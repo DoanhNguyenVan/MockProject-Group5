@@ -1,0 +1,481 @@
+.cinema-home {
+  --cinema-paper: #faf7f2;
+  --cinema-muted: #b8b6bd;
+  --cinema-surface: #141418;
+  --cinema-rule: #39383e;
+  --cinema-accent: var(--box-accent);
+
+  color: var(--cinema-paper);
+  background: var(--cinema-surface);
+}
+
+.cinema-wrap {
+  width: min(90%, 82rem);
+  margin-inline: auto;
+}
+
+.spotlight {
+  position: relative;
+  background: #101013;
+}
+
+.spotlight-slide {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  align-items: center;
+  min-height: clamp(27rem, 41vw, 36rem);
+}
+
+.spotlight-art {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background-image: linear-gradient(90deg, #101013 3%, rgb(16 16 19 / 94%) 25%, rgb(16 16 19 / 28%) 63%, transparent), linear-gradient(0deg, var(--cinema-surface), transparent 24%), var(--still);
+  background-size: cover, cover, 78% auto;
+  background-position: center, center, right 49%;
+  background-repeat: no-repeat;
+}
+
+.film-crimson-horizon {
+  --still: url("../assets/img/crimson-horizon.webp");
+}
+
+.film-velvet-shadows {
+  --still: url("../assets/img/velvet-shadows.webp");
+}
+
+.film-cyber-dynasty {
+  --still: url("../assets/img/cyber-dynasty.webp");
+}
+
+.spotlight-copy {
+  padding-block: 3.5rem 5rem;
+}
+
+.screen-label {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0 0 1.2rem;
+  color: #e9e5e2;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.screen-label::before {
+  content: "";
+  width: 1.65rem;
+  height: 3px;
+  background: var(--box-accent);
+}
+
+.screen-label span {
+  height: 0.85rem;
+  border-left: 1px solid #999;
+}
+
+.spotlight-copy :is(h1, h2) {
+  margin: 0;
+  font: 750 clamp(3rem, 6.1vw, 6.2rem)/0.99 var(--box-font);
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.spotlight-copy :is(h1, h2) small {
+  display: block;
+  margin-top: 0.55rem;
+  color: #e1cec2;
+  font: italic 400 clamp(1.65rem, 3vw, 3rem)/1.12 var(--box-font);
+  letter-spacing: -0.045em;
+}
+
+.film-facts, .feature-actions, .lineup-filters, .tile-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+.film-facts {
+  margin: 1.25rem 0 0.8rem;
+  color: #e6e3e0;
+  font-size: 0.85rem;
+}
+
+.film-facts strong span, .tile-meta strong {
+  color: #f6c766;
+}
+
+.film-age {
+  padding: 0.05rem 0.4rem;
+  border: 1px solid #99969b;
+  border-radius: 3px;
+  font: 700 0.73rem/1.5 var(--box-font);
+  color: white;
+}
+
+.film-synopsis {
+  max-width: min(46ch, 47%);
+  margin: 0 0 1.45rem;
+  color: #e1dedf;
+  line-height: 1.55;
+}
+
+.cinema-action, .cinema-secondary {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 46px;
+  padding: 0.55rem 1.35rem;
+  border: 1px solid transparent;
+  border-radius: 2rem;
+  background: var(--cinema-accent);
+  color: white;
+  font-size: 0.92rem;
+  line-height: 1.25;
+  font-family: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.cinema-secondary {
+  border-color: #77747b;
+  background: rgb(15 15 18 / 78%);
+}
+
+.cinema-action:hover {
+  color: white;
+  background: var(--box-accent);
+}
+
+.cinema-secondary:hover {
+  color: white;
+  background: #353338;
+}
+
+.feature-picker {
+  position: absolute;
+  inset: auto 0 0.4rem;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.feature-picker button {
+  width: 46px;
+  height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.feature-picker button span {
+  display: block;
+  height: 3px;
+  background: #79777b;
+}
+
+.feature-picker [aria-pressed="true"] span {
+  background: #fff;
+}
+
+.lineup, .showtime-finder {
+  padding-block: clamp(2rem, 4vw, 3.6rem);
+  scroll-margin-top: 1rem;
+}
+
+.lineup-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--cinema-rule);
+  padding-bottom: 1rem;
+}
+
+.lineup h2, .showtime-finder h2 {
+  font-size: clamp(1.7rem, 3vw, 2.45rem);
+  letter-spacing: -0.055em;
+  font-weight: 740;
+  margin: 0;
+}
+
+.lineup-filters {
+  gap: 0.35rem;
+}
+
+.lineup-filters button {
+  color: #cdcbd1;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2rem;
+  padding: 0.45rem 1rem;
+  min-height: 44px;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.lineup-filters button:hover {
+  border-color: #77747b;
+}
+
+.lineup-filters [aria-pressed="true"] {
+  background: #eeeae5;
+  color: #17161a;
+  font-weight: 700;
+}
+
+.film-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.6rem;
+}
+
+.film-tile {
+  min-width: 0;
+}
+
+.cinema-home [hidden] {
+  display: none;
+}
+
+.film-cover {
+  display: block;
+  position: relative;
+  isolation: isolate;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 0.45rem;
+  background-color: #2a2630;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 12%);
+}
+
+.film-cover img, .film-cover::after {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+}
+
+.film-cover img {
+  object-fit: cover;
+  transition: transform 220ms ease;
+}
+
+a.film-cover:hover img {
+  transform: scale(1.045);
+}
+
+.film-cover::after {
+  content: "";
+  background: linear-gradient(0deg, rgb(6 6 8 / 95%), transparent 58%);
+}
+
+.film-cover .film-age {
+  position: absolute;
+  top: 0.6rem;
+  left: 0.6rem;
+  background: rgb(11 11 13 / 84%);
+}
+
+.poster-lettering {
+  position: absolute;
+  inset: auto 7% 8%;
+  color: white;
+  text-align: center;
+  text-transform: uppercase;
+  font: 850 clamp(1.1rem, 1.9vw, 2rem)/1 var(--box-font);
+  letter-spacing: -0.045em;
+}
+
+.poster-lettering small {
+  display: block;
+  margin-top: 0.45rem;
+  letter-spacing: 0.16em;
+  font-size: 0.48em;
+}
+
+.film-velvet-shadows .poster-lettering, .film-starlight-odyssey .poster-lettering, .film-projectionist .poster-lettering {
+  font-family: var(--box-font);
+  font-weight: 400;
+}
+
+.film-crimson-horizon .film-cover img {
+  object-position: 78% center;
+}
+
+.film-apex .film-cover {
+  background: repeating-linear-gradient(132deg, transparent 0 17%, #ebe3c8 17% 20%, #322827 20% 25%, transparent 25% 38%), linear-gradient(25deg, var(--box-accent), var(--box-accent));
+}
+
+.film-projectionist .film-cover {
+  background: conic-gradient(from 80deg at 14% 39%, #302921, #caba93 13deg, #5d5346 27deg, #22201f 52deg, #161516 95deg);
+}
+
+.film-tile h3 {
+  margin: 0.8rem 0 0.3rem;
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.tile-meta, .tile-release {
+  color: var(--cinema-muted);
+  font-size: 0.8rem;
+  margin: 0;
+  gap: 0.35rem;
+}
+
+.tile-meta strong {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.tile-action, .tile-release {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+}
+
+.tile-action {
+  color: #f3f0eb;
+  text-decoration: underline;
+  text-decoration-color: var(--box-accent);
+  text-underline-offset: 0.25em;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.tile-action:hover {
+  color: white;
+  text-decoration: underline;
+}
+
+.showtime-finder {
+  border-top: 1px solid var(--cinema-rule);
+}
+
+.showtime-finder p {
+  color: var(--cinema-muted);
+  margin: 0.5rem 0 1.4rem;
+}
+
+.finder-fields {
+  display: grid;
+  grid-template-columns: 1.35fr 1.35fr 0.85fr 1fr auto;
+  align-items: end;
+  gap: 0.85rem;
+}
+
+.finder-fields label {
+  display: block;
+  color: #f1eef2;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.finder-fields select {
+  width: 100%;
+  min-height: 46px;
+  color: white;
+  background: #222126;
+  border: 1px solid #67646a;
+  border-radius: 0.4rem;
+  padding-inline: 0.65rem;
+  font: inherit;
+}
+
+#quickBookingFeedback:empty {
+  margin: 0;
+}
+
+#quickBookingFeedback:not(:empty) {
+  margin: 1rem 0 0;
+  padding: 1rem;
+  border-left: 3px solid var(--box-accent);
+  background: #242228;
+  color: white;
+}
+
+.film-tideline .film-cover {
+  background: radial-gradient(ellipse at 74% 26%, #ecebd4 0 9%, transparent 9.5%), repeating-linear-gradient(165deg, #376c70 0 14%, #21494d 15% 21%, #538682 22% 23%);
+}
+
+.film-night-train .film-cover {
+  background: linear-gradient(115deg, transparent 47%, #dbbb75 47.6% 48.2%, #26262b 49% 56%, transparent 57%), repeating-linear-gradient(0deg, #34424b 0 9%, #1c252e 10% 16%);
+}
+
+.film-northbound .film-cover {
+  background: linear-gradient(143deg, transparent 42%, #d9e3dd 42.5% 48%, #52675f 49% 66%, transparent 67%), linear-gradient(37deg, #29453c 45%, #b4c5bc 46%, #607b87);
+}
+
+.film-blue-note .film-cover {
+  background: radial-gradient(circle at 80% 37%, #c2b189 0 2%, #234979 2.5% 9%, transparent 9.5%), repeating-radial-gradient(circle at 80% 37%, #23304c 0 5%, #3b4c70 5.5% 6%, #1b2639 6.5% 9%);
+}
+
+.film-signal .film-cover {
+  background: repeating-radial-gradient(circle at 50% 35%, transparent 0 14px, rgb(130 221 211 / 40%) 15px 16px), linear-gradient(155deg, #315f65, #0e202d);
+}
+
+.film-paper-moon .film-cover {
+  background: radial-gradient(circle at 63% 30%, #ffdf9f 0 13%, transparent 13.5%), linear-gradient(145deg, #625d95, #252042 70%);
+}
+
+@media (width <= 1050px) {
+  .film-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .finder-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (width <= 640px) {
+  .spotlight-art {
+    background-size: cover, cover, auto 78%;
+    background-position: center, center, 70% top;
+    background-image: linear-gradient(0deg, #101013 12%, rgb(16 16 19 / 83%) 40%, transparent 80%), linear-gradient(90deg, rgb(16 16 19 / 45%), transparent), var(--still);
+  }
+
+  .spotlight-copy {
+    padding-block: 9.8rem 3.7rem;
+  }
+
+  .film-synopsis {
+    max-width: 41ch;
+  }
+
+  .film-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.15rem 0.85rem;
+  }
+
+  .poster-lettering {
+    font-size: clamp(1.2rem, 5vw, 2rem);
+  }
+
+  .lineup-head {
+    gap: 0.55rem;
+  }
+
+  .lineup-filters button {
+    padding-inline: 0.8rem;
+  }
+
+  .finder-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

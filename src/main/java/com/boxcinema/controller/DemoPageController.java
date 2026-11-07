@@ -1,0 +1,43 @@
+package com.boxcinema.controller;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+
+/**
+ * Controller serving Module 01 Core Pages Live Demo:
+ * Home (/), About (/about), Contact (/contact), Login (/login), and Sign Up (/register).
+ */
+@Controller
+public class DemoPageController {
+
+    @GetMapping({"/", "/home"})
+    public String homePage(Model model) {
+        model.addAttribute("activePage", "home");
+        return "customer/home";
+    }
+
+    @GetMapping("/about")
+    public String aboutPage(Model model) {
+        model.addAttribute("activePage", "about");
+        return "customer/about";
+    }
+
+    @GetMapping("/contact")
+    public String contactPage(Model model) {
+        model.addAttribute("activePage", "contact");
+        return "customer/contact";
+    }
+
+    @GetMapping("/login")
+    public String loginPage(Model model) {
+        model.addAttribute("activePage", "login");
+        return "auth/login";
+    }
+
+    @GetMapping({"/register", "/signup"})
+    public String registerPage(Model model) {
+        model.addAttribute("activePage", "register");
+        return "auth/register";
+    }
+}
