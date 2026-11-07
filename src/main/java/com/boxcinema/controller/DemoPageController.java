@@ -11,11 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class DemoPageController {
 
-    @GetMapping({"/", "/home"})
-    public String homePage(Model model) {
-        model.addAttribute("activePage", "home");
-        return "customer/home";
-    }
+    // Home mapping is handled by HomeController with real dynamic database entities.
 
     @GetMapping("/about")
     public String aboutPage(Model model) {
