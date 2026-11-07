@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : 'demo-csrf-token'}" content="demo-csrf-token">
   <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}" content="X-CSRF-TOKEN">
-  <title>BOX Cinema | Unbox the Ultimate Cinematic Experience</title>
+  <title>BOX Cinema | Premium Cinematic Experience</title>
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
     rel="stylesheet"
@@ -14,218 +14,291 @@
   <link rel="stylesheet" href="/css/home.css" th:href="@{/css/home.css}">
 </head>
 <body class="cinema-home">
-  <!-- Shared Brand Logo & Navigation Navbar -->
+  <!-- Top Navigation Bar -->
   <header th:replace="~{fragments/navbar :: navbar}"></header>
 
   <main id="main-content" tabindex="-1">
-    <section class="spotlight" aria-label="Featured films">
-      <article class="spotlight-slide film-crimson-horizon" data-feature="0">
-        <div class="spotlight-art" aria-hidden="true"></div>
-        <div class="cinema-wrap spotlight-copy">
-          <p class="screen-label">Now showing <span></span> IMAX Laser</p>
-          <h1>Crimson Horizon<small>Eclipse Protocol</small></h1>
-          <p class="film-facts"><strong><span aria-hidden="true">★</span> 9.1</strong><span>Sci-fi / Action</span><span>148 min</span><span class="film-age">T16</span></p>
-          <p class="film-synopsis">When the last signal from Earth goes silent, a pilot crosses the crimson horizon to bring her crew home.</p>
-          <div class="feature-actions">
-            <a class="cinema-action" href="#quickBookingCard" data-book-film="Crimson Horizon: Eclipse Protocol">View showtimes <span aria-hidden="true">→</span></a>
-            <a class="cinema-secondary" href="#moviesSection">Browse films</a>
+    <!-- =======================================================================
+         1. HERO SPOTLIGHT WITH NUMBERED MINI CAROUSEL (MATCHING IMAGE 1)
+         ======================================================================= -->
+    <section class="hero-spotlight" id="heroSpotlight" aria-label="Phim nổi bật">
+      <!-- Dynamic Backdrop Layer (Updated when user picks a film in the rail) -->
+      <div class="hero-backdrop-layer" id="heroBackdrop"
+           th:style="${spotlightMovies != null and !spotlightMovies.isEmpty() and spotlightMovies[0].bannerUrl != null ? 'background-image: url(' + spotlightMovies[0].bannerUrl + ');' : ''}">
+      </div>
+
+      <!-- Floating Hero Slide Navigation Arrows (Prev / Next) -->
+      <button type="button" class="hero-slide-arrow hero-arrow-prev" id="heroSlidePrev" aria-label="Phim trước đó">
+        <span aria-hidden="true">❮</span>
+      </button>
+      <button type="button" class="hero-slide-arrow hero-arrow-next" id="heroSlideNext" aria-label="Phim tiếp theo">
+        <span aria-hidden="true">❯</span>
+      </button>
+
+      <!-- Hero Split Grid: Left half info, Right half hot ranked movies (Edge-to-edge balance) -->
+      <div class="hero-container-wide">
+        <div class="hero-split-grid">
+          <!-- Left Column: Spotlight Movie Details (1 nửa) -->
+          <div class="hero-content-wrap">
+            <th:block th:if="${spotlightMovies != null and !spotlightMovies.isEmpty()}">
+              <h1 class="hero-movie-title" id="heroTitle" th:text="${spotlightMovies[0].title}">Dune: Hành Tinh Cát - Phần 2</h1>
+              <p class="hero-movie-synopsis" id="heroSynopsis" th:text="${spotlightMovies[0].synopsis}">Tóm tắt nội dung phim...</p>
+              
+              <div class="hero-movie-meta" id="heroMeta">
+                <span class="meta-badge" id="heroAge"
+                      th:classappend="${spotlightMovies[0].ageRating == 'P' ? 'badge-age-p' : (spotlightMovies[0].ageRating == 'T13' ? 'badge-age-t13' : (spotlightMovies[0].ageRating == 'T16' ? 'badge-age-t16' : 'badge-age-t18'))}"
+                      th:text="${spotlightMovies[0].ageRating}">T16</span>
+                <span id="heroDuration" th:text="${spotlightMovies[0].durationMinutes + ' mins'}">166 mins</span>
+                <span>·</span>
+                <span id="heroGenres" th:text="${spotlightMovies[0].genreNamesDisplay}">Action / Sci-Fi</span>
+                <span th:if="${spotlightMovies[0].language != null}">·</span>
+                <span id="heroLang" th:if="${spotlightMovies[0].language != null}" th:text="${spotlightMovies[0].language}">English - Vietnamese Sub</span>
+              </div>
+
+              <div class="hero-actions">
+                <!-- Orange/Red Buy Ticket Button (Matching Image 1) -->
+                <a class="btn-cta-buy" id="heroBuyBtn" href="#moviesSection" 
+                   th:data-book-id="${spotlightMovies[0].movieId}" 
+                   th:data-book-title="${spotlightMovies[0].title}">
+                  <span>🎟</span> Buy Tickets
+                </a>
+                <!-- Glass Detail Button (Matching Image 1) -->
+                <a class="btn-cta-detail" id="heroDetailBtn" href="#moviesSection">
+                  <span>ℹ</span> Details
+                </a>
+                <!-- Trailer Button (If available in DB) -->
+                <button type="button" class="btn-cta-detail" id="heroTrailerBtn"
+                        th:if="${spotlightMovies[0].trailerUrl != null}"
+                        th:data-trailer-url="${spotlightMovies[0].trailerUrl}">
+                  <span>▶</span> Trailer
+                </button>
+              </div>
+            </th:block>
+          </div>
+
+          <!-- Right Column: Top Movies (Nửa còn lại) -->
+          <div class="hero-hot-col" th:if="${spotlightMovies != null and !spotlightMovies.isEmpty()}">
+            <div class="hot-bar-header">
+              <span class="badge-hot-tag">🔥 HOT</span>
+              <h2 class="hot-bar-title">TOP MOVIES THIS MONTH</h2>
+            </div>
+
+            <div class="hot-rail-scroll" id="hotRail">
+              <div th:each="movie, iter : ${spotlightMovies}"
+                   class="hot-mini-card"
+                   th:classappend="${iter.index == 0 ? 'active' : ''}"
+                   th:data-movie-id="${movie.movieId}"
+                   th:data-title="${movie.title}"
+                   th:data-synopsis="${movie.synopsis}"
+                   th:data-age="${movie.ageRating}"
+                   th:data-duration="${movie.durationMinutes + ' mins'}"
+                   th:data-genres="${movie.genreNamesDisplay}"
+                   th:data-lang="${movie.language}"
+                   th:data-banner="${movie.bannerUrl}"
+                   th:data-trailer="${movie.trailerUrl}">
+                <div class="hot-thumb-container">
+                  <!-- Golden Rank Badge 1, 2, 3, 4, 5, 6, 7 (Image 1 Style) -->
+                  <span class="hot-rank-badge" th:text="${iter.count}">1</span>
+                  <img th:src="${movie.posterUrl}" th:alt="${movie.title}" loading="lazy" onerror="this.style.display='none'">
+                </div>
+                <p class="hot-mini-title" th:text="${movie.title}">Movie Title</p>
+              </div>
+            </div>
           </div>
         </div>
-      </article>
-      <article class="spotlight-slide film-velvet-shadows" data-feature="1" hidden>
-        <div class="spotlight-art" aria-hidden="true"></div>
-        <div class="cinema-wrap spotlight-copy">
-          <p class="screen-label">Now showing <span></span> Dolby Atmos</p>
-          <h2>Velvet Shadows<small>The Red Archive</small></h2>
-          <p class="film-facts"><strong><span aria-hidden="true">★</span> 8.8</strong><span>Mystery / Thriller</span><span>132 min</span><span class="film-age">T18</span></p>
-          <p class="film-synopsis">A film restorer uncovers a missing frame that leads deep into the secrets of an old opera house.</p>
-          <div class="feature-actions">
-            <a class="cinema-action" href="#quickBookingCard" data-book-film="Velvet Shadows: The Red Archive">View showtimes <span aria-hidden="true">→</span></a>
-            <a class="cinema-secondary" href="#moviesSection">Browse films</a>
-          </div>
-        </div>
-      </article>
-      <article class="spotlight-slide film-cyber-dynasty" data-feature="2" hidden>
-        <div class="spotlight-art" aria-hidden="true"></div>
-        <div class="cinema-wrap spotlight-copy">
-          <p class="screen-label">Now showing <span></span> 4DX Motion</p>
-          <h2>Cyber Dynasty<small>2099</small></h2>
-          <p class="film-facts"><strong><span aria-hidden="true">★</span> 8.6</strong><span>Cyberpunk / Action</span><span>126 min</span><span class="film-age">T16</span></p>
-          <p class="film-synopsis">A lone rider races through a rain-soaked megacity with one night to change its future.</p>
-          <div class="feature-actions">
-            <a class="cinema-action" href="#quickBookingCard" data-book-film="Cyber Dynasty 2099">View showtimes <span aria-hidden="true">→</span></a>
-            <a class="cinema-secondary" href="#moviesSection">Browse films</a>
-          </div>
-        </div>
-      </article>
-      <div class="cinema-wrap feature-picker" role="group" aria-label="Choose featured film">
-        <button type="button" data-show-feature="0" aria-label="Feature Crimson Horizon" aria-pressed="true"><span></span></button>
-        <button type="button" data-show-feature="1" aria-label="Feature Velvet Shadows" aria-pressed="false"><span></span></button>
-        <button type="button" data-show-feature="2" aria-label="Feature Cyber Dynasty" aria-pressed="false"><span></span></button>
       </div>
     </section>
 
-    <section class="cinema-wrap lineup" id="moviesSection" aria-labelledby="lineupHeading">
-      <div class="lineup-head">
-        <h2 id="lineupHeading">At the cinema</h2>
-        <div class="lineup-filters" role="group" aria-label="Filter films">
-          <button type="button" data-movie-tab="all" aria-pressed="true">All films</button>
-          <button type="button" data-movie-tab="now-showing" aria-pressed="false">Now showing</button>
-          <button type="button" data-movie-tab="coming-soon" aria-pressed="false">Coming soon</button>
+    <!-- =======================================================================
+         2. MARQUEE ANNOUNCEMENT STRIP (MATCHING BOTTOM OF IMAGE 1)
+         ======================================================================= -->
+    <div class="marquee-strip" aria-hidden="true">
+      <div class="marquee-content">
+        <span>🎬 WELCOME TO BOX CINEMA - EXPERIENCE PREMIUM CINEMA WITH ADVANCED IMAX LASER & DOLBY ATMOS</span>
+        <span>🍿 FAST & EASY ONLINE BOOKING - INSTANT DIGITAL QR TICKETS WITH ZERO QUEUING</span>
+        <span>🎬 WELCOME TO BOX CINEMA - EXPERIENCE PREMIUM CINEMA WITH ADVANCED IMAX LASER & DOLBY ATMOS</span>
+        <span>🍿 FAST & EASY ONLINE BOOKING - INSTANT DIGITAL QR TICKETS WITH ZERO QUEUING</span>
+      </div>
+    </div>
+
+    <!-- =======================================================================
+         3. SECTION "MOVIES" CATALOG WITH HOVER PREVIEW POPOVER (MATCHING IMAGE 2)
+         ======================================================================= -->
+    <section class="movies-catalog-section" id="moviesSection" aria-labelledby="catalogHeading">
+      <div class="cinema-container">
+        <!-- Section Header with Tabs -->
+        <div class="catalog-header">
+          <h2 class="catalog-title" id="catalogHeading">MOVIES</h2>
+          <div class="catalog-filters" role="group" aria-label="Movie catalog filter">
+            <button type="button" class="btn-filter-tab active" data-catalog-tab="all">All Movies</button>
+            <button type="button" class="btn-filter-tab" data-catalog-tab="now-showing">Now Showing</button>
+            <button type="button" class="btn-filter-tab" data-catalog-tab="coming-soon">Coming Soon</button>
+          </div>
+        </div>
+
+        <!-- 4-Column Grid of Movie Cards (Image 2 Layout) -->
+        <div class="catalog-grid" id="catalogGrid">
+          <th:block th:each="movie : ${allMovies}">
+            <div class="catalog-card" th:data-status="${movie.status == 'NOW_SHOWING' ? 'now-showing' : 'coming-soon'}">
+              <!-- Poster Card Frame -->
+              <div class="catalog-poster-frame">
+                <span class="card-badge-age"
+                      th:classappend="${movie.ageRating == 'P' ? 'badge-age-p' : (movie.ageRating == 'T13' ? 'badge-age-t13' : (movie.ageRating == 'T16' ? 'badge-age-t16' : 'badge-age-t18'))}"
+                      th:text="${movie.ageRating}">T16</span>
+                <span class="card-badge-duration" th:text="${movie.durationMinutes + ' mins'}">120'</span>
+                <img th:src="${movie.posterUrl}" th:alt="${movie.title}" loading="lazy" onerror="this.style.display='none'">
+              </div>
+
+              <!-- Movie Basic Info Under Poster -->
+              <div class="catalog-info">
+                <h3 class="catalog-movie-title" th:text="${movie.title}">Movie Title</h3>
+                <p class="catalog-movie-meta">
+                  <span th:text="${movie.genreNamesDisplay}">Genre</span>
+                  <span th:if="${movie.status == 'COMING_SOON' and movie.releaseDate != null}">
+                    · <span class="text-warning" th:text="${'Release: ' + #temporals.format(movie.releaseDate, 'dd/MM/yyyy')}">Release</span>
+                  </span>
+                </p>
+              </div>
+
+              <!-- Floating Popover / Hover Preview Card (Matching Image 2 Popover) -->
+              <div class="card-hover-popover" aria-hidden="true">
+                <div class="popover-backdrop"
+                     th:style="${movie.bannerUrl != null ? 'background-image: url(' + movie.bannerUrl + ');' : ''}">
+                </div>
+                <div class="popover-body">
+                  <h4 class="popover-title" th:text="${movie.title}">Movie Title</h4>
+                  <p class="popover-subtitle" th:text="${movie.genreNamesDisplay}">Genre</p>
+                  <p class="popover-synopsis" th:text="${movie.synopsis}">Movie synopsis from database...</p>
+                  <div class="popover-actions">
+                    <a th:if="${movie.status == 'NOW_SHOWING'}"
+                       class="btn-pop-buy" href="#moviesSection"
+                       th:data-book-id="${movie.movieId}"
+                       th:data-book-title="${movie.title}">
+                      🎟 Buy Tickets
+                    </a>
+                    <button type="button" class="btn-pop-detail" 
+                            th:data-book-id="${movie.movieId}"
+                            onclick="location.href='#moviesSection'">
+                      ℹ Details
+                    </button>
+                    <button type="button" class="btn-pop-trailer"
+                            th:if="${movie.trailerUrl != null}"
+                            th:data-trailer-url="${movie.trailerUrl}">
+                      ▶ Trailer
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </th:block>
+        </div>
+
+        <!-- Empty State when filter/search yields 0 movies -->
+        <div class="catalog-empty-state d-none" id="catalogEmptyState">
+          <div class="empty-icon">🎬</div>
+          <h4 class="empty-title">No Movies Found</h4>
+          <p class="empty-desc">Sorry, no movies match your search criteria or selected filter.</p>
+          <button type="button" class="btn-box-outline btn-reset-filters" id="btnResetFilters">View All Movies</button>
+        </div>
+
+        <!-- Pagination Controls (12 movies / page) -->
+        <div class="catalog-pagination-wrap" id="catalogPagination" aria-label="Movie list pagination">
+          <button type="button" class="pagination-arrow-btn" id="paginationPrev" aria-label="Previous page">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="page-icon">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            <span class="d-none d-sm-inline">Prev</span>
+          </button>
+
+          <div class="pagination-numbers" id="paginationNumbers"></div>
+
+          <button type="button" class="pagination-arrow-btn" id="paginationNext" aria-label="Next page">
+            <span class="d-none d-sm-inline">Next</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="page-icon">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
         </div>
       </div>
-      <div class="film-grid">
-        <div class="film-tile film-crimson-horizon" data-movie-status="now-showing">
-          <a class="film-cover" href="#quickBookingCard" data-book-film="Crimson Horizon: Eclipse Protocol" aria-label="View showtimes for Crimson Horizon: Eclipse Protocol">
-            <img src="/assets/img/crimson-horizon.webp" width="768" height="512" loading="lazy" alt="">
-            <span class="film-age">T16</span>
-            <span class="poster-lettering" aria-hidden="true">Crimson Horizon<small>Eclipse Protocol</small></span>
-          </a>
-          <h3>Crimson Horizon: Eclipse Protocol</h3>
-          <p class="tile-meta">Sci-fi <span>·</span> 148 min <strong aria-label="Rating 9.1 out of 10">★ 9.1</strong></p>
-          <a class="tile-action" href="#quickBookingCard" data-book-film="Crimson Horizon: Eclipse Protocol" aria-label="Showtimes for Crimson Horizon: Eclipse Protocol, from 85,000 VND">Showtimes <span aria-hidden="true">↗</span></a>
-        </div>
-        <div class="film-tile film-velvet-shadows" data-movie-status="now-showing">
-          <a class="film-cover" href="#quickBookingCard" data-book-film="Velvet Shadows: The Red Archive" aria-label="View showtimes for Velvet Shadows: The Red Archive">
-            <img src="/assets/img/velvet-shadows.webp" width="768" height="512" loading="lazy" alt="">
-            <span class="film-age">T18</span>
-            <span class="poster-lettering" aria-hidden="true">Velvet Shadows<small>The Red Archive</small></span>
-          </a>
-          <h3>Velvet Shadows: The Red Archive</h3>
-          <p class="tile-meta">Mystery <span>·</span> 132 min <strong aria-label="Rating 8.8 out of 10">★ 8.8</strong></p>
-          <a class="tile-action" href="#quickBookingCard" data-book-film="Velvet Shadows: The Red Archive" aria-label="Showtimes for Velvet Shadows: The Red Archive, from 80,000 VND">Showtimes <span aria-hidden="true">↗</span></a>
-        </div>
-        <div class="film-tile film-cyber-dynasty" data-movie-status="now-showing">
-          <a class="film-cover" href="#quickBookingCard" data-book-film="Cyber Dynasty 2099" aria-label="View showtimes for Cyber Dynasty 2099">
-            <img src="/assets/img/cyber-dynasty.webp" width="768" height="512" loading="lazy" alt="">
-            <span class="film-age">T16</span>
-            <span class="poster-lettering" aria-hidden="true">Cyber Dynasty<small>2099</small></span>
-          </a>
-          <h3>Cyber Dynasty 2099</h3>
-          <p class="tile-meta">Cyberpunk <span>·</span> 126 min <strong aria-label="Rating 8.6 out of 10">★ 8.6</strong></p>
-          <a class="tile-action" href="#quickBookingCard" data-book-film="Cyber Dynasty 2099" aria-label="Showtimes for Cyber Dynasty 2099, from 95,000 VND">Showtimes <span aria-hidden="true">↗</span></a>
-        </div>
-        <div class="film-tile film-starlight-odyssey" data-movie-status="now-showing">
-          <a class="film-cover" href="#quickBookingCard" data-book-film="Starlight Odyssey" aria-label="View showtimes for Starlight Odyssey">
-            <img src="/assets/img/starlight-odyssey.webp" width="768" height="512" loading="lazy" alt="">
-            <span class="film-age">P</span>
-            <span class="poster-lettering" aria-hidden="true">Starlight Odyssey</span>
-          </a>
-          <h3>Starlight Odyssey</h3>
-          <p class="tile-meta">Animation <span>·</span> 110 min <strong aria-label="Rating 9.0 out of 10">★ 9.0</strong></p>
-          <a class="tile-action" href="#quickBookingCard" data-book-film="Starlight Odyssey" aria-label="Showtimes for Starlight Odyssey, from 75,000 VND">Showtimes <span aria-hidden="true">↗</span></a>
-        </div>
-        <div class="film-tile film-tideline" data-movie-status="now-showing">
-          <a class="film-cover" href="#quickBookingCard" data-book-film="The Tide Line" aria-label="View showtimes for The Tide Line">
-            <span class="film-age">T13</span>
-            <span class="poster-lettering" aria-hidden="true">The Tide Line</span>
-          </a>
-          <h3>The Tide Line</h3>
-          <p class="tile-meta">Drama <span>·</span> 112 min</p>
-          <a class="tile-action" href="#quickBookingCard" data-book-film="The Tide Line" aria-label="Showtimes for The Tide Line">Showtimes <span aria-hidden="true">↗</span></a>
-        </div>
-        <div class="film-tile film-night-train" data-movie-status="now-showing">
-          <a class="film-cover" href="#quickBookingCard" data-book-film="Midnight Expressway" aria-label="View showtimes for Midnight Expressway">
-            <span class="film-age">T16</span>
-            <span class="poster-lettering" aria-hidden="true">Midnight Expressway</span>
-          </a>
-          <h3>Midnight Expressway</h3>
-          <p class="tile-meta">Thriller <span>·</span> 124 min</p>
-          <a class="tile-action" href="#quickBookingCard" data-book-film="Midnight Expressway" aria-label="Showtimes for Midnight Expressway">Showtimes <span aria-hidden="true">↗</span></a>
-        </div>
-        <div class="film-tile film-signal" data-movie-status="now-showing">
-          <a class="film-cover" href="#quickBookingCard" data-book-film="Signal at Dawn" aria-label="View showtimes for Signal at Dawn">
-            <span class="film-age">T13</span>
-            <span class="poster-lettering" aria-hidden="true">Signal at Dawn</span>
-          </a>
-          <h3>Signal at Dawn</h3>
-          <p class="tile-meta">Thriller <span>&middot;</span> 108 min</p>
-          <a class="tile-action" href="#quickBookingCard" data-book-film="Signal at Dawn" aria-label="Showtimes for Signal at Dawn">Showtimes <span aria-hidden="true">&#8599;</span></a>
-        </div>
-        <div class="film-tile film-apex" data-movie-status="coming-soon">
-          <div class="film-cover">
-            
-            <span class="film-age">T13</span>
-            <span class="poster-lettering" aria-hidden="true">Apex Grand Prix<small>Monza</small></span>
-          </div>
-          <h3>Apex Grand Prix: Monza</h3>
-          <p class="tile-meta">Sports <span>·</span> 138 min</p>
-          <p class="tile-release">Opens Nov 20</p>
-        </div>
-        <div class="film-tile film-projectionist" data-movie-status="coming-soon">
-          <div class="film-cover">
-            
-            <span class="film-age">T18</span>
-            <span class="poster-lettering" aria-hidden="true">The Last Projectionist</span>
-          </div>
-          <h3>The Last Projectionist</h3>
-          <p class="tile-meta">Horror <span>·</span> 118 min</p>
-          <p class="tile-release">Opens Dec 04</p>
-        </div>
-        <div class="film-tile film-northbound" data-movie-status="coming-soon">
-          <div class="film-cover">
-            <span class="film-age">P</span>
-            <span class="poster-lettering" aria-hidden="true">Northbound</span>
-          </div>
-          <h3>Northbound</h3>
-          <p class="tile-meta">Adventure <span>·</span> 104 min</p>
-          <p class="tile-release">Opens Nov 27</p>
-        </div>
-        <div class="film-tile film-blue-note" data-movie-status="coming-soon">
-          <div class="film-cover">
-            <span class="film-age">T13</span>
-            <span class="poster-lettering" aria-hidden="true">The Blue Note</span>
-          </div>
-          <h3>The Blue Note</h3>
-          <p class="tile-meta">Music <span>·</span> 98 min</p>
-          <p class="tile-release">Opens Dec 11</p>
-        </div>
-        <div class="film-tile film-paper-moon" data-movie-status="coming-soon">
-          <div class="film-cover">
-            <span class="film-age">P</span>
-            <span class="poster-lettering" aria-hidden="true">Paper Moon Parade</span>
-          </div>
-          <h3>Paper Moon Parade</h3>
-          <p class="tile-meta">Animation <span>&middot;</span> 96 min</p>
-          <p class="tile-release">Opens Dec 18</p>
-        </div>
-      </div>
-      <p id="filmFilterStatus" class="screen-reader-only" role="status"></p>
     </section>
 
-    <section class="cinema-wrap showtime-finder" id="quickBookingCard" aria-labelledby="finderHeading">
-      <h2 id="finderHeading">Find a showtime</h2>
-      <p>Choose your film, cinema and time to preview a screening.</p>
-      <form id="quickBookingForm" class="finder-fields">
-        <div><label for="qbMovie">Film</label>
-          <select id="qbMovie">
-            <option>Crimson Horizon: Eclipse Protocol</option>
-            <option>Velvet Shadows: The Red Archive</option>
-            <option>Cyber Dynasty 2099</option>
-            <option>Starlight Odyssey</option>
-            <option>The Tide Line</option>
-            <option>Midnight Expressway</option>
-            <option>Signal at Dawn</option>
-          </select>
+    <!-- =======================================================================
+         4. QUICK BOOKING BAR (TEMPORARILY HIDDEN PER USER REQUEST)
+         ======================================================================= -->
+    <!--/*
+    <section class="booking-section" id="quickBookingCard" aria-labelledby="bookingHeading">
+      <div class="cinema-container">
+        <div class="booking-glass-panel">
+          <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+            <div>
+              <h2 class="h4 fw-bold text-white mb-1" id="bookingHeading">🎟 Đặt Vé Nhanh</h2>
+              <p class="small text-secondary mb-0">Chọn phim, rạp, ngày và suất chiếu để trải nghiệm phòng chiếu chất lượng cao.</p>
+            </div>
+            <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-50 px-3 py-2 fw-bold">
+              ⚡ GIỮ VÉ TỨC THÌ
+            </span>
+          </div>
+
+          <form id="quickBookingForm" class="booking-fields-grid">
+            <div>
+              <label for="qbMovie" class="booking-label">1. Chọn Phim</label>
+              <select id="qbMovie" name="movieId" class="booking-select" required>
+                <option value="">-- Chọn bộ phim --</option>
+                <option th:each="movie : ${nowShowingMovies}"
+                        th:value="${movie.movieId}"
+                        th:text="${movie.title}">Tên Phim</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="qbCinema" class="booking-label">2. Chọn Rạp</label>
+              <select id="qbCinema" name="cinemaId" class="booking-select" required>
+                <option value="">-- Chọn cụm rạp --</option>
+                <option th:each="cinema : ${cinemas}"
+                        th:value="${cinema.cinemaId}"
+                        th:text="${cinema.displayName}">Tên Cụm Rạp</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="qbDate" class="booking-label">3. Chọn Ngày</label>
+              <select id="qbDate" name="date" class="booking-select" required>
+                <option value="">-- Chọn ngày --</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="qbTime" class="booking-label">4. Suất Chiếu</label>
+              <select id="qbTime" name="showtimeId" class="booking-select" required>
+                <option value="">-- Chọn giờ chiếu --</option>
+              </select>
+            </div>
+
+            <div>
+              <button type="submit" class="btn-cta-buy w-100 py-2 justify-content-center">
+                Tiếp Tục ➔
+              </button>
+            </div>
+          </form>
+
+          <div id="quickBookingFeedback" class="mt-3 small" role="status"></div>
         </div>
-        <div><label for="qbCinema">Cinema</label>
-          <select id="qbCinema">
-            <option>BOX Flagship District 1 (HCMC)</option>
-            <option>BOX Tay Ho Multiplex (Hanoi)</option>
-            <option>BOX Dragon Bridge (Da Nang)</option>
-          </select>
-        </div>
-        <div><label for="qbDate">Day</label>
-          <select id="qbDate"><option>Today</option><option>Tomorrow</option><option>Day after tomorrow</option></select>
-        </div>
-        <div><label for="qbTime">Showtime</label>
-          <select id="qbTime"><option>18:30 - IMAX Laser</option><option>20:15 - Dolby Atmos</option><option>21:45 - 4DX Motion</option></select>
-        </div>
-        <button type="submit" class="cinema-action">Preview screening</button>
-      </form>
-      <p id="quickBookingFeedback" role="status"></p>
+      </div>
     </section>
+    */-->
   </main>
+
+  <!-- =======================================================================
+       5. YOUTUBE TRAILER MODAL
+       ======================================================================= -->
+  <div class="trailer-modal-backdrop" id="trailerModal" aria-hidden="true" role="dialog">
+    <div class="trailer-modal-content">
+      <button type="button" class="trailer-modal-close" id="trailerModalClose" aria-label="Close trailer">×</button>
+      <div class="trailer-video-frame">
+        <iframe id="trailerIframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      </div>
+    </div>
+  </div>
 
   <!-- Shared Footer -->
   <footer th:replace="~{fragments/footer :: footer}"></footer>

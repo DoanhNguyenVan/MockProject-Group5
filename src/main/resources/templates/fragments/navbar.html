@@ -9,22 +9,70 @@
     <a class="skip-link" href="#main-content">Skip to content</a>
     <nav class="cinema-nav" aria-label="Main navigation">
       <div class="cinema-nav-inner">
+        <!-- Logo -->
         <a class="box-brand" href="/" th:href="@{/}" aria-label="BOX Cinema home">
-          <img src="/assets/img/box-cinema-logo.svg" th:src="@{/assets/img/box-cinema-logo.svg}" alt="BOX Cinema" width="150" height="40">
+          <img src="/assets/img/box-cinema-logo.svg" th:src="@{/assets/img/box-cinema-logo.svg}" alt="BOX Cinema" width="145" height="38">
         </a>
-        <button class="box-navbar-toggler" type="button" aria-expanded="false" aria-controls="boxNavbarCollapse">Menu <span aria-hidden="true">☰</span></button>
+        
+        <!-- Center Navigation Menu (Links) -->
         <div class="cinema-nav-menu" id="boxNavbarCollapse">
           <div class="cinema-nav-links">
-            <a href="/" th:href="@{/}" data-nav-route="home">Home</a>
             <a href="/#moviesSection" th:href="@{/#moviesSection}">Movies</a>
-            <a href="/#quickBookingCard" th:href="@{/#quickBookingCard}">Showtimes</a>
+            <a href="/#moviesSection" th:href="@{/#moviesSection}">Cinemas</a>
+            <a href="/#moviesSection" th:href="@{/#moviesSection}">Showtimes</a>
             <a href="/about" th:href="@{/about}" data-nav-route="about">About</a>
             <a href="/contact" th:href="@{/contact}" data-nav-route="contact">Contact</a>
           </div>
-          <div class="cinema-nav-account">
-            <a href="/login" th:href="@{/login}" data-nav-route="login">Log in</a>
-            <a class="nav-signup" href="/register" th:href="@{/register}" data-nav-route="register">Sign up</a>
+
+          <!-- Mobile Only: Account Links inside dropdown menu -->
+          <div class="cinema-nav-mobile-account d-md-none">
+            <th:block th:if="${session.currentUser == null}">
+              <div class="d-flex align-items-center gap-2 pt-2 border-top border-secondary border-opacity-25 mt-2">
+                <a href="/login" th:href="@{/login}" data-nav-route="login" class="small text-white fw-bold">Sign In</a>
+                <span class="text-secondary">·</span>
+                <a class="nav-signup" href="/register" th:href="@{/register}" data-nav-route="register">Sign Up</a>
+              </div>
+            </th:block>
+            <th:block th:if="${session.currentUser != null}">
+              <div class="d-flex align-items-center justify-content-between pt-2 border-top border-secondary border-opacity-25 mt-2">
+                <span class="text-white small fw-bold">👤 <span th:text="${session.currentUser.fullName}">Account</span></span>
+                <a href="/logout" th:href="@{/logout}" class="nav-signup">Sign Out</a>
+              </div>
+            </th:block>
           </div>
+        </div>
+
+        <!-- Right Side: Search Icon (LEFT of login/register) + Account (Desktop) + Hamburger (Mobile) -->
+        <div class="cinema-nav-right-tools">
+          <!-- Expanding Search Bar (To the LEFT of Sign In / Sign Up) -->
+          <div class="nav-search-wrap" id="navSearchWrap">
+            <form class="nav-search-form" id="navSearchForm" role="search" onsubmit="return false;">
+              <input type="text" class="nav-search-input" id="navSearchInput" placeholder="Search movies, genres..." autocomplete="off" aria-label="Search movies">
+              <button type="button" class="nav-search-btn" id="navSearchBtn" aria-label="Search">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </button>
+            </form>
+          </div>
+
+          <!-- Desktop Account (Sign In, Sign Up) -->
+          <div class="cinema-nav-account d-none d-md-flex align-items-center gap-3">
+            <th:block th:if="${session.currentUser == null}">
+              <a href="/login" th:href="@{/login}" data-nav-route="login" class="small text-white fw-bold">Sign In</a>
+              <a class="nav-signup" href="/register" th:href="@{/register}" data-nav-route="register">Sign Up</a>
+            </th:block>
+            <th:block th:if="${session.currentUser != null}">
+              <span class="text-white small fw-bold">
+                👤 <span th:text="${session.currentUser.fullName}">Account</span>
+              </span>
+              <a href="/logout" th:href="@{/logout}" class="nav-signup">Sign Out</a>
+            </th:block>
+          </div>
+
+          <!-- Hamburger Button (Mobile / Tablet) -->
+          <button class="box-navbar-toggler" type="button" aria-expanded="false" aria-label="Menu" aria-controls="boxNavbarCollapse"><span aria-hidden="true">☰</span></button>
         </div>
       </div>
     </nav>

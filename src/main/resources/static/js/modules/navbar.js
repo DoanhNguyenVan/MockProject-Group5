@@ -1,5 +1,5 @@
 /**
- * BOX Cinema - Module 01 Navbar & Core Page Interactions
+ * BOX Cinema - Module 01 Navbar & Cinemê-style Home Page Interactions
  */
 
 export function resolveActiveRoute(pathname = "/") {
@@ -39,14 +39,18 @@ export function initNavbar(doc = document, currentPath = window.location.pathnam
 
   const toggler = doc.querySelector(".box-navbar-toggler");
   const collapseEl = doc.getElementById("boxNavbarCollapse");
+  const navEl = doc.querySelector(".cinema-nav");
 
   if (toggler && collapseEl) {
     const closeMenu = () => {
       collapseEl.classList.remove("show");
       toggler.setAttribute("aria-expanded", "false");
+      if (navEl) navEl.classList.remove("menu-open");
     };
     toggler.addEventListener("click", () => {
-      toggler.setAttribute("aria-expanded", String(collapseEl.classList.toggle("show")));
+      const isOpen = collapseEl.classList.toggle("show");
+      toggler.setAttribute("aria-expanded", String(isOpen));
+      if (navEl) navEl.classList.toggle("menu-open", isOpen);
     });
     collapseEl.addEventListener("click", (event) => {
       if (event.target.closest("a")) closeMenu();
@@ -59,106 +63,729 @@ export function initNavbar(doc = document, currentPath = window.location.pathnam
     });
   }
 
+  // Navbar scroll behavior: Transparent over hero slide, solid dark glass once scrolled past
+  if (navEl && typeof window !== "undefined") {
+    const heroEl = doc.getElementById("heroSpotlight") || doc.querySelector(".hero-spotlight");
+
+    const handleScroll = () => {
+      // On mobile / small screens, activate solid dark glass background immediately when user scrolls past top (> 25px)
+      // so buttons and text scrolling up never collide with the fixed transparent navbar logo.
+      // On desktop, activate as soon as scroll leaves the top of the hero slide (> 80px).
+      const isMobile = window.innerWidth <= 768;
+      const threshold = isMobile ? 25 : 80;
+      if (window.scrollY > threshold) {
+        navEl.classList.add("nav-scrolled");
+      } else {
+        navEl.classList.remove("nav-scrolled");
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    // Check initial scroll state
+    handleScroll();
+  }
+
+  // Expanding Search Bar Interactions
+  initNavSearch(doc, navEl);
+
   return activeKey;
 }
 
-function initSpotlight(doc) {
-  const spotlight = doc.querySelector(".spotlight");
-  if (!spotlight) return;
+/**
+ * Expanding Search Bar in Navbar (White icon in black circle -> expands to white search input)
+ */
+function initNavSearch(doc, navEl) {
+  const searchWrap = doc.getElementById("navSearchWrap");
+  const searchForm = doc.getElementById("navSearchForm");
+  const searchBtn = doc.getElementById("navSearchBtn");
+  const searchInput = doc.getElementById("navSearchInput");
 
-  const buttons = [...spotlight.querySelectorAll("[data-show-feature]")];
-  const slides = spotlight.querySelectorAll("[data-feature]");
-  const motion = doc.defaultView.matchMedia("(prefers-reduced-motion: reduce)");
-  let index = Math.max(0, buttons.findIndex((button) => button.getAttribute("aria-pressed") === "true"));
-  let timer;
+  if (!searchWrap || !searchForm || !searchBtn || !searchInput) return;
 
-  function schedule() {
-    clearTimeout(timer);
-    if (!motion.matches && !doc.hidden && !spotlight.querySelector(".feature-actions:focus-within, .feature-actions:hover")) {
-      timer = setTimeout(() => selectFilm((index + 1) % buttons.length), 6000);
+  const openSearch = () => {
+    searchForm.classList.add("active");
+    if (navEl) navEl.classList.add("search-active");
+    setTimeout(() => searchInput.focus(), 80);
+  };
+
+  const closeSearch = () => {
+    searchForm.classList.remove("active");
+    if (navEl) navEl.classList.remove("search-active");
+    searchInput.blur();
+  };
+
+  searchBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (!searchForm.classList.contains("active")) {
+      openSearch();
+    } else {
+      if (searchInput.value.trim().length > 0) {
+        performSearch(searchInput.value.trim(), true);
+      } else {
+        closeSearch();
+      }
+    }
+  });
+
+  const performSearch = (query, scrollTo = true) => {
+    if (typeof window !== "undefined" && window.__boxCinemaCatalog?.setSearchQuery) {
+      window.__boxCinemaCatalog.setSearchQuery(query, scrollTo);
+      return;
+    }
+
+    const q = query.toLowerCase();
+    const catalogCards = doc.querySelectorAll("#catalogGrid .catalog-card");
+    catalogCards.forEach((card) => {
+      const title = (card.querySelector(".catalog-movie-title")?.textContent || "").toLowerCase();
+      const meta = (card.querySelector(".catalog-movie-meta")?.textContent || "").toLowerCase();
+      const matches = !q || title.includes(q) || meta.includes(q);
+      card.style.display = matches ? "" : "none";
+    });
+
+    if (scrollTo) {
+      const targetSection = doc.getElementById("moviesSection");
+      if (targetSection) {
+        targetSection.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  };
+
+  searchInput.addEventListener("input", () => {
+    performSearch(searchInput.value.trim(), false);
+  });
+
+  searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      performSearch(searchInput.value.trim(), true);
+    } else if (e.key === "Escape") {
+      closeSearch();
+    }
+  });
+
+  searchForm.addEventListener("click", (e) => {
+    e.stopPropagation();
+  });
+
+  doc.addEventListener("click", (e) => {
+    if (searchForm.classList.contains("active") && !searchWrap.contains(e.target)) {
+      closeSearch();
+    }
+  });
+
+  doc.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && searchForm.classList.contains("active")) {
+      closeSearch();
+    }
+  });
+}
+
+/**
+ * Hero Spotlight Slider: Prev/Next Slide Navigation & Auto-play (Cinemê style)
+ */
+function initHeroRail(doc) {
+  const heroSpotlight = doc.getElementById("heroSpotlight");
+  const heroBackdrop = doc.getElementById("heroBackdrop");
+  const heroTitle = doc.getElementById("heroTitle");
+  const heroSynopsis = doc.getElementById("heroSynopsis");
+  const heroAge = doc.getElementById("heroAge");
+  const heroDuration = doc.getElementById("heroDuration");
+  const heroGenres = doc.getElementById("heroGenres");
+  const heroLang = doc.getElementById("heroLang");
+  const heroBuyBtn = doc.getElementById("heroBuyBtn");
+  const heroTrailerBtn = doc.getElementById("heroTrailerBtn");
+  const hotCards = doc.querySelectorAll(".hot-mini-card");
+  const rail = doc.getElementById("hotRail");
+  const prevBtn = doc.getElementById("heroSlidePrev");
+  const nextBtn = doc.getElementById("heroSlideNext");
+
+  if (!hotCards.length) return;
+
+  let currentIndex = 0;
+  let autoTimer = null;
+  const AUTO_INTERVAL = 4000;
+
+  function updateHeroDisplay(card) {
+    if (!card) return;
+    const title = card.dataset.title;
+    const synopsis = card.dataset.synopsis;
+    const age = card.dataset.age;
+    const duration = card.dataset.duration;
+    const genres = card.dataset.genres;
+    const lang = card.dataset.lang;
+    const banner = card.dataset.banner;
+    const trailer = card.dataset.trailer;
+    const movieId = card.dataset.movieId;
+
+    if (heroBackdrop && banner) {
+      heroBackdrop.style.backgroundImage = `url(${banner})`;
+    }
+    if (heroTitle) heroTitle.textContent = title;
+    if (heroSynopsis) heroSynopsis.textContent = synopsis;
+    if (heroAge) {
+      heroAge.textContent = age;
+      heroAge.className = "meta-badge " + (
+        age === "P" ? "badge-age-p" :
+        age === "T13" ? "badge-age-t13" :
+        age === "T16" ? "badge-age-t16" : "badge-age-t18"
+      );
+    }
+    if (heroDuration) heroDuration.textContent = duration;
+    if (heroGenres) heroGenres.textContent = genres;
+    if (heroLang) {
+      heroLang.textContent = lang || "";
+      heroLang.style.display = lang ? "inline" : "none";
+    }
+    if (heroBuyBtn) {
+      heroBuyBtn.dataset.bookId = movieId;
+      heroBuyBtn.dataset.bookTitle = title;
+    }
+    if (heroTrailerBtn) {
+      if (trailer) {
+        heroTrailerBtn.dataset.trailerUrl = trailer;
+        heroTrailerBtn.style.display = "inline-flex";
+      } else {
+        heroTrailerBtn.style.display = "none";
+      }
     }
   }
 
-  function selectFilm(next) {
-    index = next;
-    slides.forEach((slide) => {
-      slide.hidden = slide.dataset.feature !== buttons[index].dataset.showFeature;
+  function goToSlide(index) {
+    if (index >= hotCards.length) {
+      currentIndex = 0;
+    } else if (index < 0) {
+      currentIndex = hotCards.length - 1;
+    } else {
+      currentIndex = index;
+    }
+
+    hotCards.forEach((c, idx) => {
+      c.classList.toggle("active", idx === currentIndex);
     });
-    buttons.forEach((button, i) => button.setAttribute("aria-pressed", String(i === index)));
-    schedule();
+
+    const activeCard = hotCards[currentIndex];
+    updateHeroDisplay(activeCard);
+
+    // Smooth scroll the rail so active card is centered
+    if (rail && activeCard) {
+      const cardLeft = activeCard.offsetLeft;
+      const cardWidth = activeCard.offsetWidth;
+      const railWidth = rail.offsetWidth;
+      rail.scrollTo({
+        left: cardLeft - (railWidth / 2) + (cardWidth / 2),
+        behavior: "smooth"
+      });
+    }
   }
 
-  buttons.forEach((button, i) => button.addEventListener("click", () => selectFilm(i)));
-  motion.addEventListener("change", schedule);
-  spotlight.querySelectorAll(".feature-actions").forEach((actions) => {
-    actions.addEventListener("pointerenter", () => clearTimeout(timer));
-    actions.addEventListener("pointerleave", schedule);
-    actions.addEventListener("focusin", () => clearTimeout(timer));
-    actions.addEventListener("focusout", (event) => {
-      if (!actions.contains(event.relatedTarget)) {
-        // Focus moves after focusout. Recheck once the next control has focus.
-        doc.defaultView.queueMicrotask(schedule);
+  function startAutoPlay() {
+    stopAutoPlay();
+    autoTimer = setInterval(() => {
+      goToSlide(currentIndex + 1);
+    }, AUTO_INTERVAL);
+  }
+
+  function stopAutoPlay() {
+    if (autoTimer) {
+      clearInterval(autoTimer);
+      autoTimer = null;
+    }
+  }
+
+  function restartAutoPlay() {
+    stopAutoPlay();
+    startAutoPlay();
+  }
+
+  // Slide navigation arrows (Prev / Next)
+  if (prevBtn) {
+    prevBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      goToSlide(currentIndex - 1);
+      restartAutoPlay();
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      goToSlide(currentIndex + 1);
+      restartAutoPlay();
+    });
+  }
+
+  // Touch swipe gestures for mobile phones & iPad / tablets
+  if (heroSpotlight) {
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchEndX = 0;
+    let touchEndY = 0;
+
+    heroSpotlight.addEventListener("touchstart", (e) => {
+      // Allow independent horizontal scrolling inside the hot movies rail
+      if (e.target && e.target.closest("#hotRail")) {
+        touchStartX = 0;
+        touchEndX = 0;
+        return;
       }
+      if (e.touches && e.touches.length > 0) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchEndX = touchStartX;
+        touchEndY = touchStartY;
+      }
+    }, { passive: true });
+
+    heroSpotlight.addEventListener("touchmove", (e) => {
+      if (e.touches && e.touches.length > 0) {
+        touchEndX = e.touches[0].clientX;
+        touchEndY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    heroSpotlight.addEventListener("touchend", () => {
+      const diffX = touchEndX - touchStartX;
+      const diffY = touchEndY - touchStartY;
+      // Trigger if horizontal swipe is dominant and exceeds 40px threshold
+      if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX < 0) {
+          // Swiped left -> next slide
+          goToSlide(currentIndex + 1);
+        } else {
+          // Swiped right -> previous slide
+          goToSlide(currentIndex - 1);
+        }
+        restartAutoPlay();
+      }
+    }, { passive: true });
+  }
+
+  // Clicking any card directly
+  hotCards.forEach((card, idx) => {
+    card.addEventListener("click", () => {
+      goToSlide(idx);
+      restartAutoPlay();
     });
   });
-  doc.addEventListener("visibilitychange", schedule);
-  schedule();
+
+  // Only pause auto-play when hovering directly over the card rail or action buttons
+  if (rail) {
+    rail.addEventListener("mouseenter", stopAutoPlay);
+    rail.addEventListener("mouseleave", startAutoPlay);
+  }
+
+  const actionsEl = doc.querySelector(".hero-actions");
+  if (actionsEl) {
+    actionsEl.addEventListener("mouseenter", stopAutoPlay);
+    actionsEl.addEventListener("mouseleave", startAutoPlay);
+  }
+
+  if (typeof doc.addEventListener !== "undefined") {
+    doc.addEventListener("visibilitychange", () => {
+      if (doc.hidden) stopAutoPlay();
+      else startAutoPlay();
+    });
+  }
+
+  // Start auto-play immediately
+  startAutoPlay();
 }
 
-export function initHomeInteractions(doc = document) {
-  initSpotlight(doc);
+/**
+ * Catalog Manager: Handles Tab filtering, Navbar Search, Empty state, and 12 movies/page Pagination.
+ * Ensures Phim đang chiếu appear first, Phim sắp chiếu appear next.
+ */
+function initCatalogManager(doc) {
+  const catalogGrid = doc.getElementById("catalogGrid");
+  if (!catalogGrid) return;
 
-  // Now Showing / Coming Soon tab filter
-  const tabButtons = doc.querySelectorAll("[data-movie-tab]");
-  const movieItems = doc.querySelectorAll("[data-movie-status]");
+  const cards = Array.from(catalogGrid.querySelectorAll(".catalog-card"));
+  const tabs = doc.querySelectorAll("[data-catalog-tab]");
+  const paginationWrap = doc.getElementById("catalogPagination");
+  const paginationNumbers = doc.getElementById("paginationNumbers");
+  const prevBtn = doc.getElementById("paginationPrev");
+  const nextBtn = doc.getElementById("paginationNext");
+  const emptyState = doc.getElementById("catalogEmptyState");
+  const resetBtn = doc.getElementById("btnResetFilters");
+  const searchInput = doc.getElementById("navSearchInput");
 
-  tabButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const targetStatus = btn.getAttribute("data-movie-tab");
-      tabButtons.forEach((button) => button.setAttribute("aria-pressed", String(button === btn)));
-      let count = 0;
-      movieItems.forEach((item) => {
-        item.hidden = targetStatus !== "all" && item.dataset.movieStatus !== targetStatus;
-        if (!item.hidden) count += 1;
-      });
-      doc.getElementById("filmFilterStatus").textContent = `${count} films shown.`;
+  const PAGE_SIZE = 12;
+  let currentPage = 1;
+  let currentTab = "all";
+  let searchQuery = "";
+
+  function scrollToCatalogHeader() {
+    const header = doc.getElementById("moviesSection");
+    if (header) {
+      const rect = header.getBoundingClientRect();
+      if (rect.top < -50 || rect.top > 300) {
+        header.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  }
+
+  function render() {
+    const q = searchQuery.trim().toLowerCase();
+
+    // 1. Filter cards by active tab and search query
+    const matchedCards = cards.filter((card) => {
+      const matchesTab = currentTab === "all" || card.dataset.status === currentTab;
+      if (!matchesTab) return false;
+
+      if (!q) return true;
+      const title = (card.querySelector(".catalog-movie-title")?.textContent || "").toLowerCase();
+      const meta = (card.querySelector(".catalog-movie-meta")?.textContent || "").toLowerCase();
+      return title.includes(q) || meta.includes(q);
+    });
+
+    const totalMatches = matchedCards.length;
+    const totalPages = Math.ceil(totalMatches / PAGE_SIZE) || 1;
+
+    // Clamp current page
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    const startIdx = (currentPage - 1) * PAGE_SIZE;
+    const endIdx = startIdx + PAGE_SIZE;
+
+    // 2. Toggle card visibility based on page slice
+    const visiblePageSet = new Set(matchedCards.slice(startIdx, endIdx));
+    cards.forEach((card) => {
+      if (visiblePageSet.has(card)) {
+        card.style.display = "flex";
+      } else {
+        card.style.display = "none";
+      }
+    });
+
+    // 3. Toggle Empty State vs Grid
+    if (totalMatches === 0) {
+      if (emptyState) emptyState.classList.remove("d-none");
+      if (paginationWrap) paginationWrap.style.display = "none";
+    } else {
+      if (emptyState) emptyState.classList.add("d-none");
+
+      // 4. Update Pagination Controls
+      if (paginationWrap) {
+        if (totalPages <= 1) {
+          paginationWrap.style.display = "none";
+        } else {
+          paginationWrap.style.display = "flex";
+
+          // Prev / Next button state
+          if (prevBtn) {
+            prevBtn.disabled = currentPage <= 1;
+            prevBtn.classList.toggle("disabled", currentPage <= 1);
+          }
+          if (nextBtn) {
+            nextBtn.disabled = currentPage >= totalPages;
+            nextBtn.classList.toggle("disabled", currentPage >= totalPages);
+          }
+
+          // Page numbers
+          if (paginationNumbers) {
+            paginationNumbers.innerHTML = "";
+            for (let p = 1; p <= totalPages; p++) {
+              const btn = doc.createElement("button");
+              btn.type = "button";
+              btn.className = `pagination-btn ${p === currentPage ? "active" : ""}`;
+              btn.textContent = p;
+              btn.setAttribute("aria-label", `Page ${p}`);
+              if (p === currentPage) {
+                btn.setAttribute("aria-current", "page");
+              }
+              btn.addEventListener("click", () => {
+                if (currentPage !== p) {
+                  currentPage = p;
+                  render();
+                  scrollToCatalogHeader();
+                }
+              });
+              paginationNumbers.appendChild(btn);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Prev / Next listeners
+  if (prevBtn) {
+    prevBtn.addEventListener("click", () => {
+      if (currentPage > 1) {
+        currentPage--;
+        render();
+        scrollToCatalogHeader();
+      }
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+      const q = searchQuery.trim().toLowerCase();
+      const matchedCount = cards.filter((c) => {
+        const matchesTab = currentTab === "all" || c.dataset.status === currentTab;
+        if (!matchesTab) return false;
+        if (!q) return true;
+        const title = (c.querySelector(".catalog-movie-title")?.textContent || "").toLowerCase();
+        const meta = (c.querySelector(".catalog-movie-meta")?.textContent || "").toLowerCase();
+        return title.includes(q) || meta.includes(q);
+      }).length;
+      const totalPages = Math.ceil(matchedCount / PAGE_SIZE) || 1;
+      if (currentPage < totalPages) {
+        currentPage++;
+        render();
+        scrollToCatalogHeader();
+      }
+    });
+  }
+
+  // Tabs listener
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      tabs.forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
+      currentTab = tab.dataset.catalogTab || "all";
+      currentPage = 1;
+      render();
     });
   });
 
-  // Quick Booking form preview handler
+  // Reset filters button listener
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      currentTab = "all";
+      searchQuery = "";
+      currentPage = 1;
+      tabs.forEach((t) => {
+        t.classList.toggle("active", t.dataset.catalogTab === "all");
+      });
+      if (searchInput) searchInput.value = "";
+      render();
+      scrollToCatalogHeader();
+    });
+  }
+
+  // Expose search trigger so navbar search updates catalog seamlessly
+  if (typeof window !== "undefined") {
+    window.__boxCinemaCatalog = {
+      setSearchQuery: (query, scrollTo = true) => {
+        searchQuery = query;
+        currentPage = 1;
+        render();
+        if (scrollTo) {
+          const section = doc.getElementById("moviesSection");
+          if (section) section.scrollIntoView({ behavior: "smooth" });
+        }
+      }
+    };
+  }
+
+  // Initial render
+  render();
+}
+
+/**
+ * YouTube Trailer Modal
+ */
+function initTrailerModal(doc) {
+  const modal = doc.getElementById("trailerModal");
+  const iframe = doc.getElementById("trailerIframe");
+  const closeBtn = doc.getElementById("trailerModalClose");
+
+  if (!modal || !iframe) return;
+
+  function toEmbedUrl(url) {
+    if (!url) return "";
+    let videoId = "";
+    if (url.includes("v=")) {
+      videoId = url.split("v=")[1].split("&")[0];
+    } else if (url.includes("youtu.be/")) {
+      videoId = url.split("youtu.be/")[1].split("?")[0];
+    }
+    return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : url;
+  }
+
+  function openTrailer(url) {
+    iframe.src = toEmbedUrl(url);
+    modal.classList.add("show");
+  }
+
+  function closeTrailer() {
+    modal.classList.remove("show");
+    iframe.src = "";
+  }
+
+  doc.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-trailer-url]");
+    if (btn) {
+      e.preventDefault();
+      openTrailer(btn.dataset.trailerUrl);
+    }
+  });
+
+  if (closeBtn) closeBtn.addEventListener("click", closeTrailer);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeTrailer();
+  });
+  doc.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.classList.contains("show")) {
+      closeTrailer();
+    }
+  });
+}
+
+/**
+ * Quick Booking & Showtime Finder
+ */
+function initQuickBooking(doc) {
   const quickBookForm = doc.getElementById("quickBookingForm");
+  if (!quickBookForm) return;
+
   const quickBookFeedback = doc.getElementById("quickBookingFeedback");
+  const movieSelect = doc.getElementById("qbMovie");
+  const cinemaSelect = doc.getElementById("qbCinema");
+  const dateSelect = doc.getElementById("qbDate");
+  const timeSelect = doc.getElementById("qbTime");
+
+  async function loadCinemasForMovie() {
+    if (!cinemaSelect) return;
+    const movieId = movieSelect ? movieSelect.value : "";
+    try {
+      const url = movieId ? `/api/quick-booking/cinemas?movieId=${movieId}` : `/api/quick-booking/cinemas`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const cinemas = await res.json();
+        cinemaSelect.innerHTML = '<option value="">-- Chọn cụm rạp --</option>' +
+          cinemas.map(c => `<option value="${c.cinemaId}">${c.displayName}</option>`).join("");
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  async function loadDates() {
+    if (!dateSelect) return;
+    const movieId = movieSelect ? movieSelect.value : "";
+    const cinemaId = cinemaSelect ? cinemaSelect.value : "";
+    if (!movieId || !cinemaId) {
+      dateSelect.innerHTML = '<option value="">-- Chọn ngày --</option>';
+      if (timeSelect) timeSelect.innerHTML = '<option value="">-- Chọn giờ chiếu --</option>';
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/quick-booking/dates?movieId=${movieId}&cinemaId=${cinemaId}`);
+      if (res.ok) {
+        const dates = await res.json();
+        dateSelect.innerHTML = '<option value="">-- Chọn ngày --</option>' +
+          dates.map(d => `<option value="${d.value}">${d.label}</option>`).join("");
+        if (dates.length > 0) {
+          dateSelect.value = dates[0].value;
+          await loadShowtimes();
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  async function loadShowtimes() {
+    if (!timeSelect) return;
+    const movieId = movieSelect ? movieSelect.value : "";
+    const cinemaId = cinemaSelect ? cinemaSelect.value : "";
+    const date = dateSelect ? dateSelect.value : "";
+    if (!movieId || !cinemaId || !date) {
+      timeSelect.innerHTML = '<option value="">-- Chọn giờ chiếu --</option>';
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/quick-booking/showtimes?movieId=${movieId}&cinemaId=${cinemaId}&date=${date}`);
+      if (res.ok) {
+        const times = await res.json();
+        if (times.length > 0) {
+          timeSelect.innerHTML = '<option value="">-- Chọn giờ chiếu --</option>' +
+            times.map(t => `<option value="${t.showtimeId}">${t.label}</option>`).join("");
+        } else {
+          timeSelect.innerHTML = '<option value="">Không có suất chiếu</option>';
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (movieSelect) {
+    movieSelect.addEventListener("change", async () => {
+      await loadCinemasForMovie();
+      await loadDates();
+    });
+  }
+
+  if (cinemaSelect) {
+    cinemaSelect.addEventListener("change", () => {
+      loadDates();
+    });
+  }
+
+  if (dateSelect) {
+    dateSelect.addEventListener("change", () => {
+      loadShowtimes();
+    });
+  }
+
+  // Pre-select movie when clicking any [data-book-id]
+  doc.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-book-id]");
+    if (btn && movieSelect) {
+      const movieId = btn.dataset.bookId;
+      if (movieId) {
+        movieSelect.value = movieId;
+        loadCinemasForMovie().then(() => {
+          loadDates();
+        });
+        if (cinemaSelect) cinemaSelect.focus({ preventScroll: true });
+      }
+    }
+  });
 
   if (quickBookForm && quickBookFeedback) {
-    doc.querySelectorAll("[data-book-film]").forEach((link) => {
-      link.addEventListener("click", () => {
-        doc.getElementById("qbMovie").value = link.dataset.bookFilm;
-        quickBookFeedback.textContent = "";
-        doc.getElementById("qbCinema").focus({ preventScroll: true });
-      });
-    });
     quickBookForm.addEventListener("change", () => { quickBookFeedback.textContent = ""; });
     quickBookForm.addEventListener("submit", (event) => {
       event.preventDefault();
-      const movieSelect = doc.getElementById("qbMovie");
-      const cinemaSelect = doc.getElementById("qbCinema");
-      const dateSelect = doc.getElementById("qbDate");
-      const timeSelect = doc.getElementById("qbTime");
 
-      const movie = movieSelect ? movieSelect.value : "";
-      const cinema = cinemaSelect ? cinemaSelect.value : "";
-      const date = dateSelect ? dateSelect.value : "";
-      const time = timeSelect ? timeSelect.value : "";
+      const movieOpt = movieSelect ? movieSelect.options[movieSelect.selectedIndex] : null;
+      const cinemaOpt = cinemaSelect ? cinemaSelect.options[cinemaSelect.selectedIndex] : null;
+      const dateOpt = dateSelect ? dateSelect.options[dateSelect.selectedIndex] : null;
+      const timeOpt = timeSelect ? timeSelect.options[timeSelect.selectedIndex] : null;
 
-      if (!movie || !cinema || !date || !time) {
+      const movieVal = movieSelect ? movieSelect.value : "";
+      const cinemaVal = cinemaSelect ? cinemaSelect.value : "";
+      const dateVal = dateSelect ? dateSelect.value : "";
+      const timeVal = timeSelect ? timeSelect.value : "";
+
+      if (!movieVal || !cinemaVal || !dateVal || !timeVal) {
         quickBookFeedback.className = "mt-3 small text-warning fw-semibold";
-        quickBookFeedback.textContent = "Please select Movie, Theater, Date, and Showtime to proceed to Step 2 (Seat Map).";
+        quickBookFeedback.textContent = "Vui lòng chọn đầy đủ Phim, Rạp, Ngày và Giờ chiếu để tiếp tục sang bước Chọn ghế.";
         return;
       }
 
-      quickBookFeedback.textContent = `${movie} · ${cinema} · ${date} · ${time}. Demo screening only. Seats cannot be reserved yet.`;
+      quickBookFeedback.className = "mt-3 small text-success fw-bold";
+      const movieText = movieOpt ? movieOpt.text : movieVal;
+      const cinemaText = cinemaOpt ? cinemaOpt.text : cinemaVal;
+      const dateText = dateOpt ? dateOpt.text : dateVal;
+      const timeText = timeOpt ? timeOpt.text : timeVal;
+      quickBookFeedback.textContent = `✔ Đã chọn: ${movieText} · ${cinemaText} · ${dateText} · ${timeText}. Sẵn sàng chuyển sang sơ đồ chọn ghế!`;
     });
   }
+}
+
+export function initHomeInteractions(doc = document) {
+  initHeroRail(doc);
+  initCatalogManager(doc);
+  initTrailerModal(doc);
+  initQuickBooking(doc);
 }
 
 if (typeof document !== "undefined") {
