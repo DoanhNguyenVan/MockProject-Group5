@@ -407,11 +407,45 @@ function initCatalogManager(doc) {
   const nextBtn = doc.getElementById("paginationNext");
   const emptyState = doc.getElementById("catalogEmptyState");
   const resetBtn = doc.getElementById("btnResetFilters");
+  const resetAllBtn = doc.getElementById("btnResetAllFilters");
   const searchInput = doc.getElementById("navSearchInput");
+
+  // Secondary Filter Selects
+  const genreSelect = doc.getElementById("filterGenre");
+  const ageSelect = doc.getElementById("filterAge");
+  const dateSelect = doc.getElementById("filterDate");
+  const sortSelect = doc.getElementById("filterSort");
+
+  // Dynamically populate genre options from cards if not already populated
+  if (genreSelect && genreSelect.options.length <= 1) {
+    const genreSet = new Set();
+    cards.forEach((card) => {
+      const gStr = card.dataset.genres || "";
+      gStr.split("/").forEach((g) => {
+        const trimmed = g.trim();
+        if (trimmed) genreSet.add(trimmed);
+      });
+    });
+    Array.from(genreSet).sort().forEach((genreName) => {
+      const opt = doc.createElement("option");
+      opt.value = genreName;
+      opt.textContent = genreName;
+      genreSelect.appendChild(opt);
+    });
+  }
+
+  // Store original index on each card for default sort restoration
+  cards.forEach((card, idx) => {
+    card.dataset.origOrder = idx;
+  });
 
   const PAGE_SIZE = 12;
   let currentPage = 1;
   let currentTab = "all";
+  let currentGenre = "all";
+  let currentAge = "all";
+  let currentDate = "all";
+  let currentSort = "default";
   let searchQuery = "";
 
   function scrollToCatalogHeader() {
@@ -424,20 +458,98 @@ function initCatalogManager(doc) {
     }
   }
 
-  function render() {
+  function getFilteredAndSortedCards() {
     const q = searchQuery.trim().toLowerCase();
+    const todayMs = new Date().setHours(0, 0, 0, 0);
 
-    // 1. Filter cards by active tab and search query
-    const matchedCards = cards.filter((card) => {
+    const filtered = cards.filter((card) => {
+      // 1. Status Tab Filter (All / Now Showing / Coming Soon)
       const matchesTab = currentTab === "all" || card.dataset.status === currentTab;
       if (!matchesTab) return false;
 
-      if (!q) return true;
-      const title = (card.querySelector(".catalog-movie-title")?.textContent || "").toLowerCase();
-      const meta = (card.querySelector(".catalog-movie-meta")?.textContent || "").toLowerCase();
-      return title.includes(q) || meta.includes(q);
+      // 2. Genre Filter
+      if (currentGenre !== "all") {
+        const cardGenres = (card.dataset.genres || "").toLowerCase();
+        const cardMeta = (card.querySelector(".catalog-movie-meta")?.textContent || "").toLowerCase();
+        const targetGenre = currentGenre.toLowerCase();
+        if (!cardGenres.includes(targetGenre) && !cardMeta.includes(targetGenre)) {
+          return false;
+        }
+      }
+
+      // 3. Age Rating Filter
+      if (currentAge !== "all") {
+        const cardAge = card.dataset.age || "";
+        if (cardAge !== currentAge) return false;
+      }
+
+      // 4. Screening / Release Date Filter
+      if (currentDate !== "all") {
+        const releaseStr = card.dataset.release;
+        const status = card.dataset.status;
+
+        if (currentDate === "today") {
+          // Movies currently playing in theaters
+          if (status !== "now-showing") return false;
+        } else if (currentDate === "upcoming-7") {
+          if (status === "now-showing") return true;
+          if (!releaseStr) return false;
+          const relMs = new Date(releaseStr).getTime();
+          const diffDays = (relMs - todayMs) / (1000 * 60 * 60 * 24);
+          if (diffDays < 0 || diffDays > 7) return false;
+        } else if (currentDate === "upcoming-30") {
+          if (status === "now-showing") return true;
+          if (!releaseStr) return false;
+          const relMs = new Date(releaseStr).getTime();
+          const diffDays = (relMs - todayMs) / (1000 * 60 * 60 * 24);
+          if (diffDays < 0 || diffDays > 30) return false;
+        }
+      }
+
+      // 5. Search Query Filter
+      if (q) {
+        const title = (card.dataset.title || card.querySelector(".catalog-movie-title")?.textContent || "").toLowerCase();
+        const meta = (card.querySelector(".catalog-movie-meta")?.textContent || "").toLowerCase();
+        const genres = (card.dataset.genres || "").toLowerCase();
+        if (!title.includes(q) && !meta.includes(q) && !genres.includes(q)) {
+          return false;
+        }
+      }
+
+      return true;
     });
 
+    // Sort matching cards
+    filtered.sort((a, b) => {
+      if (currentSort === "newest") {
+        const dateA = new Date(a.dataset.release || "1970-01-01").getTime();
+        const dateB = new Date(b.dataset.release || "1970-01-01").getTime();
+        return dateB - dateA;
+      } else if (currentSort === "duration-desc") {
+        const durA = parseInt(a.dataset.duration, 10) || 0;
+        const durB = parseInt(b.dataset.duration, 10) || 0;
+        return durB - durA;
+      } else if (currentSort === "duration-asc") {
+        const durA = parseInt(a.dataset.duration, 10) || 0;
+        const durB = parseInt(b.dataset.duration, 10) || 0;
+        return durA - durB;
+      } else if (currentSort === "title-asc") {
+        const titleA = (a.dataset.title || a.querySelector(".catalog-movie-title")?.textContent || "").toLowerCase();
+        const titleB = (b.dataset.title || b.querySelector(".catalog-movie-title")?.textContent || "").toLowerCase();
+        return titleA.localeCompare(titleB);
+      } else {
+        // Default: Original insertion order
+        const orderA = parseInt(a.dataset.origOrder, 10) || 0;
+        const orderB = parseInt(b.dataset.origOrder, 10) || 0;
+        return orderA - orderB;
+      }
+    });
+
+    return filtered;
+  }
+
+  function render() {
+    const matchedCards = getFilteredAndSortedCards();
     const totalMatches = matchedCards.length;
     const totalPages = Math.ceil(totalMatches / PAGE_SIZE) || 1;
 
@@ -448,7 +560,10 @@ function initCatalogManager(doc) {
     const startIdx = (currentPage - 1) * PAGE_SIZE;
     const endIdx = startIdx + PAGE_SIZE;
 
-    // 2. Toggle card visibility based on page slice
+    // Re-order matched cards in DOM to reflect sort order
+    matchedCards.forEach((c) => catalogGrid.appendChild(c));
+
+    // Toggle card visibility based on active page slice
     const visiblePageSet = new Set(matchedCards.slice(startIdx, endIdx));
     cards.forEach((card) => {
       if (visiblePageSet.has(card)) {
@@ -458,21 +573,20 @@ function initCatalogManager(doc) {
       }
     });
 
-    // 3. Toggle Empty State vs Grid
+    // Toggle Empty State vs Grid
     if (totalMatches === 0) {
       if (emptyState) emptyState.classList.remove("d-none");
       if (paginationWrap) paginationWrap.style.display = "none";
     } else {
       if (emptyState) emptyState.classList.add("d-none");
 
-      // 4. Update Pagination Controls
+      // Update Pagination Controls
       if (paginationWrap) {
         if (totalPages <= 1) {
           paginationWrap.style.display = "none";
         } else {
           paginationWrap.style.display = "flex";
 
-          // Prev / Next button state
           if (prevBtn) {
             prevBtn.disabled = currentPage <= 1;
             prevBtn.classList.toggle("disabled", currentPage <= 1);
@@ -482,7 +596,6 @@ function initCatalogManager(doc) {
             nextBtn.classList.toggle("disabled", currentPage >= totalPages);
           }
 
-          // Page numbers
           if (paginationNumbers) {
             paginationNumbers.innerHTML = "";
             for (let p = 1; p <= totalPages; p++) {
@@ -509,7 +622,7 @@ function initCatalogManager(doc) {
     }
   }
 
-  // Prev / Next listeners
+  // Prev / Next button listeners
   if (prevBtn) {
     prevBtn.addEventListener("click", () => {
       if (currentPage > 1) {
@@ -522,16 +635,8 @@ function initCatalogManager(doc) {
 
   if (nextBtn) {
     nextBtn.addEventListener("click", () => {
-      const q = searchQuery.trim().toLowerCase();
-      const matchedCount = cards.filter((c) => {
-        const matchesTab = currentTab === "all" || c.dataset.status === currentTab;
-        if (!matchesTab) return false;
-        if (!q) return true;
-        const title = (c.querySelector(".catalog-movie-title")?.textContent || "").toLowerCase();
-        const meta = (c.querySelector(".catalog-movie-meta")?.textContent || "").toLowerCase();
-        return title.includes(q) || meta.includes(q);
-      }).length;
-      const totalPages = Math.ceil(matchedCount / PAGE_SIZE) || 1;
+      const matchedCards = getFilteredAndSortedCards();
+      const totalPages = Math.ceil(matchedCards.length / PAGE_SIZE) || 1;
       if (currentPage < totalPages) {
         currentPage++;
         render();
@@ -540,7 +645,7 @@ function initCatalogManager(doc) {
     });
   }
 
-  // Tabs listener
+  // Tabs listener (All Movies, Now Showing, Coming Soon)
   tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
       tabs.forEach((t) => t.classList.remove("active"));
@@ -551,19 +656,68 @@ function initCatalogManager(doc) {
     });
   });
 
-  // Reset filters button listener
-  if (resetBtn) {
-    resetBtn.addEventListener("click", () => {
-      currentTab = "all";
-      searchQuery = "";
+  // Secondary Filter Select change listeners
+  if (genreSelect) {
+    genreSelect.addEventListener("change", () => {
+      currentGenre = genreSelect.value;
       currentPage = 1;
-      tabs.forEach((t) => {
-        t.classList.toggle("active", t.dataset.catalogTab === "all");
-      });
-      if (searchInput) searchInput.value = "";
       render();
-      scrollToCatalogHeader();
     });
+  }
+
+  if (ageSelect) {
+    ageSelect.addEventListener("change", () => {
+      currentAge = ageSelect.value;
+      currentPage = 1;
+      render();
+    });
+  }
+
+  if (dateSelect) {
+    dateSelect.addEventListener("change", () => {
+      currentDate = dateSelect.value;
+      currentPage = 1;
+      render();
+    });
+  }
+
+  if (sortSelect) {
+    sortSelect.addEventListener("change", () => {
+      currentSort = sortSelect.value;
+      currentPage = 1;
+      render();
+    });
+  }
+
+  // Unified Reset function
+  function resetAllFilters(scrollTo = true) {
+    currentTab = "all";
+    currentGenre = "all";
+    currentAge = "all";
+    currentDate = "all";
+    currentSort = "default";
+    searchQuery = "";
+    currentPage = 1;
+
+    tabs.forEach((t) => {
+      t.classList.toggle("active", t.dataset.catalogTab === "all");
+    });
+
+    if (genreSelect) genreSelect.value = "all";
+    if (ageSelect) ageSelect.value = "all";
+    if (dateSelect) dateSelect.value = "all";
+    if (sortSelect) sortSelect.value = "default";
+    if (searchInput) searchInput.value = "";
+
+    render();
+    if (scrollTo) scrollToCatalogHeader();
+  }
+
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => resetAllFilters(true));
+  }
+  if (resetAllBtn) {
+    resetAllBtn.addEventListener("click", () => resetAllFilters(false));
   }
 
   // Expose search trigger so navbar search updates catalog seamlessly
@@ -577,7 +731,8 @@ function initCatalogManager(doc) {
           const section = doc.getElementById("moviesSection");
           if (section) section.scrollIntoView({ behavior: "smooth" });
         }
-      }
+      },
+      resetAllFilters: resetAllFilters
     };
   }
 

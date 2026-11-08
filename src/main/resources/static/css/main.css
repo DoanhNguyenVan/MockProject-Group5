@@ -1,5 +1,5 @@
 :root {
-  --box-font: "Times New Roman", Times, serif;
+  --box-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --box-accent: #C91934;
   --box-accent-rgb: 201 25 52;
   --bs-body-font-family: var(--box-font);
@@ -898,7 +898,7 @@ main > section > .container,
 }
 
 body :is(button, input, select, textarea) {
-  font-family: var(--box-font);
+  font-family: inherit;
 }
 
 body .alert-danger {

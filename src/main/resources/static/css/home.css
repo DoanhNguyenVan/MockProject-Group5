@@ -32,6 +32,10 @@ body.cinema-home {
   width: 100%;
 }
 
+body.cinema-home :is(button, input, select, textarea) {
+  font-family: inherit;
+}
+
 #moviesSection,
 #quickBookingCard {
   scroll-margin-top: 5.5rem;
@@ -335,6 +339,7 @@ body.cinema-home .cinema-nav.search-active::before {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
+  font-family: inherit;
   background: linear-gradient(135deg, #ff4e00 0%, #ec1c24 100%);
   color: #ffffff !important;
   font-weight: 700;
@@ -360,6 +365,7 @@ body.cinema-home .cinema-nav.search-active::before {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
+  font-family: inherit;
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(8px);
   color: #ffffff !important;
@@ -711,11 +717,17 @@ body.cinema-home .cinema-nav.search-active::before {
 
 .catalog-header {
   display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  padding-bottom: 1.5rem;
+  margin-bottom: 2.25rem;
+}
+
+.catalog-header-main {
+  display: flex;
   align-items: baseline;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 1.25rem;
-  margin-bottom: 2.25rem;
   flex-wrap: wrap;
   gap: 1rem;
 }
@@ -749,6 +761,111 @@ body.cinema-home .cinema-nav.search-active::before {
   gap: 0.5rem;
 }
 
+/* Secondary Filter Controls Bar (Genre, Age, Screening Date, Sort) */
+.catalog-filter-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.85rem 1.15rem;
+  background: rgba(18, 20, 29, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 0.5rem 1rem;
+  flex: 1 1 170px;
+  min-width: 145px;
+  transition: all 0.2s ease;
+}
+
+.filter-item:hover,
+.filter-item:focus-within {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(236, 28, 36, 0.45);
+  box-shadow: 0 0 14px rgba(236, 28, 36, 0.15);
+}
+
+.filter-control-wrap {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+}
+
+.filter-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8c93a8;
+  margin-bottom: 2px;
+  font-weight: 700;
+  user-select: none;
+}
+
+.catalog-filter-select {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  width: 100%;
+  padding: 0;
+  text-overflow: ellipsis;
+}
+
+.catalog-filter-select option {
+  background: #12141d;
+  color: #ffffff;
+  font-size: 0.88rem;
+  padding: 6px 10px;
+}
+
+.filter-actions {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.btn-filter-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1.05rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd0df;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  white-space: nowrap;
+}
+
+.btn-filter-reset:hover {
+  background: #ec1c24;
+  border-color: #ec1c24;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(236, 28, 36, 0.4);
+}
+
+.btn-filter-reset:active {
+  transform: translateY(0);
+}
+
 .btn-filter-tab {
   background: transparent;
   color: #9ba1b0;
@@ -776,12 +893,27 @@ body.cinema-home .cinema-nav.search-active::before {
   .movies-catalog-section {
     padding-block: 2.5rem 3.5rem;
   }
-  .catalog-header {
+  .catalog-header-main {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.85rem;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
+  }
+  .catalog-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.85rem;
+  }
+  .filter-item {
+    width: 100%;
+    flex: none;
+  }
+  .filter-actions {
+    width: 100%;
+    margin-left: 0;
+  }
+  .btn-filter-reset {
+    width: 100%;
+    justify-content: center;
   }
   .catalog-title {
     font-size: 1.6rem;

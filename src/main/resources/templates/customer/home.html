@@ -94,7 +94,7 @@
                    th:data-duration="${movie.durationMinutes + ' mins'}"
                    th:data-genres="${movie.genreNamesDisplay}"
                    th:data-lang="${movie.language}"
-                   th:data-banner="${movie.bannerUrl}"
+                   th:data-banner="${movie.bannerUrl != null and !#strings.isEmpty(movie.bannerUrl) ? movie.bannerUrl : movie.posterUrl}"
                    th:data-trailer="${movie.trailerUrl}">
                 <div class="hot-thumb-container">
                   <!-- Golden Rank Badge 1, 2, 3, 4, 5, 6, 7 (Image 1 Style) -->
@@ -126,20 +126,86 @@
          ======================================================================= -->
     <section class="movies-catalog-section" id="moviesSection" aria-labelledby="catalogHeading">
       <div class="cinema-container">
-        <!-- Section Header with Tabs -->
+        <!-- Section Header with Tabs and Comprehensive Filter Controls -->
         <div class="catalog-header">
-          <h2 class="catalog-title" id="catalogHeading">MOVIES</h2>
-          <div class="catalog-filters" role="group" aria-label="Movie catalog filter">
-            <button type="button" class="btn-filter-tab active" data-catalog-tab="all">All Movies</button>
-            <button type="button" class="btn-filter-tab" data-catalog-tab="now-showing">Now Showing</button>
-            <button type="button" class="btn-filter-tab" data-catalog-tab="coming-soon">Coming Soon</button>
+          <div class="catalog-header-main">
+            <h2 class="catalog-title" id="catalogHeading">MOVIES</h2>
+            <div class="catalog-filters" role="group" aria-label="Movie catalog filter">
+              <button type="button" class="btn-filter-tab active" data-catalog-tab="all">All Movies</button>
+              <button type="button" class="btn-filter-tab" data-catalog-tab="now-showing">Now Showing</button>
+              <button type="button" class="btn-filter-tab" data-catalog-tab="coming-soon">Coming Soon</button>
+            </div>
+          </div>
+
+          <!-- Filter Controls Bar (Genre, Age, Schedule/Date, Sort, Reset) -->
+          <div class="catalog-filter-bar" id="catalogFilterBar">
+            <div class="filter-item">
+              <div class="filter-control-wrap">
+                <label for="filterGenre" class="filter-label">Genre</label>
+                <select id="filterGenre" class="catalog-filter-select">
+                  <option value="all">All Genres</option>
+                  <option th:each="g : ${genres}" th:value="${g.genreName}" th:text="${g.genreName}">Action</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="filter-item">
+              <div class="filter-control-wrap">
+                <label for="filterAge" class="filter-label">Age Rating</label>
+                <select id="filterAge" class="catalog-filter-select">
+                  <option value="all">All Ratings</option>
+                  <option value="P">P (All Ages)</option>
+                  <option value="T13">T13 (13+)</option>
+                  <option value="T16">T16 (16+)</option>
+                  <option value="T18">T18 (18+)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="filter-item">
+              <div class="filter-control-wrap">
+                <label for="filterDate" class="filter-label">Screening Date</label>
+                <select id="filterDate" class="catalog-filter-select">
+                  <option value="all">All Dates</option>
+                  <option value="today">Now In Theaters</option>
+                  <option value="upcoming-7">Next 7 Days</option>
+                  <option value="upcoming-30">Next 30 Days</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="filter-item">
+              <div class="filter-control-wrap">
+                <label for="filterSort" class="filter-label">Sort By</label>
+                <select id="filterSort" class="catalog-filter-select">
+                  <option value="default">Featured / Default</option>
+                  <option value="newest">Release Date (Newest)</option>
+                  <option value="duration-desc">Duration (Longest)</option>
+                  <option value="duration-asc">Duration (Shortest)</option>
+                  <option value="title-asc">Title (A - Z)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="filter-actions">
+              <button type="button" class="btn-filter-reset" id="btnResetAllFilters" title="Reset all filters">
+                <span>Reset</span>
+              </button>
+            </div>
           </div>
         </div>
 
         <!-- 4-Column Grid of Movie Cards (Image 2 Layout) -->
         <div class="catalog-grid" id="catalogGrid">
           <th:block th:each="movie : ${allMovies}">
-            <div class="catalog-card" th:data-status="${movie.status == 'NOW_SHOWING' ? 'now-showing' : 'coming-soon'}">
+            <div class="catalog-card"
+                 th:data-movie-id="${movie.movieId}"
+                 th:data-status="${movie.status == 'NOW_SHOWING' ? 'now-showing' : 'coming-soon'}"
+                 th:data-title="${movie.title}"
+                 th:data-genres="${movie.genreNamesDisplay}"
+                 th:data-age="${movie.ageRating}"
+                 th:data-release="${movie.releaseDate}"
+                 th:data-duration="${movie.durationMinutes}">
               <!-- Poster Card Frame -->
               <div class="catalog-poster-frame">
                 <span class="card-badge-age"
@@ -163,7 +229,7 @@
               <!-- Floating Popover / Hover Preview Card (Matching Image 2 Popover) -->
               <div class="card-hover-popover" aria-hidden="true">
                 <div class="popover-backdrop"
-                     th:style="${movie.bannerUrl != null ? 'background-image: url(' + movie.bannerUrl + ');' : ''}">
+                     th:style="'background-image: url(' + (${movie.bannerUrl != null and !#strings.isEmpty(movie.bannerUrl)} ? ${movie.bannerUrl} : ${movie.posterUrl}) + ');'">
                 </div>
                 <div class="popover-body">
                   <h4 class="popover-title" th:text="${movie.title}">Movie Title</h4>
