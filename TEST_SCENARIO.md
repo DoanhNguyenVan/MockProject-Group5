@@ -62,9 +62,9 @@ This document is for the test scenarios, which are used to fulfill Fundamential 
 | TS-CTR-003 | FR-08 | Customer attempts to access the counter sales function | Negative | Log in with a Customer account and attempt to open the counter sales function | The system denies access to the counter sales function.  | [ ] |
 | TS-CTR-004 | FR-08 | Staff creates a counter sale with valid information | Positive | Log in as Staff, enter valid ticket and payment information, and submit the counter sale | The system records the counter sale successfully.  | [ ] |
 | TS-CTR-005 | FR-08 | Staff submits a counter sale with missing required information | Negative | Log in as Staff and submit the counter sale with one or more required fields missing | The system rejects the sale and displays validation messages.  | [ ] |
-| TS-CTR-006 | FR-08 | Customer checks in using a valid ticket QR code | Positive | Log in as Customer and scan a valid QR code associated with the customer's ticket | The system verifies the ticket and records the check-in successfully.  | [ ] |
-| TS-CTR-007 | FR-08 | Customer attempts to check in using an invalid QR code | Negative | Log in as Customer and scan an invalid QR code | The system rejects the QR code and does not record the check-in.  | [ ] |
-| TS-CTR-008 | FR-08 | Customer attempts to check in using an already-used QR code | Negative | Log in as Customer and scan a QR code that has already been used for check-in | The system rejects the QR code and prevents duplicate check-in.  | [ ] |
+| TS-CTR-006 | FR-08 | Staff checks in using a valid ticket QR code | Positive | Log in as Customer and scan a valid QR code associated with the customer's ticket | The system verifies the ticket and records the check-in successfully.  | [ ] |
+| TS-CTR-007 | FR-08 | Staff attempts to check in using an invalid QR code | Negative | Log in as Customer and scan an invalid QR code | The system rejects the QR code and does not record the check-in.  | [ ] |
+| TS-CTR-008 | FR-08 | Staff attempts to check in using an already-used QR code | Negative | Log in as Customer and scan a QR code that has already been used for check-in | The system rejects the QR code and prevents duplicate check-in.  | [ ] |
 
 ### Manager
 | Test Scenario ID | Requirement ID | Test Scenario | Test Type | Input | Expected Output  | Status |
