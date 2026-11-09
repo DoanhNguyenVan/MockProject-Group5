@@ -3,152 +3,333 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : 'demo-csrf-token'}" content="demo-csrf-token">
-  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}" content="X-CSRF-TOKEN">
-  <title>About Us | BOX Cinema</title>
+  <title>About Us | BOX Cinema - Beyond Ordinary Experience</title>
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
     rel="stylesheet"
   >
   <link rel="stylesheet" href="/css/main.css" th:href="@{/css/main.css}">
+  <link rel="stylesheet" href="/css/home.css" th:href="@{/css/home.css}">
+  <link rel="stylesheet" href="/css/about.css?v=4.5" th:href="@{/css/about.css?v=4.5}">
 </head>
-<body>
-  <!-- Shared Brand Logo & Navigation Navbar -->
+<body class="about-page">
+  <!-- Shared Top Navbar -->
   <header th:replace="~{fragments/navbar :: navbar}"></header>
 
-  <main id="main-content" tabindex="-1">
-    <!-- Hero Story Banner -->
-    <section class="py-5 border-bottom border-secondary border-opacity-25">
-      <div class="container py-lg-4">
-        <div class="row align-items-center g-4">
-          <div class="col-lg-7">
-            <h1 class="hero-title mb-3">About BOX Cinema</h1>
-            <p class="text-secondary fs-5 mb-4">
-              Explore our cinemas in Vietnam, from the projection in each auditorium to the sound that brings a film to life.
+  <main id="main-content">
+    <!-- 1. Hero Story Banner -->
+    <section class="about-hero">
+      <div class="cinema-container">
+        <div class="about-hero-content">
+          <!-- Main Brand Typographic Stage (B-O-X / Beyond Ordinary X-perience) -->
+          <h1 class="about-hero-title hero-brand-stage" id="heroBrandStage" aria-label="BOX CINEMA - BEYOND ORDINARY X-PERIENCE">
+            <!-- Opening Welcome Prefix: "WELLCOME TO" -->
+            <span class="brand-welcome-intro" id="brandWelcomeIntro" aria-hidden="true">WELLCOME TO</span>
+            <!-- Word 1 -->
+            <span class="brand-line" id="lineBeyond">
+              <span class="char-lead" id="charB">B</span><span class="word-tail" id="tailEyond"><span class="tail-inner">EYOND</span></span>
+            </span>
+            <!-- Word 2 -->
+            <span class="brand-line" id="lineOrdinary">
+              <span class="char-lead" id="charO">O</span><span class="word-tail" id="tailOrdinary"><span class="tail-inner">RDINARY</span></span>
+            </span>
+            <!-- Word 3 -->
+            <span class="brand-line" id="lineXperience">
+              <span class="char-lead" id="charX">X</span><span class="word-tail" id="tailXperience"><span class="tail-inner">-PERIENCE</span></span>
+            </span>
+            <!-- Intro Word CINEMA -->
+            <span class="brand-cinema-intro" id="brandCinemaIntro" aria-hidden="true">CINEMA</span>
+          </h1>
+          <p class="about-hero-desc" id="heroDesc">
+            Vietnam's next-generation multiplex network featuring IMAX® Laser, Dolby Atmos® spatial sound, and zero-wait digital booking.
+          </p>
+          <div class="about-hero-actions" id="heroActions">
+            <a href="/showtimes" th:href="@{/showtimes}" class="btn-about-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              Browse Showtimes
+            </a>
+            <a href="#techSection" class="btn-about-outline">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              Explore Formats
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Real-Time System Metrics (Live Database Data) -->
+    <section class="about-stats-bar" aria-label="BOX Cinema Live System Statistics">
+      <div class="cinema-container">
+        <div class="row g-4 justify-content-center">
+          <!-- 1. Movies Now Showing -->
+          <div class="col-6 col-lg-3">
+            <div class="about-stat-card">
+              <div class="about-stat-number" th:text="${nowShowingCount != null ? nowShowingCount : 18}">18</div>
+              <div class="about-stat-label">Movies Now Showing</div>
+              <p class="about-stat-desc">
+                Currently running in theatres (<span th:text="${comingSoonCount != null ? comingSoonCount : 12}">12</span> coming soon)
+              </p>
+            </div>
+          </div>
+
+          <!-- 2. Cinema Branches -->
+          <div class="col-6 col-lg-3">
+            <div class="about-stat-card">
+              <div class="about-stat-number" th:text="${activeCinemasCount != null ? activeCinemasCount : 12}">12</div>
+              <div class="about-stat-label">Active Cinemas</div>
+              <p class="about-stat-desc">Multiplexes nationwide across 6 provinces &amp; cities</p>
+            </div>
+          </div>
+
+          <!-- 3. Showtimes Today -->
+          <div class="col-6 col-lg-3">
+            <div class="about-stat-card">
+              <div class="about-stat-number" th:text="${todayShowtimesCount != null ? todayShowtimesCount : 204}">204</div>
+              <div class="about-stat-label">Showtimes Today</div>
+              <p class="about-stat-desc">
+                Real-time screenings scheduled across all screens
+              </p>
+            </div>
+          </div>
+
+          <!-- 4. Total Auditoriums / Screens -->
+          <div class="col-6 col-lg-3">
+            <div class="about-stat-card">
+              <div class="about-stat-number" th:text="${totalScreensCount != null ? totalScreensCount : 28}">28</div>
+              <div class="about-stat-label">Laser Auditoriums</div>
+              <p class="about-stat-desc">IMAX Laser, Dolby Atmos &amp; 4DX screening rooms</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Signature Auditorium Technologies -->
+    <section class="about-section" id="techSection">
+      <div class="cinema-container">
+        <div class="about-section-header">
+          <span class="about-section-pill">Cutting-Edge Formats</span>
+          <h2 class="about-section-title">Signature Auditorium Technologies</h2>
+          <p class="about-section-subtitle">
+            Engineered with world-class acoustics, massive laser projection, and multi-sensory immersion.
+          </p>
+        </div>
+
+        <div class="tech-grid">
+          <!-- IMAX Laser -->
+          <div class="tech-card">
+            <div class="tech-img-box">
+              <img src="/assets/img/tech/box-imax-laser.jpg" alt="IMAX with Laser Auditorium" class="tech-card-img" loading="lazy">
+              <span class="tech-img-badge">4K DUAL LASER</span>
+            </div>
+            <div class="tech-card-body">
+              <h3 class="tech-card-title">IMAX® with Laser</h3>
+              <p class="tech-card-desc">
+                Massive floor-to-ceiling curved silver screen delivering 50% higher brightness and crystalline 4K clarity.
+              </p>
+              <div class="tech-specs-row">
+                <span class="tech-chip">1.43:1 Giant Screen</span>
+                <span class="tech-chip">Dual 4K Laser</span>
+                <span class="tech-chip">12-Ch Audio</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dolby Atmos -->
+          <div class="tech-card">
+            <div class="tech-img-box">
+              <img src="/assets/img/tech/box-dolby-atmos.jpg" alt="Dolby Atmos Sound Dome" class="tech-card-img" loading="lazy">
+              <span class="tech-img-badge">360° SPATIAL AUDIO</span>
+            </div>
+            <div class="tech-card-body">
+              <h3 class="tech-card-title">Dolby Atmos® Acoustic Dome</h3>
+              <p class="tech-card-desc">
+                Overhead spatial sound flows in three dimensions, placing you inside the movie with pinpoint sonic precision.
+              </p>
+              <div class="tech-specs-row">
+                <span class="tech-chip">64 Speaker Channels</span>
+                <span class="tech-chip">Ceiling Acoustic Array</span>
+                <span class="tech-chip">Sound Dampening</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4DX Motion -->
+          <div class="tech-card">
+            <div class="tech-img-box">
+              <img src="/assets/img/tech/box-4dx-motion.jpg" alt="4DX Dynamic Immersion" class="tech-card-img" loading="lazy">
+              <span class="tech-img-badge">MULTI-SENSORY 4DX</span>
+            </div>
+            <div class="tech-card-body">
+              <h3 class="tech-card-title">4DX® Dynamic Immersion</h3>
+              <p class="tech-card-desc">
+                Motion seats heave and roll in sync with Hollywood action, amplified by real wind, mist, scents, and strobe effects.
+              </p>
+              <div class="tech-specs-row">
+                <span class="tech-chip">Synchronized Motion</span>
+                <span class="tech-chip">Wind &amp; Mist Effects</span>
+                <span class="tech-chip">Strobe Lighting</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- BOX Luxe Suites -->
+          <div class="tech-card">
+            <div class="tech-img-box">
+              <img src="/assets/img/tech/box-luxe-suites.jpg" alt="BOX Luxe Recliner Suites" class="tech-card-img" loading="lazy">
+              <span class="tech-img-badge">VIP FIRST-CLASS</span>
+            </div>
+            <div class="tech-card-body">
+              <h3 class="tech-card-title">BOX Luxe Recliner Suites</h3>
+              <p class="tech-card-desc">
+                Motorized Italian leather recliners with personal charging tables, plush blankets, and seat-side concierge service.
+              </p>
+              <div class="tech-specs-row">
+                <span class="tech-chip">180° Power Recline</span>
+                <span class="tech-chip">Wireless Charging</span>
+                <span class="tech-chip">Seat-Side Service</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Zero-Wait Digital Ticketing & Exclusive VNPAY Payment Partner -->
+    <section class="about-section">
+      <div class="cinema-container">
+        <div class="about-section-header">
+          <span class="about-section-pill">Digital Ticketing</span>
+          <h2 class="about-section-title">Zero-Wait Booking with VNPAY</h2>
+          <p class="about-section-subtitle">
+            Skip the box office queue. Reserve seats online in seconds with Vietnam's most trusted payment network.
+          </p>
+        </div>
+
+        <div class="vnpay-feature-card">
+          <!-- Left: VNPAY Highlights -->
+          <div>
+            <div class="vnpay-partner-badge">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+              Official Digital Payment Partner
+            </div>
+            <h3 class="vnpay-feature-title">
+              Instant QR Checkout Powered by VNPAY
+            </h3>
+            <p class="vnpay-feature-desc">
+              Fast, secure, and fee-free. Scan with over 40+ mobile banking apps and e-wallets across Vietnam.
             </p>
-            <div class="d-flex flex-wrap gap-3">
-              <a href="/#moviesSection" th:href="@{/#moviesSection}" class="btn btn-box-primary">Find a showtime</a>
-              <a href="/contact" th:href="@{/contact}" class="btn btn-box-outline">Partner With Us</a>
+
+            <div class="vnpay-perks-grid">
+              <div class="vnpay-perk-item">
+                <div class="vnpay-perk-title">&lt; 60s Fast Checkout</div>
+                <p class="vnpay-perk-sub">Direct QR scan with any mobile banking app</p>
+              </div>
+
+              <div class="vnpay-perk-item">
+                <div class="vnpay-perk-title">Paperless E-Ticket</div>
+                <p class="vnpay-perk-sub">Instant QR pass sent straight to your screen &amp; email</p>
+              </div>
+
+              <div class="vnpay-perk-item">
+                <div class="vnpay-perk-title">10-Min Seat Hold</div>
+                <p class="vnpay-perk-sub">Real-time seat locking guarantees zero double-booking</p>
+              </div>
+
+              <div class="vnpay-perk-item">
+                <div class="vnpay-perk-title">Bank-Grade Security</div>
+                <p class="vnpay-perk-sub">PCI-DSS encrypted transactions</p>
+              </div>
             </div>
           </div>
 
-          <div class="col-lg-5">
-            <div class="hero-poster-card">
-              <span class="text-glow-red small fw-bold text-uppercase d-block mb-2">Why Movie Lovers Choose BOX</span>
-              <h2 class="h4 fw-bold text-white mb-3">Engineered for Immersion</h2>
-              <ul class="list-unstyled small text-secondary mb-0 d-flex flex-column gap-2">
-                <li>&#10003; <strong class="text-white">Zero-Wait Ticketing:</strong> Complete your booking in under 5 steps on desktop or mobile.</li>
-                <li>&#10003; <strong class="text-white">Real-Time Seat Sync:</strong> Instant 10-minute seat hold synchronized across Web and POS counters.</li>
-                <li>&#10003; <strong class="text-white">Pure Black Contrast:</strong> Custom matte-obsidian auditoriums eliminate stray light reflections.</li>
-                <li>&#10003; <strong class="text-white">Express QR Entry:</strong> Contactless e-ticket verification within 30 minutes before showtime.</li>
-              </ul>
+          <!-- Right: How It Works Flow -->
+          <div class="vnpay-flow-card">
+            <h4 class="h6 fw-bold text-white text-uppercase tracking-wide mb-4">4 Steps to Your Seats</h4>
+            
+            <div class="flow-step-item">
+              <div class="flow-step-num">1</div>
+              <div class="flow-step-content">
+                <div class="flow-step-title">Select Cinema &amp; Showtime</div>
+                <p class="flow-step-sub">Pick your preferred branch and movie schedule.</p>
+              </div>
+            </div>
+
+            <div class="flow-step-item">
+              <div class="flow-step-num">2</div>
+              <div class="flow-step-content">
+                <div class="flow-step-title">Choose Preferred Seats</div>
+                <p class="flow-step-sub">Interactive real-time seating map.</p>
+              </div>
+            </div>
+
+            <div class="flow-step-item">
+              <div class="flow-step-num">3</div>
+              <div class="flow-step-content">
+                <div class="flow-step-title">Scan VNPAY-QR to Pay</div>
+                <p class="flow-step-sub">Instant confirmation via your mobile banking app.</p>
+              </div>
+            </div>
+
+            <div class="flow-step-item">
+              <div class="flow-step-num">4</div>
+              <div class="flow-step-content">
+                <div class="flow-step-title">Direct Hall Admission</div>
+                <p class="flow-step-sub">Scan your digital QR code at the turnstile and enjoy.</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Key Statistics Counter -->
-    <section class="py-5" aria-label="Cinema Milestones">
-      <div class="container">
-        <div class="row g-4">
-          <div class="col-6 col-lg-3">
-            <div class="stat-card">
-              <div class="stat-number mb-1">18+</div>
-              <div class="fw-bold text-white">Multiplex Locations</div>
-              <p class="small text-secondary mb-0 mt-1">Across Ho Chi Minh City, Hanoi &amp; Da Nang</p>
-            </div>
-          </div>
-          <div class="col-6 col-lg-3">
-            <div class="stat-card">
-              <div class="stat-number mb-1">140+</div>
-              <div class="fw-bold text-white">4K Laser Screens</div>
-              <p class="small text-secondary mb-0 mt-1">100% digital laser projection fleet</p>
-            </div>
-          </div>
-          <div class="col-6 col-lg-3">
-            <div class="stat-card">
-              <div class="stat-number mb-1">360&#176;</div>
-              <div class="fw-bold text-white">Dolby Atmos Sound</div>
-              <p class="small text-secondary mb-0 mt-1">Up to 64 independent speaker channels</p>
-            </div>
-          </div>
-          <div class="col-6 col-lg-3">
-            <div class="stat-card">
-              <div class="stat-number mb-1">2.5M+</div>
-              <div class="fw-bold text-white">Annual Guests</div>
-              <p class="small text-secondary mb-0 mt-1">Rated 4.9/5 for seat comfort &amp; service</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Signature Auditorium Technologies -->
-    <section class="py-5 bg-black bg-opacity-50 border-top border-bottom border-secondary border-opacity-25" aria-label="Projection and Audio Technologies">
-      <div class="container">
-        <div class="mb-4">
-          <span class="text-glow-red small fw-bold text-uppercase">Next-Gen Formats</span>
-          <h2 class="h2 section-heading text-white mb-0">Signature Auditorium Technology</h2>
+    <!-- 5. Cinematic Gourmet Concessions (F&B) -->
+    <section class="about-section">
+      <div class="cinema-container">
+        <div class="about-section-header">
+          <span class="about-section-pill">Movie Night Treats</span>
+          <h2 class="about-section-title">Handcrafted Cinema Concessions</h2>
+          <p class="about-section-subtitle">
+            No movie is complete without the aroma of warm, freshly popped corn. Discover our signature gourmet flavors and curated cinema combos.
+          </p>
         </div>
 
-        <div class="row g-4">
-          <div class="col-md-6">
-            <div class="box-surface-card">
-              <div class="d-flex align-items-center gap-3 mb-3">
-                <span class="icon-circle-red fw-bold">4K</span>
-                <div>
-                  <span class="badge badge-box-red mb-1">FLAGSHIP VISUALS</span>
-                  <h3 class="h5 fw-bold text-white mb-0">IMAX&#174; with Dual Laser</h3>
-                </div>
-              </div>
-              <p class="small text-secondary mb-0">
-                Dual 4K laser projection systems deliver 50% greater brightness and an expanded aspect ratio, revealing up to 26% more picture on our floor-to-ceiling silver screens.
+        <div class="fnb-grid">
+          <div class="fnb-card">
+            <div class="fnb-img-wrapper">
+              <img src="/assets/img/fnb/box-popcorn.jpg" alt="BOX Cinema Gourmet Popcorn" class="fnb-card-img" loading="lazy">
+              <span class="fnb-badge">BESTSELLER</span>
+            </div>
+            <div class="fnb-content">
+              <h3 class="fnb-title">Gourmet Popcorn</h3>
+              <p class="fnb-desc">
+                Popped fresh throughout the day using non-GMO corn kernels. Available in Traditional Butter, Golden Cheddar Cheese, and Royal Caramel Crunch.
               </p>
             </div>
           </div>
 
-          <div class="col-md-6">
-            <div class="box-surface-card">
-              <div class="d-flex align-items-center gap-3 mb-3">
-                <span class="icon-circle-red fw-bold">3D</span>
-                <div>
-                  <span class="badge badge-box-red mb-1">SPATIAL AUDIO</span>
-                  <h3 class="h5 fw-bold text-white mb-0">Dolby Atmos&#174; Acoustic Chambers</h3>
-                </div>
-              </div>
-              <p class="small text-secondary mb-0">
-                Sound moves all around you in three-dimensional space, including overhead arrays, placing you directly inside the eye of the storm or the cockpit of a starfighter.
+          <div class="fnb-card">
+            <div class="fnb-img-wrapper">
+              <img src="/assets/img/fnb/box-beverages.jpg" alt="BOX Cinema Ice-Cold Beverages" class="fnb-card-img" loading="lazy">
+              <span class="fnb-badge">REFRESHING</span>
+            </div>
+            <div class="fnb-content">
+              <h3 class="fnb-title">Ice-Cold Beverages</h3>
+              <p class="fnb-desc">
+                Signature slushies, ice-cold fountain sodas, and seasonal fruit teas. Served in collectible custom BOX Cinema cups.
               </p>
             </div>
           </div>
 
-          <div class="col-md-6">
-            <div class="box-surface-card">
-              <div class="d-flex align-items-center gap-3 mb-3">
-                <span class="icon-circle-red fw-bold">VIP</span>
-                <div>
-                  <span class="badge badge-box-red mb-1">FIRST-CLASS COMFORT</span>
-                  <h3 class="h5 fw-bold text-white mb-0">BOX Luxe Recliner Suites</h3>
-                </div>
-              </div>
-              <p class="small text-secondary mb-0">
-                Motorized Italian leather recliners with generous legroom, wireless phone charging docks, warm blankets, and direct seat-side dining service.
-              </p>
+          <div class="fnb-card">
+            <div class="fnb-img-wrapper">
+              <img src="/assets/img/fnb/box-combos.jpg" alt="BOX Cinema Hot Bites &amp; Combos" class="fnb-card-img" loading="lazy">
+              <span class="fnb-badge">SIGNATURE</span>
             </div>
-          </div>
-
-          <div class="col-md-6">
-            <div class="box-surface-card">
-              <div class="d-flex align-items-center gap-3 mb-3">
-                <span class="icon-circle-red fw-bold">4DX</span>
-                <div>
-                  <span class="badge badge-box-red mb-1">MULTI-SENSORY</span>
-                  <h3 class="h5 fw-bold text-white mb-0">4DX&#174; Motion &amp; Environmental Effects</h3>
-                </div>
-              </div>
-              <p class="small text-secondary mb-0">
-                Synchronized motion seats combined with wind, mist, lightning strobes, and atmospheric scents choreographed frame-by-frame with Hollywood studios.
+            <div class="fnb-content">
+              <h3 class="fnb-title">Hot Bites &amp; Combos</h3>
+              <p class="fnb-desc">
+                Crispy golden fries, tender chicken bites with savory dipping sauces, and curated value combos pre-orderable online for instant pickup.
               </p>
             </div>
           </div>
@@ -156,15 +337,23 @@
       </div>
     </section>
 
-    <!-- Call to Action -->
-    <section class="py-5">
-      <div class="container">
-        <div class="quick-booking-card text-center py-4 px-3">
-          <h2 class="h3 fw-bold text-white mb-2">Ready for Your Next Movie Night?</h2>
-          <p class="text-secondary mb-4">Create your free BOX Cinema member account or browse today&#39;s live showtimes.</p>
+    <!-- 5. Final Call To Action (CTA) -->
+    <section class="about-cta-section">
+      <div class="cinema-container">
+        <div class="about-cta-box">
+          <h2 class="about-cta-title">Ready for Your Next Movie Night?</h2>
+          <p class="about-cta-sub">
+            Browse today's live screening times across all BOX Cinema branches, choose your favorite seats, and pay instantly with VNPAY in seconds.
+          </p>
           <div class="d-flex justify-content-center flex-wrap gap-3">
-            <a href="/register" th:href="@{/register}" class="btn btn-box-primary">Create Member Account</a>
-            <a href="/contact" th:href="@{/contact}" class="btn btn-box-outline">Contact Our Team</a>
+            <a href="/showtimes" th:href="@{/showtimes}" class="btn-about-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              View Live Showtimes
+            </a>
+            <a href="/movies" th:href="@{/movies}" class="btn-about-outline">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
+              Explore Movies
+            </a>
           </div>
         </div>
       </div>
@@ -174,6 +363,9 @@
   <!-- Shared Footer -->
   <footer th:replace="~{fragments/footer :: footer}"></footer>
 
+  <!-- GSAP Core for 60fps GPU Typographic Motion -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script type="module" src="/js/modules/about-hero-anim.js?v=4.0" th:src="@{/js/modules/about-hero-anim.js?v=4.0}"></script>
   <script type="module" src="/js/modules/navbar.js" th:src="@{/js/modules/navbar.js}"></script>
 </body>
 </html>

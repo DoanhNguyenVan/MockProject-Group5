@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Showtimes By Cinema | BOX Cinema</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+  <link rel="stylesheet" href="/css/main.css" th:href="@{/css/main.css}">
+  <link rel="stylesheet" href="/css/home.css" th:href="@{/css/home.css}">
+  <link rel="stylesheet" href="/css/showtimes.css?v=3.0" th:href="@{/css/showtimes.css?v=3.0}">
+</head>
+<body class="showtimes-page">
+  <!-- Top Navigation Bar -->
+  <header th:replace="~{fragments/navbar :: navbar}"></header>
+
+  <main id="main-content">
+    <!-- Top Hero Header & Cinema Selector -->
+    <section class="showtimes-hero-bar">
+      <div class="cinema-container">
+        <div class="showtimes-header-inner">
+          <div>
+            <h1 class="showtimes-page-title">SHOWTIMES BY CINEMA</h1>
+            <p class="small text-secondary mb-0 mt-1">Explore upcoming showtimes and available seats at your preferred cinema</p>
+          </div>
+
+          <!-- Cinema Branch Switcher -->
+          <div class="showtimes-cinema-switch">
+            <label for="showtimeCinemaSwitch" class="switch-label">Cinema Branch:</label>
+            <select id="showtimeCinemaSwitch" class="switch-select">
+              <optgroup th:each="entry : ${cinemasByCity}" th:label="${entry.key}">
+                <option th:each="c : ${entry.value}"
+                        th:value="${c.cinemaId}"
+                        th:selected="${selectedCinemaId == c.cinemaId}"
+                        th:text="${c.cinemaName}">Cinema Branch</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Horizontal Date Navigation Tabs (Matching Image 1 & 2) -->
+    <section class="showtime-date-nav-wrapper">
+      <div class="cinema-container">
+        <div class="showtime-date-tabs" id="showtimeDateTabs" role="tablist" aria-label="Select screening date">
+          <button th:each="tab : ${dateTabs}"
+                  type="button"
+                  class="showtime-date-tab"
+                  th:classappend="${tab.active ? 'active' : ''}"
+                  th:data-date="${tab.dateStr}">
+            <span class="date-tab-day" th:text="${tab.dayNumber}">09</span>
+            <span class="date-tab-sub" th:text="${tab.monthAndDayOfWeek}">/11 - Mon</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Legend bar -->
+    <div class="cinema-container">
+      <div class="showtime-legend-bar">
+        <span class="legend-swatch" aria-hidden="true"></span>
+        <span class="legend-text">Late night screening from 22:00</span>
+      </div>
+    </div>
+
+    <!-- 2-Column Movie Showtimes Grid (Matching Image 1 & 2) -->
+    <div class="cinema-container showtimes-container">
+      <div class="showtime-movies-grid" id="showtimeMoviesGrid">
+        <th:block th:each="movie : ${movieGroups}">
+          <div class="showtime-movie-card">
+            <!-- Left: Poster Column -->
+            <div class="showtime-poster-col">
+              <span class="showtime-age-badge"
+                    th:classappend="${movie.ageRating == 'P' ? 'badge-age-p' : (movie.ageRating == 'T13' ? 'badge-age-t13' : (movie.ageRating == 'T16' ? 'badge-age-t16' : 'badge-age-t18'))}"
+                    th:text="${movie.ageRating}">T16</span>
+              <img th:src="${movie.posterUrl}" th:alt="${movie.title}" loading="lazy" onerror="this.style.display='none'">
+              
+              <!-- Trailer Play Button on Hover (Matching Image 2) -->
+              <button type="button" class="poster-trailer-overlay"
+                      th:if="${movie.trailerUrl != null}"
+                      th:data-trailer-url="${movie.trailerUrl}"
+                      aria-label="Watch trailer">
+                <span class="trailer-play-icon">
+                  <svg viewBox="0 0 24 24" width="20" height="20"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>
+                </span>
+              </button>
+            </div>
+
+            <!-- Right: Details & Showtimes Column -->
+            <div class="showtime-details-col">
+              <h4 class="showtime-movie-title" th:text="${movie.title}">Movie Title</h4>
+              
+              <div class="showtime-movie-meta">
+                <span class="meta-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                  <span th:text="${movie.genreNamesDisplay != null ? movie.genreNamesDisplay : 'Movies'}">Action</span>
+                </span>
+                <span class="meta-item">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  <span th:text="${movie.durationMinutes + ' mins'}">135 mins</span>
+                </span>
+              </div>
+
+              <!-- Format blocks (e.g. 2D SUBTITLES, IMAX 2D) -->
+              <th:block th:each="fmtEntry : ${movie.formats}">
+                <div class="showtime-format-block">
+                  <h5 class="showtime-format-title" th:text="${fmtEntry.key}">2D SUBTITLES</h5>
+                  <div class="showtime-slots-wrap">
+                    <button th:each="slot : ${fmtEntry.value}"
+                            type="button"
+                            class="showtime-slot-btn"
+                            th:classappend="${slot.late ? 'slot-late' : ''}"
+                            th:data-showtime-id="${slot.showtimeId}"
+                            th:data-movie-title="${movie.title}"
+                            th:data-slot-time="${slot.time}"
+                            th:data-slot-price="${slot.price}">
+                      <span class="slot-time" th:text="${slot.time}">17:45</span>
+                      <span class="slot-date-sub" th:if="${slot.late}" th:text="${slot.dateSub}">09/11</span>
+                      <span class="slot-seats" th:text="${slot.availableSeats + ' seats available'}">170 seats available</span>
+                    </button>
+                  </div>
+                </div>
+              </th:block>
+            </div>
+          </div>
+        </th:block>
+      </div>
+
+      <!-- Empty State -->
+      <div class="showtimes-empty-state" id="showtimeEmptyState" th:classappend="${movieGroups != null and !movieGroups.isEmpty() ? 'd-none' : ''}">
+        <div class="showtimes-empty-icon">🎬</div>
+        <h4 class="showtimes-empty-title">No Showtimes Available</h4>
+        <p class="showtimes-empty-desc">No showtimes found for this cinema on the selected date. Please choose another date or cinema.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Trailer Modal -->
+  <div class="trailer-modal-backdrop" id="trailerModal" aria-hidden="true" role="dialog">
+    <div class="trailer-modal-content">
+      <button type="button" class="trailer-modal-close" id="trailerModalClose" aria-label="Close trailer">×</button>
+      <div class="trailer-video-frame">
+        <iframe id="trailerIframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Booking Confirmation Modal (Beta Cinema Style) -->
+  <div class="booking-confirm-backdrop" id="bookingConfirmModal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="booking-confirm-modal">
+      <button type="button" class="booking-confirm-close" id="bookingConfirmClose" aria-label="Close dialog">×</button>
+
+      <div class="booking-confirm-header">
+        <h4 class="booking-confirm-title">YOU ARE BOOKING TICKETS FOR</h4>
+      </div>
+
+      <div class="booking-confirm-body">
+        <div class="confirm-movie-name" id="confirmMovieTitle">Movie Title</div>
+
+        <div class="confirm-details-table">
+          <div class="confirm-details-header">
+            <span class="col-cinema">Cinema</span>
+            <span class="col-date">Date</span>
+            <span class="col-time">Time</span>
+          </div>
+          <div class="confirm-details-row">
+            <span class="col-cinema" id="confirmCinemaName">BOX Cinema</span>
+            <span class="col-date" id="confirmDate">09/11/2026</span>
+            <span class="col-time" id="confirmTime">18:30</span>
+          </div>
+        </div>
+
+        <div class="confirm-actions">
+          <button type="button" class="btn-confirm-agree" id="btnConfirmAgree">
+            CONFIRM
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shared Footer -->
+  <footer th:replace="~{fragments/footer :: footer}"></footer>
+
+  <script type="module" src="/js/modules/navbar.js" th:src="@{/js/modules/navbar.js}"></script>
+  <script type="module" src="/js/modules/showtimes.js" th:src="@{/js/modules/showtimes.js}"></script>
+</body>
+</html>
+

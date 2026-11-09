@@ -13,13 +13,24 @@
         <a class="box-brand" href="/" th:href="@{/}" aria-label="BOX Cinema home">
           <img src="/assets/img/box-cinema-logo.png" th:src="@{/assets/img/box-cinema-logo.png}" alt="BOX Cinema" width="145" height="48">
         </a>
+
+        <!-- Cinema Branch Selector (Select dropdown matching Showtimes style) -->
+        <div class="nav-cinema-switch-wrap" id="cinemaSelectorWrap">
+          <select id="navCinemaSelect" class="nav-cinema-select" aria-label="Select Cinema Branch">
+            <option value="all">All Cinemas</option>
+            <optgroup th:each="entry : ${cinemasByCity}" th:label="${entry.key}">
+              <option th:each="c : ${entry.value}"
+                      th:value="${c.cinemaId}"
+                      th:text="${c.cinemaName}">Cinema Branch</option>
+            </optgroup>
+          </select>
+        </div>
         
         <!-- Center Navigation Menu (Links) -->
         <div class="cinema-nav-menu" id="boxNavbarCollapse">
           <div class="cinema-nav-links">
-            <a href="/#moviesSection" th:href="@{/#moviesSection}">Movies</a>
-            <a href="/#moviesSection" th:href="@{/#moviesSection}">Cinemas</a>
-            <a href="/#moviesSection" th:href="@{/#moviesSection}">Showtimes</a>
+            <a href="/#moviesSection" th:href="@{/#moviesSection}" data-nav-route="home">Movies</a>
+            <a href="/showtimes" th:href="@{/showtimes}" data-nav-route="showtimes">Showtimes</a>
             <a href="/about" th:href="@{/about}" data-nav-route="about">About</a>
             <a href="/contact" th:href="@{/contact}" data-nav-route="contact">Contact</a>
           </div>

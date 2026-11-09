@@ -1,0 +1,827 @@
+/* =============================================================================
+   BOX CINEMA - ABOUT US PAGE STYLING (RED & BLACK IMMERSIVE THEME)
+   ============================================================================= */
+
+:root {
+  --about-bg: #0c0d12;
+  --about-surface: #14151b;
+  --about-surface-card: #181a24;
+  --about-surface-hover: #222534;
+  --about-border: rgba(255, 255, 255, 0.08);
+  --about-border-hover: rgba(229, 9, 20, 0.4);
+  --about-red: #e50914;
+  --about-red-hover: #ff1e27;
+  --about-text-primary: #ffffff;
+  --about-text-secondary: #9ba1b0;
+  --about-text-muted: #64748b;
+}
+
+body.about-page {
+  background-color: var(--about-bg);
+  color: var(--about-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* =============================================================================
+   1. HERO STORY BANNER (WITH SIGNATURE LOGO PATTERN BACKDROP)
+   ============================================================================= */
+.about-hero {
+  position: relative;
+  padding-top: 8rem;
+  padding-bottom: 5.5rem;
+  background: 
+    radial-gradient(circle at 50% 0%, rgba(229, 9, 20, 0.22) 0%, transparent 65%),
+    radial-gradient(circle at 85% 25%, rgba(229, 9, 20, 0.08) 0%, transparent 50%),
+    linear-gradient(180deg, #0c0d12 0%, #101117 100%);
+  border-bottom: 1px solid var(--about-border);
+  overflow: hidden;
+}
+
+.about-hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 50% 100%, rgba(229, 9, 20, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.about-hero-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 1020px;
+  margin: 0 auto;
+}
+
+.about-tagline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.4rem 1.15rem;
+  background: rgba(229, 9, 20, 0.12);
+  border: 1px solid rgba(229, 9, 20, 0.35);
+  border-radius: 9999px;
+  color: #ff5560;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 0 15px rgba(229, 9, 20, 0.25);
+}
+
+.tagline-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #ff3340;
+  box-shadow: 0 0 8px #ff3340;
+  animation: pulseDot 2s infinite ease-in-out;
+}
+
+.about-hero-title {
+  font-size: clamp(2.2rem, 5vw, 3.8rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: #ffffff;
+  margin-bottom: 1.25rem;
+  text-transform: uppercase;
+}
+
+/* =============================================================================
+   HERO BRAND TYPOGRAPHIC STAGE & ANIMATION
+   ============================================================================= */
+.hero-brand-stage {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  font-size: clamp(2rem, 4.4vw, 3.4rem);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 1.08;
+  margin: 0 auto 1.5rem auto;
+  text-transform: uppercase;
+  min-height: calc(3 * 1.08em);
+  user-select: none;
+}
+
+.brand-welcome-intro {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: #ec1c24;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, opacity, filter;
+  text-shadow: 0 0 25px rgba(236, 28, 36, 0.45);
+}
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  font-size: clamp(2.4rem, 6.2vw, 4.4rem);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 1.08;
+  margin: 0 auto 1.5rem auto;
+  text-transform: uppercase;
+  min-height: calc(3 * 1.08em);
+  user-select: none;
+}
+
+.brand-line {
+  display: flex;
+  align-items: baseline;
+  white-space: nowrap;
+  position: relative;
+}
+
+.char-lead {
+  display: inline-block;
+  color: #e50914;
+  font-weight: 950;
+  margin-right: 0.04em;
+  text-shadow: 0 0 25px rgba(229, 9, 20, 0.75), 0 0 45px rgba(229, 9, 20, 0.35);
+  position: relative;
+  will-change: transform, color;
+}
+
+.word-tail {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: bottom;
+  will-change: width, opacity;
+}
+
+.tail-inner {
+  display: inline-block;
+  color: #ffffff;
+}
+
+.brand-cinema-intro {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: #ffffff;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word-tail {
+    width: auto !important;
+    opacity: 1 !important;
+  }
+  .brand-welcome-intro,
+  .brand-cinema-intro {
+    display: none !important;
+  }
+}
+
+.about-hero-desc {
+  font-size: 1.12rem;
+  line-height: 1.7;
+  color: var(--about-text-secondary);
+  margin-bottom: 2.25rem;
+  font-weight: 400;
+}
+
+.about-hero-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn-about-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 2rem;
+  background: linear-gradient(135deg, #e50914 0%, #b20710 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-decoration: none;
+  box-shadow: 0 4px 18px rgba(229, 9, 20, 0.45);
+  transition: all 0.22s ease;
+}
+
+.btn-about-primary:hover {
+  background: linear-gradient(135deg, #ff1e27 0%, #c40812 100%);
+  box-shadow: 0 6px 24px rgba(229, 9, 20, 0.65);
+  transform: translateY(-2px);
+  color: #ffffff;
+}
+
+.btn-about-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 2rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-decoration: none;
+  backdrop-filter: blur(8px);
+  transition: all 0.22s ease;
+}
+
+.btn-about-outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-2px);
+  color: #ffffff;
+}
+
+/* =============================================================================
+   2. KEY METRICS COUNTER BAR (REAL DATABASE STATS)
+   ============================================================================= */
+.about-stats-bar {
+  position: relative;
+  background: linear-gradient(180deg, rgba(16, 18, 25, 0.95) 0%, rgba(12, 13, 18, 0.98) 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 3.5rem 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.stats-live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.35rem 1.1rem;
+  background: rgba(16, 18, 26, 0.9);
+  border: 1px solid rgba(229, 9, 20, 0.4);
+  border-radius: 9999px;
+  color: #ff5e68;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 2rem;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 15px rgba(229, 9, 20, 0.25);
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+  display: inline-block;
+  animation: livePulse 1.8s infinite;
+}
+
+@keyframes livePulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.25); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.about-stat-card {
+  background: 
+    radial-gradient(circle at 50% 0%, rgba(229, 9, 20, 0.22) 0%, rgba(229, 9, 20, 0.05) 55%, transparent 80%),
+    linear-gradient(180deg, #181217 0%, #0f1015 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(229, 9, 20, 0.25);
+  border-radius: 14px;
+  padding: 1.85rem 1.25rem;
+  text-align: center;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.about-stat-card:hover {
+  transform: translateY(-4px);
+  background: 
+    radial-gradient(circle at 50% 0%, rgba(229, 9, 20, 0.35) 0%, rgba(229, 9, 20, 0.10) 60%, transparent 85%),
+    linear-gradient(180deg, #221419 0%, #101117 100%);
+  border-color: rgba(229, 9, 20, 0.65);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.75), 0 0 28px rgba(229, 9, 20, 0.3);
+}
+
+.about-stat-number {
+  font-size: 3.2rem;
+  font-weight: 900;
+  line-height: 1;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.45rem;
+}
+
+.about-stat-label {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.35rem;
+}
+
+.about-stat-desc {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin-bottom: 0;
+  line-height: 1.45;
+}
+
+/* =============================================================================
+   SECTION GENERAL
+   ============================================================================= */
+.about-section {
+  padding: 5rem 0;
+  border-bottom: 1px solid var(--about-border);
+}
+
+.about-section-header {
+  text-align: center;
+  max-width: 680px;
+  margin: 0 auto 3.5rem;
+}
+
+.about-section-pill {
+  display: inline-block;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: var(--about-red);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+.about-section-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.about-section-subtitle {
+  font-size: 1rem;
+  color: var(--about-text-secondary);
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+/* =============================================================================
+   3. SIGNATURE AUDITORIUM TECHNOLOGIES
+   ============================================================================= */
+.tech-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.75rem;
+}
+
+@media (max-width: 991px) {
+  .tech-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tech-card {
+  position: relative;
+  background: 
+    radial-gradient(circle at 50% 0%, rgba(229, 9, 20, 0.22) 0%, rgba(229, 9, 20, 0.05) 55%, transparent 80%),
+    linear-gradient(180deg, #181216 0%, #101117 100%);
+  border: 1px solid rgba(229, 9, 20, 0.22);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: transform 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease, background 0.28s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.tech-card:hover {
+  background: 
+    radial-gradient(circle at 50% 0%, rgba(229, 9, 20, 0.35) 0%, rgba(229, 9, 20, 0.10) 60%, transparent 85%),
+    linear-gradient(180deg, #221419 0%, #12131a 100%);
+  border-color: rgba(229, 9, 20, 0.6);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 35px rgba(229, 9, 20, 0.3);
+  transform: translateY(-5px);
+}
+
+.tech-img-box {
+  position: relative;
+  width: 100%;
+  height: 250px;
+  overflow: hidden;
+  background: #08090d;
+}
+
+.tech-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+  display: block;
+}
+
+.tech-card:hover .tech-card-img {
+  transform: scale(1.05);
+}
+
+.tech-img-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: rgba(229, 9, 20, 0.92);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.3rem 0.75rem;
+  border-radius: 6px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.tech-card-body {
+  padding: 1.75rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.tech-card-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.tech-card-desc {
+  font-size: 0.88rem;
+  color: var(--about-text-secondary);
+  line-height: 1.6;
+  margin-bottom: 1.25rem;
+}
+
+.tech-specs-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: auto;
+}
+
+.tech-chip {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  transition: all 0.2s ease;
+}
+
+.tech-card:hover .tech-chip {
+  border-color: rgba(229, 9, 20, 0.35);
+  background: rgba(229, 9, 20, 0.08);
+  color: #ffffff;
+}
+
+/* =============================================================================
+   4. DIGITAL TICKETING & EXCLUSIVE VNPAY PAYMENT PARTNER
+   ============================================================================= */
+.vnpay-feature-card {
+  background: linear-gradient(135deg, rgba(20, 21, 27, 0.95) 0%, rgba(16, 18, 24, 0.98) 100%);
+  border: 1px solid rgba(229, 9, 20, 0.35);
+  border-radius: 16px;
+  padding: 2.75rem 2.5rem;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(229, 9, 20, 0.12);
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+
+.vnpay-partner-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #005baa;
+  color: #ffffff;
+  padding: 0.3rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.vnpay-feature-title {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 1rem;
+  line-height: 1.3;
+}
+
+.vnpay-feature-desc {
+  font-size: 0.95rem;
+  color: var(--about-text-secondary);
+  line-height: 1.65;
+  margin-bottom: 1.75rem;
+}
+
+.vnpay-perks-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.15rem;
+}
+
+.vnpay-perk-item {
+  background: 
+    radial-gradient(circle at 0% 50%, rgba(229, 9, 20, 0.16) 0%, transparent 70%),
+    rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(229, 9, 20, 0.22);
+  border-left: 3px solid #e50914;
+  border-radius: 12px;
+  padding: 1.15rem 1.25rem;
+  transition: transform 0.22s ease, border-color 0.22s ease, background 0.22s ease, box-shadow 0.22s ease;
+}
+
+.vnpay-perk-item:hover {
+  background: 
+    radial-gradient(circle at 0% 50%, rgba(229, 9, 20, 0.28) 0%, transparent 75%),
+    rgba(229, 9, 20, 0.06);
+  border-color: rgba(229, 9, 20, 0.45);
+  border-left-color: #ff3340;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 20px rgba(229, 9, 20, 0.2);
+  transform: translateY(-2px);
+}
+
+.vnpay-perk-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.35rem;
+}
+
+.vnpay-perk-sub {
+  font-size: 0.78rem;
+  color: var(--about-text-secondary);
+  margin-bottom: 0;
+  line-height: 1.5;
+}
+
+/* VNPAY Flow Box (Right Column) */
+.vnpay-flow-card {
+  background: 
+    radial-gradient(circle at 50% 0%, rgba(229, 9, 20, 0.20) 0%, rgba(229, 9, 20, 0.05) 55%, transparent 80%),
+    linear-gradient(180deg, #181216 0%, #101117 100%);
+  border: 1px solid rgba(229, 9, 20, 0.25);
+  border-radius: 12px;
+  padding: 1.75rem;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.flow-step-item {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.flow-step-item:last-child {
+  margin-bottom: 0;
+}
+
+.flow-step-item:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 17px;
+  top: 36px;
+  bottom: -18px;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.flow-step-num {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #e50914;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.flow-step-content {
+  flex: 1;
+}
+
+.flow-step-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.2rem;
+}
+
+.flow-step-sub {
+  font-size: 0.8rem;
+  color: var(--about-text-secondary);
+  margin-bottom: 0;
+  line-height: 1.45;
+}
+
+/* =============================================================================
+   5. CINEMATIC GOURMET CONCESSIONS (F&B)
+   ============================================================================= */
+.fnb-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.75rem;
+}
+
+.fnb-card {
+  background: 
+    radial-gradient(circle at 50% 0%, rgba(229, 9, 20, 0.22) 0%, rgba(229, 9, 20, 0.05) 55%, transparent 80%),
+    linear-gradient(180deg, #181216 0%, #101117 100%);
+  border: 1px solid rgba(229, 9, 20, 0.22);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: transform 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease, background 0.28s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.fnb-card:hover {
+  transform: translateY(-5px);
+  background: 
+    radial-gradient(circle at 50% 0%, rgba(229, 9, 20, 0.35) 0%, rgba(229, 9, 20, 0.10) 60%, transparent 85%),
+    linear-gradient(180deg, #221419 0%, #12131a 100%);
+  border-color: rgba(229, 9, 20, 0.6);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7), 0 0 35px rgba(229, 9, 20, 0.3);
+}
+
+.fnb-img-wrapper {
+  position: relative;
+  width: 100%;
+  height: 240px;
+  overflow: hidden;
+  background: #0a0b0e;
+}
+
+.fnb-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+  display: block;
+}
+
+.fnb-card:hover .fnb-card-img {
+  transform: scale(1.06);
+}
+
+.fnb-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: rgba(229, 9, 20, 0.92);
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0.28rem 0.7rem;
+  border-radius: 6px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.fnb-content {
+  padding: 1.5rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.fnb-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 0.6rem;
+}
+
+.fnb-desc {
+  font-size: 0.88rem;
+  color: var(--about-text-secondary);
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+/* =============================================================================
+   6. FINAL CALL TO ACTION (CTA)
+   ============================================================================= */
+.about-cta-section {
+  padding: 6rem 0;
+  background: radial-gradient(circle at 50% 50%, rgba(229, 9, 20, 0.12) 0%, rgba(12, 13, 18, 1) 75%);
+}
+
+.about-cta-box {
+  background: 
+    radial-gradient(ellipse at 50% -20%, rgba(229, 9, 20, 0.25) 0%, transparent 70%),
+    linear-gradient(135deg, rgba(22, 24, 34, 0.95) 0%, rgba(12, 13, 18, 0.98) 100%);
+  border: 1px solid rgba(229, 9, 20, 0.35);
+  border-radius: 20px;
+  padding: 4rem 2.5rem;
+  text-align: center;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 30px rgba(229, 9, 20, 0.15);
+  max-width: 860px;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+}
+
+.about-cta-title {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+  margin-bottom: 0.85rem;
+}
+
+.about-cta-sub {
+  font-size: 1.05rem;
+  color: var(--about-text-secondary);
+  max-width: 600px;
+  margin: 0 auto 2.25rem;
+  line-height: 1.6;
+}
+
+/* =============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================= */
+@media (max-width: 992px) {
+  .vnpay-feature-card {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    padding: 2rem 1.5rem;
+  }
+
+  .fnb-grid,
+  .membership-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .about-hero {
+    padding-top: 6.5rem;
+    padding-bottom: 3.5rem;
+  }
+
+  .about-stat-number {
+    font-size: 2.2rem;
+  }
+
+  .vnpay-perks-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-cta-box {
+    padding: 2.5rem 1.25rem;
+  }
+}

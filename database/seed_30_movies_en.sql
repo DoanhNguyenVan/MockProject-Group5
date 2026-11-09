@@ -37,42 +37,88 @@ INSERT INTO GENRES (genre_id, genre_name, description) VALUES
 (12, 'Romance', 'Heartfelt romance, heartfelt connections, and modern relationship journeys.');
 
 -- -----------------------------------------------------------------------------
--- 3. CINEMAS (5 MODERN THEATERS)
+-- 3. CINEMAS (12 MODERN THEATERS ACROSS MAJOR CITIES)
 -- -----------------------------------------------------------------------------
 INSERT INTO CINEMAS (cinema_id, cinema_name, address, city, phone, email, status) VALUES
-(1, 'BOX Cinema Landmark 81', 'B1 Floor, Vincom Landmark 81, 720A Dien Bien Phu, Binh Thanh', 'Ho Chi Minh City', '028 3822 8181', 'landmark81@boxcinema.vn', 'ACTIVE'),
-(2, 'BOX Cinema Vincom Center D1', '5th Floor, 72 Le Thanh Ton, Ben Nghe, District 1', 'Ho Chi Minh City', '028 3939 6868', 'vincom.d1@boxcinema.vn', 'ACTIVE'),
-(3, 'BOX Cinema Lotte Mall West Lake', '4th Floor, Lotte Mall West Lake, 272 Vo Chi Cong, Tay Ho', 'Hanoi', '024 3788 8899', 'westlake@boxcinema.vn', 'ACTIVE'),
-(4, 'BOX Cinema Vincom Ba Trieu', '6th Floor, Vincom Center, 191 Ba Trieu, Hai Ba Trung', 'Hanoi', '024 3974 9999', 'batrieu@boxcinema.vn', 'ACTIVE'),
-(5, 'BOX Cinema Vincom Plaza Da Nang', '4th Floor, Vincom Plaza, 910A Ngo Quyen, Son Tra', 'Da Nang', '0236 399 6688', 'danang@boxcinema.vn', 'ACTIVE');
+-- Hanoi
+(1, 'BOX Cinema Lotte Mall West Lake', '4th Floor, Lotte Mall West Lake, 272 Vo Chi Cong, Tay Ho', 'Hanoi', '024 3788 8899', 'westlake@boxcinema.vn', 'ACTIVE'),
+(2, 'BOX Cinema Vincom Ba Trieu', '6th Floor, Vincom Center, 191 Ba Trieu, Hai Ba Trung', 'Hanoi', '024 3974 9999', 'batrieu@boxcinema.vn', 'ACTIVE'),
+(3, 'BOX Cinema Royal City', 'B2 Floor, Vincom Mega Mall Royal City, 72A Nguyen Trai, Thanh Xuan', 'Hanoi', '024 6262 0999', 'royalcity@boxcinema.vn', 'ACTIVE'),
+(4, 'BOX Cinema Mipec Long Bien', '5th Floor, Mipec Riverside, 2 Long Bien 2, Bo De', 'Hanoi', '024 3999 1234', 'longbien@boxcinema.vn', 'ACTIVE'),
+
+-- Ho Chi Minh City
+(5, 'BOX Cinema Landmark 81', 'B1 Floor, Vincom Landmark 81, 720A Dien Bien Phu, Binh Thanh', 'Ho Chi Minh City', '028 3822 8181', 'landmark81@boxcinema.vn', 'ACTIVE'),
+(6, 'BOX Cinema Vincom Center D1', '5th Floor, 72 Le Thanh Ton, Ben Nghe, District 1', 'Ho Chi Minh City', '028 3939 6868', 'vincom.d1@boxcinema.vn', 'ACTIVE'),
+(7, 'BOX Cinema Crescent Mall D7', '5th Floor, Crescent Mall, 101 Ton Dat Tien, Tan Phu, District 7', 'Ho Chi Minh City', '028 5413 7788', 'crescent@boxcinema.vn', 'ACTIVE'),
+(8, 'BOX Cinema Van Hanh Mall D10', '6th Floor, Van Hanh Mall, 11 Su Van Hanh, Ward 12, District 10', 'Ho Chi Minh City', '028 3862 5566', 'vanhanh@boxcinema.vn', 'ACTIVE'),
+
+-- Da Nang
+(9, 'BOX Cinema Vincom Plaza Da Nang', '4th Floor, Vincom Plaza, 910A Ngo Quyen, Son Tra', 'Da Nang', '0236 399 6688', 'danang@boxcinema.vn', 'ACTIVE'),
+
+-- Hai Phong
+(10, 'BOX Cinema Vincom Imperia', '4th Floor, Vincom Plaza Imperia, Thuong Ly, Hong Bang', 'Hai Phong', '0225 366 8899', 'haiphong@boxcinema.vn', 'ACTIVE'),
+
+-- Khanh Hoa (Nha Trang)
+(11, 'BOX Cinema Vincom Tran Phu', '3rd Floor, Vincom Plaza, 78-80 Tran Phu, Loc Tho', 'Khanh Hoa', '0258 352 8899', 'nhatrang@boxcinema.vn', 'ACTIVE'),
+
+-- Binh Duong
+(12, 'BOX Cinema Aeon Mall Binh Duong', '2nd Floor, Aeon Mall Canary, 1 Binh Duong Blvd, Thuan An', 'Binh Duong', '0274 376 5588', 'binhduong@boxcinema.vn', 'ACTIVE');
 
 -- -----------------------------------------------------------------------------
--- 4. SCREENING ROOMS (14 ROOMS ACROSS CINEMAS)
+-- 4. SCREENING ROOMS (28 ROOMS ACROSS ALL 12 CINEMAS)
 -- -----------------------------------------------------------------------------
 INSERT INTO ROOMS (room_id, cinema_id, room_name, room_type, status) VALUES
--- Cinema 1: Landmark 81
+-- 1. Hanoi: Lotte Mall West Lake
 (1, 1, 'Screen 01 - IMAX Laser', 'IMAX Laser', 'ACTIVE'),
 (2, 1, 'Screen 02 - Dolby Atmos', 'Dolby Atmos', 'ACTIVE'),
 (3, 1, 'Screen 03 - 4DX Motion', '4DX Motion', 'ACTIVE'),
-(4, 1, 'Screen 04 - Standard Luxe', 'Standard', 'ACTIVE'),
 
--- Cinema 2: Vincom D1
-(5, 2, 'Screen 01 - IMAX Laser', 'IMAX Laser', 'ACTIVE'),
-(6, 2, 'Screen 02 - Dolby Atmos', 'Dolby Atmos', 'ACTIVE'),
-(7, 2, 'Screen 03 - Standard Luxe', 'Standard', 'ACTIVE'),
+-- 2. Hanoi: Vincom Ba Trieu
+(4, 2, 'Screen 01 - Dolby Atmos', 'Dolby Atmos', 'ACTIVE'),
+(5, 2, 'Screen 02 - Standard Luxe', 'Standard', 'ACTIVE'),
 
--- Cinema 3: Lotte Mall West Lake
-(8, 3, 'Screen 01 - IMAX Laser', 'IMAX Laser', 'ACTIVE'),
-(9, 3, 'Screen 02 - Dolby Atmos', 'Dolby Atmos', 'ACTIVE'),
-(10, 3, 'Screen 03 - 4DX Motion', '4DX Motion', 'ACTIVE'),
+-- 3. Hanoi: Royal City
+(6, 3, 'Screen 01 - IMAX Laser', 'IMAX Laser', 'ACTIVE'),
+(7, 3, 'Screen 02 - 4DX Motion', '4DX Motion', 'ACTIVE'),
+(8, 3, 'Screen 03 - Standard Luxe', 'Standard', 'ACTIVE'),
 
--- Cinema 4: Vincom Ba Trieu
-(11, 4, 'Screen 01 - Dolby Atmos', 'Dolby Atmos', 'ACTIVE'),
-(12, 4, 'Screen 02 - Standard Luxe', 'Standard', 'ACTIVE'),
+-- 4. Hanoi: Mipec Long Bien
+(9, 4, 'Screen 01 - Dolby Atmos', 'Dolby Atmos', 'ACTIVE'),
+(10, 4, 'Screen 02 - Standard Luxe', 'Standard', 'ACTIVE'),
 
--- Cinema 5: Da Nang
-(13, 5, 'Screen 01 - IMAX Laser', 'IMAX Laser', 'ACTIVE'),
-(14, 5, 'Screen 02 - Dolby Atmos', 'Dolby Atmos', 'ACTIVE');
+-- 5. HCMC: Landmark 81
+(11, 5, 'Screen 01 - IMAX Laser', 'IMAX Laser', 'ACTIVE'),
+(12, 5, 'Screen 02 - Dolby Atmos', 'Dolby Atmos', 'ACTIVE'),
+(13, 5, 'Screen 03 - 4DX Motion', '4DX Motion', 'ACTIVE'),
+(14, 5, 'Screen 04 - Standard Luxe', 'Standard', 'ACTIVE'),
+
+-- 6. HCMC: Vincom D1
+(15, 6, 'Screen 01 - IMAX Laser', 'IMAX Laser', 'ACTIVE'),
+(16, 6, 'Screen 02 - Dolby Atmos', 'Dolby Atmos', 'ACTIVE'),
+(17, 6, 'Screen 03 - Standard Luxe', 'Standard', 'ACTIVE'),
+
+-- 7. HCMC: Crescent Mall D7
+(18, 7, 'Screen 01 - IMAX Laser', 'IMAX Laser', 'ACTIVE'),
+(19, 7, 'Screen 02 - Dolby Atmos', 'Dolby Atmos', 'ACTIVE'),
+
+-- 8. HCMC: Van Hanh Mall D10
+(20, 8, 'Screen 01 - 4DX Motion', '4DX Motion', 'ACTIVE'),
+(21, 8, 'Screen 02 - Standard Luxe', 'Standard', 'ACTIVE'),
+
+-- 9. Da Nang
+(22, 9, 'Screen 01 - IMAX Laser', 'IMAX Laser', 'ACTIVE'),
+(23, 9, 'Screen 02 - Dolby Atmos', 'Dolby Atmos', 'ACTIVE'),
+
+-- 10. Hai Phong
+(24, 10, 'Screen 01 - IMAX Laser', 'IMAX Laser', 'ACTIVE'),
+(25, 10, 'Screen 02 - Standard Luxe', 'Standard', 'ACTIVE'),
+
+-- 11. Khanh Hoa
+(26, 11, 'Screen 01 - Dolby Atmos', 'Dolby Atmos', 'ACTIVE'),
+(27, 11, 'Screen 02 - Standard Luxe', 'Standard', 'ACTIVE'),
+
+-- 12. Binh Duong
+(28, 12, 'Screen 01 - IMAX Laser', 'IMAX Laser', 'ACTIVE');
 
 -- -----------------------------------------------------------------------------
 -- 5. MOVIES (30 BLOCKBUSTERS IN ENGLISH)
@@ -454,7 +500,7 @@ CROSS JOIN (
     SELECT '22:15:00'
 ) t
 JOIN ROOMS r ON r.room_id = (
-    1 + ((m.movie_id * 3 + d.day_offset * 2 + TIME_TO_SEC(t.slot_time) / 3600) MOD 14)
+    1 + ((m.movie_id * 3 + d.day_offset * 2 + TIME_TO_SEC(t.slot_time) / 3600) MOD 28)
 )
 WHERE m.status = 'NOW_SHOWING'
   AND (m.movie_id + d.day_offset) % 2 = 0;

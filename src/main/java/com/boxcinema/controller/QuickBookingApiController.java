@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/quick-booking")
@@ -43,6 +44,18 @@ public class QuickBookingApiController {
             return ResponseEntity.ok(cinemaService.getCinemasShowingMovie(movieId));
         }
         return ResponseEntity.ok(cinemaService.getActiveCinemaDtos());
+    }
+
+    @GetMapping("/cinemas/grouped")
+    public ResponseEntity<Map<String, List<CinemaDto>>> getCinemasGrouped() {
+        Map<String, List<CinemaDto>> grouped = cinemaService.getActiveCinemaDtos().stream()
+                .collect(Collectors.groupingBy(CinemaDto::getCity, LinkedHashMap::new, Collectors.toList()));
+        return ResponseEntity.ok(grouped);
+    }
+
+    @GetMapping("/cinemas/movie-map")
+    public ResponseEntity<Map<Long, String>> getMovieCinemaMap() {
+        return ResponseEntity.ok(showtimeService.getMovieCinemaIdsMap());
     }
 
     @GetMapping("/dates")
@@ -78,6 +91,25 @@ public class QuickBookingApiController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
         return ResponseEntity.ok(showtimeService.getShowtimeOptions(movieId, cinemaId, date));
+    }
+
+    @GetMapping("/schedule")
+    public ResponseEntity<Map<String, Object>> getSchedule(
+            @RequestParam(required = false) Long cinemaId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        if (date == null) {
+            date = LocalDate.now();
+        }
+        List<com.boxcinema.dto.MovieShowtimeGroupDto> movieGroups = showtimeService.getMovieShowtimeGroups(cinemaId, date);
+        List<com.boxcinema.dto.DateTabDto> dateTabs = showtimeService.getDateTabs(date);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("cinemaId", cinemaId);
+        response.put("date", date.toString());
+        response.put("dateTabs", dateTabs);
+        response.put("movieGroups", movieGroups);
+        return ResponseEntity.ok(response);
     }
 }
 
