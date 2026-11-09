@@ -1,0 +1,730 @@
+/* =============================================================================
+   BOX CINEMA - SHOWTIMES BY CINEMA (LỊCH CHIẾU THEO RẠP - BETA CINEMA STYLE)
+   ============================================================================= */
+
+.showtimes-page {
+  background-color: #0c0d12;
+  color: #ffffff;
+  min-height: 100vh;
+}
+
+.showtimes-hero-bar {
+  position: relative;
+  padding-top: 7.25rem;
+  padding-bottom: 3.25rem;
+  background-color: #0c0d12;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.showtimes-hero-bar::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  background: url('/assets/img/cinema-auditorium-luxury.jpg') center 30% / cover no-repeat;
+  opacity: 0.35;
+  filter: brightness(0.7) saturate(1.25) contrast(1.1);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.showtimes-hero-bar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(ellipse at 50% 50%, rgba(12, 13, 18, 0.45) 0%, rgba(12, 13, 18, 0.9) 85%),
+    linear-gradient(180deg, #0c0d12 0%, rgba(12, 13, 18, 0.3) 40%, rgba(12, 13, 18, 0.96) 100%),
+    radial-gradient(ellipse at 15% 45%, rgba(229, 9, 20, 0.22) 0%, transparent 55%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.showtimes-hero-bar .cinema-container {
+  position: relative;
+  z-index: 2;
+}
+
+.showtimes-header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.showtimes-page-title {
+  font-size: 1.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #ffffff;
+  letter-spacing: 0.05em;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.95);
+}
+
+.showtimes-page-title::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 26px;
+  background: var(--cinema-red, #e50914);
+  border-radius: 3px;
+  box-shadow: 0 0 12px rgba(229, 9, 20, 0.8);
+}
+
+.showtimes-hero-bar p.text-secondary {
+  color: #cbd5e1 !important;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.9);
+  font-weight: 500;
+  font-size: 0.92rem;
+}
+
+/* Cinema branch switcher on page */
+.showtimes-cinema-switch {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(18, 20, 27, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  padding: 0.55rem 1.15rem;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6), 0 0 18px rgba(229, 9, 20, 0.12);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.showtimes-cinema-switch:focus-within {
+  border-color: #e50914;
+  box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.25), 0 8px 24px rgba(0, 0, 0, 0.7);
+}
+
+.switch-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #9ba1b0;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.switch-select {
+  background: #1a1b23;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 0.4rem 1.8rem 0.4rem 0.75rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  background-size: 13px;
+  transition: border-color 0.2s ease;
+}
+
+.switch-select:focus {
+  border-color: #e50914;
+}
+
+/* =============================================================================
+   DATE TABS SELECTOR (MATCHING IMAGE 1 & 2)
+   ============================================================================= */
+.showtime-date-nav-wrapper {
+  background: #101117;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+  position: sticky;
+  top: 60px;
+  z-index: 99;
+}
+
+.showtime-date-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 0.5rem 0 0;
+}
+
+.showtime-date-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.showtime-date-tab {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.75rem 1.4rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.showtime-date-tab:hover {
+  color: #ffffff;
+}
+
+.date-tab-day {
+  font-size: 1.85rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.date-tab-sub {
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* Active tab style: ALL elements red on active date (number, month, day, border) */
+.showtime-date-tab.active,
+.showtime-date-tab.active:hover {
+  color: #e50914;
+  border-bottom-color: #e50914;
+}
+
+.showtime-date-tab.active .date-tab-day,
+.showtime-date-tab.active .date-tab-sub,
+.showtime-date-tab.active:hover .date-tab-day,
+.showtime-date-tab.active:hover .date-tab-sub {
+  color: #e50914;
+}
+
+/* Legend bar */
+.showtime-legend-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 1rem 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.legend-swatch {
+  width: 20px;
+  height: 14px;
+  background: rgba(229, 9, 20, 0.25);
+  border: 1px solid #e50914;
+  border-radius: 4px;
+  display: inline-block;
+  box-shadow: 0 0 8px rgba(229, 9, 20, 0.35);
+}
+
+.legend-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+/* =============================================================================
+   2-COLUMN MOVIE SHOWTIME GRID (MATCHING IMAGE 1 & 2)
+   ============================================================================= */
+.showtimes-container {
+  padding-top: 1.5rem;
+  padding-bottom: 4rem;
+}
+
+.showtime-movies-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2.25rem 2rem;
+}
+
+@media (max-width: 992px) {
+  .showtime-movies-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+.showtime-movie-card {
+  display: flex;
+  gap: 1.35rem;
+  background: #14151b;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 1.25rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.showtime-movie-card:hover {
+  border-color: rgba(229, 9, 20, 0.4);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.8), 0 0 20px rgba(229, 9, 20, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Poster Column with Play button on hover */
+.showtime-poster-col {
+  flex: 0 0 170px;
+  width: 170px;
+  height: 250px;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  background-color: #1a1d2c;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+}
+
+.showtime-poster-col img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.showtime-movie-card:hover .showtime-poster-col img {
+  transform: scale(1.05);
+}
+
+/* Age badge pinned at top-left */
+.showtime-age-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  border-radius: 6px;
+  text-transform: uppercase;
+  z-index: 2;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6);
+}
+
+.badge-age-p { background: #10b981; color: #fff; }
+.badge-age-t13 { background: #3b82f6; color: #fff; }
+.badge-age-t16 { background: #f59e0b; color: #fff; }
+.badge-age-t18 { background: #ef4444; color: #fff; }
+
+/* Poster Trailer Hover Play Button (Matching Image 2) */
+.poster-trailer-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.22s ease, visibility 0.22s ease;
+  z-index: 3;
+  cursor: pointer;
+  border: none;
+}
+
+.showtime-poster-col:hover .poster-trailer-overlay {
+  opacity: 1;
+  visibility: visible;
+}
+
+.trailer-play-icon {
+  width: 48px;
+  height: 48px;
+  background: #e50914;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 18px rgba(229, 9, 20, 0.5);
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.trailer-play-icon svg {
+  fill: #ffffff;
+  margin-left: 3px;
+}
+
+.poster-trailer-overlay:hover .trailer-play-icon {
+  transform: scale(1.12);
+  background: #ff1e27;
+  box-shadow: 0 8px 24px rgba(229, 9, 20, 0.7);
+}
+
+/* Details Column */
+.showtime-details-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.showtime-movie-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 0.45rem 0;
+  line-height: 1.35;
+  transition: color 0.18s ease;
+}
+
+.showtime-movie-title:hover {
+  color: #e50914;
+}
+
+/* Meta line: Tag and Clock icons */
+.showtime-movie-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin-bottom: 0.85rem;
+}
+
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.meta-item svg {
+  width: 14px;
+  height: 14px;
+  stroke: #94a3b8;
+}
+
+/* Format subtitle: 2D PHỤ ĐỀ */
+.showtime-format-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #e2e8f0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0.4rem 0 0.55rem 0;
+}
+
+/* Showtime Slots Wrap */
+.showtime-slots-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+/* Showtime Pill Button */
+.showtime-slot-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.85rem;
+  background: #1a1b24;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  min-width: 78px;
+  text-decoration: none;
+}
+
+.showtime-slot-btn:hover {
+  background: #232534;
+  border-color: #e50914;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(229, 9, 20, 0.35);
+}
+
+.slot-time {
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #ffffff;
+}
+
+.slot-seats {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #9ba1b0;
+  margin-top: 0.25rem;
+  white-space: nowrap;
+  transition: color 0.18s ease;
+}
+
+.showtime-slot-btn:hover .slot-seats {
+  color: #ffffff;
+}
+
+/* Late Showtime (Suất chiếu muộn >= 22:00) in Red-Black palette */
+.showtime-slot-btn.slot-late {
+  background: rgba(229, 9, 20, 0.22);
+  border: 1px solid rgba(229, 9, 20, 0.65);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(229, 9, 20, 0.25);
+}
+
+.showtime-slot-btn.slot-late .slot-time {
+  color: #ffffff;
+}
+
+.showtime-slot-btn.slot-late .slot-date-sub {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #ff858d;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+.showtime-slot-btn.slot-late .slot-seats {
+  color: #fca5a5;
+  font-weight: 600;
+}
+
+.showtime-slot-btn.slot-late:hover {
+  background: linear-gradient(135deg, #e50914 0%, #b20710 100%);
+  border-color: #ff3340;
+  box-shadow: 0 6px 20px rgba(229, 9, 20, 0.55);
+  color: #ffffff;
+  transform: translateY(-2px);
+}
+
+.showtime-slot-btn.slot-late:hover .slot-date-sub {
+  color: #ffe4e6;
+}
+
+.showtime-slot-btn.slot-late:hover .slot-seats {
+  color: #ffffff;
+}
+
+/* Empty State */
+.showtimes-empty-state {
+  text-align: center;
+  padding: 4rem 1.5rem;
+  background: #14151b;
+  border-radius: 12px;
+  border: 1px dashed rgba(229, 9, 20, 0.35);
+  margin-top: 1.5rem;
+}
+
+.showtimes-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.4;
+}
+
+.showtimes-empty-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.showtimes-empty-desc {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  margin-bottom: 0;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+  .showtime-movie-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .showtime-poster-col {
+    width: 150px;
+    height: 220px;
+  }
+
+  .showtime-movie-meta {
+    justify-content: center;
+  }
+
+  .showtime-slots-wrap {
+    justify-content: center;
+  }
+}
+
+/* =============================================================================
+   BOOKING CONFIRMATION MODAL (SYNCHRONIZED WITH BOX CINEMA DARK RED DESIGN)
+   ============================================================================= */
+.booking-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1070;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.25s ease;
+}
+
+.booking-confirm-backdrop.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.booking-confirm-modal {
+  position: relative;
+  width: 100%;
+  max-width: 540px;
+  background: #14151b;
+  color: #ffffff;
+  border: 1px solid rgba(229, 9, 20, 0.3);
+  border-radius: 14px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.95), 0 0 35px rgba(229, 9, 20, 0.2);
+  padding: 1.85rem 2.25rem 1.85rem;
+  transform: scale(0.92) translateY(12px);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.booking-confirm-backdrop.show .booking-confirm-modal {
+  transform: scale(1) translateY(0);
+}
+
+.booking-confirm-close {
+  position: absolute;
+  top: 1rem;
+  right: 1.25rem;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.booking-confirm-close:hover {
+  color: #ffffff;
+  transform: scale(1.15);
+}
+
+.booking-confirm-header {
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.85rem;
+}
+
+.booking-confirm-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #ffffff;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.booking-confirm-body {
+  padding-top: 1.5rem;
+  text-align: center;
+}
+
+.confirm-movie-name {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 1.75rem;
+  line-height: 1.3;
+}
+
+/* 3-Column Table */
+.confirm-details-table {
+  width: 100%;
+  margin-bottom: 1.75rem;
+}
+
+.confirm-details-header {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.confirm-details-row {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  padding: 1rem 0.5rem;
+  background: #1a1b24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  text-align: center;
+  align-items: center;
+  margin-top: 0.65rem;
+}
+
+.confirm-details-row .col-cinema {
+  font-weight: 600;
+  padding: 0 0.5rem;
+  word-break: break-word;
+}
+
+.confirm-details-row .col-time {
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.btn-confirm-agree {
+  background: linear-gradient(135deg, #e50914 0%, #b20710 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 3.25rem;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(229, 9, 20, 0.4);
+  transition: all 0.2s ease;
+}
+
+.btn-confirm-agree:hover {
+  background: linear-gradient(135deg, #f0141f 0%, #c40812 100%);
+  box-shadow: 0 6px 20px rgba(229, 9, 20, 0.6);
+  transform: translateY(-1px);
+}
+
+.confirm-notice-text {
+  font-size: 0.78rem;
+  color: #64748b;
+  font-style: italic;
+  margin-top: 1rem;
+}
+

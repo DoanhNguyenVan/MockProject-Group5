@@ -32,6 +32,9 @@ public class HomeControllerTest {
     private CinemaService cinemaService;
 
     @MockBean
+    private com.boxcinema.service.ShowtimeService showtimeService;
+
+    @MockBean
     private com.boxcinema.repository.GenreRepository genreRepository;
 
     private Movie sampleMovie;

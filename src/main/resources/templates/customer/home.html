@@ -10,8 +10,124 @@
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
     rel="stylesheet"
   >
-  <link rel="stylesheet" href="/css/main.css" th:href="@{/css/main.css}">
-  <link rel="stylesheet" href="/css/home.css" th:href="@{/css/home.css}">
+  <link rel="stylesheet" href="/css/main.css?v=20261109b" th:href="@{/css/main.css(v='20261109b')}">
+  <link rel="stylesheet" href="/css/home.css?v=20261109b" th:href="@{/css/home.css(v='20261109b')}">
+  <style>
+    /* Critical 3D CoverFlow CSS - Prevents unstyled vertical stacking */
+    .hero-hot-col {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      overflow: visible;
+    }
+    .hero-coverflow-wrapper {
+      position: relative;
+      width: 100%;
+      height: 340px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      perspective: 1200px;
+      perspective-origin: 50% 48%;
+      overflow: visible;
+      user-select: none;
+      touch-action: pan-y;
+      pointer-events: none;
+    }
+    .hero-coverflow-stage {
+      position: relative;
+      width: 100%;
+      height: 290px;
+      transform-style: preserve-3d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .coverflow-card,
+    .hot-mini-card {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 160px;
+      transform: translate(-50%, -50%);
+      transform-origin: center center;
+      transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), 
+                  opacity 0.45s ease, 
+                  filter 0.45s ease, 
+                  box-shadow 0.45s ease;
+      will-change: transform, opacity;
+      cursor: pointer;
+      user-select: none;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .coverflow-thumb,
+    .hot-thumb-container {
+      position: relative;
+      width: 160px;
+      height: 240px;
+      aspect-ratio: 2 / 3;
+      border-radius: 12px;
+      overflow: hidden;
+      background-color: #14151b;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.75), 0 4px 10px rgba(0, 0, 0, 0.5);
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      transition: border-color 0.35s ease, box-shadow 0.35s ease, transform 0.35s ease;
+      transform-style: preserve-3d;
+      -webkit-box-reflect: below 8px linear-gradient(to bottom, transparent 65%, rgba(0, 0, 0, 0.35) 100%);
+    }
+    .coverflow-thumb img,
+    .hot-thumb-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .coverflow-card.active .coverflow-thumb,
+    .coverflow-card.active .hot-thumb-container {
+      border-color: rgba(236, 28, 36, 0.95);
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.9), 
+                  0 0 35px rgba(236, 28, 36, 0.5), 
+                  0 0 10px rgba(255, 255, 255, 0.2);
+    }
+    .coverflow-title,
+    .hot-mini-title {
+      display: none !important;
+    }
+    /* Flanking clickable cards (up to ~2 on each side of center) */
+    .coverflow-card[data-clickable="true"] {
+      cursor: pointer !important;
+    }
+    .coverflow-card[data-clickable="true"]:not(.active):hover .coverflow-thumb {
+      border-color: rgba(255, 255, 255, 0.65) !important;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.85), 0 0 25px rgba(236, 28, 36, 0.4) !important;
+      transform: scale(1.05);
+    }
+    .coverflow-card[data-clickable="true"]:not(.active):hover {
+      filter: brightness(1.15) contrast(1.02) !important;
+      opacity: 0.98 !important;
+      z-index: 25 !important;
+    }
+    .coverflow-card:not([data-clickable="true"]) {
+      cursor: default !important;
+      pointer-events: none !important;
+    }
+    .coverflow-pagination {
+      pointer-events: auto !important;
+    }
+    @media (max-width: 768px) {
+      .hero-coverflow-wrapper { height: 260px; }
+      .hero-coverflow-stage { height: 220px; }
+      .coverflow-card, .hot-mini-card { width: 105px; }
+      .coverflow-thumb, .hot-thumb-container { width: 105px; height: 158px; border-radius: 8px; }
+    }
+  </style>
 </head>
 <body class="cinema-home">
   <!-- Top Navigation Bar -->
@@ -76,34 +192,123 @@
             </th:block>
           </div>
 
-          <!-- Right Column: Top Movies (Nửa còn lại) -->
+          <!-- Right Column: Top Movies (3D CoverFlow Perspective Carousel) -->
           <div class="hero-hot-col" th:if="${spotlightMovies != null and !spotlightMovies.isEmpty()}">
-            <div class="hot-bar-header">
-              <span class="badge-hot-tag">🔥 HOT</span>
-              <h2 class="hot-bar-title">TOP MOVIES THIS MONTH</h2>
-            </div>
-
-            <div class="hot-rail-scroll" id="hotRail">
-              <div th:each="movie, iter : ${spotlightMovies}"
-                   class="hot-mini-card"
-                   th:classappend="${iter.index == 0 ? 'active' : ''}"
-                   th:data-movie-id="${movie.movieId}"
-                   th:data-title="${movie.title}"
-                   th:data-synopsis="${movie.synopsis}"
-                   th:data-age="${movie.ageRating}"
-                   th:data-duration="${movie.durationMinutes + ' mins'}"
-                   th:data-genres="${movie.genreNamesDisplay}"
-                   th:data-lang="${movie.language}"
-                   th:data-banner="${movie.bannerUrl != null and !#strings.isEmpty(movie.bannerUrl) ? movie.bannerUrl : movie.posterUrl}"
-                   th:data-trailer="${movie.trailerUrl}">
-                <div class="hot-thumb-container">
-                  <!-- Golden Rank Badge 1, 2, 3, 4, 5, 6, 7 (Image 1 Style) -->
-                  <span class="hot-rank-badge" th:text="${iter.count}">1</span>
-                  <img th:src="${movie.posterUrl}" th:alt="${movie.title}" loading="lazy" onerror="this.style.display='none'">
+            <div class="hero-coverflow-wrapper" id="heroCoverflowWrapper">
+              <div class="hero-coverflow-stage" id="heroCoverflowStage">
+                <div th:each="movie, iter : ${spotlightMovies}"
+                     class="coverflow-card hot-mini-card"
+                     th:classappend="${iter.index == 0 ? 'active' : ''}"
+                     th:data-index="${iter.index}"
+                     th:data-clickable="${iter.index <= 2 || iter.index >= spotlightMovies.size() - 2 ? 'true' : 'false'}"
+                     onclick="if(window.coverflowGoToSlide){window.coverflowGoToSlide(this.dataset.index);}"
+                     th:data-movie-id="${movie.movieId}"
+                     th:data-title="${movie.title}"
+                     th:data-synopsis="${movie.synopsis}"
+                     th:data-age="${movie.ageRating}"
+                     th:data-duration="${movie.durationMinutes + ' mins'}"
+                     th:data-genres="${movie.genreNamesDisplay}"
+                     th:data-lang="${movie.language}"
+                     th:data-banner="${movie.bannerUrl != null and !#strings.isEmpty(movie.bannerUrl) ? movie.bannerUrl : movie.posterUrl}"
+                     th:data-trailer="${movie.trailerUrl}">
+                  <div class="coverflow-thumb hot-thumb-container">
+                    <!-- Rank Badge 1, 2, 3... -->
+                    <span class="coverflow-rank hot-rank-badge" th:text="${iter.count}">1</span>
+                    <img th:src="${movie.posterUrl}" th:alt="${movie.title}" loading="lazy" onerror="this.style.display='none'">
+                    <div class="coverflow-glass-glare"></div>
+                  </div>
+                  <p class="coverflow-title hot-mini-title" th:text="${movie.title}">Movie Title</p>
                 </div>
-                <p class="hot-mini-title" th:text="${movie.title}">Movie Title</p>
+              </div>
+
+              <!-- Pagination Dots Indicator -->
+              <div class="coverflow-pagination" id="coverflowPagination" aria-label="Slide indicators">
+                <button th:each="movie, iter : ${spotlightMovies}"
+                        type="button"
+                        class="coverflow-dot"
+                        th:classappend="${iter.index == 0 ? 'active' : ''}"
+                        th:data-index="${iter.index}"
+                        th:aria-label="${'Phim ' + iter.count}"></button>
               </div>
             </div>
+
+            <!-- Inline Instant Layout Script - 0ms Render Guaranteed -->
+            <script>
+              (function() {
+                try {
+                  var cards = document.querySelectorAll('.coverflow-card, .hot-mini-card');
+                  var stage = document.getElementById('heroCoverflowStage');
+                  if (!cards.length) return;
+                  var isMobile = window.innerWidth <= 768;
+                  var isTablet = window.innerWidth > 768 && window.innerWidth <= 1024;
+                  var baseSpacing = isMobile ? 75 : (isTablet ? 110 : 140);
+                  var activeScale = isMobile ? 1.05 : 1.06;
+
+                  function renderLayout(activeIndex) {
+                    cards.forEach(function(card, idx) {
+                      var diff = idx - activeIndex;
+                      if (diff > cards.length / 2) diff -= cards.length;
+                      if (diff < -cards.length / 2) diff += cards.length;
+                      var absDiff = Math.abs(diff);
+
+                      card.classList.toggle('active', absDiff === 0);
+
+                      if (absDiff === 0) {
+                        card.style.transform = 'translate(-50%, -50%) translateX(0px) translateZ(' + (isMobile ? 35 : 60) + 'px) scale(' + activeScale + ')';
+                        card.style.opacity = '1';
+                        card.style.zIndex = '30';
+                        card.style.pointerEvents = 'auto';
+                        card.setAttribute('data-clickable', 'true');
+                      } else if (absDiff === 1) {
+                        var dir = Math.sign(diff);
+                        card.style.transform = 'translate(-50%, -50%) translateX(' + (dir * baseSpacing) + 'px) translateZ(' + (isMobile ? 15 : 30) + 'px) rotateY(' + (-dir * 12) + 'deg) scale(0.95)';
+                        card.style.opacity = '0.82';
+                        card.style.zIndex = '20';
+                        card.style.pointerEvents = 'auto';
+                        card.setAttribute('data-clickable', 'true');
+                      } else if (absDiff === 2) {
+                        var dir = Math.sign(diff);
+                        card.style.transform = 'translate(-50%, -50%) translateX(' + (dir * baseSpacing * 1.8) + 'px) translateZ(' + (isMobile ? 5 : 10) + 'px) rotateY(' + (-dir * 20) + 'deg) scale(0.85)';
+                        card.style.opacity = isMobile ? '0.25' : '0.50';
+                        card.style.zIndex = '10';
+                        card.style.pointerEvents = 'auto';
+                        card.setAttribute('data-clickable', 'true');
+                      } else {
+                        card.style.transform = 'translate(-50%, -50%) scale(0.6) translateZ(0px)';
+                        card.style.opacity = '0';
+                        card.style.pointerEvents = 'none';
+                        card.removeAttribute('data-clickable');
+                        card.style.zIndex = '1';
+                      }
+                    });
+                  }
+
+                  window.coverflowGoToSlide = function(index) {
+                    var idx = parseInt(index, 10);
+                    if (isNaN(idx)) return;
+                    if (window._navbarGoToSlide) {
+                      window._navbarGoToSlide(idx);
+                    } else {
+                      renderLayout(idx);
+                    }
+                  };
+
+                  renderLayout(0);
+
+                  if (stage) {
+                    stage.addEventListener('click', function(e) {
+                      var targetCard = e.target.closest('.coverflow-card, .hot-mini-card');
+                      if (!targetCard) return;
+                      var idx = targetCard.dataset.index;
+                      if (typeof idx !== 'undefined' && window.coverflowGoToSlide) {
+                        e.preventDefault();
+                        window.coverflowGoToSlide(idx);
+                      }
+                    });
+                  }
+                } catch(e) {}
+              })();
+            </script>
           </div>
         </div>
       </div>
@@ -205,7 +410,8 @@
                  th:data-genres="${movie.genreNamesDisplay}"
                  th:data-age="${movie.ageRating}"
                  th:data-release="${movie.releaseDate}"
-                 th:data-duration="${movie.durationMinutes}">
+                 th:data-duration="${movie.durationMinutes}"
+                 th:data-cinemas="${movie.status == 'COMING_SOON' ? 'all' : (movieCinemaIdsMap != null and movieCinemaIdsMap[movie.movieId] != null ? movieCinemaIdsMap[movie.movieId] : '')}">
               <!-- Poster Card Frame -->
               <div class="catalog-poster-frame">
                 <span class="card-badge-age"
@@ -366,9 +572,61 @@
     </div>
   </div>
 
+  <!-- =======================================================================
+       6. WELCOME CINEMA SELECTION MODAL (BETA CINEMA ONBOARDING POPUP)
+       ======================================================================= -->
+  <div class="welcome-cinema-backdrop" id="welcomeCinemaModal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="welcome-cinema-modal">
+      <button type="button" class="welcome-modal-close" id="welcomeModalClose" aria-label="Đóng cửa sổ">×</button>
+      
+      <div class="welcome-modal-header">
+        <h3 class="welcome-modal-title">CHỌN CƠ SỞ RẠP CHIẾU</h3>
+        <p class="welcome-modal-subtitle">Vui lòng chọn khu vực và cụm rạp để cập nhật lịch chiếu và giá vé chính xác nhất</p>
+      </div>
+
+      <div class="welcome-modal-body">
+        <div class="welcome-fields-row">
+          <div class="welcome-field-col">
+            <label for="welcomeCitySelect" class="welcome-label">Tỉnh / Thành phố</label>
+            <div class="welcome-select-wrapper">
+              <select id="welcomeCitySelect" class="welcome-select">
+                <option value="">-- Chọn Tỉnh / Thành phố --</option>
+                <option th:each="entry : ${cinemasByCity}" th:value="${entry.key}" th:text="${entry.key}">Hà Nội</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="welcome-field-col">
+            <label for="welcomeCinemaSelect" class="welcome-label">Tên rạp</label>
+            <div class="welcome-select-wrapper">
+              <select id="welcomeCinemaSelect" class="welcome-select" disabled>
+                <option value="">-- Chọn rạp --</option>
+                <th:block th:each="entry : ${cinemasByCity}">
+                  <option th:each="c : ${entry.value}"
+                          th:value="${c.cinemaId}"
+                          th:data-city="${entry.key}"
+                          th:text="${c.cinemaName}">Tên rạp</option>
+                </th:block>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="welcome-actions">
+          <button type="button" class="btn-welcome-confirm" id="btnWelcomeConfirm" disabled>
+            Xác Nhận &amp; Khám Phá Phim
+          </button>
+          <button type="button" class="btn-welcome-skip" id="btnWelcomeSkip">
+            Bỏ qua, xem tất cả rạp
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Shared Footer -->
   <footer th:replace="~{fragments/footer :: footer}"></footer>
 
-  <script type="module" src="/js/modules/navbar.js" th:src="@{/js/modules/navbar.js}"></script>
+  <script type="module" src="/js/modules/navbar.js?v=20261109b" th:src="@{/js/modules/navbar.js(v='20261109b')}"></script>
 </body>
 </html>

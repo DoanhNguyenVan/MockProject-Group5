@@ -7,6 +7,9 @@ export function resolveActiveRoute(pathname = "/") {
   if (cleanPath === "/" || cleanPath === "/home" || cleanPath.endsWith("home.html")) {
     return "home";
   }
+  if (cleanPath.startsWith("/showtimes") || cleanPath.endsWith("showtimes.html")) {
+    return "showtimes";
+  }
   if (cleanPath.startsWith("/about") || cleanPath.endsWith("about.html")) {
     return "about";
   }
@@ -87,6 +90,9 @@ export function initNavbar(doc = document, currentPath = window.location.pathnam
 
   // Expanding Search Bar Interactions
   initNavSearch(doc, navEl);
+
+  // Cinema Branch Selector (Beta Cinema Style Cascading Flyout Menu)
+  initCinemaSelector(doc);
 
   return activeKey;
 }
@@ -181,6 +187,62 @@ function initNavSearch(doc, navEl) {
 }
 
 /**
+ * Cinema Branch Selector in Navbar (Matching Showtimes select style with City optgroups)
+ */
+export function initCinemaSelector(doc = document) {
+  const select = doc.getElementById("navCinemaSelect");
+  if (!select) return;
+
+  // 1. Restore saved selection from localStorage
+  try {
+    const savedId = localStorage.getItem("box_cinema_selected_branch_id");
+    if (savedId) {
+      select.value = String(savedId);
+      if (savedId !== "all") {
+        const selectedOpt = select.options[select.selectedIndex];
+        const savedName = selectedOpt ? selectedOpt.text : localStorage.getItem("box_cinema_selected_branch_name");
+        setTimeout(() => {
+          doc.dispatchEvent(new CustomEvent("box:cinema-selected", {
+            detail: { cinemaId: savedId, cinemaName: savedName, initial: true }
+          }));
+        }, 50);
+      }
+    }
+  } catch (_) {}
+
+  // 2. Select change event
+  select.addEventListener("change", () => {
+    const cinemaId = select.value;
+    const cinemaName = select.options[select.selectedIndex]?.text || "All Cinemas";
+
+    try {
+      localStorage.setItem("box_cinema_selected_branch_id", cinemaId);
+      if (cinemaId !== "all") {
+        localStorage.setItem("box_cinema_selected_branch_name", cinemaName);
+      } else {
+        localStorage.removeItem("box_cinema_selected_branch_name");
+      }
+    } catch (_) {}
+
+    // Dispatch custom event for catalog manager and quick booking
+    doc.dispatchEvent(new CustomEvent("box:cinema-selected", {
+      detail: { cinemaId, cinemaName }
+    }));
+
+    // Remove focus immediately so no browser outline/glow remains
+    select.blur();
+  });
+
+  // 3. Sync when cinema is selected externally (e.g. from welcome popup modal or showtimes page)
+  doc.addEventListener("box:cinema-selected", (e) => {
+    const cId = e.detail?.cinemaId;
+    if (cId && select.value !== String(cId)) {
+      select.value = String(cId);
+    }
+  });
+}
+
+/**
  * Hero Spotlight Slider: Prev/Next Slide Navigation & Auto-play (Cinemê style)
  */
 function initHeroRail(doc) {
@@ -194,8 +256,10 @@ function initHeroRail(doc) {
   const heroLang = doc.getElementById("heroLang");
   const heroBuyBtn = doc.getElementById("heroBuyBtn");
   const heroTrailerBtn = doc.getElementById("heroTrailerBtn");
-  const hotCards = doc.querySelectorAll(".hot-mini-card");
-  const rail = doc.getElementById("hotRail");
+  const hotCards = doc.querySelectorAll(".coverflow-card, .hot-mini-card");
+  const stage = doc.getElementById("heroCoverflowStage");
+  const wrapper = doc.getElementById("heroCoverflowWrapper") || doc.getElementById("hotRail");
+  const paginationDots = doc.querySelectorAll(".coverflow-dot");
   const prevBtn = doc.getElementById("heroSlidePrev");
   const nextBtn = doc.getElementById("heroSlideNext");
 
@@ -203,7 +267,115 @@ function initHeroRail(doc) {
 
   let currentIndex = 0;
   let autoTimer = null;
-  const AUTO_INTERVAL = 4000;
+  const AUTO_INTERVAL = 4500;
+
+  function updateCoverflowLayout(activeIndex) {
+    const n = hotCards.length;
+    if (n === 0) return;
+
+    const width = window.innerWidth;
+    const isMobile = width <= 768;
+    const isTablet = width > 768 && width <= 1024;
+
+    // Spacing and subtle perspective scaling (harmonious & refined balance)
+    const baseSpacing = isMobile ? 75 : (isTablet ? 110 : 140);
+    const baseScale = isMobile ? 0.95 : 0.97;
+    const activeScale = isMobile ? 1.05 : 1.06;
+
+    hotCards.forEach((card, idx) => {
+      // Shortest circular offset
+      let diff = idx - activeIndex;
+      if (diff > n / 2) diff -= n;
+      if (diff < -n / 2) diff += n;
+
+      const absDiff = Math.abs(diff);
+      const isActive = (diff === 0);
+
+      card.classList.toggle("active", isActive);
+
+      let translateX = 0;
+      let translateZ = 0;
+      let rotateY = 0;
+      let scale = 1;
+      let opacity = 1;
+      let zIndex = 1;
+      let pointerEvents = "auto";
+      let filter = "none";
+
+      if (isActive) {
+        // Center Active Card (Refined, subtle elegance, not oversized)
+        translateX = 0;
+        translateZ = isMobile ? 35 : 60;
+        rotateY = 0;
+        scale = activeScale;
+        opacity = 1;
+        zIndex = 30;
+        filter = "drop-shadow(0 12px 25px rgba(0,0,0,0.8))";
+      } else if (absDiff === 1) {
+        // Immediate Flanking Cards (Gentle size step-down, highly cohesive)
+        const dir = Math.sign(diff);
+        translateX = dir * baseSpacing;
+        translateZ = isMobile ? 15 : 30;
+        rotateY = -dir * (isMobile ? 10 : 12);
+        scale = baseScale * 0.98;
+        opacity = 0.82;
+        zIndex = 20;
+        filter = "brightness(0.82) contrast(0.96)";
+      } else if (absDiff === 2) {
+        // Secondary Flanking Cards (Still clickable within ~2 cards range)
+        const dir = Math.sign(diff);
+        translateX = dir * (baseSpacing * 1.8);
+        translateZ = isMobile ? 5 : 10;
+        rotateY = -dir * (isMobile ? 16 : 20);
+        scale = baseScale * 0.88;
+        opacity = isMobile ? 0.25 : 0.50;
+        zIndex = 10;
+        filter = "brightness(0.65)";
+      } else if (absDiff === 3) {
+        // Tertiary Cards (visible on wider screens, background only)
+        const dir = Math.sign(diff);
+        translateX = dir * (baseSpacing * 2.45);
+        translateZ = 0;
+        rotateY = -dir * (isMobile ? 20 : 26);
+        scale = baseScale * 0.76;
+        opacity = isMobile ? 0 : 0.22;
+        zIndex = 5;
+        filter = "brightness(0.45)";
+        pointerEvents = "none";
+      } else {
+        // Far off / wrap-around cards
+        const dir = Math.sign(diff) || 1;
+        translateX = dir * (baseSpacing * 3.0);
+        translateZ = 0;
+        scale = 0.6;
+        opacity = 0;
+        zIndex = 1;
+        pointerEvents = "none";
+      }
+
+      // Explicitly enable clicking & hover only for center + ~2 movies on each side
+      if (absDiff <= 2) {
+        pointerEvents = "auto";
+        card.setAttribute("data-clickable", "true");
+        card.style.cursor = "pointer";
+      } else {
+        pointerEvents = "none";
+        card.removeAttribute("data-clickable");
+        card.style.cursor = "default";
+      }
+
+      card.style.transform = `translate(-50%, -50%) translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`;
+      card.style.opacity = opacity;
+      card.style.zIndex = zIndex;
+      card.style.pointerEvents = pointerEvents;
+      card.style.filter = filter;
+    });
+
+    // Update Pagination Dots
+    paginationDots.forEach((dot, idx) => {
+      dot.classList.toggle("active", idx === activeIndex);
+    });
+  }
 
   function updateHeroDisplay(card) {
     if (!card) return;
@@ -218,7 +390,12 @@ function initHeroRail(doc) {
     const movieId = card.dataset.movieId;
 
     if (heroBackdrop && banner) {
-      heroBackdrop.style.backgroundImage = `url(${banner})`;
+      heroBackdrop.style.transition = "opacity 0.25s ease";
+      heroBackdrop.style.opacity = "0.55";
+      setTimeout(() => {
+        heroBackdrop.style.backgroundImage = `url(${banner})`;
+        heroBackdrop.style.opacity = "1";
+      }, 150);
     }
     if (heroTitle) heroTitle.textContent = title;
     if (heroSynopsis) heroSynopsis.textContent = synopsis;
@@ -251,32 +428,26 @@ function initHeroRail(doc) {
   }
 
   function goToSlide(index) {
-    if (index >= hotCards.length) {
+    const total = hotCards.length;
+    if (index >= total) {
       currentIndex = 0;
     } else if (index < 0) {
-      currentIndex = hotCards.length - 1;
+      currentIndex = total - 1;
     } else {
       currentIndex = index;
     }
 
-    hotCards.forEach((c, idx) => {
-      c.classList.toggle("active", idx === currentIndex);
-    });
-
     const activeCard = hotCards[currentIndex];
     updateHeroDisplay(activeCard);
-
-    // Smooth scroll the rail so active card is centered
-    if (rail && activeCard) {
-      const cardLeft = activeCard.offsetLeft;
-      const cardWidth = activeCard.offsetWidth;
-      const railWidth = rail.offsetWidth;
-      rail.scrollTo({
-        left: cardLeft - (railWidth / 2) + (cardWidth / 2),
-        behavior: "smooth"
-      });
-    }
+    updateCoverflowLayout(currentIndex);
   }
+
+  // Expose to window so inline click handlers & event delegation can invoke it seamlessly
+  window._navbarGoToSlide = goToSlide;
+  window.coverflowGoToSlide = (idx) => {
+    goToSlide(parseInt(idx, 10));
+    restartAutoPlay();
+  };
 
   function startAutoPlay() {
     stopAutoPlay();
@@ -314,64 +485,95 @@ function initHeroRail(doc) {
     });
   }
 
-  // Touch swipe gestures for mobile phones & iPad / tablets
-  if (heroSpotlight) {
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let touchEndX = 0;
-    let touchEndY = 0;
-
-    heroSpotlight.addEventListener("touchstart", (e) => {
-      // Allow independent horizontal scrolling inside the hot movies rail
-      if (e.target && e.target.closest("#hotRail")) {
-        touchStartX = 0;
-        touchEndX = 0;
-        return;
-      }
-      if (e.touches && e.touches.length > 0) {
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-        touchEndX = touchStartX;
-        touchEndY = touchStartY;
-      }
-    }, { passive: true });
-
-    heroSpotlight.addEventListener("touchmove", (e) => {
-      if (e.touches && e.touches.length > 0) {
-        touchEndX = e.touches[0].clientX;
-        touchEndY = e.touches[0].clientY;
-      }
-    }, { passive: true });
-
-    heroSpotlight.addEventListener("touchend", () => {
-      const diffX = touchEndX - touchStartX;
-      const diffY = touchEndY - touchStartY;
-      // Trigger if horizontal swipe is dominant and exceeds 40px threshold
-      if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY)) {
-        if (diffX < 0) {
-          // Swiped left -> next slide
-          goToSlide(currentIndex + 1);
-        } else {
-          // Swiped right -> previous slide
-          goToSlide(currentIndex - 1);
-        }
-        restartAutoPlay();
-      }
-    }, { passive: true });
-  }
-
-  // Clicking any card directly
+  // Direct card clicks
   hotCards.forEach((card, idx) => {
-    card.addEventListener("click", () => {
+    card.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       goToSlide(idx);
       restartAutoPlay();
     });
   });
 
-  // Only pause auto-play when hovering directly over the card rail or action buttons
-  if (rail) {
-    rail.addEventListener("mouseenter", stopAutoPlay);
-    rail.addEventListener("mouseleave", startAutoPlay);
+  // Event delegation on stage (captures any click on card or its poster)
+  if (stage) {
+    stage.addEventListener("click", (e) => {
+      const card = e.target.closest(".coverflow-card[data-clickable='true'], .coverflow-card");
+      if (!card) return;
+      const idx = parseInt(card.dataset.index, 10);
+      if (!isNaN(idx)) {
+        e.preventDefault();
+        e.stopPropagation();
+        goToSlide(idx);
+        restartAutoPlay();
+      }
+    });
+  }
+
+  paginationDots.forEach((dot, idx) => {
+    dot.addEventListener("click", (e) => {
+      e.preventDefault();
+      goToSlide(idx);
+      restartAutoPlay();
+    });
+  });
+
+  // Touch & Pointer Drag gestures on Coverflow Stage and Hero
+  const gestureTarget = wrapper || heroSpotlight;
+  if (gestureTarget) {
+    let startX = 0;
+    let startY = 0;
+    let isDragging = false;
+
+    const onStart = (x, y) => {
+      startX = x;
+      startY = y;
+      isDragging = true;
+    };
+
+    const onEnd = (x, y) => {
+      if (!isDragging) return;
+      isDragging = false;
+      const diffX = x - startX;
+      const diffY = y - startY;
+      if (Math.abs(diffX) > 35 && Math.abs(diffX) > Math.abs(diffY)) {
+        if (diffX < 0) {
+          goToSlide(currentIndex + 1);
+        } else {
+          goToSlide(currentIndex - 1);
+        }
+        restartAutoPlay();
+      }
+    };
+
+    // Touch events
+    gestureTarget.addEventListener("touchstart", (e) => {
+      if (e.touches && e.touches.length > 0) {
+        onStart(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    gestureTarget.addEventListener("touchend", (e) => {
+      if (e.changedTouches && e.changedTouches.length > 0) {
+        onEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+      }
+    }, { passive: true });
+
+    // Mouse drag events - ignore if clicking directly on a clickable card
+    gestureTarget.addEventListener("mousedown", (e) => {
+      if (e.target.closest(".coverflow-card[data-clickable='true']")) return;
+      onStart(e.clientX, e.clientY);
+    });
+
+    gestureTarget.addEventListener("mouseup", (e) => {
+      onEnd(e.clientX, e.clientY);
+    });
+  }
+
+  // Pause autoplay on mouse hover
+  if (wrapper) {
+    wrapper.addEventListener("mouseenter", stopAutoPlay);
+    wrapper.addEventListener("mouseleave", startAutoPlay);
   }
 
   const actionsEl = doc.querySelector(".hero-actions");
@@ -380,6 +582,7 @@ function initHeroRail(doc) {
     actionsEl.addEventListener("mouseleave", startAutoPlay);
   }
 
+  // Handle visibility & window resize
   if (typeof doc.addEventListener !== "undefined") {
     doc.addEventListener("visibilitychange", () => {
       if (doc.hidden) stopAutoPlay();
@@ -387,7 +590,16 @@ function initHeroRail(doc) {
     });
   }
 
-  // Start auto-play immediately
+  let resizeDebounce = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeDebounce);
+    resizeDebounce = setTimeout(() => {
+      updateCoverflowLayout(currentIndex);
+    }, 100);
+  }, { passive: true });
+
+  // Initial layout calculation & start auto-play
+  goToSlide(0);
   startAutoPlay();
 }
 
@@ -446,7 +658,16 @@ function initCatalogManager(doc) {
   let currentAge = "all";
   let currentDate = "all";
   let currentSort = "default";
+  let currentCinema = "all";
+  let currentCinemaName = "All Cinemas";
   let searchQuery = "";
+
+  doc.addEventListener("box:cinema-selected", (e) => {
+    currentCinema = e.detail?.cinemaId || "all";
+    currentCinemaName = e.detail?.cinemaName || "All Cinemas";
+    currentPage = 1;
+    render();
+  });
 
   function scrollToCatalogHeader() {
     const header = doc.getElementById("moviesSection");
@@ -463,6 +684,17 @@ function initCatalogManager(doc) {
     const todayMs = new Date().setHours(0, 0, 0, 0);
 
     const filtered = cards.filter((card) => {
+      // 0. Cinema Branch Filter (Beta Cinema style)
+      if (currentCinema && currentCinema !== "all") {
+        const cardCinemas = card.dataset.cinemas || "";
+        if (cardCinemas !== "all") {
+          const list = cardCinemas.split(",").map((s) => s.trim());
+          if (!list.includes(String(currentCinema))) {
+            return false;
+          }
+        }
+      }
+
       // 1. Status Tab Filter (All / Now Showing / Coming Soon)
       const matchesTab = currentTab === "all" || card.dataset.status === currentTab;
       if (!matchesTab) return false;
@@ -934,6 +1166,135 @@ function initQuickBooking(doc) {
       quickBookFeedback.textContent = `✔ Đã chọn: ${movieText} · ${cinemaText} · ${dateText} · ${timeText}. Sẵn sàng chuyển sang sơ đồ chọn ghế!`;
     });
   }
+
+  // Sync with global cinema branch selection
+  doc.addEventListener("box:cinema-selected", (e) => {
+    const cId = e.detail?.cinemaId;
+    if (cinemaSelect && cId && cId !== "all") {
+      cinemaSelect.value = cId;
+      loadDates();
+    }
+  });
+}
+
+/**
+ * Welcome Cinema Selection Modal (Beta Cinema Onboarding Style)
+ * Automatically prompts the user to select their cinema branch upon first visit.
+ */
+export function initWelcomeCinemaModal(doc = document) {
+  const modal = doc.getElementById("welcomeCinemaModal");
+  if (!modal) return;
+
+  const closeBtn = doc.getElementById("welcomeModalClose");
+  const skipBtn = doc.getElementById("btnWelcomeSkip");
+  const confirmBtn = doc.getElementById("btnWelcomeConfirm");
+  const citySelect = doc.getElementById("welcomeCitySelect");
+  const cinemaSelect = doc.getElementById("welcomeCinemaSelect");
+
+  if (!citySelect || !cinemaSelect) return;
+
+  // Store all original cinema option elements for fast client-side filtering
+  const allCinemaOptions = Array.from(cinemaSelect.querySelectorAll("option[data-city]"));
+
+  function openModal() {
+    modal.classList.add("show");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeModal() {
+    modal.classList.remove("show");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+    try {
+      localStorage.setItem("box_cinema_welcome_dismissed", "true");
+    } catch (_) {}
+  }
+
+  // Check if first-time visitor
+  try {
+    const savedId = localStorage.getItem("box_cinema_selected_branch_id");
+    const dismissed = localStorage.getItem("box_cinema_welcome_dismissed");
+    if (!savedId && !dismissed) {
+      setTimeout(() => {
+        openModal();
+      }, 400);
+    }
+  } catch (_) {}
+
+  // Filter cinema branches when city changes
+  citySelect.addEventListener("change", () => {
+    const selectedCity = citySelect.value;
+    cinemaSelect.innerHTML = '<option value="">-- Chọn rạp --</option>';
+
+    if (!selectedCity) {
+      cinemaSelect.disabled = true;
+      if (confirmBtn) confirmBtn.disabled = true;
+      return;
+    }
+
+    const filtered = allCinemaOptions.filter(opt => opt.dataset.city === selectedCity);
+    filtered.forEach(opt => {
+      cinemaSelect.appendChild(opt.cloneNode(true));
+    });
+
+    cinemaSelect.disabled = false;
+    if (confirmBtn) confirmBtn.disabled = true;
+  });
+
+  // Enable confirm button when cinema branch is selected
+  cinemaSelect.addEventListener("change", () => {
+    const selectedCinemaId = cinemaSelect.value;
+    if (confirmBtn) {
+      confirmBtn.disabled = !selectedCinemaId;
+    }
+  });
+
+  // Confirm selection
+  if (confirmBtn) {
+    confirmBtn.addEventListener("click", () => {
+      const cinemaId = cinemaSelect.value;
+      const cinemaName = cinemaSelect.options[cinemaSelect.selectedIndex]?.text;
+      if (cinemaId && cinemaName) {
+        try {
+          localStorage.setItem("box_cinema_selected_branch_id", cinemaId);
+          localStorage.setItem("box_cinema_selected_branch_name", cinemaName);
+          localStorage.setItem("box_cinema_welcome_dismissed", "true");
+        } catch (_) {}
+
+        doc.dispatchEvent(new CustomEvent("box:cinema-selected", {
+          detail: { cinemaId, cinemaName }
+        }));
+
+        closeModal();
+      }
+    });
+  }
+
+  // Skip / Dismiss
+  if (skipBtn) {
+    skipBtn.addEventListener("click", () => {
+      closeModal();
+    });
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      closeModal();
+    });
+  }
+
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
+
+  doc.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.classList.contains("show")) {
+      closeModal();
+    }
+  });
 }
 
 export function initHomeInteractions(doc = document) {
@@ -941,11 +1302,19 @@ export function initHomeInteractions(doc = document) {
   initCatalogManager(doc);
   initTrailerModal(doc);
   initQuickBooking(doc);
+  initWelcomeCinemaModal(doc);
 }
 
 if (typeof document !== "undefined") {
-  document.addEventListener("DOMContentLoaded", () => {
+  const bootstrapApp = () => {
     initNavbar(document, window.location.pathname);
     initHomeInteractions(document);
-  });
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootstrapApp);
+  } else {
+    // DOM already loaded or interactive - execute immediately!
+    bootstrapApp();
+  }
 }
