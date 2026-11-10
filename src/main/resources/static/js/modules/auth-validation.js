@@ -380,7 +380,41 @@ function initOtpVerificationForm(doc = document) {
   });
 }
 
+function initAuthPosterSlideshow(doc = document) {
+  const container = doc.getElementById("authPosterSlideshow");
+  if (!container) return;
+
+  const getSlides = () => Array.from(container.querySelectorAll(".auth-poster-slide"));
+  let slides = getSlides();
+  if (slides.length <= 1) return;
+
+  const requestedStart = Number.parseInt(container.getAttribute("data-start-index") || "0", 10);
+  let currentIndex = Number.isNaN(requestedStart) ? 0 : (requestedStart % slides.length);
+
+  slides.forEach((slide, idx) => {
+    slide.classList.toggle("active", idx === currentIndex);
+  });
+
+  setInterval(() => {
+    slides = getSlides();
+    if (slides.length <= 1) {
+      if (slides.length === 1) {
+        slides[0].classList.add("active");
+      }
+      return;
+    }
+
+    if (currentIndex >= slides.length) {
+      currentIndex = 0;
+    }
+    slides[currentIndex].classList.remove("active");
+    currentIndex = (currentIndex + 1) % slides.length;
+    slides[currentIndex].classList.add("active");
+  }, 4000);
+}
+
 export function initAuthAndContactForms(doc = document) {
+  initAuthPosterSlideshow(doc);
   initPasswordToggles(doc);
   initQuickDemoPills(doc);
   initSocialOAuthModal(doc);
