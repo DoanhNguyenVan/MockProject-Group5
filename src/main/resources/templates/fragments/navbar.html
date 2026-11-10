@@ -6,6 +6,82 @@
 </head>
 <body>
   <header th:fragment="navbar">
+    <style>
+      .nav-user-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        height: 36px;
+        padding: 3px 4px 3px 5px;
+        border-radius: 999px;
+        background: rgba(15, 17, 24, 0.82);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(10px);
+        transition: border-color 0.2s ease, background 0.2s ease;
+      }
+      .nav-user-pill:hover {
+        border-color: rgba(255, 255, 255, 0.26);
+        background: rgba(22, 24, 34, 0.92);
+      }
+      .nav-user-avatar {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #C91934 0%, #8f0f23 100%);
+        color: #ffffff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 2px 6px rgba(201, 25, 52, 0.4);
+      }
+      .nav-user-avatar svg {
+        width: 14px;
+        height: 14px;
+        stroke: currentColor;
+      }
+      .nav-user-name {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #f1f5f9;
+        max-width: 125px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1;
+        padding-right: 0.15rem;
+      }
+      .nav-logout-icon-btn {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        min-width: 28px;
+        min-height: 28px !important;
+        padding: 0 !important;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #cbd5e1 !important;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+      }
+      .nav-logout-icon-btn svg {
+        width: 14px;
+        height: 14px;
+        stroke: currentColor;
+        display: block;
+      }
+      .nav-logout-icon-btn:hover {
+        background: #C91934;
+        border-color: #C91934;
+        color: #ffffff !important;
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(201, 25, 52, 0.55);
+      }
+    </style>
     <a class="skip-link" href="#main-content">Skip to content</a>
     <nav class="cinema-nav" aria-label="Main navigation">
       <div class="cinema-nav-inner">
@@ -35,8 +111,22 @@
             </th:block>
             <th:block th:if="${session.currentUser != null}">
               <div class="d-flex align-items-center justify-content-between pt-2 border-top border-secondary border-opacity-25 mt-2">
-                <span class="text-white small fw-bold">👤 <span th:text="${session.currentUser.fullName}">Account</span></span>
-                <a href="/logout" th:href="@{/logout}" class="nav-signup">Sign Out</a>
+                <div class="nav-user-pill">
+                  <span class="nav-user-avatar" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                  </span>
+                  <span class="nav-user-name" th:text="${session.currentUser.fullName}">Account</span>
+                  <a href="/logout" th:href="@{/logout}" class="nav-logout-icon-btn" title="Sign Out" aria-label="Sign Out">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                      <polyline points="16 17 21 12 16 7"></polyline>
+                      <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                  </a>
+                </div>
               </div>
             </th:block>
           </div>
@@ -57,17 +147,29 @@
             </form>
           </div>
 
-          <!-- Desktop Account (Sign In, Sign Up) -->
+          <!-- Desktop Account (Sign In, Sign Up / Unified User Pill) -->
           <div class="cinema-nav-account d-none d-md-flex align-items-center gap-3">
             <th:block th:if="${session.currentUser == null}">
               <a href="/login" th:href="@{/login}" data-nav-route="login" class="small text-white fw-bold">Sign In</a>
               <a class="nav-signup" href="/register" th:href="@{/register}" data-nav-route="register">Sign Up</a>
             </th:block>
             <th:block th:if="${session.currentUser != null}">
-              <span class="text-white small fw-bold">
-                👤 <span th:text="${session.currentUser.fullName}">Account</span>
-              </span>
-              <a href="/logout" th:href="@{/logout}" class="nav-signup">Sign Out</a>
+              <div class="nav-user-pill">
+                <span class="nav-user-avatar" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                </span>
+                <span class="nav-user-name" th:text="${session.currentUser.fullName}">Account</span>
+                <a href="/logout" th:href="@{/logout}" class="nav-logout-icon-btn" title="Sign Out" aria-label="Sign Out">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                  </svg>
+                </a>
+              </div>
             </th:block>
           </div>
 
