@@ -147,7 +147,26 @@ function initNavSearch(doc, navEl) {
       return;
     }
 
+    if (typeof window !== "undefined" && window.__boxCinemaShowtimes?.setSearchQuery) {
+      window.__boxCinemaShowtimes.setSearchQuery(query, scrollTo);
+      return;
+    }
+
     const q = query.toLowerCase();
+    const showtimeCards = doc.querySelectorAll("#showtimeMoviesGrid .showtime-movie-card");
+    if (showtimeCards.length > 0) {
+      showtimeCards.forEach((card) => {
+        const title = (card.querySelector(".showtime-movie-title")?.textContent || "").toLowerCase();
+        const meta = (card.querySelector(".showtime-movie-meta")?.textContent || "").toLowerCase();
+        const matches = !q || title.includes(q) || meta.includes(q);
+        card.style.display = matches ? "" : "none";
+      });
+      if (scrollTo) {
+        doc.getElementById("showtimeMoviesGrid")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+      return;
+    }
+
     const catalogCards = doc.querySelectorAll("#catalogGrid .catalog-card");
     catalogCards.forEach((card) => {
       const title = (card.querySelector(".catalog-movie-title")?.textContent || "").toLowerCase();

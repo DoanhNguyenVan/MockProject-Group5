@@ -13,6 +13,55 @@ export function initShowtimesPage(doc = document) {
 
   if (!dateTabsContainer || !moviesGrid) return;
 
+  let currentSearchQuery = (doc.getElementById("navSearchInput")?.value || "").trim();
+
+  function applyShowtimeSearchFilter() {
+    const q = currentSearchQuery.trim().toLowerCase();
+    const cards = Array.from(moviesGrid.querySelectorAll(".showtime-movie-card"));
+    let visibleCount = 0;
+
+    cards.forEach((card) => {
+      const title = (card.querySelector(".showtime-movie-title")?.textContent || "").toLowerCase();
+      const meta = (card.querySelector(".showtime-movie-meta")?.textContent || "").toLowerCase();
+      const matches = !q || title.includes(q) || meta.includes(q);
+      card.style.display = matches ? "" : "none";
+      if (matches) visibleCount++;
+    });
+
+    if (emptyState) {
+      const emptyTitle = emptyState.querySelector(".showtimes-empty-title");
+      const emptyDesc = emptyState.querySelector(".showtimes-empty-desc");
+      if (cards.length === 0) {
+        if (emptyTitle) emptyTitle.textContent = "No Showtimes Available";
+        if (emptyDesc) emptyDesc.textContent = "No showtimes found for this cinema on the selected date. Please choose another date or cinema.";
+        emptyState.classList.remove("d-none");
+      } else if (visibleCount === 0) {
+        if (emptyTitle) emptyTitle.textContent = "No Matching Movies Found";
+        if (emptyDesc) emptyDesc.textContent = `No showtimes match "${currentSearchQuery.trim()}" at this cinema on the selected date.`;
+        emptyState.classList.remove("d-none");
+      } else {
+        emptyState.classList.add("d-none");
+      }
+    }
+  }
+
+  if (typeof window !== "undefined") {
+    window.__boxCinemaShowtimes = {
+      setSearchQuery: (query, scrollTo = true) => {
+        currentSearchQuery = query || "";
+        applyShowtimeSearchFilter();
+        if (scrollTo) {
+          moviesGrid.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      }
+    };
+  }
+
+  // Apply filter on initial load if search input already has text
+  if (currentSearchQuery) {
+    applyShowtimeSearchFilter();
+  }
+
   // 1. Initial Cinema Sync with localStorage
   try {
     const savedCinemaId = localStorage.getItem("box_cinema_selected_branch_id");
@@ -108,7 +157,7 @@ export function initShowtimesPage(doc = document) {
   function renderMovies(movieGroups) {
     if (!movieGroups || movieGroups.length === 0) {
       moviesGrid.innerHTML = "";
-      if (emptyState) emptyState.classList.remove("d-none");
+      applyShowtimeSearchFilter();
       return;
     }
 
@@ -179,6 +228,7 @@ export function initShowtimesPage(doc = document) {
     }).join("");
 
     moviesGrid.innerHTML = html;
+    applyShowtimeSearchFilter();
   }
 
   function escapeHtml(str) {
