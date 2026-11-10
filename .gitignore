@@ -13,3 +13,8 @@ target/
 *.log
 .DS_Store
 Thumbs.db
+
+### Local Environment & Secrets ###
+src/main/resources/application-local.properties
+application-local.properties
+*.local.properties

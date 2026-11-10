@@ -56,6 +56,30 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
+    @Override
+    public boolean sendInquiryConfirmationEmail(String toEmail, String fullName, Long inquiryId, String topic, String userMessage) {
+        log.info("=================================================================");
+        log.info("[CONTACT INQUIRY CONFIRMATION] Recipient: {} ({}) | Ticket #BOX-REQ-{} | Topic: {}",
+                fullName, toEmail, inquiryId, topic);
+        log.info("=================================================================");
+
+        if (!isSmtpConfigured()) {
+            log.info("Gmail SMTP credentials are not configured. Skipping live confirmation email.");
+            return false;
+        }
+
+        try {
+            String subject = "BOX Cinema - Tiếp nhận yêu cầu hỗ trợ [#BOX-REQ-" + inquiryId + "]";
+            String htmlBody = buildInquiryConfirmationEmailHtml(fullName, inquiryId, topic, userMessage);
+            sendHtmlEmailViaSslSmtp(toEmail, fullName, subject, htmlBody);
+            log.info("Successfully dispatched inquiry confirmation email to {} for ticket #BOX-REQ-{}", toEmail, inquiryId);
+            return true;
+        } catch (Exception ex) {
+            log.warn("Could not dispatch inquiry email via Gmail SMTP: {}", ex.getMessage());
+            return false;
+        }
+    }
+
     private boolean isSmtpConfigured() {
         return smtpUsername != null && !smtpUsername.isBlank()
                 && !smtpUsername.startsWith("YOUR_")
@@ -142,5 +166,44 @@ public class EmailServiceImpl implements EmailService {
                   </div>
                 </div>
                 """.formatted(fullName, otpCode);
+    }
+
+    private String buildInquiryConfirmationEmailHtml(String fullName, Long inquiryId, String topic, String userMessage) {
+        String cleanMessage = userMessage.replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>");
+        return """
+                <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 580px; margin: 0 auto; background: #121318; color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #2a2b36;">
+                  <div style="background: linear-gradient(135deg, #C91934 0%%, #7a0d1e 100%%); padding: 26px 30px; text-align: center;">
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: 0.04em;">BOX CINEMA</h1>
+                    <p style="margin: 6px 0 0; font-size: 13px; color: #ffd7de;">Xác Nhận Tiếp Nhận Yêu Cầu Hỗ Trợ</p>
+                  </div>
+                  <div style="padding: 30px;">
+                    <p style="font-size: 15px; margin-top: 0; color: #e2e8f0;">Kính gửi Quý khách <strong>%s</strong>,</p>
+                    <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">
+                      BOX Cinema xin chân thành cảm ơn Quý khách đã gửi tin nhắn liên hệ. Hệ thống đã tiếp nhận thành công yêu cầu của Quý khách với thông tin chi tiết dưới đây:
+                    </p>
+                    
+                    <div style="margin: 20px 0; padding: 18px; background: #1b1c24; border-left: 4px solid #C91934; border-radius: 8px;">
+                      <p style="margin: 0 0 8px; font-size: 13px; color: #94a3b8;">Mã phiếu hỗ trợ: <strong style="color: #ffffff; font-size: 14px;">#BOX-REQ-%d</strong></p>
+                      <p style="margin: 0 0 8px; font-size: 13px; color: #94a3b8;">Chủ đề: <strong style="color: #ffffff;">%s</strong></p>
+                      <p style="margin: 0; font-size: 13px; color: #94a3b8;">Trạng thái: <strong style="color: #22c55e;">ĐÃ TIẾP NHẬN (PENDING)</strong></p>
+                    </div>
+
+                    <div style="margin: 18px 0; padding: 16px; background: #161720; border: 1px solid #282938; border-radius: 8px;">
+                      <p style="margin: 0 0 6px; font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Nội dung Quý khách gửi:</p>
+                      <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #e2e8f0; font-style: italic;">"%s"</p>
+                    </div>
+
+                    <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">
+                      Đội ngũ Chăm Sóc Khách Hàng của BOX Cinema sẽ tiến hành kiểm tra và phản hồi trực tiếp tới Quý khách trong vòng <strong>2 giờ làm việc</strong> (tối đa 24 giờ).
+                    </p>
+                    <p style="font-size: 13px; color: #94a3b8; line-height: 1.5; margin-bottom: 0;">
+                      Trường hợp cần hỗ trợ khẩn cấp (suất chiếu sắp bắt đầu hoặc sự cố vé), Quý khách vui lòng gọi ngay Tổng đài CSKH: <strong style="color: #ff4d6a;">1900 6868</strong> (08:00 - 01:00 hàng ngày).
+                    </p>
+                  </div>
+                  <div style="background: #0d0e14; padding: 16px 30px; text-align: center; border-top: 1px solid #22232e;">
+                    <p style="margin: 0; font-size: 12px; color: #64748b;">BOX Cinema Vietnam · Rạp chiếu phim thế hệ mới IMAX Laser &amp; Dolby Atmos</p>
+                  </div>
+                </div>
+                """.formatted(fullName, inquiryId, topic, cleanMessage);
     }
 }

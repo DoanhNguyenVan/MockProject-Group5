@@ -977,6 +977,51 @@ body:not(.cinema-home) {
   background: var(--box-accent);
 }
 
+.cinema-nav-account .nav-auth-pill,
+.cinema-nav-mobile-account .nav-auth-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 1.15rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  text-decoration: none;
+  border-radius: 2rem;
+  border: 1px solid transparent;
+  background: transparent;
+  transition: all 0.22s ease-in-out;
+}
+
+.cinema-nav-account .nav-auth-pill:hover,
+.cinema-nav-mobile-account .nav-auth-pill:hover {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+/* Default state: Sign Up has the subtle border when neither is active */
+.cinema-nav-account .nav-auth-pill[data-nav-route="register"],
+.cinema-nav-mobile-account .nav-auth-pill[data-nav-route="register"] {
+  border-color: #625f68;
+  color: #ffffff;
+}
+
+/* When Sign In is active, transfer the rounded border to Sign In and clear from Sign Up */
+.cinema-nav-account:has([data-nav-route="login"].active) .nav-auth-pill[data-nav-route="register"],
+.cinema-nav-mobile-account:has([data-nav-route="login"].active) .nav-auth-pill[data-nav-route="register"] {
+  border-color: transparent;
+  color: #cbd5e1;
+}
+
+.cinema-nav-account .nav-auth-pill.active,
+.cinema-nav-mobile-account .nav-auth-pill.active {
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.75) !important;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
 .cinema-nav-account .nav-signup {
   padding-inline: 1.15rem;
   border: 1px solid #625f68;
@@ -1282,3 +1327,29 @@ body .alert-danger {
 .box-footer {
   margin-top: 0;
 }
+
+/* Auth & Icon Layout Safety Fallbacks */
+.auth-perk-icon svg {
+  width: 20px !important;
+  height: 20px !important;
+  max-width: 20px !important;
+  max-height: 20px !important;
+  display: block !important;
+}
+
+.auth-input-icon svg {
+  width: 18px !important;
+  height: 18px !important;
+  max-width: 18px !important;
+  max-height: 18px !important;
+  display: block !important;
+}
+
+.provider-svg {
+  width: 20px !important;
+  height: 20px !important;
+  max-width: 20px !important;
+  max-height: 20px !important;
+  display: inline-block !important;
+}
+

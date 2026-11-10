@@ -40,6 +40,14 @@ export function initNavbar(doc = document, currentPath = window.location.pathnam
     }
   });
 
+  const authPills = doc.querySelectorAll(".nav-auth-pill");
+  authPills.forEach((pill) => {
+    pill.addEventListener("click", () => {
+      authPills.forEach((p) => p.classList.remove("active"));
+      pill.classList.add("active");
+    });
+  });
+
   const toggler = doc.querySelector(".box-navbar-toggler");
   const collapseEl = doc.getElementById("boxNavbarCollapse");
   const navEl = doc.querySelector(".cinema-nav");
