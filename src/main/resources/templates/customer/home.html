@@ -11,7 +11,7 @@
     rel="stylesheet"
   >
   <link rel="stylesheet" href="/css/main.css?v=20261109b" th:href="@{/css/main.css(v='20261109b')}">
-  <link rel="stylesheet" href="/css/home.css?v=20261110a" th:href="@{/css/home.css(v='20261110a')}">
+  <link rel="stylesheet" href="/css/home.css?v=20261110b" th:href="@{/css/home.css(v='20261110b')}">
   <style>
     /* Critical 3D CoverFlow CSS - Prevents unstyled vertical stacking */
     .hero-hot-col {
@@ -419,6 +419,36 @@
                       th:text="${movie.ageRating}">T16</span>
                 <span class="card-badge-duration" th:text="${movie.durationMinutes + ' mins'}">120'</span>
                 <img th:src="${movie.posterUrl}" th:alt="${movie.title}" loading="lazy" onerror="this.style.display='none'">
+
+                <!-- Hover Preview Overlay (Strictly inside poster frame) -->
+                <div class="card-hover-popover" aria-hidden="true">
+                  <div class="popover-backdrop"
+                       th:style="'background-image: url(' + (${movie.bannerUrl != null and !#strings.isEmpty(movie.bannerUrl)} ? ${movie.bannerUrl} : ${movie.posterUrl}) + ');'">
+                  </div>
+                  <div class="popover-body">
+                    <h4 class="popover-title" th:text="${movie.title}">Movie Title</h4>
+                    <p class="popover-subtitle" th:text="${movie.genreNamesDisplay}">Genre</p>
+                    <p class="popover-synopsis" th:text="${movie.synopsis}">Movie synopsis from database...</p>
+                    <div class="popover-actions">
+                      <a th:if="${movie.status == 'NOW_SHOWING'}"
+                         class="btn-pop-buy" href="#moviesSection"
+                         th:data-book-id="${movie.movieId}"
+                         th:data-book-title="${movie.title}">
+                        🎟 Buy Tickets
+                      </a>
+                      <button type="button" class="btn-pop-detail" 
+                              th:data-book-id="${movie.movieId}"
+                              onclick="location.href='#moviesSection'">
+                        ℹ Details
+                      </button>
+                      <button type="button" class="btn-pop-trailer"
+                              th:if="${movie.trailerUrl != null}"
+                              th:data-trailer-url="${movie.trailerUrl}">
+                        ▶ Trailer
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <!-- Movie Basic Info Under Poster -->
@@ -430,36 +460,6 @@
                     · <span class="text-warning" th:text="${'Release: ' + #temporals.format(movie.releaseDate, 'dd/MM/yyyy')}">Release</span>
                   </span>
                 </p>
-              </div>
-
-              <!-- Floating Popover / Hover Preview Card (Matching Image 2 Popover) -->
-              <div class="card-hover-popover" aria-hidden="true">
-                <div class="popover-backdrop"
-                     th:style="'background-image: url(' + (${movie.bannerUrl != null and !#strings.isEmpty(movie.bannerUrl)} ? ${movie.bannerUrl} : ${movie.posterUrl}) + ');'">
-                </div>
-                <div class="popover-body">
-                  <h4 class="popover-title" th:text="${movie.title}">Movie Title</h4>
-                  <p class="popover-subtitle" th:text="${movie.genreNamesDisplay}">Genre</p>
-                  <p class="popover-synopsis" th:text="${movie.synopsis}">Movie synopsis from database...</p>
-                  <div class="popover-actions">
-                    <a th:if="${movie.status == 'NOW_SHOWING'}"
-                       class="btn-pop-buy" href="#moviesSection"
-                       th:data-book-id="${movie.movieId}"
-                       th:data-book-title="${movie.title}">
-                      🎟 Buy Tickets
-                    </a>
-                    <button type="button" class="btn-pop-detail" 
-                            th:data-book-id="${movie.movieId}"
-                            onclick="location.href='#moviesSection'">
-                      ℹ Details
-                    </button>
-                    <button type="button" class="btn-pop-trailer"
-                            th:if="${movie.trailerUrl != null}"
-                            th:data-trailer-url="${movie.trailerUrl}">
-                      ▶ Trailer
-                    </button>
-                  </div>
-                </div>
               </div>
             </div>
           </th:block>
