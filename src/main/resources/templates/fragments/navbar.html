@@ -115,9 +115,8 @@
           <div class="cinema-nav-mobile-account d-md-none">
             <th:block th:if="${session.currentUser == null}">
               <div class="d-flex align-items-center gap-2 pt-2 border-top border-secondary border-opacity-25 mt-2">
-                <a href="/login" th:href="@{/login}" data-nav-route="login" class="small text-white fw-bold">Sign In</a>
-                <span class="text-secondary">·</span>
-                <a class="nav-signup" href="/register" th:href="@{/register}" data-nav-route="register">Sign Up</a>
+                <a href="/login" th:href="@{/login}" data-nav-route="login" class="nav-auth-pill" th:classappend="${activePage == 'login' ? 'active' : ''}">Sign In</a>
+                <a href="/register" th:href="@{/register}" data-nav-route="register" class="nav-auth-pill" th:classappend="${activePage == 'register' ? 'active' : ''}">Sign Up</a>
               </div>
             </th:block>
             <th:block th:if="${session.currentUser != null}">
@@ -158,11 +157,11 @@
             </form>
           </div>
 
-          <!-- Desktop Account (Sign In, Sign Up / Unified User Pill) -->
-          <div class="cinema-nav-account d-none d-md-flex align-items-center gap-3">
+          <!-- Desktop Account (Sign In, Sign Up / Unified Dynamic Pill) -->
+          <div class="cinema-nav-account d-none d-md-flex align-items-center gap-2">
             <th:block th:if="${session.currentUser == null}">
-              <a href="/login" th:href="@{/login}" data-nav-route="login" class="small text-white fw-bold">Sign In</a>
-              <a class="nav-signup" href="/register" th:href="@{/register}" data-nav-route="register">Sign Up</a>
+              <a href="/login" th:href="@{/login}" data-nav-route="login" class="nav-auth-pill" th:classappend="${activePage == 'login' ? 'active' : ''}">Sign In</a>
+              <a href="/register" th:href="@{/register}" data-nav-route="register" class="nav-auth-pill" th:classappend="${activePage == 'register' ? 'active' : ''}">Sign Up</a>
             </th:block>
             <th:block th:if="${session.currentUser != null}">
               <div class="nav-user-pill">

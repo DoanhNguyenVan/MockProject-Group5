@@ -194,9 +194,11 @@ export function initShowtimesPage(doc = document) {
   const confirmCinemaName = doc.getElementById("confirmCinemaName");
   const confirmDate = doc.getElementById("confirmDate");
   const confirmTime = doc.getElementById("confirmTime");
+  let currentSelectedShowtimeId = null;
 
-  function openConfirmModal(movieTitle, cinemaName, formattedDate, slotTime) {
+  function openConfirmModal(movieTitle, cinemaName, formattedDate, slotTime, showtimeId) {
     if (!confirmModal) return;
+    currentSelectedShowtimeId = showtimeId || null;
     if (confirmMovieTitle) confirmMovieTitle.textContent = movieTitle;
     if (confirmCinemaName) confirmCinemaName.textContent = cinemaName;
     if (confirmDate) confirmDate.textContent = formattedDate;
@@ -233,7 +235,7 @@ export function initShowtimesPage(doc = document) {
       const rawDate = getActiveDate();
       const formattedDate = formatDateDisplay(rawDate);
 
-      openConfirmModal(movieTitle, cinemaName, formattedDate, slotTime);
+      openConfirmModal(movieTitle, cinemaName, formattedDate, slotTime, showtimeId);
     }
   });
 
@@ -259,9 +261,32 @@ export function initShowtimesPage(doc = document) {
       const cName = confirmCinemaName ? confirmCinemaName.textContent : "";
       const dVal = confirmDate ? confirmDate.textContent : "";
       const tVal = confirmTime ? confirmTime.textContent : "";
+      const sId = currentSelectedShowtimeId || "";
+
+      // Check if user is signed in via presence of .nav-user-pill in navbar
+      const isLoggedIn = Boolean(doc.querySelector(".nav-user-pill"));
+
+      if (!isLoggedIn) {
+        // Save pending booking details so user can continue seamlessly after login
+        try {
+          sessionStorage.setItem("boxcinema_pending_booking", JSON.stringify({
+            showtimeId: sId,
+            movieTitle: mTitle,
+            cinemaName: cName,
+            date: dVal,
+            time: tVal
+          }));
+        } catch (_) {}
+
+        closeConfirmModal();
+        const movieParam = encodeURIComponent(mTitle);
+        window.location.href = `/login?booking=true&movie=${movieParam}`;
+        return;
+      }
+
       closeConfirmModal();
       
-      // Feedback toast on screen
+      // If signed in, proceed to seat selection feedback toast
       showAgreeToast(mTitle, cName, dVal, tVal);
     });
   }

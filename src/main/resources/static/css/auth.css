@@ -324,17 +324,23 @@
   left: 0.85rem;
   top: 50%;
   transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  line-height: 1;
   color: #64748b;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  z-index: 2;
   transition: color 0.2s ease;
 }
 
 .auth-input-icon svg {
-  width: 17px;
-  height: 17px;
+  width: 17px !important;
+  height: 17px !important;
+  max-width: 17px !important;
+  max-height: 17px !important;
 }
 
 .auth-input-group:focus-within .auth-input-icon {

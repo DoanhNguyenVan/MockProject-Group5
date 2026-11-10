@@ -39,7 +39,17 @@ public class UserServiceImpl implements UserService {
     }
 
     public UserServiceImpl(UserRepository userRepository) {
-        this(userRepository, (toEmail, fullName, otpCode) -> false);
+        this(userRepository, new EmailService() {
+            @Override
+            public boolean sendVerificationOtpEmail(String toEmail, String fullName, String otpCode) {
+                return false;
+            }
+
+            @Override
+            public boolean sendInquiryConfirmationEmail(String toEmail, String fullName, Long inquiryId, String topic, String userMessage) {
+                return false;
+            }
+        });
     }
 
     @Override

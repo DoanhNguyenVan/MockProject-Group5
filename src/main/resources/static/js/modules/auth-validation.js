@@ -415,8 +415,8 @@ export function initAuthAndContactForms(doc = document) {
       }
       const submitBtn = doc.getElementById("loginSubmitBtn");
       if (submitBtn) {
-        submitBtn.disabled = true;
         submitBtn.textContent = "Signing in...";
+        setTimeout(() => { submitBtn.disabled = true; }, 50);
       }
     });
   }
@@ -465,8 +465,8 @@ export function initAuthAndContactForms(doc = document) {
       }
       const submitBtn = doc.getElementById("registerSubmitBtn");
       if (submitBtn) {
-        submitBtn.disabled = true;
         submitBtn.textContent = "Creating account...";
+        setTimeout(() => { submitBtn.disabled = true; }, 50);
       }
     });
   }
@@ -475,7 +475,6 @@ export function initAuthAndContactForms(doc = document) {
   const contactForm = doc.getElementById("contactForm");
   if (contactForm) {
     contactForm.addEventListener("submit", (event) => {
-      event.preventDefault();
       const fullName = doc.getElementById("contactName")?.value || "";
       const email = doc.getElementById("contactEmail")?.value || "";
       const topic = doc.getElementById("contactTopic")?.value || "";
@@ -487,18 +486,25 @@ export function initAuthAndContactForms(doc = document) {
       setFieldFeedback(doc, "contactEmail", "contactEmailError", result.errors.email);
       setFieldFeedback(doc, "contactTopic", "contactTopicError", result.errors.topic);
       setFieldFeedback(doc, "contactMessage", "contactMessageError", result.errors.message);
-      contactForm.querySelector('[aria-invalid="true"]')?.focus();
 
-      if (statusBox) {
-        if (!result.isValid) {
+      if (!result.isValid) {
+        event.preventDefault();
+        contactForm.querySelector('[aria-invalid="true"]')?.focus();
+        if (statusBox) {
           statusBox.className = "alert alert-danger py-2 px-3 small mb-3";
-          statusBox.textContent = "Please complete all required fields before sending your message.";
-          statusBox.classList.remove("d-none");
-        } else {
-          statusBox.className = "alert alert-success py-2 px-3 small mb-3";
-          statusBox.textContent = "Your message is ready. This demo previews the form. To reach the cinema, use the email or phone link.";
+          statusBox.textContent = "Please fill in all required fields marked with an asterisk before submitting.";
           statusBox.classList.remove("d-none");
         }
+        return;
+      }
+
+      if (statusBox) {
+        statusBox.classList.add("d-none");
+      }
+      const submitBtn = contactForm.querySelector('button[type="submit"]');
+      if (submitBtn) {
+        submitBtn.textContent = "Sending message...";
+        setTimeout(() => { submitBtn.disabled = true; }, 50);
       }
     });
   }
