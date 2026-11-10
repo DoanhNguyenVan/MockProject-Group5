@@ -13,8 +13,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 /**
- * Controller serving Module 01 Core Pages Live Demo:
- * Home (/), About (/about), Contact (/contact), Login (/login), and Sign Up (/register).
+ * Controller serving Module 01 Core Pages:
+ * About (/about) and Contact (/contact).
+ * Authentication pages (/login, /register, /logout, /auth/*) are handled by AuthController.
  */
 @Controller
 public class DemoPageController {
@@ -64,17 +65,5 @@ public class DemoPageController {
     public String contactPage(Model model) {
         model.addAttribute("activePage", "contact");
         return "customer/contact";
-    }
-
-    @GetMapping("/login")
-    public String loginPage(Model model) {
-        model.addAttribute("activePage", "login");
-        return "auth/login";
-    }
-
-    @GetMapping({"/register", "/signup"})
-    public String registerPage(Model model) {
-        model.addAttribute("activePage", "register");
-        return "auth/register";
     }
 }
