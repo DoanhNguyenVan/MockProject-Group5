@@ -2,11 +2,14 @@ package com.boxcinema.controller;
 
 import com.boxcinema.dto.RegisterRequestDto;
 import com.boxcinema.dto.UserSummaryDto;
+import com.boxcinema.entity.Movie;
+import com.boxcinema.service.MovieService;
 import com.boxcinema.service.UserService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,12 +22,16 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 public class AuthController {
 
     private final UserService userService;
     private final ObjectMapper objectMapper;
+    private final MovieService movieService;
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
     @Value("${app.oauth2.google.client-id:}")
@@ -45,9 +52,17 @@ public class AuthController {
     @Value("${app.oauth2.facebook.redirect-uri:}")
     private String facebookRedirectUri;
 
-    public AuthController(UserService userService, ObjectMapper objectMapper) {
+    @Autowired
+    public AuthController(UserService userService,
+                          ObjectMapper objectMapper,
+                          @Autowired(required = false) MovieService movieService) {
         this.userService = userService;
         this.objectMapper = objectMapper;
+        this.movieService = movieService;
+    }
+
+    public AuthController(UserService userService, ObjectMapper objectMapper) {
+        this(userService, objectMapper, null);
     }
 
     @GetMapping("/login")
@@ -55,6 +70,7 @@ public class AuthController {
         model.addAttribute("activePage", "login");
         model.addAttribute("googleOAuthConfigured", isConfigured(googleClientId));
         model.addAttribute("facebookOAuthConfigured", isConfigured(facebookClientId));
+        populateAuthShowcasePosters(model);
         return "auth/login";
     }
 
@@ -89,6 +105,7 @@ public class AuthController {
             model.addAttribute("enteredEmail", loginEmail != null ? loginEmail.trim() : "");
             model.addAttribute("googleOAuthConfigured", isConfigured(googleClientId));
             model.addAttribute("facebookOAuthConfigured", isConfigured(facebookClientId));
+            populateAuthShowcasePosters(model);
             return "auth/login";
         }
     }
@@ -101,6 +118,7 @@ public class AuthController {
         if (!model.containsAttribute("formData")) {
             model.addAttribute("formData", new RegisterRequestDto());
         }
+        populateAuthShowcasePosters(model);
         return "auth/register";
     }
 
@@ -122,6 +140,7 @@ public class AuthController {
             model.addAttribute("formData", registerRequest);
             model.addAttribute("googleOAuthConfigured", isConfigured(googleClientId));
             model.addAttribute("facebookOAuthConfigured", isConfigured(facebookClientId));
+            populateAuthShowcasePosters(model);
             return "auth/register";
         }
     }
@@ -136,6 +155,7 @@ public class AuthController {
         model.addAttribute("verifyEmail", cleanEmail);
         userService.getPendingOtpPreview(cleanEmail)
                 .ifPresent(otp -> model.addAttribute("demoOtpCode", otp));
+        populateAuthShowcasePosters(model);
         return "auth/verify-email";
     }
 
@@ -160,6 +180,7 @@ public class AuthController {
             model.addAttribute("errorMessage", ex.getMessage());
             userService.getPendingOtpPreview(cleanEmail)
                     .ifPresent(otp -> model.addAttribute("demoOtpCode", otp));
+            populateAuthShowcasePosters(model);
             return "auth/verify-email";
         }
     }
@@ -364,6 +385,22 @@ public class AuthController {
 
     private boolean isConfigured(String val) {
         return val != null && !val.isBlank() && !val.startsWith("YOUR_");
+    }
+
+    private void populateAuthShowcasePosters(Model model) {
+        if (movieService == null) {
+            model.addAttribute("authPosters", Collections.emptyList());
+            return;
+        }
+        List<String> posters = movieService.getAllActiveMovies().stream()
+                .filter(m -> "NOW_SHOWING".equalsIgnoreCase(m.getStatus())
+                        || "COMING_SOON".equalsIgnoreCase(m.getStatus()))
+                .map(Movie::getPosterUrl)
+                .filter(url -> url != null && !url.isBlank())
+                .distinct()
+                .limit(12)
+                .collect(Collectors.toList());
+        model.addAttribute("authPosters", posters);
     }
 
     private String getBaseUrl(HttpServletRequest request) {
