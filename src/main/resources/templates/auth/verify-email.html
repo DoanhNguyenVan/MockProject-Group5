@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : 'demo-csrf-token'}" content="demo-csrf-token">
+  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}" content="X-CSRF-TOKEN">
+  <title>Verify Your Gmail (OTP) | BOX Cinema</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+  <link rel="stylesheet" href="/css/main.css" th:href="@{/css/main.css}">
+  <link rel="stylesheet" href="/css/auth.css" th:href="@{/css/auth.css}">
+</head>
+<body>
+  <!-- Shared Brand Logo & Navigation Navbar -->
+  <header th:replace="~{fragments/navbar :: navbar}"></header>
+
+  <main id="main-content" tabindex="-1">
+    <section class="auth-page-section" aria-label="Verify Gmail OTP">
+      <div class="auth-split-shell">
+        <!-- Left Cinema Showcase Panel -->
+        <aside class="auth-welcome" aria-label="Welcome to BOX Cinema">
+          <div class="auth-theater auth-theater-register" aria-hidden="true">
+            <div class="auth-theater-overlay">
+              <span class="auth-cinema-badge">✦ SECURITY VERIFICATION</span>
+              <h2 class="auth-showcase-title">Confirm Your Gmail Account.</h2>
+              <p class="auth-showcase-sub">
+                We protect every BOX Cinema member account with 6-digit Gmail OTP verification so your e-tickets and rewards stay safe.
+              </p>
+              <ul class="auth-perk-list">
+                <li>
+                  <span class="auth-perk-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="4" width="20" height="16" rx="3"></rect>
+                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                    </svg>
+                  </span>
+                  <div>
+                    <strong>Check Your Gmail Inbox</strong>
+                    <span>Look for an email from BOX Cinema with your 6-digit OTP</span>
+                  </div>
+                </li>
+                <li>
+                  <span class="auth-perk-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                  </span>
+                  <div>
+                    <strong>Valid for 10 Minutes</strong>
+                    <span>You can request a fresh code anytime if it expires</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div class="auth-brand">
+            <img src="/assets/img/box-cinema-logo.png" th:src="@{/assets/img/box-cinema-logo.png}" width="180" height="60" alt="BOX Cinema">
+            <p>Gmail OTP Verification</p>
+          </div>
+        </aside>
+
+        <!-- Right OTP Verification Column -->
+        <div class="auth-form-col">
+          <div class="auth-header-block mb-3">
+            <span class="badge-box-red d-inline-block mb-2">STEP 2 OF 2 · GMAIL OTP</span>
+            <h1 class="h3 fw-bold text-white mb-1">Enter 6-Digit Verification Code</h1>
+            <p class="small text-secondary mb-0">
+              We sent a 6-digit OTP code to
+              <strong class="text-white" th:text="${verifyEmail != null && !verifyEmail.isEmpty() ? verifyEmail : 'your Gmail'}">alex@gmail.com</strong>.
+            </p>
+          </div>
+
+          <!-- Server-side Error Banner -->
+          <div
+            th:if="${errorMessage != null}"
+            class="auth-alert auth-alert-danger mb-3"
+            role="alert"
+          >
+            <svg class="auth-alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span th:text="${errorMessage}">Invalid verification code.</span>
+          </div>
+
+          <!-- Server-side Success Banner -->
+          <div
+            th:if="${successMessage != null}"
+            class="auth-alert auth-alert-success mb-3"
+            role="alert"
+          >
+            <svg class="auth-alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <span th:text="${successMessage}">Verification code sent!</span>
+          </div>
+
+          <!-- Local Dev OTP Preview Banner (only shown if Gmail SMTP credentials are not configured yet) -->
+          <div
+            th:if="${demoOtpCode != null}"
+            class="otp-dev-preview mb-3"
+          >
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <div>
+                <span class="otp-dev-badge">DEV / LOCAL PREVIEW</span>
+                <p class="small text-secondary mb-0 mt-1">
+                  Configure <code>spring.mail.username</code> &amp; <code>spring.mail.password</code> in <code>application.properties</code> to send real Gmail emails. Current OTP:
+                </p>
+              </div>
+              <button
+                type="button"
+                class="otp-dev-code-btn"
+                id="autoFillDemoOtpBtn"
+                th:attr="data-otp=${demoOtpCode}"
+                title="Click to auto-fill OTP"
+              >
+                <span th:text="${demoOtpCode}">123456</span>
+                <small>Auto-fill</small>
+              </button>
+            </div>
+          </div>
+
+          <div id="otpFormStatus" class="d-none" role="alert" aria-live="polite"></div>
+
+          <!-- 6-Digit OTP Verification Form -->
+          <form id="verifyOtpForm" action="/verify-email" th:action="@{/verify-email}" method="post" novalidate>
+            <input
+              type="hidden"
+              name="_csrf"
+              th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}"
+              th:value="${_csrf != null ? _csrf.token : 'demo-csrf-token'}"
+              value="demo-csrf-token"
+            >
+            <input type="hidden" name="email" th:value="${verifyEmail}">
+            <input type="hidden" name="otpCode" id="otpCodeHidden" value="">
+
+            <label class="form-label small text-secondary fw-semibold mb-2">6-Digit OTP Code *</label>
+            <div class="otp-digit-grid mb-2" role="group" aria-label="6-digit verification code">
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-digit-input" data-otp-index="0" aria-label="Digit 1" autocomplete="one-time-code" required>
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-digit-input" data-otp-index="1" aria-label="Digit 2" required>
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-digit-input" data-otp-index="2" aria-label="Digit 3" required>
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-digit-input" data-otp-index="3" aria-label="Digit 4" required>
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-digit-input" data-otp-index="4" aria-label="Digit 5" required>
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-digit-input" data-otp-index="5" aria-label="Digit 6" required>
+            </div>
+            <div id="otpCodeError" class="field-error-msg mb-3"></div>
+
+            <button type="submit" id="verifyOtpSubmitBtn" class="btn btn-box-primary w-100 py-2 mt-3 mb-3 auth-submit-btn">
+              <span>Verify &amp; Activate Account</span>
+              <span class="auth-btn-arrow" aria-hidden="true">&#8594;</span>
+            </button>
+          </form>
+
+          <!-- Resend OTP Form -->
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top border-secondary border-opacity-25">
+            <span class="small text-secondary">Didn't receive the code in your Gmail?</span>
+            <form action="/verify-email/resend" th:action="@{/verify-email/resend}" method="post" class="d-inline">
+              <input
+                type="hidden"
+                name="_csrf"
+                th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}"
+                th:value="${_csrf != null ? _csrf.token : 'demo-csrf-token'}"
+                value="demo-csrf-token"
+              >
+              <input type="hidden" name="email" th:value="${verifyEmail}">
+              <button type="submit" class="btn-link-reset small text-glow-red fw-bold">
+                Resend 6-Digit OTP &#8635;
+              </button>
+            </form>
+          </div>
+
+          <p class="text-center small text-secondary mb-0 mt-3">
+            Entered the wrong email address?
+            <a href="/register" th:href="@{/register}" class="text-glow-red fw-bold ms-1">&#8592; Back to Sign Up</a>
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Shared Footer -->
+  <footer th:replace="~{fragments/footer :: footer}"></footer>
+
+  <script type="module" src="/js/modules/navbar.js" th:src="@{/js/modules/navbar.js}"></script>
+  <script type="module" src="/js/modules/auth-validation.js" th:src="@{/js/modules/auth-validation.js}"></script>
+</body>
+</html>
+
