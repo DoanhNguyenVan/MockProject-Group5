@@ -45,3 +45,4 @@ public class InquiryServiceImplTest {
         verify(emailService, never()).sendInquiryConfirmationEmail(any(), any(), any(), any(), any());
     }
 }
+
