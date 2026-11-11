@@ -123,13 +123,15 @@
             <th:block th:if="${currentUser != null or session.currentUser != null}">
               <div class="d-flex align-items-center justify-content-between pt-2 border-top border-secondary border-opacity-25 mt-2">
                 <div class="nav-user-pill">
-                  <span class="nav-user-avatar" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                  </span>
-                  <span class="nav-user-name" th:text="${currentUser != null ? currentUser.fullName : session.currentUser.fullName}">Account</span>
+                  <a href="/profile" th:href="@{/profile}" class="d-inline-flex align-items-center gap-2 text-decoration-none text-white" title="Account Settings">
+                    <span class="nav-user-avatar" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                    </span>
+                    <span class="nav-user-name" th:text="${currentUser != null ? currentUser.fullName : session.currentUser.fullName}">Account</span>
+                  </a>
                   <form action="/logout" th:action="@{/logout}" method="post" class="d-inline-flex m-0 p-0">
                     <button type="submit" class="nav-logout-icon-btn" title="Sign Out" aria-label="Sign Out">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -168,13 +170,15 @@
             </th:block>
             <th:block th:if="${currentUser != null or session.currentUser != null}">
               <div class="nav-user-pill">
-                <span class="nav-user-avatar" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                </span>
-                <span class="nav-user-name" th:text="${currentUser != null ? currentUser.fullName : session.currentUser.fullName}">Account</span>
+                <a href="/profile" th:href="@{/profile}" class="d-inline-flex align-items-center gap-2 text-decoration-none text-white" title="Account Settings">
+                  <span class="nav-user-avatar" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                  </span>
+                  <span class="nav-user-name" th:text="${currentUser != null ? currentUser.fullName : session.currentUser.fullName}">Account</span>
+                </a>
                 <form action="/logout" th:action="@{/logout}" method="post" class="d-inline-flex m-0 p-0">
                   <button type="submit" class="nav-logout-icon-btn" title="Sign Out" aria-label="Sign Out">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

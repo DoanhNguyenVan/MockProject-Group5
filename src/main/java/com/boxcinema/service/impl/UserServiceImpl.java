@@ -19,7 +19,6 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @Transactional
@@ -27,13 +26,11 @@ public class UserServiceImpl implements UserService {
 
     private static final int MAX_FAILED_ATTEMPTS = 5;
     private static final int LOCK_DURATION_MINUTES = 30;
-    private static final int OTP_EXPIRY_MINUTES = 10;
 
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final Map<String, LoginAttemptState> loginAttempts = new ConcurrentHashMap<>();
-    private final Map<String, EmailOtpState> pendingEmailOtps = new ConcurrentHashMap<>();
 
     @Autowired
     public UserServiceImpl(UserRepository userRepository,
@@ -57,6 +54,9 @@ public class UserServiceImpl implements UserService {
         }, new BCryptPasswordEncoder());
     }
 
+    /**
+     * Phase 1: Register customer directly with status ACTIVE (No OTP).
+     */
     @Override
     public UserSummaryDto registerCustomer(RegisterRequestDto request) {
         if (request.getFullName() == null || request.getFullName().trim().length() < 2) {
@@ -80,107 +80,30 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException("Passwords do not match.");
         }
 
-        Optional<User> existingEmailUser = userRepository.findByEmail(cleanEmail);
-        if (existingEmailUser.isPresent()) {
-            User existing = existingEmailUser.get();
-            if (!"PENDING_VERIFICATION".equalsIgnoreCase(existing.getAccountStatus())) {
-                throw new IllegalArgumentException("This email address is already registered.");
-            }
-            Optional<User> phoneOwner = userRepository.findByPhone(cleanPhone);
-            if (phoneOwner.isPresent() && !phoneOwner.get().getUserId().equals(existing.getUserId())) {
-                throw new IllegalArgumentException("This phone number is already registered.");
-            }
-            existing.setFullName(request.getFullName().trim());
-            existing.setPhone(cleanPhone);
-            existing.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-            existing = userRepository.save(existing);
-            generateAndSendOtp(existing);
-            return toSummaryDto(existing);
+        // Check duplicate email
+        if (userRepository.existsByEmail(cleanEmail)) {
+            throw new IllegalArgumentException("This email address is already registered.");
         }
 
+        // Check duplicate phone
         if (userRepository.existsByPhone(cleanPhone)) {
             throw new IllegalArgumentException("This phone number is already registered.");
         }
 
         String hashedPassword = passwordEncoder.encode(request.getPassword());
         User user = new User(request.getFullName().trim(), cleanEmail, cleanPhone, hashedPassword, "CUSTOMER");
-        user.setAccountStatus("PENDING_VERIFICATION");
-        user = userRepository.save(user);
-
-        generateAndSendOtp(user);
-        return toSummaryDto(user);
-    }
-
-    @Override
-    public UserSummaryDto verifyEmailOtp(String email, String otpCode) {
-        if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("Email address is required.");
-        }
-        if (otpCode == null || otpCode.trim().length() != 6) {
-            throw new IllegalArgumentException("Please enter the 6-digit verification code sent to your Gmail.");
-        }
-
-        String cleanEmail = email.trim().toLowerCase();
-        String cleanOtp = otpCode.trim();
-
-        User user = userRepository.findByEmail(cleanEmail)
-                .orElseThrow(() -> new IllegalArgumentException("No pending registration found for " + cleanEmail + "."));
-
-        if ("ACTIVE".equalsIgnoreCase(user.getAccountStatus())) {
-            pendingEmailOtps.remove(cleanEmail);
-            return toSummaryDto(user);
-        }
-
-        EmailOtpState otpState = pendingEmailOtps.get(cleanEmail);
-        if (otpState == null) {
-            throw new IllegalArgumentException("No active verification code found. Please click 'Resend Code' to get a new one.");
-        }
-
-        if (LocalDateTime.now().isAfter(otpState.expiresAt)) {
-            pendingEmailOtps.remove(cleanEmail);
-            throw new IllegalArgumentException("Your verification code has expired (valid for 10 minutes). Please request a new code.");
-        }
-
-        if (!otpState.otpCode.equals(cleanOtp)) {
-            throw new IllegalArgumentException("Invalid verification code. Please check your Gmail and try again.");
-        }
-
         user.setAccountStatus("ACTIVE");
+        user.setGoogleId(null);
+        user.setCinemaId(null);
         user = userRepository.save(user);
-        pendingEmailOtps.remove(cleanEmail);
 
         return toSummaryDto(user);
     }
 
-    @Override
-    public boolean resendVerificationOtp(String email) {
-        if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("Email address is required.");
-        }
-        String cleanEmail = email.trim().toLowerCase();
-        User user = userRepository.findByEmail(cleanEmail)
-                .orElseThrow(() -> new IllegalArgumentException("No account found for " + cleanEmail + "."));
-
-        if ("ACTIVE".equalsIgnoreCase(user.getAccountStatus())) {
-            throw new IllegalArgumentException("This account is already verified. Please sign in.");
-        }
-
-        return generateAndSendOtp(user);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Optional<String> getPendingOtpPreview(String email) {
-        if (email == null || email.isBlank()) {
-            return Optional.empty();
-        }
-        EmailOtpState state = pendingEmailOtps.get(email.trim().toLowerCase());
-        if (state == null || LocalDateTime.now().isAfter(state.expiresAt) || state.sentViaSmtp) {
-            return Optional.empty();
-        }
-        return Optional.of(state.otpCode);
-    }
-
+    /**
+     * Phase 2: Authenticate email/password.
+     * Validates account status, blocks password login for Google-only accounts, BCrypt matches.
+     */
     @Override
     @Transactional(readOnly = true)
     public UserSummaryDto authenticate(String email, String rawPassword) {
@@ -198,24 +121,34 @@ public class UserServiceImpl implements UserService {
         }
 
         User user = userOpt.get();
-        if (user.getPasswordHash() == null || !passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
-            recordFailedAttempt(cleanEmail);
-            throw new IllegalArgumentException("Invalid email or password.");
-        }
 
-        if ("PENDING_VERIFICATION".equalsIgnoreCase(user.getAccountStatus())) {
-            generateAndSendOtp(user);
-            throw new IllegalStateException("UNVERIFIED_EMAIL:" + cleanEmail);
-        }
-
+        // Check account status
         if (!"ACTIVE".equalsIgnoreCase(user.getAccountStatus())) {
             throw new IllegalArgumentException("Your account is currently locked or inactive.");
+        }
+
+        // Check if account is Google-only (password_hash is NULL)
+        if (user.getPasswordHash() == null || user.getPasswordHash().isBlank()) {
+            throw new IllegalArgumentException("This account was registered via Google. Please sign in using 'Continue with Google'.");
+        }
+
+        // Compare password via BCrypt
+        if (!passwordEncoder.matches(rawPassword, user.getPasswordHash())) {
+            recordFailedAttempt(cleanEmail);
+            throw new IllegalArgumentException("Invalid email or password.");
         }
 
         loginAttempts.remove(cleanEmail);
         return toSummaryDto(user);
     }
 
+    /**
+     * Phase 3: Authenticate Social (Google OAuth2).
+     * Follows OWASP recommendations:
+     * - Case A: Google sub already linked -> login directly.
+     * - Case B: Google sub not linked, but email already exists in USERS -> DO NOT auto-link, instruct user to sign in and link in Account Settings.
+     * - Case C: Brand new Google user -> signal that user needs to complete profile (enter phone number).
+     */
     @Override
     public UserSummaryDto authenticateSocial(String provider, String providerId, String email, String fullName) {
         String normalizedProvider = (provider == null || provider.isBlank())
@@ -234,41 +167,112 @@ public class UserServiceImpl implements UserService {
         String cleanName = (fullName == null || fullName.isBlank())
                 ? cleanEmail.substring(0, cleanEmail.indexOf('@'))
                 : fullName.trim();
+        String sub = (providerId == null || providerId.isBlank()) ? cleanEmail : providerId.trim();
 
-        String rawId = (providerId == null || providerId.isBlank()) ? cleanEmail : providerId.trim();
-        String socialKey = normalizedProvider.toLowerCase() + ":" + rawId;
-
-        Optional<User> existingUserOpt = userRepository.findByGoogleId(socialKey);
-        if (existingUserOpt.isEmpty()) {
-            existingUserOpt = userRepository.findByEmail(cleanEmail);
-        }
-
-        if (existingUserOpt.isPresent()) {
-            User existingUser = existingUserOpt.get();
-            if ("PENDING_VERIFICATION".equalsIgnoreCase(existingUser.getAccountStatus())) {
-                existingUser.setAccountStatus("ACTIVE");
-                pendingEmailOtps.remove(cleanEmail);
-            } else if (!"ACTIVE".equalsIgnoreCase(existingUser.getAccountStatus())) {
+        // 1. Look up by google_id
+        Optional<User> byGoogleId = userRepository.findByGoogleId(sub);
+        if (byGoogleId.isPresent()) {
+            User user = byGoogleId.get();
+            if (!"ACTIVE".equalsIgnoreCase(user.getAccountStatus())) {
                 throw new IllegalArgumentException("Your account is currently locked or inactive.");
             }
-            if (existingUser.getGoogleId() == null || existingUser.getGoogleId().isBlank()) {
-                existingUser.setGoogleId(socialKey);
-            }
-            if (existingUser.getFullName() == null || existingUser.getFullName().isBlank()) {
-                existingUser.setFullName(cleanName);
-            }
-            existingUser = userRepository.save(existingUser);
-            loginAttempts.remove(cleanEmail);
-            return toSummaryDto(existingUser);
+            return toSummaryDto(user);
         }
 
-        String uniqueSocialPhone = generateUniqueSocialPhone(normalizedProvider);
-        User newUser = new User(cleanName, cleanEmail, uniqueSocialPhone, null, "CUSTOMER");
-        newUser.setGoogleId(socialKey);
+        // 2. Look up by email (User previously registered via Email/Password)
+        Optional<User> byEmail = userRepository.findByEmail(cleanEmail);
+        if (byEmail.isPresent()) {
+            // OWASP rule: Do NOT automatically merge or link!
+            throw new IllegalStateException("ACCOUNT_EXISTS_NEEDS_LINK:" + cleanEmail);
+        }
+
+        // 3. Brand new Google user: needs to complete profile with phone number
+        throw new IllegalStateException("GOOGLE_NEEDS_PROFILE:" + sub + ":::" + cleanEmail + ":::" + cleanName);
+    }
+
+    /**
+     * Phase 3: Complete profile for brand new Google user.
+     */
+    @Override
+    public UserSummaryDto registerGoogleCustomer(String googleSub, String email, String fullName, String phone) {
+        if (googleSub == null || googleSub.isBlank()) {
+            throw new IllegalArgumentException("Google identity information is missing.");
+        }
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Email is required.");
+        }
+        if (phone == null || phone.isBlank()) {
+            throw new IllegalArgumentException("Phone number is required to complete registration.");
+        }
+
+        String cleanEmail = email.trim().toLowerCase();
+        String cleanPhone = phone.trim();
+        String cleanName = (fullName != null && !fullName.isBlank()) ? fullName.trim() : "BOX Cinema Member";
+        String cleanSub = googleSub.trim();
+
+        if (userRepository.existsByPhone(cleanPhone)) {
+            throw new IllegalArgumentException("This phone number is already registered. Please enter a different number.");
+        }
+        if (userRepository.existsByEmail(cleanEmail)) {
+            throw new IllegalArgumentException("An account with this email already exists.");
+        }
+        if (userRepository.findByGoogleId(cleanSub).isPresent()) {
+            throw new IllegalArgumentException("This Google account is already registered.");
+        }
+
+        User newUser = new User(cleanName, cleanEmail, cleanPhone, null, "CUSTOMER");
+        newUser.setGoogleId(cleanSub);
         newUser.setAccountStatus("ACTIVE");
         newUser = userRepository.save(newUser);
 
         return toSummaryDto(newUser);
+    }
+
+    /**
+     * Phase 4: Link Google account to an existing user in Account Settings.
+     */
+    @Override
+    public void linkGoogleAccount(Long userId, String googleSub, String googleEmail) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID is required.");
+        }
+        if (googleSub == null || googleSub.isBlank()) {
+            throw new IllegalArgumentException("Google identity is required.");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User account not found."));
+
+        String cleanSub = googleSub.trim();
+
+        // Check if this Google sub is already linked to another account
+        Optional<User> otherUser = userRepository.findByGoogleId(cleanSub);
+        if (otherUser.isPresent() && !otherUser.get().getUserId().equals(userId)) {
+            throw new IllegalArgumentException("This Google account is already linked to another BOX Cinema user.");
+        }
+
+        user.setGoogleId(cleanSub);
+        userRepository.save(user);
+    }
+
+    /**
+     * Phase 4: Unlink Google account from an existing user in Account Settings.
+     */
+    @Override
+    public void unlinkGoogleAccount(Long userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID is required.");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User account not found."));
+
+        if (user.getPasswordHash() == null || user.getPasswordHash().isBlank()) {
+            throw new IllegalArgumentException("Cannot unlink Google because it is your only login method. Please set a password first.");
+        }
+
+        user.setGoogleId(null);
+        userRepository.save(user);
     }
 
     @Override
@@ -306,16 +310,6 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private boolean generateAndSendOtp(User user) {
-        String otpCode = String.format("%06d", ThreadLocalRandom.current().nextInt(100_000, 1_000_000));
-        boolean sentViaSmtp = emailService.sendVerificationOtpEmail(user.getEmail(), user.getFullName(), otpCode);
-        pendingEmailOtps.put(
-                user.getEmail().trim().toLowerCase(),
-                new EmailOtpState(otpCode, LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES), sentViaSmtp)
-        );
-        return sentViaSmtp;
-    }
-
     private void checkLockStatus(String cleanEmail) {
         LoginAttemptState state = loginAttempts.get(cleanEmail);
         if (state != null && state.lockedUntil != null) {
@@ -349,18 +343,6 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private String generateUniqueSocialPhone(String provider) {
-        String prefix = "FACEBOOK".equals(provider) ? "FB" : "GG";
-        for (int i = 0; i < 20; i++) {
-            long randomDigits = ThreadLocalRandom.current().nextLong(100_000_000L, 999_999_999L);
-            String candidate = prefix + randomDigits;
-            if (!userRepository.existsByPhone(candidate)) {
-                return candidate;
-            }
-        }
-        return prefix + (System.currentTimeMillis() % 1_000_000_000L);
-    }
-
     private UserSummaryDto toSummaryDto(User user) {
         return new UserSummaryDto(
                 user.getUserId(),
@@ -378,18 +360,6 @@ public class UserServiceImpl implements UserService {
         LoginAttemptState(int failedCount, LocalDateTime lockedUntil) {
             this.failedCount = failedCount;
             this.lockedUntil = lockedUntil;
-        }
-    }
-
-    private static class EmailOtpState {
-        final String otpCode;
-        final LocalDateTime expiresAt;
-        final boolean sentViaSmtp;
-
-        EmailOtpState(String otpCode, LocalDateTime expiresAt, boolean sentViaSmtp) {
-            this.otpCode = otpCode;
-            this.expiresAt = expiresAt;
-            this.sentViaSmtp = sentViaSmtp;
         }
     }
 }

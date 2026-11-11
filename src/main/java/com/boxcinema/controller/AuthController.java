@@ -1,8 +1,11 @@
 package com.boxcinema.controller;
 
+import com.boxcinema.dto.LoginRequestDto;
 import com.boxcinema.dto.RegisterRequestDto;
 import com.boxcinema.dto.UserSummaryDto;
 import com.boxcinema.entity.Movie;
+import com.boxcinema.entity.User;
+import com.boxcinema.repository.UserRepository;
 import com.boxcinema.security.SecuritySessionHelper;
 import com.boxcinema.service.MovieService;
 import com.boxcinema.service.UserService;
@@ -10,8 +13,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -26,6 +32,8 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Controller
@@ -35,6 +43,7 @@ public class AuthController {
     private final ObjectMapper objectMapper;
     private final MovieService movieService;
     private final SecurityContextRepository securityContextRepository;
+    private final UserRepository userRepository;
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
     @Value("${app.oauth2.google.client-id:}")
@@ -59,15 +68,17 @@ public class AuthController {
     public AuthController(UserService userService,
                           ObjectMapper objectMapper,
                           @Autowired(required = false) MovieService movieService,
-                          @Autowired(required = false) SecurityContextRepository securityContextRepository) {
+                          @Autowired(required = false) SecurityContextRepository securityContextRepository,
+                          @Autowired(required = false) UserRepository userRepository) {
         this.userService = userService;
         this.objectMapper = objectMapper;
         this.movieService = movieService;
         this.securityContextRepository = securityContextRepository;
+        this.userRepository = userRepository;
     }
 
     public AuthController(UserService userService, ObjectMapper objectMapper) {
-        this(userService, objectMapper, null, null);
+        this(userService, objectMapper, null, null, null);
     }
 
     @GetMapping("/login")
@@ -91,6 +102,10 @@ public class AuthController {
         return "auth/register";
     }
 
+    /**
+     * Phase 1: Direct registration (No OTP).
+     * Account is created in ACTIVE status and redirects to login with success flash.
+     */
     @PostMapping({"/register", "/signup"})
     public String processRegister(
             @ModelAttribute RegisterRequestDto registerRequest,
@@ -101,8 +116,9 @@ public class AuthController {
             UserSummaryDto newUser = userService.registerCustomer(registerRequest);
             redirectAttributes.addFlashAttribute(
                     "successMessage",
-                    "A 6-digit verification code has been sent to " + newUser.getEmail() + ". Please verify your Gmail to activate your account.");
-            return "redirect:/verify-email?email=" + URLEncoder.encode(newUser.getEmail(), StandardCharsets.UTF_8);
+                    "Registration successful! Please sign in with your email and password.");
+            redirectAttributes.addFlashAttribute("enteredEmail", newUser.getEmail());
+            return "redirect:/login?registered=true";
         } catch (IllegalArgumentException ex) {
             model.addAttribute("activePage", "register");
             model.addAttribute("errorMessage", ex.getMessage());
@@ -114,62 +130,86 @@ public class AuthController {
         }
     }
 
-    @GetMapping("/verify-email")
-    public String verifyEmailPage(
-            @RequestParam(value = "email", required = false) String email,
-            Model model) {
-
-        String cleanEmail = (email != null) ? email.trim().toLowerCase() : "";
-        model.addAttribute("activePage", "register");
-        model.addAttribute("verifyEmail", cleanEmail);
-        userService.getPendingOtpPreview(cleanEmail)
-                .ifPresent(otp -> model.addAttribute("demoOtpCode", otp));
-        populateAuthShowcasePosters(model);
-        return "auth/verify-email";
-    }
-
-    @PostMapping("/verify-email")
-    public String processVerifyEmail(
-            @RequestParam("email") String email,
-            @RequestParam("otpCode") String otpCode,
-            Model model,
-            RedirectAttributes redirectAttributes) {
-
-        String cleanEmail = (email != null) ? email.trim().toLowerCase() : "";
+    /**
+     * REST API for Registration (JSON payload).
+     */
+    @PostMapping("/api/auth/register")
+    @ResponseBody
+    public ResponseEntity<?> apiRegister(@RequestBody RegisterRequestDto registerRequest) {
         try {
-            UserSummaryDto verifiedUser = userService.verifyEmailOtp(cleanEmail, otpCode);
-            redirectAttributes.addFlashAttribute(
-                    "successMessage",
-                    "Gmail verified successfully! Welcome to BOX Cinema, " + verifiedUser.getFullName() + ". Please sign in.");
-            redirectAttributes.addFlashAttribute("enteredEmail", verifiedUser.getEmail());
-            return "redirect:/login?verified=true";
+            UserSummaryDto user = userService.registerCustomer(registerRequest);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Registration successful. Please sign in.",
+                    "user", user
+            ));
         } catch (IllegalArgumentException ex) {
-            model.addAttribute("activePage", "register");
-            model.addAttribute("verifyEmail", cleanEmail);
-            model.addAttribute("errorMessage", ex.getMessage());
-            userService.getPendingOtpPreview(cleanEmail)
-                    .ifPresent(otp -> model.addAttribute("demoOtpCode", otp));
-            populateAuthShowcasePosters(model);
-            return "auth/verify-email";
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", ex.getMessage()
+            ));
         }
     }
 
-    @PostMapping("/verify-email/resend")
-    public String resendVerificationOtp(
-            @RequestParam("email") String email,
-            RedirectAttributes redirectAttributes) {
-
-        String cleanEmail = (email != null) ? email.trim().toLowerCase() : "";
+    /**
+     * REST API for Login (JSON payload).
+     */
+    @PostMapping("/api/auth/login")
+    @ResponseBody
+    public ResponseEntity<?> apiLogin(
+            @RequestBody LoginRequestDto loginRequest,
+            HttpServletRequest request,
+            HttpServletResponse response) {
         try {
-            boolean sentViaSmtp = userService.resendVerificationOtp(cleanEmail);
-            String msg = sentViaSmtp
-                    ? "A new 6-digit verification code has been sent to your Gmail (" + cleanEmail + ")."
-                    : "A new 6-digit verification code has been generated for " + cleanEmail + ".";
-            redirectAttributes.addFlashAttribute("successMessage", msg);
+            UserSummaryDto user = userService.authenticate(loginRequest.getEmail(), loginRequest.getPassword());
+            SecuritySessionHelper.authenticateUserSession(user, request, response, securityContextRepository);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Login successful.",
+                    "user", user
+            ));
         } catch (IllegalArgumentException ex) {
-            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", ex.getMessage()
+            ));
         }
-        return "redirect:/verify-email?email=" + URLEncoder.encode(cleanEmail, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * REST API for retrieving current authenticated user.
+     */
+    @GetMapping("/api/auth/me")
+    @ResponseBody
+    public ResponseEntity<?> apiMe(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        UserSummaryDto user = (session != null) ? (UserSummaryDto) session.getAttribute("currentUser") : null;
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "success", false,
+                    "message", "Not authenticated."
+            ));
+        }
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "user", user
+        ));
+    }
+
+    /**
+     * REST API for Logout.
+     */
+    @PostMapping("/api/auth/logout")
+    @ResponseBody
+    public ResponseEntity<?> apiLogout(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Logged out successfully."
+        ));
     }
 
     @PostMapping("/auth/social")
@@ -186,6 +226,24 @@ public class AuthController {
             UserSummaryDto user = userService.authenticateSocial(provider, providerId, email, fullName);
             SecuritySessionHelper.authenticateUserSession(user, request, response, securityContextRepository);
             return "redirect:/";
+        } catch (IllegalStateException stateEx) {
+            String msg = stateEx.getMessage();
+            if (msg != null && msg.startsWith("ACCOUNT_EXISTS_NEEDS_LINK:")) {
+                redirectAttributes.addFlashAttribute(
+                        "errorMessage",
+                        "An account with this email already exists. Please sign in with your email and password, then link Google in Account Settings."
+                );
+                return "redirect:/login";
+            } else if (msg != null && msg.startsWith("GOOGLE_NEEDS_PROFILE:")) {
+                String[] parts = msg.split(":::");
+                HttpSession session = request.getSession(true);
+                session.setAttribute("pendingGoogleSub", parts.length > 1 ? parts[1] : providerId);
+                session.setAttribute("pendingGoogleEmail", parts.length > 2 ? parts[2] : email);
+                session.setAttribute("pendingGoogleName", parts.length > 3 ? parts[3] : fullName);
+                return "redirect:/auth/google/complete-profile";
+            }
+            redirectAttributes.addFlashAttribute("errorMessage", stateEx.getMessage());
+            return "redirect:/login";
         } catch (IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
             return "redirect:/login";
@@ -195,6 +253,7 @@ public class AuthController {
     @GetMapping("/auth/oauth2/{provider}")
     public String redirectToOAuth2Provider(
             @PathVariable("provider") String provider,
+            @RequestParam(value = "action", required = false) String action,
             HttpServletRequest request) {
 
         String cleanProvider = provider.trim().toLowerCase();
@@ -206,11 +265,17 @@ public class AuthController {
                     : baseUrl + "/login/oauth2/code/google";
             String redirectUri = URLEncoder.encode(resolvedRedirect, StandardCharsets.UTF_8);
             String scope = URLEncoder.encode("openid email profile", StandardCharsets.UTF_8);
-            return "redirect:https://accounts.google.com/o/oauth2/v2/auth?client_id="
+
+            String authUrl = "redirect:https://accounts.google.com/o/oauth2/v2/auth?client_id="
                     + URLEncoder.encode(googleClientId.trim(), StandardCharsets.UTF_8)
                     + "&redirect_uri=" + redirectUri
                     + "&response_type=code&scope=" + scope
                     + "&prompt=select_account";
+
+            if (action != null && !action.isBlank()) {
+                authUrl += "&state=" + URLEncoder.encode(action.trim(), StandardCharsets.UTF_8);
+            }
+            return authUrl;
         }
 
         if ("facebook".equals(cleanProvider) && isConfigured(facebookClientId)) {
@@ -232,6 +297,7 @@ public class AuthController {
     public String handleOAuth2Callback(
             @PathVariable("provider") String provider,
             @RequestParam(value = "code", required = false) String code,
+            @RequestParam(value = "state", required = false) String state,
             @RequestParam(value = "error", required = false) String error,
             HttpServletRequest request,
             HttpServletResponse response,
@@ -281,9 +347,47 @@ public class AuthController {
                 String email = userJson.path("email").asText("");
                 String name = userJson.path("name").asText("");
 
-                UserSummaryDto user = userService.authenticateSocial("GOOGLE", sub, email, name);
-                SecuritySessionHelper.authenticateUserSession(user, request, response, securityContextRepository);
-                return "redirect:/";
+                // Phase 4: Handle Google Account Linking from Profile
+                if (state != null && state.startsWith("link")) {
+                    HttpSession session = request.getSession(false);
+                    UserSummaryDto currentUser = (session != null) ? (UserSummaryDto) session.getAttribute("currentUser") : null;
+                    if (currentUser == null) {
+                        redirectAttributes.addFlashAttribute("errorMessage", "You must be signed in to link a Google account.");
+                        return "redirect:/login";
+                    }
+                    try {
+                        userService.linkGoogleAccount(currentUser.getUserId(), sub, email);
+                        redirectAttributes.addFlashAttribute("successMessage", "Google account connected successfully!");
+                        return "redirect:/profile";
+                    } catch (IllegalArgumentException linkEx) {
+                        redirectAttributes.addFlashAttribute("errorMessage", linkEx.getMessage());
+                        return "redirect:/profile";
+                    }
+                }
+
+                // Phase 3: Google Login / Registration
+                try {
+                    UserSummaryDto user = userService.authenticateSocial("GOOGLE", sub, email, name);
+                    SecuritySessionHelper.authenticateUserSession(user, request, response, securityContextRepository);
+                    return "redirect:/";
+                } catch (IllegalStateException stateEx) {
+                    String msg = stateEx.getMessage();
+                    if (msg != null && msg.startsWith("ACCOUNT_EXISTS_NEEDS_LINK:")) {
+                        redirectAttributes.addFlashAttribute(
+                                "errorMessage",
+                                "An account with email (" + email + ") already exists. Please sign in with your email and password, then link your Google account in Account Settings."
+                        );
+                        return "redirect:/login";
+                    } else if (msg != null && msg.startsWith("GOOGLE_NEEDS_PROFILE:")) {
+                        String[] parts = msg.split(":::");
+                        HttpSession session = request.getSession(true);
+                        session.setAttribute("pendingGoogleSub", parts.length > 1 ? parts[1] : sub);
+                        session.setAttribute("pendingGoogleEmail", parts.length > 2 ? parts[2] : email);
+                        session.setAttribute("pendingGoogleName", parts.length > 3 ? parts[3] : name);
+                        return "redirect:/auth/google/complete-profile";
+                    }
+                    throw stateEx;
+                }
             }
 
             if ("facebook".equals(cleanProvider) && isConfigured(facebookClientId) && isConfigured(facebookClientSecret)) {
@@ -324,6 +428,114 @@ public class AuthController {
         }
 
         return "redirect:/login";
+    }
+
+    /**
+     * Phase 3: Complete profile form for first-time Google user.
+     */
+    @GetMapping("/auth/google/complete-profile")
+    public String completeProfilePage(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+        String sub = (String) session.getAttribute("pendingGoogleSub");
+        String email = (String) session.getAttribute("pendingGoogleEmail");
+        String name = (String) session.getAttribute("pendingGoogleName");
+        if (sub == null || email == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "No pending Google sign-in session found.");
+            return "redirect:/login";
+        }
+        model.addAttribute("googleEmail", email);
+        model.addAttribute("googleName", name);
+        model.addAttribute("activePage", "register");
+        populateAuthShowcasePosters(model);
+        return "auth/complete-profile";
+    }
+
+    @PostMapping("/auth/google/complete-profile")
+    public String processCompleteProfile(
+            @RequestParam("phone") String phone,
+            HttpSession session,
+            HttpServletRequest request,
+            HttpServletResponse response,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+
+        String sub = (String) session.getAttribute("pendingGoogleSub");
+        String email = (String) session.getAttribute("pendingGoogleEmail");
+        String name = (String) session.getAttribute("pendingGoogleName");
+        if (sub == null || email == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Session expired. Please sign in with Google again.");
+            return "redirect:/login";
+        }
+
+        try {
+            UserSummaryDto newUser = userService.registerGoogleCustomer(sub, email, name, phone);
+            session.removeAttribute("pendingGoogleSub");
+            session.removeAttribute("pendingGoogleEmail");
+            session.removeAttribute("pendingGoogleName");
+
+            SecuritySessionHelper.authenticateUserSession(newUser, request, response, securityContextRepository);
+            redirectAttributes.addFlashAttribute("successMessage", "Welcome to BOX Cinema, " + newUser.getFullName() + "! Your account has been created.");
+            return "redirect:/";
+        } catch (IllegalArgumentException ex) {
+            model.addAttribute("googleEmail", email);
+            model.addAttribute("googleName", name);
+            model.addAttribute("errorMessage", ex.getMessage());
+            model.addAttribute("enteredPhone", phone);
+            model.addAttribute("activePage", "register");
+            populateAuthShowcasePosters(model);
+            return "auth/complete-profile";
+        }
+    }
+
+    /**
+     * Phase 4: Account Settings & Linked Accounts.
+     */
+    @GetMapping("/profile")
+    public String profilePage(HttpServletRequest request, Model model) {
+        HttpSession session = request.getSession(false);
+        UserSummaryDto currentUser = (session != null) ? (UserSummaryDto) session.getAttribute("currentUser") : null;
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+
+        if (userRepository != null) {
+            Optional<User> userOpt = userRepository.findById(currentUser.getUserId());
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                model.addAttribute("user", user);
+                model.addAttribute("hasPassword", user.getPasswordHash() != null && !user.getPasswordHash().isBlank());
+                model.addAttribute("isGoogleLinked", user.getGoogleId() != null && !user.getGoogleId().isBlank());
+                model.addAttribute("activePage", "profile");
+                return "customer/profile";
+            }
+        }
+
+        model.addAttribute("user", currentUser);
+        model.addAttribute("hasPassword", true);
+        model.addAttribute("isGoogleLinked", false);
+        model.addAttribute("activePage", "profile");
+        return "customer/profile";
+    }
+
+    @GetMapping("/auth/account/link/google")
+    public String linkGoogleStart(HttpServletRequest request) {
+        return redirectToOAuth2Provider("google", "link", request);
+    }
+
+    @PostMapping("/auth/account/unlink/google")
+    public String unlinkGoogle(HttpServletRequest request, RedirectAttributes redirectAttributes) {
+        HttpSession session = request.getSession(false);
+        UserSummaryDto currentUser = (session != null) ? (UserSummaryDto) session.getAttribute("currentUser") : null;
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            userService.unlinkGoogleAccount(currentUser.getUserId());
+            redirectAttributes.addFlashAttribute("successMessage", "Google account unlinked successfully.");
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/profile";
     }
 
     @PostMapping("/forgot-password")
