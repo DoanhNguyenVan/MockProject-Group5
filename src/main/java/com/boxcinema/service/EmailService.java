@@ -26,6 +26,14 @@ public interface EmailService {
     }
 
     /**
+     * Dispatches the inquiry confirmation email asynchronously on the background mail executor
+     * so HTTP responses return immediately after DB persistence.
+     */
+    default void sendInquiryConfirmationEmailAsync(String toEmail, String fullName, Long inquiryId, String topic, String userMessage) {
+        sendInquiryConfirmationEmail(toEmail, fullName, inquiryId, topic, userMessage);
+    }
+
+    /**
      * Sends a security notification email confirming that the user's password was reset.
      *
      * @param toEmail  customer email address
@@ -34,5 +42,12 @@ public interface EmailService {
      */
     default boolean sendPasswordResetConfirmationEmail(String toEmail, String fullName) {
         return false;
+    }
+
+    /**
+     * Dispatches the password reset confirmation email asynchronously on the background mail executor.
+     */
+    default void sendPasswordResetConfirmationEmailAsync(String toEmail, String fullName) {
+        sendPasswordResetConfirmationEmail(toEmail, fullName);
     }
 }

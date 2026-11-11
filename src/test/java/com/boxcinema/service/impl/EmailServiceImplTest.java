@@ -89,3 +89,4 @@ public class EmailServiceImplTest {
         verify(mailSender, never()).send(any(MimeMessage.class));
     }
 }
+

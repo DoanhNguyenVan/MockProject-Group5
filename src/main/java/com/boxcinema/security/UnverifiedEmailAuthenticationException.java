@@ -19,3 +19,4 @@ public class UnverifiedEmailAuthenticationException extends AuthenticationExcept
         return email;
     }
 }
+
