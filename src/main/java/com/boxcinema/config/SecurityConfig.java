@@ -58,13 +58,14 @@ public class SecurityConfig {
 
         http
                 .securityContext(sc -> sc.securityContextRepository(securityContextRepository))
-                .csrf(Customizer.withDefaults())
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/auth/password-reset/**", "/api/quick-booking/**"))
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/", "/home", "/about", "/contact", "/showtimes/**", "/movies/**",
                                 "/login", "/register", "/signup", "/verify-email/**", "/forgot-password",
                                 "/auth/**", "/login/oauth2/**",
+                                "/api/auth/password-reset/**",
                                 "/api/quick-booking/**",
                                 "/css/**", "/js/**", "/assets/**", "/images/**", "/favicon.ico", "/error"
                         ).permitAll()
