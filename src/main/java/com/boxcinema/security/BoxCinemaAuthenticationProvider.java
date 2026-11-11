@@ -47,3 +47,4 @@ public class BoxCinemaAuthenticationProvider implements AuthenticationProvider {
         return UsernamePasswordAuthenticationToken.class.isAssignableFrom(authentication);
     }
 }
+

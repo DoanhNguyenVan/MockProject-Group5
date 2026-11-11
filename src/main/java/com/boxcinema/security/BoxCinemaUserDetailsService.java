@@ -32,3 +32,4 @@ public class BoxCinemaUserDetailsService implements UserDetailsService {
         return new BoxCinemaUserDetails(user);
     }
 }
+

@@ -71,3 +71,4 @@ public final class SecuritySessionHelper {
         FLASH_MAP_MANAGER.saveOutputFlashMap(flashMap, request, response);
     }
 }
+

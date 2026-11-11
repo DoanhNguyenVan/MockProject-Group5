@@ -13,6 +13,7 @@ import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
@@ -82,6 +83,12 @@ public class EmailServiceImpl implements EmailService {
         );
     }
 
+    @Async("emailTaskExecutor")
+    @Override
+    public void sendInquiryConfirmationEmailAsync(String toEmail, String fullName, Long inquiryId, String topic, String userMessage) {
+        sendInquiryConfirmationEmail(toEmail, fullName, inquiryId, topic, userMessage);
+    }
+
     @Override
     public boolean sendPasswordResetConfirmationEmail(String toEmail, String fullName) {
         log.info("[PASSWORD RESET ALERT] Recipient: {} ({})", fullName, toEmail);
@@ -92,6 +99,12 @@ public class EmailServiceImpl implements EmailService {
                 "BOX Cinema - Your Password Was Successfully Reset",
                 buildPasswordResetEmailHtml(fullName)
         );
+    }
+
+    @Async("emailTaskExecutor")
+    @Override
+    public void sendPasswordResetConfirmationEmailAsync(String toEmail, String fullName) {
+        sendPasswordResetConfirmationEmail(toEmail, fullName);
     }
 
     private boolean sendHtmlEmail(String toEmail, String toName, String subject, String htmlBody) {

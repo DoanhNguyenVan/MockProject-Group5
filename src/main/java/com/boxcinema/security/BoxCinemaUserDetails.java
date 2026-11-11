@@ -97,3 +97,4 @@ public class BoxCinemaUserDetails implements UserDetails {
         return enabled;
     }
 }
+
