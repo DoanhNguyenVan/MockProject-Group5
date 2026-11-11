@@ -135,13 +135,6 @@
           <div id="loginFormStatus" class="d-none" role="alert" aria-live="polite"></div>
 
           <form id="loginForm" action="/login" th:action="@{/login}" method="post" novalidate>
-            <input
-              type="hidden"
-              name="_csrf"
-              th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}"
-              th:value="${_csrf != null ? _csrf.token : 'demo-csrf-token'}"
-              value="demo-csrf-token"
-            >
 
             <div class="mb-3">
               <label for="loginEmail" class="form-label small text-secondary fw-semibold">Email Address *</label>

@@ -8,6 +8,7 @@ import com.boxcinema.service.EmailService;
 import com.boxcinema.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,14 +29,21 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final EmailService emailService;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final PasswordEncoder passwordEncoder;
     private final Map<String, LoginAttemptState> loginAttempts = new ConcurrentHashMap<>();
     private final Map<String, EmailOtpState> pendingEmailOtps = new ConcurrentHashMap<>();
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, EmailService emailService) {
+    public UserServiceImpl(UserRepository userRepository,
+                           EmailService emailService,
+                           @Autowired(required = false) PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.emailService = emailService;
+        this.passwordEncoder = (passwordEncoder != null) ? passwordEncoder : new BCryptPasswordEncoder();
+    }
+
+    public UserServiceImpl(UserRepository userRepository, EmailService emailService) {
+        this(userRepository, emailService, new BCryptPasswordEncoder());
     }
 
     public UserServiceImpl(UserRepository userRepository) {
@@ -44,12 +52,7 @@ public class UserServiceImpl implements UserService {
             public boolean sendVerificationOtpEmail(String toEmail, String fullName, String otpCode) {
                 return false;
             }
-
-            @Override
-            public boolean sendInquiryConfirmationEmail(String toEmail, String fullName, Long inquiryId, String topic, String userMessage) {
-                return false;
-            }
-        });
+        }, new BCryptPasswordEncoder());
     }
 
     @Override
@@ -285,6 +288,9 @@ public class UserServiceImpl implements UserService {
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         loginAttempts.remove(cleanEmail);
+        if (emailService != null) {
+            emailService.sendPasswordResetConfirmationEmail(user.getEmail(), user.getFullName());
+        }
     }
 
     private boolean generateAndSendOtp(User user) {
