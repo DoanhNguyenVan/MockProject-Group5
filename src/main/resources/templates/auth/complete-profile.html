@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complete Google Profile | BOX Cinema</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/main.css" th:href="@{/css/main.css(v='2.4')}">
+  <link rel="stylesheet" href="/css/auth.css" th:href="@{/css/auth.css(v='2.4')}">
+  <style>
+    .auth-theater { position: relative !important; overflow: hidden !important; }
+    .auth-poster-slideshow { position: absolute !important; inset: 0 !important; z-index: 0 !important; pointer-events: none !important; background: #0d0e14; }
+    .auth-poster-slide { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; object-fit: cover !important; object-position: center 20% !important; opacity: 0; transform: scale(1.03); transition: opacity 0.9s ease-in-out, transform 4.5s ease-out; }
+    .auth-poster-slide.active { opacity: 1 !important; transform: scale(1) !important; }
+    .auth-theater-scrim { position: absolute !important; inset: 0 !important; z-index: 1 !important; pointer-events: none !important; background: radial-gradient(circle at 75% 20%, rgb(201 25 52 / 28%) 0%, transparent 55%), linear-gradient(180deg, rgb(10 11 18 / 12%) 0%, rgb(10 11 18 / 55%) 58%, rgb(10 11 18 / 95%) 100%) !important; }
+    .auth-theater-overlay { position: relative !important; z-index: 2 !important; }
+    .auth-input-group { position: relative !important; display: block !important; width: 100% !important; }
+    .auth-input-icon { position: absolute !important; left: 0.85rem !important; top: 50% !important; transform: translateY(-50%) !important; width: 18px !important; height: 18px !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; color: #64748b !important; pointer-events: none !important; z-index: 2 !important; }
+    .form-control-dark.has-leading-icon { padding-left: 2.55rem !important; }
+  </style>
+</head>
+<body>
+  <header th:replace="~{fragments/navbar :: navbar}"></header>
+
+  <main id="main-content" tabindex="-1">
+    <section class="auth-page-section" aria-label="Complete Registration">
+      <div class="auth-split-shell">
+        <aside class="auth-welcome" aria-label="Welcome">
+          <div class="auth-theater" aria-hidden="true">
+            <div class="auth-poster-slideshow" th:if="${authPosters != null and !authPosters.isEmpty()}">
+              <img th:each="posterUrl, iter : ${authPosters}" th:src="${posterUrl}" th:classappend="${iter.index == 0 ? ' active' : ''}" alt="" class="auth-poster-slide" loading="eager" onerror="this.remove()">
+            </div>
+            <div class="auth-theater-scrim"></div>
+            <div class="auth-theater-overlay">
+              <h2 class="auth-showcase-title">Almost there!</h2>
+              <p class="auth-showcase-sub">
+                Complete your Google registration to book cinema tickets and receive instant e-ticket SMS alerts.
+              </p>
+            </div>
+          </div>
+          <div class="auth-brand">
+            <img src="/assets/img/box-cinema-logo.png" th:src="@{/assets/img/box-cinema-logo.png}" width="180" height="60" alt="BOX Cinema">
+            <p>Welcome to BOX Cinema!</p>
+          </div>
+        </aside>
+
+        <div class="auth-form-col">
+          <div class="mb-4">
+            <h1 class="h4 fw-bold text-white mb-2">Complete Your Profile</h1>
+            <p class="text-secondary small mb-0">
+              Your Google identity is verified. Please provide a phone number to complete your BOX Cinema membership.
+            </p>
+          </div>
+
+          <div th:if="${errorMessage != null}" class="auth-alert auth-alert-danger mb-3" role="alert">
+            <span th:text="${errorMessage}">Error message</span>
+          </div>
+
+          <form action="/auth/google/complete-profile" th:action="@{/auth/google/complete-profile}" method="post">
+            <input type="hidden" name="_csrf" th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}" th:value="${_csrf != null ? _csrf.token : ''}">
+
+            <div class="mb-3">
+              <label class="form-label small text-secondary fw-semibold">Full Name (from Google)</label>
+              <input type="text" class="form-control form-control-dark" th:value="${googleName}" readonly disabled>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small text-secondary fw-semibold">Email Address (Verified by Google)</label>
+              <input type="email" class="form-control form-control-dark" th:value="${googleEmail}" readonly disabled>
+            </div>
+
+            <div class="mb-4">
+              <label for="phoneInput" class="form-label small text-secondary fw-semibold">Phone Number *</label>
+              <div class="auth-input-group">
+                <span class="auth-input-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                  </svg>
+                </span>
+                <input type="tel" id="phoneInput" name="phone" th:value="${enteredPhone}" class="form-control form-control-dark has-leading-icon" placeholder="0901234567" pattern="[0-9]{9,15}" required autofocus>
+              </div>
+              <div class="form-text text-secondary small">Required for e-ticket booking confirmations and security alerts.</div>
+            </div>
+
+            <button type="submit" class="btn btn-box-primary w-100 py-2 fw-semibold">
+              Complete Registration &amp; Sign In
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>

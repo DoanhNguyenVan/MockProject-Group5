@@ -3,17 +3,17 @@ package com.boxcinema.controller;
 import com.boxcinema.config.SecurityConfig;
 import com.boxcinema.dto.RegisterRequestDto;
 import com.boxcinema.dto.UserSummaryDto;
+import com.boxcinema.repository.UserRepository;
 import com.boxcinema.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-
-import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -35,6 +35,9 @@ public class AuthControllerTest {
 
     @MockBean
     private UserService userService;
+
+    @MockBean
+    private UserRepository userRepository;
 
     @Test
     void testLoginPageRenders() throws Exception {
@@ -60,6 +63,21 @@ public class AuthControllerTest {
     }
 
     @Test
+    void testProcessLoginStaffRoleRedirectsToStaffDashboard() throws Exception {
+        UserSummaryDto staffDto = new UserSummaryDto(2L, "Staff User", "staff@boxcinema.com", "0909998887", "STAFF");
+        when(userService.authenticate("staff@boxcinema.com", "StaffSecret123")).thenReturn(staffDto);
+
+        mockMvc.perform(post("/login")
+                        .with(csrf())
+                        .param("username", "staff@boxcinema.com")
+                        .param("password", "StaffSecret123"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/staff"))
+                .andExpect(authenticated().withUsername("staff@boxcinema.com").withRoles("STAFF"))
+                .andExpect(request().sessionAttribute("currentUser", staffDto));
+    }
+
+    @Test
     void testProcessLoginFailureRedirectsWithFlashError() throws Exception {
         when(userService.authenticate(anyString(), anyString()))
                 .thenThrow(new IllegalArgumentException("Invalid email or password."));
@@ -82,28 +100,29 @@ public class AuthControllerTest {
     }
 
     @Test
-    void testProcessLoginUnverifiedGmailRedirectsToVerifyOtp() throws Exception {
-        when(userService.authenticate("unverified@gmail.com", "Password123!"))
-                .thenThrow(new IllegalStateException("UNVERIFIED_EMAIL:unverified@gmail.com"));
+    void testProcessLoginGoogleOnlyAccountDisplaysMessage() throws Exception {
+        when(userService.authenticate("googleuser@gmail.com", "anypass"))
+                .thenThrow(new IllegalArgumentException("This account was registered via Google. Please sign in using 'Continue with Google'."));
 
         MvcResult result = mockMvc.perform(post("/login")
                         .with(csrf())
-                        .param("username", "unverified@gmail.com")
-                        .param("password", "Password123!"))
+                        .param("username", "googleuser@gmail.com")
+                        .param("password", "anypass"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/verify-email?email=unverified%40gmail.com"))
+                .andExpect(redirectedUrl("/login?error=true"))
                 .andExpect(unauthenticated())
                 .andReturn();
 
         MockHttpSession session = (MockHttpSession) result.getRequest().getSession(false);
-        mockMvc.perform(get("/verify-email?email=unverified@gmail.com").session(session))
+        mockMvc.perform(get("/login?error=true").session(session))
                 .andExpect(status().isOk())
-                .andExpect(view().name("auth/verify-email"))
-                .andExpect(model().attributeExists("errorMessage"));
+                .andExpect(view().name("auth/login"))
+                .andExpect(model().attribute("errorMessage", "This account was registered via Google. Please sign in using 'Continue with Google'."));
     }
 
     @Test
-    void testProcessRegisterRedirectsToVerifyEmailOtpPageAndRequiresCsrf() throws Exception {
+    void testProcessRegisterRedirectsToLoginPageDirectlyAndRequiresCsrf() throws Exception {
+        // CSRF protection check
         mockMvc.perform(post("/register")
                         .param("fullName", "Minh Tran")
                         .param("email", "minh@gmail.com"))
@@ -112,6 +131,7 @@ public class AuthControllerTest {
         UserSummaryDto created = new UserSummaryDto(2L, "Minh Tran", "minh@gmail.com", "0909888777", "CUSTOMER");
         when(userService.registerCustomer(any(RegisterRequestDto.class))).thenReturn(created);
 
+        // Direct registration without OTP: redirects to /login?registered=true
         mockMvc.perform(post("/register")
                         .with(csrf())
                         .param("fullName", "Minh Tran")
@@ -121,30 +141,44 @@ public class AuthControllerTest {
                         .param("confirmPassword", "Password123!")
                         .param("termsAccepted", "true"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/verify-email?email=minh%40gmail.com"))
+                .andExpect(redirectedUrl("/login?registered=true"))
                 .andExpect(flash().attributeExists("successMessage"));
     }
 
     @Test
-    void testVerifyEmailOtpPageAndSubmission() throws Exception {
-        when(userService.getPendingOtpPreview("minh@gmail.com")).thenReturn(Optional.of("654321"));
+    void testApiRegisterAndLoginJsonEndpoints() throws Exception {
+        UserSummaryDto created = new UserSummaryDto(5L, "REST User", "rest@boxcinema.com", "0912345678", "CUSTOMER");
+        when(userService.registerCustomer(any(RegisterRequestDto.class))).thenReturn(created);
+        when(userService.authenticate("rest@boxcinema.com", "Password123!")).thenReturn(created);
 
-        mockMvc.perform(get("/verify-email").param("email", "minh@gmail.com"))
+        // 1. API Register
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "fullName": "REST User",
+                                  "email": "rest@boxcinema.com",
+                                  "phone": "0912345678",
+                                  "password": "Password123!",
+                                  "confirmPassword": "Password123!"
+                                }
+                                """))
                 .andExpect(status().isOk())
-                .andExpect(view().name("auth/verify-email"))
-                .andExpect(model().attribute("verifyEmail", "minh@gmail.com"))
-                .andExpect(model().attribute("demoOtpCode", "654321"));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("Registration successful. Please sign in."));
 
-        UserSummaryDto verified = new UserSummaryDto(2L, "Minh Tran", "minh@gmail.com", "0909888777", "CUSTOMER");
-        when(userService.verifyEmailOtp("minh@gmail.com", "654321")).thenReturn(verified);
-
-        mockMvc.perform(post("/verify-email")
-                        .with(csrf())
-                        .param("email", "minh@gmail.com")
-                        .param("otpCode", "654321"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login?verified=true"))
-                .andExpect(flash().attributeExists("successMessage"));
+        // 2. API Login
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "rest@boxcinema.com",
+                                  "password": "Password123!"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.user.email").value("rest@boxcinema.com"));
     }
 
     @Test

@@ -58,14 +58,14 @@ public class SecurityConfig {
 
         http
                 .securityContext(sc -> sc.securityContextRepository(securityContextRepository))
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/auth/password-reset/**", "/api/quick-booking/**"))
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/auth/**", "/api/quick-booking/**"))
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/", "/home", "/about", "/contact", "/showtimes/**", "/movies/**",
                                 "/login", "/register", "/signup", "/verify-email/**", "/forgot-password",
                                 "/auth/**", "/login/oauth2/**",
-                                "/api/auth/password-reset/**",
+                                "/api/auth/**",
                                 "/api/quick-booking/**",
                                 "/css/**", "/js/**", "/assets/**", "/images/**", "/favicon.ico", "/error"
                         ).permitAll()
@@ -116,6 +116,18 @@ public class SecurityConfig {
                 session.setAttribute("currentUser", details.getUserSummary());
                 if (request.getParameter("remember-me") != null) {
                     session.setMaxInactiveInterval(7 * 24 * 60 * 60);
+                }
+
+                String role = details.getUserSummary().getRole();
+                if ("ADMIN".equalsIgnoreCase(role)) {
+                    response.sendRedirect("/admin");
+                    return;
+                } else if ("MANAGER".equalsIgnoreCase(role)) {
+                    response.sendRedirect("/manager");
+                    return;
+                } else if ("STAFF".equalsIgnoreCase(role)) {
+                    response.sendRedirect("/staff");
+                    return;
                 }
             }
             delegate.onAuthenticationSuccess(request, response, authentication);
