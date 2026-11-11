@@ -90,6 +90,25 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    public boolean sendPasswordResetOtpEmail(String toEmail, String fullName, String otpCode) {
+        log.info("=================================================================");
+        log.info("[PASSWORD RESET OTP] Recipient: {} ({}) | OTP Code: {}", fullName, toEmail, otpCode);
+        log.info("=================================================================");
+
+        return sendHtmlEmail(
+                toEmail,
+                fullName,
+                "BOX Cinema - Password Reset Code (OTP: " + otpCode + ")",
+                buildPasswordResetOtpEmailHtml(fullName, otpCode)
+        );
+    }
+
+    @Override
+    public boolean sendPasswordResetSuccessEmail(String toEmail, String fullName) {
+        return sendPasswordResetConfirmationEmail(toEmail, fullName);
+    }
+
+    @Override
     public boolean sendPasswordResetConfirmationEmail(String toEmail, String fullName) {
         log.info("[PASSWORD RESET ALERT] Recipient: {} ({})", fullName, toEmail);
 
@@ -224,6 +243,36 @@ public class EmailServiceImpl implements EmailService {
                   </div>
                 </div>
                 """.formatted(safeName, inquiryId, safeTopic, safeMessage);
+    }
+
+    private String buildPasswordResetOtpEmailHtml(String fullName, String otpCode) {
+        String safeName = escapeHtml(fullName != null && !fullName.isBlank() ? fullName : "Member");
+        return """
+                <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; background: #141418; color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #2e2e38;">
+                  <div style="background: linear-gradient(135deg, #C91934 0%%, #7a0d1e 100%%); padding: 28px 32px; text-align: center;">
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: 0.04em;">BOX CINEMA</h1>
+                    <p style="margin: 6px 0 0; font-size: 13px; color: #ffd7de;">Password Reset Code</p>
+                  </div>
+                  <div style="padding: 32px;">
+                    <p style="font-size: 16px; margin-top: 0; color: #e2e8f0;">Hello <strong>%s</strong>,</p>
+                    <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">
+                      We received a request to reset your BOX Cinema account password. Please enter the following 6-digit verification code:
+                    </p>
+                    <div style="margin: 28px 0; padding: 20px; background: #1f2029; border: 2px dashed #C91934; border-radius: 12px; text-align: center;">
+                      <span style="font-size: 34px; font-weight: 900; letter-spacing: 10px; color: #ffffff;">%s</span>
+                    </div>
+                    <p style="font-size: 13px; color: #94a3b8; margin-bottom: 8px;">
+                      This verification code expires in <strong>5 minutes</strong>.
+                    </p>
+                    <p style="font-size: 13px; color: #94a3b8; margin-bottom: 0;">
+                      If you did not request a password reset, please ignore this email. Your current password remains secure.
+                    </p>
+                  </div>
+                  <div style="background: #0d0e14; padding: 16px 30px; text-align: center; border-top: 1px solid #22232e;">
+                    <p style="margin: 0; font-size: 12px; color: #64748b;">BOX Cinema Vietnam · Secure Account Recovery</p>
+                  </div>
+                </div>
+                """.formatted(safeName, otpCode);
     }
 
     private String buildPasswordResetEmailHtml(String fullName) {

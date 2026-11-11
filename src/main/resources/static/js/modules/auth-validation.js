@@ -279,24 +279,273 @@ function initForgotPasswordModal(doc = document) {
     return;
   }
 
+  const alertBox = doc.getElementById("forgotModalAlert");
+  const step1 = doc.getElementById("forgotStep1");
+  const step2 = doc.getElementById("forgotStep2");
+  const step3 = doc.getElementById("forgotStep3");
+  const step4 = doc.getElementById("forgotStep4");
+
+  const emailInput = doc.getElementById("resetEmail");
+  const otpInput = doc.getElementById("resetOtpInput");
+  const newPassInput = doc.getElementById("resetNewPassword");
+  const confirmPassInput = doc.getElementById("resetConfirmPassword");
+
+  const btnSendOtp = doc.getElementById("btnSendForgotOtp");
+  const btnVerifyOtp = doc.getElementById("btnVerifyForgotOtp");
+  const btnResendOtp = doc.getElementById("btnResendForgotOtp");
+  const btnComplete = doc.getElementById("btnCompleteForgotReset");
+  const btnFinish = doc.getElementById("btnFinishForgotSuccess");
+
+  const countdownSpan = doc.getElementById("resendCountdownSpan");
+  const countdownSec = doc.getElementById("resendCountdownSec");
+  const displayTargetEmail = doc.getElementById("displayTargetEmail");
+
+  let currentEmail = "";
+  let currentResetToken = "";
+  let cooldownTimer = null;
+
+  function showAlert(type, message) {
+    if (!alertBox) return;
+    alertBox.className = `auth-alert auth-alert-${type} mb-3`;
+    alertBox.textContent = message;
+    alertBox.classList.remove("d-none");
+  }
+
+  function hideAlert() {
+    if (!alertBox) return;
+    alertBox.classList.add("d-none");
+    alertBox.textContent = "";
+  }
+
+  function showStep(stepNum) {
+    hideAlert();
+    [step1, step2, step3, step4].forEach((s, idx) => {
+      if (s) {
+        if (idx + 1 === stepNum) {
+          s.classList.remove("d-none");
+        } else {
+          s.classList.add("d-none");
+        }
+      }
+    });
+  }
+
+  function startCooldown(seconds = 60) {
+    if (cooldownTimer) clearInterval(cooldownTimer);
+    if (!btnResendOtp || !countdownSpan || !countdownSec) return;
+
+    btnResendOtp.disabled = true;
+    btnResendOtp.classList.add("text-muted");
+    btnResendOtp.classList.remove("text-glow-red");
+    countdownSpan.classList.remove("d-none");
+    countdownSec.textContent = String(seconds);
+
+    let remaining = seconds;
+    cooldownTimer = setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        clearInterval(cooldownTimer);
+        cooldownTimer = null;
+        btnResendOtp.disabled = false;
+        btnResendOtp.classList.remove("text-muted");
+        btnResendOtp.classList.add("text-glow-red");
+        countdownSpan.classList.add("d-none");
+      } else {
+        countdownSec.textContent = String(remaining);
+      }
+    }, 1000);
+  }
+
   openBtn.addEventListener("click", () => {
     const loginEmail = doc.getElementById("loginEmail")?.value || "";
-    const resetEmail = doc.getElementById("resetEmail");
-    if (resetEmail && loginEmail) {
-      resetEmail.value = loginEmail;
+    if (emailInput && loginEmail) {
+      emailInput.value = loginEmail;
     }
+    showStep(1);
     modal.classList.remove("d-none");
   });
 
   if (closeBtn) {
-    closeBtn.addEventListener("click", () => modal.classList.add("d-none"));
+    closeBtn.addEventListener("click", () => {
+      if (cooldownTimer) clearInterval(cooldownTimer);
+      modal.classList.add("d-none");
+    });
   }
 
   modal.addEventListener("click", (e) => {
     if (e.target === modal) {
+      if (cooldownTimer) clearInterval(cooldownTimer);
       modal.classList.add("d-none");
     }
   });
+
+  // Step 1: Send OTP
+  if (btnSendOtp) {
+    btnSendOtp.addEventListener("click", async () => {
+      hideAlert();
+      const email = emailInput?.value?.trim() || "";
+      if (!email || !email.includes("@")) {
+        showAlert("danger", "Please enter a valid email address.");
+        return;
+      }
+
+      btnSendOtp.disabled = true;
+      const originalText = btnSendOtp.innerHTML;
+      btnSendOtp.innerHTML = "<span>Sending code...</span>";
+
+      try {
+        const res = await fetch("/api/auth/password-reset/request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          currentEmail = email;
+          if (displayTargetEmail) displayTargetEmail.textContent = email;
+          showStep(2);
+          startCooldown(60);
+          showAlert("success", data.message || "A verification code has been dispatched.");
+        } else {
+          showAlert("danger", data.message || "Failed to request verification code. Please try again.");
+        }
+      } catch (err) {
+        showAlert("danger", "Connection error. Please try again.");
+      } finally {
+        btnSendOtp.disabled = false;
+        btnSendOtp.innerHTML = originalText;
+      }
+    });
+  }
+
+  // Step 2: Verify OTP
+  if (btnVerifyOtp) {
+    btnVerifyOtp.addEventListener("click", async () => {
+      hideAlert();
+      const otp = otpInput?.value?.trim() || "";
+      if (!otp || otp.length !== 6 || !/^\d{6}$/.test(otp)) {
+        showAlert("danger", "Please enter the 6-digit numeric verification code.");
+        return;
+      }
+
+      btnVerifyOtp.disabled = true;
+      const originalText = btnVerifyOtp.innerHTML;
+      btnVerifyOtp.innerHTML = "<span>Verifying code...</span>";
+
+      try {
+        const res = await fetch("/api/auth/password-reset/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: currentEmail, otp })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success && data.resetToken) {
+          currentResetToken = data.resetToken;
+          showStep(3);
+          showAlert("success", "Code verified! Please create your new password.");
+        } else {
+          showAlert("danger", data.message || "Invalid or expired verification code.");
+        }
+      } catch (err) {
+        showAlert("danger", "Connection error. Please try again.");
+      } finally {
+        btnVerifyOtp.disabled = false;
+        btnVerifyOtp.innerHTML = originalText;
+      }
+    });
+  }
+
+  // Step 2: Resend OTP
+  if (btnResendOtp) {
+    btnResendOtp.addEventListener("click", async () => {
+      hideAlert();
+      btnResendOtp.disabled = true;
+
+      try {
+        const res = await fetch("/api/auth/password-reset/resend", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: currentEmail })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          startCooldown(60);
+          showAlert("success", data.message || "A fresh code has been sent.");
+        } else {
+          btnResendOtp.disabled = false;
+          showAlert("danger", data.message || "Failed to resend code.");
+        }
+      } catch (err) {
+        btnResendOtp.disabled = false;
+        showAlert("danger", "Connection error while resending code.");
+      }
+    });
+  }
+
+  // Step 3: Complete Password Reset
+  if (btnComplete) {
+    btnComplete.addEventListener("click", async () => {
+      hideAlert();
+      const newPassword = newPassInput?.value || "";
+      const confirmPassword = confirmPassInput?.value || "";
+
+      if (newPassword.length < 8) {
+        showAlert("danger", "Password must be at least 8 characters long.");
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        showAlert("danger", "New password and confirmation do not match.");
+        return;
+      }
+
+      btnComplete.disabled = true;
+      const originalText = btnComplete.innerHTML;
+      btnComplete.innerHTML = "<span>Updating password...</span>";
+
+      try {
+        const res = await fetch("/api/auth/password-reset/complete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            resetToken: currentResetToken,
+            newPassword,
+            confirmPassword
+          })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          showStep(4);
+        } else {
+          showAlert("danger", data.message || "Failed to reset password. Please try again.");
+        }
+      } catch (err) {
+        showAlert("danger", "Connection error while updating password.");
+      } finally {
+        btnComplete.disabled = false;
+        btnComplete.innerHTML = originalText;
+      }
+    });
+  }
+
+  // Step 4: Finish & Sign In
+  if (btnFinish) {
+    btnFinish.addEventListener("click", () => {
+      modal.classList.add("d-none");
+      const loginEmail = doc.getElementById("loginEmail");
+      const loginPass = doc.getElementById("loginPassword");
+      if (loginEmail && currentEmail) {
+        loginEmail.value = currentEmail;
+      }
+      if (loginPass) {
+        loginPass.value = "";
+        loginPass.focus();
+      }
+    });
+  }
 }
 
 function initOtpVerificationForm(doc = document) {

@@ -135,6 +135,13 @@
           <div id="loginFormStatus" class="d-none" role="alert" aria-live="polite"></div>
 
           <form id="loginForm" action="/login" th:action="@{/login}" method="post" novalidate>
+            <input
+              type="hidden"
+              name="_csrf"
+              th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}"
+              th:value="${_csrf != null ? _csrf.token : 'demo-csrf-token'}"
+              value="demo-csrf-token"
+            >
 
             <div class="mb-3">
               <label for="loginEmail" class="form-label small text-secondary fw-semibold">Email Address *</label>
@@ -291,55 +298,124 @@
     </div>
   </div>
 
-  <!-- Forgot Password Modal -->
+  <!-- Forgot Password Multi-step Modal -->
   <div class="auth-modal-backdrop d-none" id="forgotPasswordModal" role="dialog" aria-modal="true" aria-labelledby="forgotModalTitle">
     <div class="auth-modal-card">
       <div class="auth-modal-header">
         <div>
           <h3 id="forgotModalTitle" class="h6 fw-bold text-white mb-0">Reset Your Password</h3>
-          <p class="small text-secondary mb-0">Enter your registered email and choose a new password.</p>
+          <p id="forgotModalSubtitle" class="small text-secondary mb-0">Follow the steps to recover access to your account.</p>
         </div>
         <button type="button" class="auth-modal-close" id="closeForgotModalBtn" aria-label="Close">&times;</button>
       </div>
+
       <div class="auth-modal-body">
-        <form id="forgotPasswordForm" action="/forgot-password" th:action="@{/forgot-password}" method="post">
+        <div id="forgotModalAlert" class="auth-alert mb-3 d-none" role="alert"></div>
+
+        <!-- Step 1: Request OTP -->
+        <div id="forgotStep1">
+          <p class="small text-secondary mb-3">
+            Enter your registered email address and we'll send a 6-digit verification code to confirm ownership.
+          </p>
           <div class="mb-3">
             <label for="resetEmail" class="form-label small text-secondary fw-semibold">Registered Email *</label>
             <input
               type="email"
               id="resetEmail"
-              name="email"
               class="form-control form-control-dark"
               placeholder="alex@boxcinema.com"
               required
             >
+            <div id="resetEmailError" class="field-error-msg"></div>
           </div>
+          <button type="button" id="btnSendForgotOtp" class="btn btn-box-primary w-100 py-2">
+            <span>Send Verification Code</span>
+          </button>
+        </div>
+
+        <!-- Step 2: Verify OTP -->
+        <div id="forgotStep2" class="d-none">
+          <p class="small text-secondary mb-3">
+            A 6-digit verification code has been dispatched to <strong id="displayTargetEmail" class="text-white"></strong>. Please enter the code below (valid for 5 minutes):
+          </p>
           <div class="mb-3">
-            <label for="resetNewPassword" class="form-label small text-secondary fw-semibold">New Password (Min 6 chars) *</label>
+            <label for="resetOtpInput" class="form-label small text-secondary fw-semibold">6-Digit OTP Code *</label>
+            <input
+              type="text"
+              id="resetOtpInput"
+              class="form-control form-control-dark text-center font-monospace fs-4 fw-bold"
+              placeholder="000000"
+              maxlength="6"
+              pattern="\d{6}"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              style="letter-spacing: 6px;"
+              required
+            >
+            <div id="resetOtpError" class="field-error-msg"></div>
+          </div>
+          <button type="button" id="btnVerifyForgotOtp" class="btn btn-box-primary w-100 py-2 mb-3">
+            <span>Verify Code</span>
+          </button>
+          <div class="text-center small text-secondary">
+            <span>Didn't receive the code? </span>
+            <button type="button" id="btnResendForgotOtp" class="btn-link-reset text-glow-red fw-bold">
+              Resend Code
+            </button>
+            <span id="resendCountdownSpan" class="d-none text-muted ms-1">(<span id="resendCountdownSec">60</span>s)</span>
+          </div>
+        </div>
+
+        <!-- Step 3: Set New Password -->
+        <div id="forgotStep3" class="d-none">
+          <p class="small text-secondary mb-3">
+            Verification successful! Please create a strong new password for your account.
+          </p>
+          <div class="mb-3">
+            <label for="resetNewPassword" class="form-label small text-secondary fw-semibold">New Password *</label>
             <input
               type="password"
               id="resetNewPassword"
-              name="newPassword"
               class="form-control form-control-dark"
-              placeholder="Enter new password"
-              minlength="6"
+              placeholder="Min 8 chars (upper, lower, digit, special)"
+              minlength="8"
               required
             >
+            <div id="resetNewPasswordError" class="field-error-msg"></div>
           </div>
           <div class="mb-3">
             <label for="resetConfirmPassword" class="form-label small text-secondary fw-semibold">Confirm New Password *</label>
             <input
               type="password"
               id="resetConfirmPassword"
-              name="confirmPassword"
               class="form-control form-control-dark"
-              placeholder="Repeat new password"
-              minlength="6"
+              placeholder="Re-enter your new password"
+              minlength="8"
               required
             >
+            <div id="resetConfirmPasswordError" class="field-error-msg"></div>
           </div>
-          <button type="submit" class="btn btn-box-primary w-100 py-2">Update Password</button>
-        </form>
+          <button type="button" id="btnCompleteForgotReset" class="btn btn-box-primary w-100 py-2">
+            <span>Update Password</span>
+          </button>
+        </div>
+
+        <!-- Step 4: Success -->
+        <div id="forgotStep4" class="d-none text-center py-2">
+          <div class="mb-3" style="color: #22c55e;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          </div>
+          <h4 class="h6 fw-bold text-white mb-2">Password Reset Successful!</h4>
+          <p class="small text-secondary mb-4">
+            Your password has been securely updated. You can now sign in using your new credentials.
+          </p>
+          <button type="button" id="btnFinishForgotSuccess" class="btn btn-box-primary w-100 py-2">
+            <span>Sign In to Account</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
