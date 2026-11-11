@@ -3,14 +3,16 @@ package com.boxcinema.controller;
 import com.boxcinema.dto.RegisterRequestDto;
 import com.boxcinema.dto.UserSummaryDto;
 import com.boxcinema.entity.Movie;
+import com.boxcinema.security.SecuritySessionHelper;
 import com.boxcinema.service.MovieService;
 import com.boxcinema.service.UserService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -32,6 +34,7 @@ public class AuthController {
     private final UserService userService;
     private final ObjectMapper objectMapper;
     private final MovieService movieService;
+    private final SecurityContextRepository securityContextRepository;
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
     @Value("${app.oauth2.google.client-id:}")
@@ -55,14 +58,16 @@ public class AuthController {
     @Autowired
     public AuthController(UserService userService,
                           ObjectMapper objectMapper,
-                          @Autowired(required = false) MovieService movieService) {
+                          @Autowired(required = false) MovieService movieService,
+                          @Autowired(required = false) SecurityContextRepository securityContextRepository) {
         this.userService = userService;
         this.objectMapper = objectMapper;
         this.movieService = movieService;
+        this.securityContextRepository = securityContextRepository;
     }
 
     public AuthController(UserService userService, ObjectMapper objectMapper) {
-        this(userService, objectMapper, null);
+        this(userService, objectMapper, null, null);
     }
 
     @GetMapping("/login")
@@ -72,42 +77,6 @@ public class AuthController {
         model.addAttribute("facebookOAuthConfigured", isConfigured(facebookClientId));
         populateAuthShowcasePosters(model);
         return "auth/login";
-    }
-
-    @PostMapping("/login")
-    public String processLogin(
-            @RequestParam(value = "username", required = false) String username,
-            @RequestParam(value = "email", required = false) String email,
-            @RequestParam(value = "password", required = false) String password,
-            @RequestParam(value = "remember-me", required = false) String rememberMe,
-            HttpSession session,
-            Model model,
-            RedirectAttributes redirectAttributes) {
-
-        String loginEmail = (username != null && !username.isBlank()) ? username : email;
-
-        try {
-            UserSummaryDto user = userService.authenticate(loginEmail, password);
-            session.setAttribute("currentUser", user);
-            if (rememberMe != null) {
-                session.setMaxInactiveInterval(7 * 24 * 60 * 60);
-            }
-            return "redirect:/";
-        } catch (IllegalStateException unverifiedEx) {
-            String targetEmail = loginEmail != null ? loginEmail.trim().toLowerCase() : "";
-            redirectAttributes.addFlashAttribute(
-                    "errorMessage",
-                    "Please verify your Gmail address before signing in. A new 6-digit OTP code has been generated.");
-            return "redirect:/verify-email?email=" + URLEncoder.encode(targetEmail, StandardCharsets.UTF_8);
-        } catch (IllegalArgumentException ex) {
-            model.addAttribute("activePage", "login");
-            model.addAttribute("errorMessage", ex.getMessage());
-            model.addAttribute("enteredEmail", loginEmail != null ? loginEmail.trim() : "");
-            model.addAttribute("googleOAuthConfigured", isConfigured(googleClientId));
-            model.addAttribute("facebookOAuthConfigured", isConfigured(facebookClientId));
-            populateAuthShowcasePosters(model);
-            return "auth/login";
-        }
     }
 
     @GetMapping({"/register", "/signup"})
@@ -209,12 +178,13 @@ public class AuthController {
             @RequestParam(value = "providerId", required = false) String providerId,
             @RequestParam("email") String email,
             @RequestParam(value = "fullName", required = false) String fullName,
-            HttpSession session,
+            HttpServletRequest request,
+            HttpServletResponse response,
             RedirectAttributes redirectAttributes) {
 
         try {
             UserSummaryDto user = userService.authenticateSocial(provider, providerId, email, fullName);
-            session.setAttribute("currentUser", user);
+            SecuritySessionHelper.authenticateUserSession(user, request, response, securityContextRepository);
             return "redirect:/";
         } catch (IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
@@ -264,7 +234,7 @@ public class AuthController {
             @RequestParam(value = "code", required = false) String code,
             @RequestParam(value = "error", required = false) String error,
             HttpServletRequest request,
-            HttpSession session,
+            HttpServletResponse response,
             RedirectAttributes redirectAttributes) {
 
         if (error != null || code == null || code.isBlank()) {
@@ -312,7 +282,7 @@ public class AuthController {
                 String name = userJson.path("name").asText("");
 
                 UserSummaryDto user = userService.authenticateSocial("GOOGLE", sub, email, name);
-                session.setAttribute("currentUser", user);
+                SecuritySessionHelper.authenticateUserSession(user, request, response, securityContextRepository);
                 return "redirect:/";
             }
 
@@ -345,7 +315,7 @@ public class AuthController {
                 }
 
                 UserSummaryDto user = userService.authenticateSocial("FACEBOOK", fbId, email, name);
-                session.setAttribute("currentUser", user);
+                SecuritySessionHelper.authenticateUserSession(user, request, response, securityContextRepository);
                 return "redirect:/";
             }
         } catch (Exception ex) {
@@ -374,13 +344,6 @@ public class AuthController {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
             return "redirect:/login";
         }
-    }
-
-    @RequestMapping(value = "/logout", method = {RequestMethod.GET, RequestMethod.POST})
-    public String logout(HttpSession session, RedirectAttributes redirectAttributes) {
-        session.invalidate();
-        redirectAttributes.addFlashAttribute("successMessage", "You have been signed out safely.");
-        return "redirect:/login?logout=true";
     }
 
     private boolean isConfigured(String val) {

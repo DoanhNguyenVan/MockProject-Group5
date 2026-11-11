@@ -111,13 +111,6 @@
           <div id="registerFormStatus" class="d-none" role="alert" aria-live="polite"></div>
 
           <form id="registerForm" action="/register" th:action="@{/register}" method="post" novalidate>
-            <input
-              type="hidden"
-              name="_csrf"
-              th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}"
-              th:value="${_csrf != null ? _csrf.token : 'demo-csrf-token'}"
-              value="demo-csrf-token"
-            >
 
             <div class="row g-3">
               <div class="col-12">

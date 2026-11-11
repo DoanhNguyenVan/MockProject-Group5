@@ -1,5 +1,6 @@
 package com.boxcinema.controller;
 
+import com.boxcinema.config.SecurityConfig;
 import com.boxcinema.entity.Cinema;
 import com.boxcinema.entity.Movie;
 import com.boxcinema.service.CinemaService;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
@@ -20,6 +22,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(HomeController.class)
+@Import(SecurityConfig.class)
 public class HomeControllerTest {
 
     @Autowired

@@ -4,9 +4,11 @@ import com.boxcinema.entity.User;
 import com.boxcinema.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -18,10 +20,13 @@ public class DataInitializer implements CommandLineRunner {
     private boolean seedEnabled;
 
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final PasswordEncoder passwordEncoder;
 
-    public DataInitializer(UserRepository userRepository) {
+    @Autowired
+    public DataInitializer(UserRepository userRepository,
+                           @Autowired(required = false) PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = (passwordEncoder != null) ? passwordEncoder : new BCryptPasswordEncoder();
     }
 
     @Override

@@ -24,4 +24,15 @@ public interface EmailService {
     default boolean sendInquiryConfirmationEmail(String toEmail, String fullName, Long inquiryId, String topic, String userMessage) {
         return false;
     }
+
+    /**
+     * Sends a security notification email confirming that the user's password was reset.
+     *
+     * @param toEmail  customer email address
+     * @param fullName customer full name
+     * @return true if sent via real SMTP server, false if running in local fallback mode
+     */
+    default boolean sendPasswordResetConfirmationEmail(String toEmail, String fullName) {
+        return false;
+    }
 }

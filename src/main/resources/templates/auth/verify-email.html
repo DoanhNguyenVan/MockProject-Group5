@@ -142,13 +142,6 @@
 
           <!-- 6-Digit OTP Verification Form -->
           <form id="verifyOtpForm" action="/verify-email" th:action="@{/verify-email}" method="post" novalidate>
-            <input
-              type="hidden"
-              name="_csrf"
-              th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}"
-              th:value="${_csrf != null ? _csrf.token : 'demo-csrf-token'}"
-              value="demo-csrf-token"
-            >
             <input type="hidden" name="email" th:value="${verifyEmail}">
             <input type="hidden" name="otpCode" id="otpCodeHidden" value="">
 
@@ -173,13 +166,6 @@
           <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top border-secondary border-opacity-25">
             <span class="small text-secondary">Didn't receive the code in your Gmail?</span>
             <form action="/verify-email/resend" th:action="@{/verify-email/resend}" method="post" class="d-inline">
-              <input
-                type="hidden"
-                name="_csrf"
-                th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}"
-                th:value="${_csrf != null ? _csrf.token : 'demo-csrf-token'}"
-                value="demo-csrf-token"
-              >
               <input type="hidden" name="email" th:value="${verifyEmail}">
               <button type="submit" class="btn-link-reset small text-glow-red fw-bold">
                 Resend 6-Digit OTP &#8635;

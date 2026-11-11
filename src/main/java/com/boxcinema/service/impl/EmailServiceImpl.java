@@ -1,27 +1,32 @@
 package com.boxcinema.service.impl;
 
 import com.boxcinema.service.EmailService;
+import jakarta.annotation.PostConstruct;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.MailException;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
-import java.io.*;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
 @Service
 public class EmailServiceImpl implements EmailService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailServiceImpl.class);
 
+    private final JavaMailSender mailSender;
+
     @Value("${spring.mail.host:smtp.gmail.com}")
     private String smtpHost;
-
-    @Value("${spring.mail.port:465}")
-    private int smtpPort;
 
     @Value("${spring.mail.username:}")
     private String smtpUsername;
@@ -29,31 +34,36 @@ public class EmailServiceImpl implements EmailService {
     @Value("${spring.mail.password:}")
     private String smtpPassword;
 
+    @Value("${app.mail.from-name:BOX Cinema}")
+    private String fromName;
+
+    @Autowired
+    public EmailServiceImpl(@Autowired(required = false) JavaMailSender mailSender) {
+        this.mailSender = mailSender;
+    }
+
+    @PostConstruct
+    void normalizeGmailAppPassword() {
+        if (mailSender instanceof JavaMailSenderImpl impl
+                && impl.getHost() != null
+                && impl.getHost().toLowerCase().contains("gmail.com")
+                && impl.getPassword() != null) {
+            impl.setPassword(impl.getPassword().replace(" ", "").trim());
+        }
+    }
+
     @Override
     public boolean sendVerificationOtpEmail(String toEmail, String fullName, String otpCode) {
         log.info("=================================================================");
         log.info("[GMAIL VERIFICATION OTP] Recipient: {} ({}) | OTP Code: {}", fullName, toEmail, otpCode);
         log.info("=================================================================");
 
-        if (!isSmtpConfigured()) {
-            log.info("Gmail SMTP credentials (spring.mail.username / spring.mail.password) are not configured. Using local OTP preview mode.");
-            return false;
-        }
-
-        try {
-            sendHtmlEmailViaSslSmtp(
-                    toEmail,
-                    fullName,
-                    "BOX Cinema - Verify Your Account (OTP: " + otpCode + ")",
-                    buildVerificationEmailHtml(fullName, otpCode)
-            );
-            log.info("Successfully sent verification OTP email to {} via {}", toEmail, smtpHost);
-            return true;
-        } catch (Exception ex) {
-            log.warn("Failed to send email via Gmail SMTP ({}). Falling back to on-screen/console OTP. Reason: {}",
-                    smtpHost, ex.getMessage());
-            return false;
-        }
+        return sendHtmlEmail(
+                toEmail,
+                fullName,
+                "BOX Cinema - Verify Your Account (OTP: " + otpCode + ")",
+                buildVerificationEmailHtml(fullName, otpCode)
+        );
     }
 
     @Override
@@ -63,89 +73,86 @@ public class EmailServiceImpl implements EmailService {
                 fullName, toEmail, inquiryId, topic);
         log.info("=================================================================");
 
+        String subject = "BOX Cinema - Support Inquiry Received [#BOX-REQ-" + inquiryId + "]";
+        return sendHtmlEmail(
+                toEmail,
+                fullName,
+                subject,
+                buildInquiryConfirmationEmailHtml(fullName, inquiryId, topic, userMessage)
+        );
+    }
+
+    @Override
+    public boolean sendPasswordResetConfirmationEmail(String toEmail, String fullName) {
+        log.info("[PASSWORD RESET ALERT] Recipient: {} ({})", fullName, toEmail);
+
+        return sendHtmlEmail(
+                toEmail,
+                fullName,
+                "BOX Cinema - Your Password Was Successfully Reset",
+                buildPasswordResetEmailHtml(fullName)
+        );
+    }
+
+    private boolean sendHtmlEmail(String toEmail, String toName, String subject, String htmlBody) {
+        if (toEmail == null || toEmail.isBlank()) {
+            log.warn("Cannot send email: recipient address is blank.");
+            return false;
+        }
+
         if (!isSmtpConfigured()) {
-            log.info("Gmail SMTP credentials are not configured. Skipping live confirmation email.");
+            log.info("SMTP credentials or JavaMailSender are not configured. Skipping live email dispatch to {}.", toEmail);
             return false;
         }
 
         try {
-            String subject = "BOX Cinema - Tiếp nhận yêu cầu hỗ trợ [#BOX-REQ-" + inquiryId + "]";
-            String htmlBody = buildInquiryConfirmationEmailHtml(fullName, inquiryId, topic, userMessage);
-            sendHtmlEmailViaSslSmtp(toEmail, fullName, subject, htmlBody);
-            log.info("Successfully dispatched inquiry confirmation email to {} for ticket #BOX-REQ-{}", toEmail, inquiryId);
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, StandardCharsets.UTF_8.name());
+
+            String senderDisplayName = (fromName != null && !fromName.isBlank()) ? fromName.trim() : "BOX Cinema";
+            helper.setFrom(new InternetAddress(smtpUsername.trim(), senderDisplayName, StandardCharsets.UTF_8.name()));
+
+            if (toName != null && !toName.isBlank()) {
+                helper.setTo(new InternetAddress(toEmail.trim(), toName.trim(), StandardCharsets.UTF_8.name()));
+            } else {
+                helper.setTo(toEmail.trim());
+            }
+
+            helper.setSubject(subject);
+            helper.setText(htmlBody, true);
+
+            mailSender.send(mimeMessage);
+            log.info("Successfully dispatched email '{}' to {} via {} (JavaMailSender).", subject, toEmail, smtpHost);
             return true;
-        } catch (Exception ex) {
-            log.warn("Could not dispatch inquiry email via Gmail SMTP: {}", ex.getMessage());
+        } catch (MailException | MessagingException | UnsupportedEncodingException ex) {
+            log.warn("Failed to dispatch email '{}' to {} via {} (JavaMailSender): {}",
+                    subject, toEmail, smtpHost, ex.getMessage());
             return false;
         }
     }
 
     private boolean isSmtpConfigured() {
-        return smtpUsername != null && !smtpUsername.isBlank()
+        return mailSender != null
+                && smtpUsername != null && !smtpUsername.isBlank()
                 && !smtpUsername.startsWith("YOUR_")
                 && smtpPassword != null && !smtpPassword.isBlank()
                 && !smtpPassword.startsWith("YOUR_");
     }
 
-    private void sendHtmlEmailViaSslSmtp(String toEmail, String fullName, String subject, String htmlBody) throws IOException {
-        SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-        int port = (smtpPort == 587) ? 465 : smtpPort;
-
-        try (SSLSocket socket = (SSLSocket) factory.createSocket(smtpHost, port);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8))) {
-
-            socket.setSoTimeout(10_000);
-            String cleanUser = smtpUsername.trim();
-            String cleanPass = smtpPassword.replace(" ", "").trim();
-
-            readSmtpResponse(reader, "220");
-            sendSmtpCommand(writer, reader, "EHLO boxcinema.com", "250");
-            sendSmtpCommand(writer, reader, "AUTH LOGIN", "334");
-            sendSmtpCommand(writer, reader, Base64.getEncoder().encodeToString(cleanUser.getBytes(StandardCharsets.UTF_8)), "334");
-            sendSmtpCommand(writer, reader, Base64.getEncoder().encodeToString(cleanPass.getBytes(StandardCharsets.UTF_8)), "235");
-            sendSmtpCommand(writer, reader, "MAIL FROM:<" + cleanUser + ">", "250");
-            sendSmtpCommand(writer, reader, "RCPT TO:<" + toEmail.trim() + ">", "250");
-            sendSmtpCommand(writer, reader, "DATA", "354");
-
-            String encodedSubject = "=?UTF-8?B?" + Base64.getEncoder().encodeToString(subject.getBytes(StandardCharsets.UTF_8)) + "?=";
-            StringBuilder message = new StringBuilder();
-            message.append("From: \"BOX Cinema\" <").append(cleanUser).append(">\r\n");
-            message.append("To: \"").append(fullName.replace("\"", "")).append("\" <").append(toEmail.trim()).append(">\r\n");
-            message.append("Subject: ").append(encodedSubject).append("\r\n");
-            message.append("MIME-Version: 1.0\r\n");
-            message.append("Content-Type: text/html; charset=UTF-8\r\n");
-            message.append("Content-Transfer-Encoding: 8bit\r\n\r\n");
-            message.append(htmlBody).append("\r\n.\r\n");
-
-            writer.write(message.toString());
-            writer.flush();
-            readSmtpResponse(reader, "250");
-            sendSmtpCommand(writer, reader, "QUIT", "221");
+    private String escapeHtml(String raw) {
+        if (raw == null) {
+            return "";
         }
-    }
-
-    private void sendSmtpCommand(BufferedWriter writer, BufferedReader reader, String command, String expectedCode) throws IOException {
-        writer.write(command + "\r\n");
-        writer.flush();
-        readSmtpResponse(reader, expectedCode);
-    }
-
-    private void readSmtpResponse(BufferedReader reader, String expectedCode) throws IOException {
-        String line;
-        String lastLine = "";
-        while ((line = reader.readLine()) != null) {
-            lastLine = line;
-            if (line.length() < 4 || line.charAt(3) != '-') {
-                break;
-            }
-        }
-        if (!lastLine.startsWith(expectedCode)) {
-            throw new IOException("SMTP error (expected " + expectedCode + "): " + lastLine);
-        }
+        return raw.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
     }
 
     private String buildVerificationEmailHtml(String fullName, String otpCode) {
+        String safeName = escapeHtml(fullName != null && !fullName.isBlank() ? fullName : "Member");
+        String safeOtp = escapeHtml(otpCode);
         return """
                 <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; background: #141418; color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #2e2e38;">
                   <div style="background: linear-gradient(135deg, #C91934 0%%, #7a0d1e 100%%); padding: 28px 32px; text-align: center;">
@@ -165,45 +172,65 @@ public class EmailServiceImpl implements EmailService {
                     </p>
                   </div>
                 </div>
-                """.formatted(fullName, otpCode);
+                """.formatted(safeName, safeOtp);
     }
 
     private String buildInquiryConfirmationEmailHtml(String fullName, Long inquiryId, String topic, String userMessage) {
-        String cleanMessage = userMessage.replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>");
+        String safeName = escapeHtml(fullName);
+        String safeTopic = escapeHtml(topic);
+        String safeMessage = escapeHtml(userMessage).replace("\r\n", "<br>").replace("\n", "<br>");
         return """
                 <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 580px; margin: 0 auto; background: #121318; color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #2a2b36;">
                   <div style="background: linear-gradient(135deg, #C91934 0%%, #7a0d1e 100%%); padding: 26px 30px; text-align: center;">
                     <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: 0.04em;">BOX CINEMA</h1>
-                    <p style="margin: 6px 0 0; font-size: 13px; color: #ffd7de;">Xác Nhận Tiếp Nhận Yêu Cầu Hỗ Trợ</p>
+                    <p style="margin: 6px 0 0; font-size: 13px; color: #ffd7de;">Support Inquiry Confirmation</p>
                   </div>
                   <div style="padding: 30px;">
-                    <p style="font-size: 15px; margin-top: 0; color: #e2e8f0;">Kính gửi Quý khách <strong>%s</strong>,</p>
+                    <p style="font-size: 15px; margin-top: 0; color: #e2e8f0;">Dear <strong>%s</strong>,</p>
                     <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">
-                      BOX Cinema xin chân thành cảm ơn Quý khách đã gửi tin nhắn liên hệ. Hệ thống đã tiếp nhận thành công yêu cầu của Quý khách với thông tin chi tiết dưới đây:
+                      Thank you for contacting <strong>BOX Cinema</strong>. We have received your support request with the following details:
                     </p>
-                    
                     <div style="margin: 20px 0; padding: 18px; background: #1b1c24; border-left: 4px solid #C91934; border-radius: 8px;">
-                      <p style="margin: 0 0 8px; font-size: 13px; color: #94a3b8;">Mã phiếu hỗ trợ: <strong style="color: #ffffff; font-size: 14px;">#BOX-REQ-%d</strong></p>
-                      <p style="margin: 0 0 8px; font-size: 13px; color: #94a3b8;">Chủ đề: <strong style="color: #ffffff;">%s</strong></p>
-                      <p style="margin: 0; font-size: 13px; color: #94a3b8;">Trạng thái: <strong style="color: #22c55e;">ĐÃ TIẾP NHẬN (PENDING)</strong></p>
+                      <p style="margin: 0 0 8px; font-size: 13px; color: #94a3b8;">Ticket Reference: <strong style="color: #ffffff; font-size: 14px;">#BOX-REQ-%d</strong></p>
+                      <p style="margin: 0 0 8px; font-size: 13px; color: #94a3b8;">Topic: <strong style="color: #ffffff;">%s</strong></p>
+                      <p style="margin: 0; font-size: 13px; color: #94a3b8;">Status: <strong style="color: #22c55e;">RECEIVED (PENDING)</strong></p>
                     </div>
-
                     <div style="margin: 18px 0; padding: 16px; background: #161720; border: 1px solid #282938; border-radius: 8px;">
-                      <p style="margin: 0 0 6px; font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Nội dung Quý khách gửi:</p>
+                      <p style="margin: 0 0 6px; font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Your Message:</p>
                       <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #e2e8f0; font-style: italic;">"%s"</p>
                     </div>
-
                     <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">
-                      Đội ngũ Chăm Sóc Khách Hàng của BOX Cinema sẽ tiến hành kiểm tra và phản hồi trực tiếp tới Quý khách trong vòng <strong>2 giờ làm việc</strong> (tối đa 24 giờ).
+                      Our Guest Relations team will review your inquiry and respond within <strong>2 business hours</strong>.
                     </p>
                     <p style="font-size: 13px; color: #94a3b8; line-height: 1.5; margin-bottom: 0;">
-                      Trường hợp cần hỗ trợ khẩn cấp (suất chiếu sắp bắt đầu hoặc sự cố vé), Quý khách vui lòng gọi ngay Tổng đài CSKH: <strong style="color: #ff4d6a;">1900 6868</strong> (08:00 - 01:00 hàng ngày).
+                      For urgent ticket assistance before a showtime, please call our National Hotline at <strong style="color: #ff4d6a;">1900 6868</strong> (08:00 - 01:00 daily).
                     </p>
                   </div>
                   <div style="background: #0d0e14; padding: 16px 30px; text-align: center; border-top: 1px solid #22232e;">
-                    <p style="margin: 0; font-size: 12px; color: #64748b;">BOX Cinema Vietnam · Rạp chiếu phim thế hệ mới IMAX Laser &amp; Dolby Atmos</p>
+                    <p style="margin: 0; font-size: 12px; color: #64748b;">BOX Cinema Vietnam · IMAX Laser &amp; Dolby Atmos</p>
                   </div>
                 </div>
-                """.formatted(fullName, inquiryId, topic, cleanMessage);
+                """.formatted(safeName, inquiryId, safeTopic, safeMessage);
+    }
+
+    private String buildPasswordResetEmailHtml(String fullName) {
+        String safeName = escapeHtml(fullName != null && !fullName.isBlank() ? fullName : "Member");
+        return """
+                <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; background: #141418; color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #2e2e38;">
+                  <div style="background: linear-gradient(135deg, #C91934 0%%, #7a0d1e 100%%); padding: 26px 30px; text-align: center;">
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: 0.04em;">BOX CINEMA</h1>
+                    <p style="margin: 6px 0 0; font-size: 13px; color: #ffd7de;">Security Notification</p>
+                  </div>
+                  <div style="padding: 30px;">
+                    <p style="font-size: 15px; margin-top: 0; color: #e2e8f0;">Hi <strong>%s</strong>,</p>
+                    <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">
+                      Your <strong>BOX Cinema</strong> account password has just been updated. If you initiated this change, no further action is needed.
+                    </p>
+                    <p style="font-size: 13px; color: #94a3b8; margin-bottom: 0;">
+                      If you did not request a password reset, please contact our support team immediately at <strong>1900 6868</strong> or <strong>support@boxcinema.vn</strong>.
+                    </p>
+                  </div>
+                </div>
+                """.formatted(safeName);
     }
 }
