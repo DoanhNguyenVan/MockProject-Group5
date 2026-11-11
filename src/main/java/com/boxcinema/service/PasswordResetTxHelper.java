@@ -258,18 +258,22 @@ public class PasswordResetTxHelper {
         LocalDateTime now = LocalDateTime.now();
 
         String tokenHash = resetTokenService.hashToken(resetToken);
-        PasswordReset pr = passwordResetRepository.findByResetTokenHash(tokenHash)
+        Long userId = passwordResetRepository.findUserIdByResetTokenHash(tokenHash)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid or expired password reset authorization."));
 
         // Lock in consistent order: USERS first, then PASSWORD_RESET
-        User user = userRepository.findByIdForUpdate(pr.getUserId())
+        User user = userRepository.findByIdForUpdate(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User account not found."));
 
-        PasswordReset lockedPr = passwordResetRepository.findByIdForUpdate(pr.getUserId())
+        PasswordReset lockedPr = passwordResetRepository.findByIdForUpdate(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Reset request not found."));
 
         if (lockedPr.getStatus() != PasswordResetStatus.VERIFIED) {
             throw new IllegalArgumentException("Password reset authorization is not in a valid state.");
+        }
+
+        if (lockedPr.getResetTokenHash() == null || !tokenHash.equals(lockedPr.getResetTokenHash())) {
+            throw new IllegalArgumentException("Password reset authorization has already been used or revoked.");
         }
 
         if (lockedPr.getResetTokenExpiresAt() == null || lockedPr.getResetTokenExpiresAt().isBefore(now)) {
