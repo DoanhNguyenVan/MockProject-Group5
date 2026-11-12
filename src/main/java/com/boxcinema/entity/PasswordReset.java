@@ -5,11 +5,17 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "PASSWORD_RESET")
+@IdClass(PasswordResetId.class)
 public class PasswordReset {
 
     @Id
     @Column(name = "user_id", nullable = false)
     private Long userId;
+
+    @Id
+    @Enumerated(EnumType.STRING)
+    @Column(name = "purpose", length = 30, nullable = false)
+    private OtpPurpose purpose = OtpPurpose.PASSWORD_RESET;
 
     @Column(name = "challenge_id", length = 36, nullable = false, unique = true)
     private String challengeId;
@@ -64,7 +70,12 @@ public class PasswordReset {
     }
 
     public PasswordReset(Long userId, String challengeId) {
+        this(userId, OtpPurpose.PASSWORD_RESET, challengeId);
+    }
+
+    public PasswordReset(Long userId, OtpPurpose purpose, String challengeId) {
         this.userId = userId;
+        this.purpose = (purpose != null) ? purpose : OtpPurpose.PASSWORD_RESET;
         this.challengeId = challengeId;
         this.status = null;
         this.failedAttempts = 0;
@@ -93,6 +104,14 @@ public class PasswordReset {
 
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    public OtpPurpose getPurpose() {
+        return purpose;
+    }
+
+    public void setPurpose(OtpPurpose purpose) {
+        this.purpose = purpose;
     }
 
     public String getChallengeId() {

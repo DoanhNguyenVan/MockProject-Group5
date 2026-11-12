@@ -1,11 +1,13 @@
 package com.boxcinema.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
+/**
+ * Response DTO for Password Reset API endpoints.
+ */
 public class PasswordResetResponseDto {
+
     private boolean success;
     private String message;
+    private String errorCode;
     private String resetToken;
     private Integer cooldownSeconds;
 
@@ -34,12 +36,28 @@ public class PasswordResetResponseDto {
         return new PasswordResetResponseDto(true, message);
     }
 
+    public static PasswordResetResponseDto success(String message, int cooldownSeconds) {
+        return new PasswordResetResponseDto(true, message, null, cooldownSeconds);
+    }
+
     public static PasswordResetResponseDto success(String message, String resetToken) {
         return new PasswordResetResponseDto(true, message, resetToken);
     }
 
     public static PasswordResetResponseDto error(String message) {
         return new PasswordResetResponseDto(false, message);
+    }
+
+    public static PasswordResetResponseDto errorWithCooldown(String message, int cooldownSeconds) {
+        PasswordResetResponseDto dto = new PasswordResetResponseDto(false, message, null, cooldownSeconds);
+        dto.setErrorCode("RATE_LIMITED");
+        return dto;
+    }
+
+    public static PasswordResetResponseDto error(String errorCode, String message) {
+        PasswordResetResponseDto dto = new PasswordResetResponseDto(false, message);
+        dto.setErrorCode(errorCode);
+        return dto;
     }
 
     public boolean isSuccess() {
@@ -73,5 +91,12 @@ public class PasswordResetResponseDto {
     public void setCooldownSeconds(Integer cooldownSeconds) {
         this.cooldownSeconds = cooldownSeconds;
     }
-}
 
+    public String getErrorCode() {
+        return errorCode;
+    }
+
+    public void setErrorCode(String errorCode) {
+        this.errorCode = errorCode;
+    }
+}

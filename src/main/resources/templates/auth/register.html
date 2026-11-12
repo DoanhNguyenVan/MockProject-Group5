@@ -11,7 +11,7 @@
     rel="stylesheet"
   >
   <link rel="stylesheet" href="/css/main.css" th:href="@{/css/main.css(v='2.4')}">
-  <link rel="stylesheet" href="/css/auth.css" th:href="@{/css/auth.css(v='2.4')}">
+  <link rel="stylesheet" href="/css/auth.css" th:href="@{/css/auth.css(v='2.6')}">
   <style>
     /* Critical SVG & layout guards to guarantee correct sizing regardless of browser cache */
     .auth-theater { position: relative !important; overflow: hidden !important; }
@@ -195,7 +195,9 @@
                     id="regPassword"
                     name="password"
                     class="form-control form-control-dark has-leading-icon pe-5"
-                    placeholder="Create password"
+                    placeholder="Min 6 characters"
+                    minlength="6"
+                    maxlength="128"
                     autocomplete="new-password"
                     required
                   >
@@ -283,65 +285,10 @@
     </section>
   </main>
 
-  <!-- Google OAuth2 Account Chooser Modal -->
-  <div class="auth-modal-backdrop d-none" id="socialAuthModal" role="dialog" aria-modal="true" aria-labelledby="socialModalTitle">
-    <div class="auth-modal-card">
-      <div class="auth-modal-header">
-        <div class="d-flex align-items-center gap-2">
-          <span id="socialModalLogo" class="social-modal-logo"></span>
-          <div>
-            <h3 id="socialModalTitle" class="h6 fw-bold text-white mb-0">Sign up with Google</h3>
-            <p class="small text-secondary mb-0">to continue to <strong>BOX Cinema</strong></p>
-          </div>
-        </div>
-        <button type="button" class="auth-modal-close" id="closeSocialModalBtn" aria-label="Close">&times;</button>
-      </div>
-
-      <div class="auth-modal-body">
-        <p class="small text-secondary mb-2">Choose an account to continue:</p>
-        <div id="socialQuickAccounts" class="social-account-list mb-3"></div>
-
-        <div class="auth-divider my-3"><span>OR USE ANOTHER ACCOUNT</span></div>
-
-        <form id="socialCustomForm" action="/auth/social" th:action="@{/auth/social}" method="post">
-          <input type="hidden" name="provider" id="socialProviderInput" value="GOOGLE">
-          <input type="hidden" name="providerId" id="socialProviderIdInput" value="">
-
-          <div class="mb-2">
-            <label for="socialFullName" class="form-label small text-secondary fw-semibold">Display Name *</label>
-            <input
-              type="text"
-              id="socialFullName"
-              name="fullName"
-              class="form-control form-control-dark"
-              placeholder="e.g., Alex Nguyen"
-              required
-            >
-          </div>
-          <div class="mb-3">
-            <label for="socialEmail" class="form-label small text-secondary fw-semibold">Account Email *</label>
-            <input
-              type="email"
-              id="socialEmail"
-              name="email"
-              class="form-control form-control-dark"
-              placeholder="yourname@gmail.com"
-              required
-            >
-          </div>
-
-          <button type="submit" id="socialSubmitBtn" class="btn btn-box-primary w-100 py-2">
-            Continue as <span id="socialProviderBtnLabel">Google</span> User
-          </button>
-        </form>
-      </div>
-    </div>
-  </div>
-
   <!-- Shared Footer -->
   <footer th:replace="~{fragments/footer :: footer}"></footer>
 
   <script type="module" src="/js/modules/navbar.js" th:src="@{/js/modules/navbar.js}"></script>
-  <script type="module" src="/js/modules/auth-validation.js?v=2.4" th:src="@{/js/modules/auth-validation.js(v='2.4')}"></script>
+  <script type="module" src="/js/modules/auth-validation.js?v=2.8" th:src="@{/js/modules/auth-validation.js(v='2.8')}"></script>
 </body>
 </html>

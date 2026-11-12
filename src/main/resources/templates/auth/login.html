@@ -11,7 +11,7 @@
     rel="stylesheet"
   >
   <link rel="stylesheet" href="/css/main.css" th:href="@{/css/main.css(v='2.4')}">
-  <link rel="stylesheet" href="/css/auth.css" th:href="@{/css/auth.css(v='2.4')}">
+  <link rel="stylesheet" href="/css/auth.css" th:href="@{/css/auth.css(v='2.6')}">
   <style>
     /* Critical SVG & layout guards to guarantee correct sizing regardless of browser cache */
     .auth-theater { position: relative !important; overflow: hidden !important; }
@@ -201,16 +201,7 @@
               <div id="loginPasswordError" class="field-error-msg"></div>
             </div>
 
-            <div class="d-flex justify-content-between align-items-center mb-4">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="rememberMe" name="remember-me">
-                <label class="form-check-label small text-secondary" for="rememberMe">
-                  Keep me signed in for 7 days
-                </label>
-              </div>
-            </div>
-
-            <button type="submit" id="loginSubmitBtn" class="btn btn-box-primary w-100 py-2 auth-submit-btn">
+            <button type="submit" id="loginSubmitBtn" class="btn btn-box-primary w-100 py-2 mt-2 auth-submit-btn">
               <span>Sign In to Account</span>
               <span class="auth-btn-arrow" aria-hidden="true">&#8594;</span>
             </button>
@@ -243,61 +234,6 @@
     </section>
   </main>
 
-  <!-- Google OAuth2 Account Chooser Modal -->
-  <div class="auth-modal-backdrop d-none" id="socialAuthModal" role="dialog" aria-modal="true" aria-labelledby="socialModalTitle">
-    <div class="auth-modal-card">
-      <div class="auth-modal-header">
-        <div class="d-flex align-items-center gap-2">
-          <span id="socialModalLogo" class="social-modal-logo"></span>
-          <div>
-            <h3 id="socialModalTitle" class="h6 fw-bold text-white mb-0">Sign in with Google</h3>
-            <p class="small text-secondary mb-0">to continue to <strong>BOX Cinema</strong></p>
-          </div>
-        </div>
-        <button type="button" class="auth-modal-close" id="closeSocialModalBtn" aria-label="Close">&times;</button>
-      </div>
-
-      <div class="auth-modal-body">
-        <p class="small text-secondary mb-2">Choose an account to continue:</p>
-        <div id="socialQuickAccounts" class="social-account-list mb-3"></div>
-
-        <div class="auth-divider my-3"><span>OR USE ANOTHER ACCOUNT</span></div>
-
-        <form id="socialCustomForm" action="/auth/social" th:action="@{/auth/social}" method="post">
-          <input type="hidden" name="provider" id="socialProviderInput" value="GOOGLE">
-          <input type="hidden" name="providerId" id="socialProviderIdInput" value="">
-
-          <div class="mb-2">
-            <label for="socialFullName" class="form-label small text-secondary fw-semibold">Display Name *</label>
-            <input
-              type="text"
-              id="socialFullName"
-              name="fullName"
-              class="form-control form-control-dark"
-              placeholder="e.g., Alex Nguyen"
-              required
-            >
-          </div>
-          <div class="mb-3">
-            <label for="socialEmail" class="form-label small text-secondary fw-semibold">Account Email *</label>
-            <input
-              type="email"
-              id="socialEmail"
-              name="email"
-              class="form-control form-control-dark"
-              placeholder="yourname@gmail.com"
-              required
-            >
-          </div>
-
-          <button type="submit" id="socialSubmitBtn" class="btn btn-box-primary w-100 py-2">
-            Continue as <span id="socialProviderBtnLabel">Google</span> User
-          </button>
-        </form>
-      </div>
-    </div>
-  </div>
-
   <!-- Forgot Password Multi-step Modal -->
   <div class="auth-modal-backdrop d-none" id="forgotPasswordModal" role="dialog" aria-modal="true" aria-labelledby="forgotModalTitle">
     <div class="auth-modal-card">
@@ -310,6 +246,13 @@
       </div>
 
       <div class="auth-modal-body">
+        <div id="forgotStep2Header" class="auth-header-block mb-3 d-none">
+          <h4 class="h3 fw-bold text-white mb-1">Enter 6-Digit Verification Code</h4>
+          <p class="small text-secondary mb-0">
+            We sent a 6-digit OTP code to <strong id="displayTargetEmail" class="text-white"></strong>.
+          </p>
+        </div>
+
         <div id="forgotModalAlert" class="auth-alert mb-3 d-none" role="alert"></div>
 
         <!-- Step 1: Request OTP -->
@@ -335,35 +278,38 @@
 
         <!-- Step 2: Verify OTP -->
         <div id="forgotStep2" class="d-none">
-          <p class="small text-secondary mb-3">
-            A 6-digit verification code has been dispatched to <strong id="displayTargetEmail" class="text-white"></strong>. Please enter the code below (valid for 5 minutes):
-          </p>
-          <div class="mb-3">
-            <label for="resetOtpInput" class="form-label small text-secondary fw-semibold">6-Digit OTP Code *</label>
-            <input
-              type="text"
-              id="resetOtpInput"
-              class="form-control form-control-dark text-center font-monospace fs-4 fw-bold"
-              placeholder="000000"
-              maxlength="6"
-              pattern="\d{6}"
-              inputmode="numeric"
-              autocomplete="one-time-code"
-              style="letter-spacing: 6px;"
-              required
-            >
-            <div id="resetOtpError" class="field-error-msg"></div>
+          <input type="hidden" id="resetOtpInput" value="">
+          <div class="mb-2">
+            <label for="forgotOtpDigit0" class="form-label small text-secondary fw-semibold mb-2">6-Digit OTP Code *</label>
+            <div class="otp-digit-grid mb-2" id="forgotOtpDigitGrid" role="group" aria-label="6-digit verification code">
+              <input type="text" inputmode="numeric" maxlength="1" id="forgotOtpDigit0" class="otp-digit-input" data-otp-index="0" aria-label="Digit 1" autocomplete="one-time-code">
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-digit-input" data-otp-index="1" aria-label="Digit 2">
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-digit-input" data-otp-index="2" aria-label="Digit 3">
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-digit-input" data-otp-index="3" aria-label="Digit 4">
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-digit-input" data-otp-index="4" aria-label="Digit 5">
+              <input type="text" inputmode="numeric" maxlength="1" class="otp-digit-input" data-otp-index="5" aria-label="Digit 6">
+            </div>
+            <div id="resetOtpError" class="field-error-msg mb-1"></div>
           </div>
-          <button type="button" id="btnVerifyForgotOtp" class="btn btn-box-primary w-100 py-2 mb-3">
+
+          <button type="button" id="btnVerifyForgotOtp" class="btn btn-box-primary w-100 py-2 mt-3 mb-3 auth-submit-btn">
             <span>Verify Code</span>
+            <span class="auth-btn-arrow" aria-hidden="true">&#8594;</span>
           </button>
-          <div class="text-center small text-secondary">
-            <span>Didn't receive the code? </span>
-            <button type="button" id="btnResendForgotOtp" class="btn-link-reset text-glow-red fw-bold">
-              Resend Code
-            </button>
-            <span id="resendCountdownSpan" class="d-none text-muted ms-1">(<span id="resendCountdownSec">60</span>s)</span>
+
+          <div class="d-flex align-items-center justify-content-center flex-wrap gap-2 pt-3 border-top border-secondary border-opacity-25">
+            <div class="d-inline-flex align-items-center">
+              <button type="button" id="btnResendForgotOtp" class="btn-link-reset small text-glow-red fw-bold">
+                Resend 6-Digit OTP &#8635;
+              </button>
+              <span id="resendCountdownSpan" class="d-none text-secondary small ms-1">(<span id="resendCountdownSec">60</span>s)</span>
+            </div>
           </div>
+
+          <p class="text-center small text-secondary mb-0 mt-3">
+            Entered the wrong email address?
+            <button type="button" id="btnBackToForgotEmail" class="btn-link-reset text-glow-red fw-bold ms-1">&#8592; Back to Email</button>
+          </p>
         </div>
 
         <!-- Step 3: Set New Password -->
@@ -372,16 +318,18 @@
             Verification successful! Please create a strong new password for your account.
           </p>
           <div class="mb-3">
-            <label for="resetNewPassword" class="form-label small text-secondary fw-semibold">New Password *</label>
+            <label for="resetNewPassword" class="form-label small text-secondary fw-semibold">New Password (Min 6 chars) *</label>
             <input
               type="password"
               id="resetNewPassword"
               class="form-control form-control-dark"
-              placeholder="Min 8 chars (upper, lower, digit, special)"
-              minlength="8"
+              placeholder="Min 6 characters"
+              minlength="6"
+              maxlength="128"
               required
             >
             <div id="resetNewPasswordError" class="field-error-msg"></div>
+            <div class="form-text text-secondary small mt-1">At least 6 characters, with 1 uppercase letter, 1 number, and 1 special character.</div>
           </div>
           <div class="mb-3">
             <label for="resetConfirmPassword" class="form-label small text-secondary fw-semibold">Confirm New Password *</label>
@@ -390,7 +338,8 @@
               id="resetConfirmPassword"
               class="form-control form-control-dark"
               placeholder="Re-enter your new password"
-              minlength="8"
+              minlength="6"
+              maxlength="128"
               required
             >
             <div id="resetConfirmPasswordError" class="field-error-msg"></div>
@@ -424,6 +373,6 @@
   <footer th:replace="~{fragments/footer :: footer}"></footer>
 
   <script type="module" src="/js/modules/navbar.js" th:src="@{/js/modules/navbar.js}"></script>
-  <script type="module" src="/js/modules/auth-validation.js?v=2.4" th:src="@{/js/modules/auth-validation.js(v='2.4')}"></script>
+  <script type="module" src="/js/modules/auth-validation.js?v=2.8" th:src="@{/js/modules/auth-validation.js(v='2.8')}"></script>
 </body>
 </html>

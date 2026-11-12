@@ -2,12 +2,12 @@ package com.boxcinema.config;
 
 import com.boxcinema.entity.User;
 import com.boxcinema.repository.UserRepository;
+import com.boxcinema.service.PasswordHashService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -26,7 +26,7 @@ public class DataInitializer implements CommandLineRunner {
     public DataInitializer(UserRepository userRepository,
                            @Autowired(required = false) PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
-        this.passwordEncoder = (passwordEncoder != null) ? passwordEncoder : new BCryptPasswordEncoder();
+        this.passwordEncoder = (passwordEncoder != null) ? passwordEncoder : new PasswordHashService();
     }
 
     @Override

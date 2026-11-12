@@ -33,16 +33,22 @@ public class PasswordResetControllerTest {
     @Test
     void testRequestPasswordResetSuccess() throws Exception {
         when(passwordResetService.requestPasswordReset("alex@boxcinema.com"))
-                .thenReturn(PasswordResetResponseDto.success("A 6-digit verification code has been sent."));
+                .thenReturn(PasswordResetResponseDto.success("If this email is eligible, a verification code has been sent."));
 
         PasswordResetRequestDto request = new PasswordResetRequestDto("alex@boxcinema.com");
 
         mockMvc.perform(post("/api/auth/password-reset/request")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
+                .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.message").value("A 6-digit verification code has been sent."));
+                .andExpect(jsonPath("$.message").value("If this email is eligible, a verification code has been sent."));
+
+        mockMvc.perform(post("/api/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.success").value(true));
     }
 
     @Test

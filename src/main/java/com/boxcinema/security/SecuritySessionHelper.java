@@ -1,6 +1,7 @@
 package com.boxcinema.security;
 
 import com.boxcinema.dto.UserSummaryDto;
+import com.boxcinema.service.SessionManagementService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -18,7 +19,7 @@ import java.util.Map;
 
 /**
  * Shared helper to keep Spring Security Context, HttpSession ("currentUser"),
- * and Spring MVC FlashMap redirects synchronized across form login, OAuth2, and logout.
+ * session ID rotation (session fixation protection), and FlashMap redirects synchronized.
  */
 public final class SecuritySessionHelper {
 
@@ -32,10 +33,22 @@ public final class SecuritySessionHelper {
             UserSummaryDto user,
             HttpServletRequest request,
             HttpServletResponse response,
-            SecurityContextRepository repository) {
+            SecurityContextRepository securityContextRepository) {
+        authenticateUserSession(user, request, response, securityContextRepository, null);
+    }
 
-        if (user == null || request == null) {
-            return;
+    public static void authenticateUserSession(
+            UserSummaryDto user,
+            HttpServletRequest request,
+            HttpServletResponse response,
+            SecurityContextRepository securityContextRepository,
+            SessionManagementService sessionManagementService) {
+
+        HttpSession session = request.getSession(true);
+        try {
+            request.changeSessionId();
+        } catch (IllegalStateException ignored) {
+            // Mock or container request state without active mutable session ID
         }
 
         BoxCinemaUserDetails principal = new BoxCinemaUserDetails(user);
@@ -49,21 +62,23 @@ public final class SecuritySessionHelper {
         context.setAuthentication(auth);
         SecurityContextHolder.setContext(context);
 
-        SecurityContextRepository repo = (repository != null) ? repository : DEFAULT_CONTEXT_REPOSITORY;
-        if (response != null) {
-            repo.saveContext(context, request, response);
-        }
+        SecurityContextRepository repo = (securityContextRepository != null)
+                ? securityContextRepository
+                : DEFAULT_CONTEXT_REPOSITORY;
+        repo.saveContext(context, request, response);
 
-        HttpSession session = request.getSession(true);
+        session = request.getSession(true);
         session.setAttribute("currentUser", user);
+        if (sessionManagementService != null) {
+            sessionManagementService.registerSession(user.getUserId(), user.getRole(), session);
+        }
     }
 
     public static void saveFlashAttributes(
             HttpServletRequest request,
             HttpServletResponse response,
             Map<String, ?> attributes) {
-
-        if (request == null || response == null || attributes == null || attributes.isEmpty()) {
+        if (attributes == null || attributes.isEmpty()) {
             return;
         }
         FlashMap flashMap = new FlashMap();
@@ -71,4 +86,3 @@ public final class SecuritySessionHelper {
         FLASH_MAP_MANAGER.saveOutputFlashMap(flashMap, request, response);
     }
 }
-
