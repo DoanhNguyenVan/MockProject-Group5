@@ -75,4 +75,32 @@ public interface EmailService {
     default boolean sendPasswordResetSuccessEmail(String toEmail, String fullName) {
         return sendPasswordResetConfirmationEmail(toEmail, fullName);
     }
+
+    /**
+     * Dispatches a verification OTP email asynchronously on the background mail executor.
+     */
+    default void sendVerificationOtpEmailAsync(String toEmail, String fullName, String otpCode) {
+        sendVerificationOtpEmail(toEmail, fullName, otpCode);
+    }
+
+    /**
+     * Sends a 6-digit OTP to verify email ownership before one-time Google account linking.
+     */
+    default boolean sendGoogleAutoLinkOtpEmail(String toEmail, String fullName, String otpCode) {
+        return sendVerificationOtpEmail(toEmail, fullName, otpCode);
+    }
+
+    /**
+     * Dispatches a security alert asynchronously when a Google account is linked.
+     */
+    default void sendGoogleLinkedNotificationEmailAsync(String toEmail, String fullName) {
+        // Optional security notification
+    }
+
+    /**
+     * Dispatches a security alert asynchronously when a Google account is unlinked.
+     */
+    default void sendGoogleUnlinkedNotificationEmailAsync(String toEmail, String fullName) {
+        // Optional security notification
+    }
 }

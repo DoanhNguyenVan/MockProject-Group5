@@ -2,8 +2,9 @@ package com.boxcinema.service;
 
 import com.boxcinema.dto.PasswordResetResponseDto;
 import com.boxcinema.entity.User;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.boxcinema.service.PasswordResetTxHelper.OtpPreparationResult;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.regex.Pattern;
@@ -11,109 +12,121 @@ import java.util.regex.Pattern;
 @Service
 public class PasswordResetService {
 
-    private static final Logger log = LoggerFactory.getLogger(PasswordResetService.class);
-
-    // Password must be at least 8 characters long, contain uppercase, lowercase, number, and special character
-    private static final Pattern STRONG_PASSWORD_REGEX = Pattern.compile(
-            "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&#^()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{8,}$"
-    );
+    private static final String GENERIC_OTP_SENT_MESSAGE =
+            "If an account exists with this email, a verification code has been sent.";
+    private static final Pattern OTP_REGEX = Pattern.compile("^\\d{6}$");
 
     private final PasswordResetTxHelper txHelper;
     private final EmailService emailService;
+    private final PasswordPolicyService passwordPolicyService;
+    private final AuthAuditService authAuditService;
+
+    @Autowired
+    public PasswordResetService(
+            PasswordResetTxHelper txHelper,
+            EmailService emailService,
+            PasswordPolicyService passwordPolicyService,
+            ObjectProvider<AuthAuditService> authAuditServiceProvider) {
+        this.txHelper = txHelper;
+        this.emailService = emailService;
+        this.passwordPolicyService = passwordPolicyService;
+        this.authAuditService = authAuditServiceProvider != null
+                ? authAuditServiceProvider.getIfAvailable(AuthAuditService::new)
+                : new AuthAuditService();
+    }
 
     public PasswordResetService(PasswordResetTxHelper txHelper, EmailService emailService) {
         this.txHelper = txHelper;
         this.emailService = emailService;
+        this.passwordPolicyService = new PasswordPolicyService();
+        this.authAuditService = new AuthAuditService();
     }
 
     /**
-     * Flow 1: Request OTP code for password reset.
+     * Step 1: Request Forgot Password OTP via Gmail SMTP.
      */
     public PasswordResetResponseDto requestPasswordReset(String rawEmail) {
-        if (rawEmail == null || rawEmail.isBlank()) {
-            throw new IllegalArgumentException("Email address is required.");
-        }
-        String cleanEmail = rawEmail.trim().toLowerCase();
+        String cleanEmail = normalizeAndValidateEmail(rawEmail);
 
-        // 1. Transactional preparation
-        PasswordResetTxHelper.OtpPreparationResult prep = txHelper.prepareOtpRequest(cleanEmail, false);
-
+        OtpPreparationResult prep = txHelper.prepareOtpRequest(cleanEmail, false);
+        int cooldown = txHelper.getResendCooldownSeconds();
         if (!prep.userEligible) {
-            // BR-11: Generic success response so email existence is not leaked
-            return PasswordResetResponseDto.success("If an account exists with this email, a verification code has been sent.");
+            authAuditService.logEvent("PASSWORD_RESET_REQUESTED", null, cleanEmail, "IGNORED", "Ineligible or unknown account");
+            return PasswordResetResponseDto.success(GENERIC_OTP_SENT_MESSAGE, cooldown);
         }
 
-        // 2. Dispatch email outside of DB transaction
-        boolean sentOk = false;
+        boolean emailSent = false;
         try {
-            sentOk = emailService.sendPasswordResetOtpEmail(prep.email, prep.fullName, prep.plainOtp);
-        } catch (Exception e) {
-            log.warn("Failed to dispatch password reset OTP email to {}: {}", prep.email, e.getMessage());
+            emailSent = emailService.sendPasswordResetOtpEmail(prep.email, prep.fullName, prep.plainOtp);
+        } finally {
+            txHelper.finalizeOtpSent(prep.userId, prep.challengeId, emailSent);
         }
 
-        // 3. Finalize DB status
-        txHelper.finalizeOtpSent(prep.userId, prep.challengeId, sentOk);
-
-        if (!sentOk) {
-            throw new IllegalStateException("Failed to send verification code. Please check your email configuration or try again.");
+        if (!emailSent) {
+            authAuditService.logEvent("PASSWORD_RESET_REQUESTED", prep.userId, cleanEmail, "FAILED", "SMTP delivery unavailable");
+        } else {
+            authAuditService.logEvent("PASSWORD_RESET_REQUESTED", prep.userId, cleanEmail, "SENT", "OTP email dispatched");
         }
 
-        return PasswordResetResponseDto.success("A 6-digit verification code has been sent to your email. Please enter it to continue.");
+        return PasswordResetResponseDto.success(GENERIC_OTP_SENT_MESSAGE, cooldown);
     }
 
     /**
-     * Flow 2: Verify OTP code. Returns reset authorization token if valid.
+     * Step 2: Verify 6-digit OTP and issue temporary 256-bit reset token.
      */
     public PasswordResetResponseDto verifyOtp(String rawEmail, String otp) {
-        if (rawEmail == null || rawEmail.isBlank()) {
-            throw new IllegalArgumentException("Email address is required.");
-        }
-        if (otp == null || otp.isBlank() || !otp.trim().matches("^\\d{6}$")) {
+        String cleanEmail = normalizeAndValidateEmail(rawEmail);
+        if (otp == null || !OTP_REGEX.matcher(otp.trim()).matches()) {
             throw new IllegalArgumentException("Verification code must be exactly 6 numeric digits.");
         }
 
-        String cleanEmail = rawEmail.trim().toLowerCase();
-        String resetToken = txHelper.verifyOtp(cleanEmail, otp.trim());
-
-        return PasswordResetResponseDto.success("Code verified successfully.", resetToken);
+        try {
+            String resetToken = txHelper.verifyOtp(cleanEmail, otp.trim());
+            authAuditService.logEvent("PASSWORD_RESET_REQUESTED", null, cleanEmail, "OTP_VERIFIED", "OTP verified");
+            return PasswordResetResponseDto.success(
+                    "Code verified successfully. Please set your new password.",
+                    resetToken
+            );
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            authAuditService.logEvent("PASSWORD_RESET_REQUESTED", null, cleanEmail, "OTP_FAILED", ex.getMessage());
+            throw ex;
+        }
     }
 
     /**
-     * Flow 3: Resend OTP code.
+     * Resend 6-digit OTP subject to cooldown, max resends, and hourly rate limit.
      */
     public PasswordResetResponseDto resendOtp(String rawEmail) {
-        if (rawEmail == null || rawEmail.isBlank()) {
-            throw new IllegalArgumentException("Email address is required.");
-        }
-        String cleanEmail = rawEmail.trim().toLowerCase();
+        String cleanEmail = normalizeAndValidateEmail(rawEmail);
 
-        // 1. Transactional preparation with isResend = true
-        PasswordResetTxHelper.OtpPreparationResult prep = txHelper.prepareOtpRequest(cleanEmail, true);
-
+        OtpPreparationResult prep = txHelper.prepareOtpRequest(cleanEmail, true);
+        int cooldown = txHelper.getResendCooldownSeconds();
         if (!prep.userEligible) {
-            return PasswordResetResponseDto.success("If an account exists with this email, a verification code has been sent.");
+            authAuditService.logEvent("PASSWORD_RESET_REQUESTED", null, cleanEmail, "RESEND_IGNORED", "Ineligible or unknown account");
+            return PasswordResetResponseDto.success(GENERIC_OTP_SENT_MESSAGE, cooldown);
         }
 
-        // 2. Dispatch email outside of DB transaction
-        boolean sentOk = false;
+        boolean emailSent = false;
         try {
-            sentOk = emailService.sendPasswordResetOtpEmail(prep.email, prep.fullName, prep.plainOtp);
-        } catch (Exception e) {
-            log.warn("Failed to resend password reset OTP email to {}: {}", prep.email, e.getMessage());
+            emailSent = emailService.sendPasswordResetOtpEmail(prep.email, prep.fullName, prep.plainOtp);
+        } finally {
+            txHelper.finalizeOtpSent(prep.userId, prep.challengeId, emailSent);
         }
 
-        // 3. Finalize DB status
-        txHelper.finalizeOtpSent(prep.userId, prep.challengeId, sentOk);
-
-        if (!sentOk) {
+        if (!emailSent) {
+            authAuditService.logEvent("PASSWORD_RESET_REQUESTED", prep.userId, cleanEmail, "RESEND_FAILED", "SMTP delivery unavailable");
             throw new IllegalStateException("Failed to resend verification code. Please try again later.");
         }
 
-        return PasswordResetResponseDto.success("A fresh 6-digit verification code has been dispatched to your email.");
+        authAuditService.logEvent("PASSWORD_RESET_REQUESTED", prep.userId, cleanEmail, "RESENT", "OTP resent");
+        return PasswordResetResponseDto.success(
+                "A new verification code has been sent to your email.",
+                cooldown
+        );
     }
 
     /**
-     * Flow 4: Complete password reset with new password.
+     * Step 3: Validate strong password, update hash atomically, invalidate active sessions, and notify via Gmail.
      */
     public PasswordResetResponseDto completePasswordReset(String resetToken, String newPassword, String confirmPassword) {
         if (resetToken == null || resetToken.isBlank()) {
@@ -125,22 +138,24 @@ public class PasswordResetService {
         if (!newPassword.equals(confirmPassword)) {
             throw new IllegalArgumentException("New password and confirmation password do not match.");
         }
-        if (!STRONG_PASSWORD_REGEX.matcher(newPassword).matches()) {
-            throw new IllegalArgumentException(
-                    "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character."
-            );
-        }
+        passwordPolicyService.validatePasswordStrength(newPassword);
 
-        User updatedUser = txHelper.completePasswordReset(resetToken.trim(), newPassword);
+        User completedUser = txHelper.completePasswordReset(resetToken.trim(), newPassword);
+        authAuditService.logEvent("PASSWORD_RESET_SUCCESS", completedUser.getUserId(), completedUser.getEmail(), "SUCCESS", "Password updated and sessions revoked");
 
-        // Send confirmation email asynchronously / outside transaction
         try {
-            emailService.sendPasswordResetSuccessEmail(updatedUser.getEmail(), updatedUser.getFullName());
-        } catch (Exception e) {
-            log.warn("Could not dispatch password reset success notification: {}", e.getMessage());
+            emailService.sendPasswordResetSuccessEmail(completedUser.getEmail(), completedUser.getFullName());
+        } catch (Exception ignored) {
+            // Best-effort confirmation email; password update is already committed
         }
 
-        return PasswordResetResponseDto.success("Your password has been reset successfully. Please sign in with your new password.");
+        return PasswordResetResponseDto.success("Your password has been successfully updated! You can now log in with your new password.");
+    }
+
+    private String normalizeAndValidateEmail(String rawEmail) {
+        if (rawEmail == null || rawEmail.isBlank()) {
+            throw new IllegalArgumentException("Email address is required.");
+        }
+        return passwordPolicyService.validateAndNormalizeEmail(rawEmail);
     }
 }
-

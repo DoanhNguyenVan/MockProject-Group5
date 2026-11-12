@@ -29,7 +29,26 @@ public class EmailServiceImplTest {
 
         assertTrue(result);
         verify(mailSender, times(1)).send(mimeMessage);
-        assertEquals("BOX Cinema - Verify Your Account (OTP: 123456)", mimeMessage.getSubject());
+        assertEquals("BOX Cinema - Verify Your Account", mimeMessage.getSubject());
+        assertFalse(mimeMessage.getSubject().contains("123456"));
+    }
+
+    @Test
+    void testSendPasswordResetOtpEmailExcludesOtpFromSubject() throws Exception {
+        JavaMailSender mailSender = mock(JavaMailSender.class);
+        MimeMessage mimeMessage = new MimeMessage(Session.getInstance(new Properties()));
+        when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
+
+        EmailServiceImpl service = new EmailServiceImpl(mailSender);
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "smtpUsername", "box@gmail.com");
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "smtpPassword", "app-pass");
+
+        boolean result = service.sendPasswordResetOtpEmail("alex@gmail.com", "Alex Nguyen", "654321");
+
+        assertTrue(result);
+        verify(mailSender, times(1)).send(mimeMessage);
+        assertEquals("BOX Cinema - Password Reset Verification Code", mimeMessage.getSubject());
+        assertFalse(mimeMessage.getSubject().contains("654321"));
     }
 
     @Test

@@ -1,11 +1,13 @@
 package com.boxcinema.service;
 
 import com.boxcinema.dto.PasswordResetResponseDto;
+import com.boxcinema.entity.OtpPurpose;
 import com.boxcinema.entity.PasswordReset;
 import com.boxcinema.entity.PasswordResetStatus;
 import com.boxcinema.entity.User;
 import com.boxcinema.repository.PasswordResetRepository;
 import com.boxcinema.repository.UserRepository;
+import org.springframework.mock.web.MockHttpSession;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,20 +50,36 @@ public class PasswordResetServiceIntegrationTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private LoginAttemptService loginAttemptService;
+
+    @Autowired
+    private SessionManagementService sessionManagementService;
+
+    @Autowired
+    private AuthRateLimitService authRateLimitService;
+
     @MockBean
     private EmailService emailService;
 
     private static final String TEST_EMAIL = "qa_audit_testuser@boxcinema.com";
+    private static final String GOOGLE_ONLY_EMAIL = "qa_audit_googleonly@boxcinema.com";
     private User testUser;
 
     @BeforeEach
     void setUp() {
         when(emailService.sendPasswordResetOtpEmail(anyString(), anyString(), anyString())).thenReturn(true);
         when(emailService.sendPasswordResetSuccessEmail(anyString(), anyString())).thenReturn(true);
+        authRateLimitService.clearAll();
+        loginAttemptService.clearAttempts(TEST_EMAIL);
 
         // Clean up any existing test user
         userRepository.findByEmail(TEST_EMAIL).ifPresent(u -> {
-            passwordResetRepository.deleteById(u.getUserId());
+            passwordResetRepository.deleteByUserId(u.getUserId());
+            userRepository.delete(u);
+        });
+        userRepository.findByEmail(GOOGLE_ONLY_EMAIL).ifPresent(u -> {
+            passwordResetRepository.deleteByUserId(u.getUserId());
             userRepository.delete(u);
         });
 
@@ -73,10 +91,16 @@ public class PasswordResetServiceIntegrationTest {
 
     @AfterEach
     void tearDown() {
+        loginAttemptService.clearAttempts(TEST_EMAIL);
+        authRateLimitService.clearAll();
         if (testUser != null && testUser.getUserId() != null) {
-            passwordResetRepository.deleteById(testUser.getUserId());
+            passwordResetRepository.deleteByUserId(testUser.getUserId());
             userRepository.deleteById(testUser.getUserId());
         }
+        userRepository.findByEmail(GOOGLE_ONLY_EMAIL).ifPresent(u -> {
+            passwordResetRepository.deleteByUserId(u.getUserId());
+            userRepository.delete(u);
+        });
     }
 
     @Test
@@ -86,7 +110,7 @@ public class PasswordResetServiceIntegrationTest {
         assertTrue(response.isSuccess());
         assertNotNull(response.getMessage());
 
-        Optional<PasswordReset> prOpt = passwordResetRepository.findById(testUser.getUserId());
+        Optional<PasswordReset> prOpt = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET);
         assertTrue(prOpt.isPresent());
 
         PasswordReset pr = prOpt.get();
@@ -123,7 +147,7 @@ public class PasswordResetServiceIntegrationTest {
 
         assertTrue(response.isSuccess());
         assertEquals("If an account exists with this email, a verification code has been sent.", response.getMessage());
-        assertTrue(passwordResetRepository.findById(testUser.getUserId()).isEmpty());
+        assertTrue(passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).isEmpty());
     }
 
     @Test
@@ -151,7 +175,7 @@ public class PasswordResetServiceIntegrationTest {
     void testFP006_ResendOtpSuccessAfterCooldownGeneratesNewChallenge() {
         passwordResetService.requestPasswordReset(TEST_EMAIL);
 
-        PasswordReset prInitial = passwordResetRepository.findById(testUser.getUserId()).orElseThrow();
+        PasswordReset prInitial = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
         String initialChallenge = prInitial.getChallengeId();
         String initialHash = prInitial.getOtpHash();
 
@@ -162,7 +186,7 @@ public class PasswordResetServiceIntegrationTest {
         PasswordResetResponseDto resendResponse = passwordResetService.resendOtp(TEST_EMAIL);
         assertTrue(resendResponse.isSuccess());
 
-        PasswordReset prUpdated = passwordResetRepository.findById(testUser.getUserId()).orElseThrow();
+        PasswordReset prUpdated = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
         assertNotEquals(initialChallenge, prUpdated.getChallengeId());
         assertNotEquals(initialHash, prUpdated.getOtpHash());
         assertEquals(1, prUpdated.getResendCount());
@@ -173,7 +197,7 @@ public class PasswordResetServiceIntegrationTest {
     void testFP007_ResendOtpExceedsMax3Times() {
         passwordResetService.requestPasswordReset(TEST_EMAIL);
 
-        PasswordReset pr = passwordResetRepository.findById(testUser.getUserId()).orElseThrow();
+        PasswordReset pr = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
         pr.setResendCount(3);
         pr.setLastSentAt(LocalDateTime.now().minusSeconds(65));
         passwordResetRepository.save(pr);
@@ -185,11 +209,11 @@ public class PasswordResetServiceIntegrationTest {
     }
 
     @Test
-    void testFP008_HourlyRateLimitExceeds5Otps() {
+    void testFP008_HourlyRateLimitExceeds10Otps() {
         passwordResetService.requestPasswordReset(TEST_EMAIL);
 
-        PasswordReset pr = passwordResetRepository.findById(testUser.getUserId()).orElseThrow();
-        pr.setSendCountInWindow(5);
+        PasswordReset pr = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
+        pr.setSendCountInWindow(10);
         pr.setSendWindowStartedAt(LocalDateTime.now().minusMinutes(10));
         pr.setLastSentAt(LocalDateTime.now().minusSeconds(65));
         passwordResetRepository.save(pr);
@@ -209,7 +233,7 @@ public class PasswordResetServiceIntegrationTest {
         );
         assertTrue(ex.getMessage().contains("Invalid verification code. Remaining attempts: 4"));
 
-        PasswordReset pr = passwordResetRepository.findById(testUser.getUserId()).orElseThrow();
+        PasswordReset pr = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
         assertEquals(1, pr.getFailedAttempts());
     }
 
@@ -217,7 +241,7 @@ public class PasswordResetServiceIntegrationTest {
     void testFP010_VerifyOtp5FailedAttemptsLocksAccountFor15Minutes() {
         passwordResetService.requestPasswordReset(TEST_EMAIL);
 
-        PasswordReset pr = passwordResetRepository.findById(testUser.getUserId()).orElseThrow();
+        PasswordReset pr = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
         pr.setFailedAttempts(4);
         passwordResetRepository.save(pr);
 
@@ -226,7 +250,7 @@ public class PasswordResetServiceIntegrationTest {
         );
         assertTrue(ex.getMessage().contains("Too many failed attempts (5/5). Password reset is locked for 15 minutes."));
 
-        PasswordReset lockedPr = passwordResetRepository.findById(testUser.getUserId()).orElseThrow();
+        PasswordReset lockedPr = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
         assertEquals(PasswordResetStatus.LOCKED, lockedPr.getStatus());
         assertNotNull(lockedPr.getLockedUntil());
         assertTrue(lockedPr.getLockedUntil().isAfter(LocalDateTime.now().plusMinutes(14)));
@@ -237,7 +261,7 @@ public class PasswordResetServiceIntegrationTest {
     void testFP011_VerifyOtpExpiredCodeRejects() {
         passwordResetService.requestPasswordReset(TEST_EMAIL);
 
-        PasswordReset pr = passwordResetRepository.findById(testUser.getUserId()).orElseThrow();
+        PasswordReset pr = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
         pr.setOtpExpiresAt(LocalDateTime.now().minusSeconds(1)); // Expired
         passwordResetRepository.save(pr);
 
@@ -246,7 +270,7 @@ public class PasswordResetServiceIntegrationTest {
         );
         assertTrue(ex.getMessage().contains("Verification code has expired"));
 
-        PasswordReset expiredPr = passwordResetRepository.findById(testUser.getUserId()).orElseThrow();
+        PasswordReset expiredPr = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
         assertEquals(PasswordResetStatus.EXPIRED, expiredPr.getStatus());
         assertNull(expiredPr.getOtpHash());
     }
@@ -255,7 +279,7 @@ public class PasswordResetServiceIntegrationTest {
     void testFP012_VerifyOtpSuccessAndAtomicConsumption() {
         passwordResetService.requestPasswordReset(TEST_EMAIL);
 
-        PasswordReset pr = passwordResetRepository.findById(testUser.getUserId()).orElseThrow();
+        PasswordReset pr = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
         String knownOtp = "789123";
         pr.setOtpHash(otpService.computeOtpHmac(testUser.getUserId(), pr.getChallengeId(), knownOtp));
         passwordResetRepository.save(pr);
@@ -265,7 +289,7 @@ public class PasswordResetServiceIntegrationTest {
         assertNotNull(verifyResponse.getResetToken());
         assertEquals(64, verifyResponse.getResetToken().length()); // 256-bit token hex
 
-        PasswordReset verifiedPr = passwordResetRepository.findById(testUser.getUserId()).orElseThrow();
+        PasswordReset verifiedPr = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
         assertEquals(PasswordResetStatus.VERIFIED, verifiedPr.getStatus());
         assertNull(verifiedPr.getOtpHash()); // Atomic consumption
         assertNotNull(verifiedPr.getVerifiedAt());
@@ -283,7 +307,7 @@ public class PasswordResetServiceIntegrationTest {
     void testFP013_CompletePasswordResetSuccessUpdatesPasswordAndRevokesToken() {
         passwordResetService.requestPasswordReset(TEST_EMAIL);
 
-        PasswordReset pr = passwordResetRepository.findById(testUser.getUserId()).orElseThrow();
+        PasswordReset pr = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
         String knownOtp = "654321";
         pr.setOtpHash(otpService.computeOtpHmac(testUser.getUserId(), pr.getChallengeId(), knownOtp));
         passwordResetRepository.save(pr);
@@ -312,7 +336,7 @@ public class PasswordResetServiceIntegrationTest {
         assertFalse(passwordEncoder.matches("InitialP@ssword123", updatedUser.getPasswordHash()));
 
         // Verify status COMPLETED and token revoked
-        PasswordReset completedPr = passwordResetRepository.findById(testUser.getUserId()).orElseThrow();
+        PasswordReset completedPr = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
         assertEquals(PasswordResetStatus.COMPLETED, completedPr.getStatus());
         assertNotNull(completedPr.getCompletedAt());
         assertNull(completedPr.getResetTokenHash());
@@ -328,7 +352,7 @@ public class PasswordResetServiceIntegrationTest {
     void testFP014_ConcurrencyTwoThreadsVerifySameOtpSimultaneously() throws Exception {
         passwordResetService.requestPasswordReset(TEST_EMAIL);
 
-        PasswordReset pr = passwordResetRepository.findById(testUser.getUserId()).orElseThrow();
+        PasswordReset pr = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
         String knownOtp = "998877";
         pr.setOtpHash(otpService.computeOtpHmac(testUser.getUserId(), pr.getChallengeId(), knownOtp));
         passwordResetRepository.save(pr);
@@ -369,7 +393,7 @@ public class PasswordResetServiceIntegrationTest {
     void testFP015_ConcurrencyTwoThreadsCompleteResetSimultaneously() throws Exception {
         passwordResetService.requestPasswordReset(TEST_EMAIL);
 
-        PasswordReset pr = passwordResetRepository.findById(testUser.getUserId()).orElseThrow();
+        PasswordReset pr = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
         String knownOtp = "445566";
         pr.setOtpHash(otpService.computeOtpHmac(testUser.getUserId(), pr.getChallengeId(), knownOtp));
         passwordResetRepository.save(pr);
@@ -407,4 +431,116 @@ public class PasswordResetServiceIntegrationTest {
         assertEquals(1, successCount.get(), "Exactly one thread must succeed in completing password reset");
         assertEquals(1, failureCount.get(), "Second thread must be rejected because token was already consumed");
     }
+
+    @Test
+    void testBUG03_GoogleOnlyUserWithoutPasswordCannotGenerateResetOtp() {
+        User googleOnly = new User("Google User", GOOGLE_ONLY_EMAIL, "0999777222", null, "CUSTOMER");
+        googleOnly.setGoogleId("sub_google_only_bug03");
+        googleOnly.setAccountStatus("ACTIVE");
+        googleOnly = userRepository.save(googleOnly);
+
+        PasswordResetResponseDto response = passwordResetService.requestPasswordReset(GOOGLE_ONLY_EMAIL);
+        assertTrue(response.isSuccess());
+        assertEquals("If an account exists with this email, a verification code has been sent.", response.getMessage());
+        assertTrue(passwordResetRepository.findByUserIdAndPurpose(googleOnly.getUserId(), OtpPurpose.PASSWORD_RESET).isEmpty());
+    }
+
+    @Test
+    void testBUG05_ExpiredResetTokenPersistsExpiredStatusAndRejects() {
+        PasswordResetResponseDto reqRes = passwordResetService.requestPasswordReset(TEST_EMAIL);
+        assertEquals(60, reqRes.getCooldownSeconds());
+
+        PasswordReset pr = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
+        String knownOtp = "246810";
+        pr.setOtpHash(otpService.computeOtpHmac(testUser.getUserId(), pr.getChallengeId(), knownOtp));
+        passwordResetRepository.save(pr);
+
+        String resetToken = passwordResetService.verifyOtp(TEST_EMAIL, knownOtp).getResetToken();
+        pr = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
+        pr.setResetTokenExpiresAt(LocalDateTime.now().minusSeconds(1));
+        passwordResetRepository.save(pr);
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> passwordResetService.completePasswordReset(resetToken, "StrongNewP@ss9!", "StrongNewP@ss9!")
+        );
+        assertTrue(ex.getMessage().contains("expired"));
+
+        PasswordReset afterFailure = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
+        assertEquals(PasswordResetStatus.EXPIRED, afterFailure.getStatus());
+        assertNull(afterFailure.getResetTokenHash());
+    }
+
+    @Test
+    void testBUG06_ResendRejectsMissingOrVerifiedStateAndRequestDoesNotResetResendCount() {
+        assertThrows(IllegalArgumentException.class, () -> passwordResetService.resendOtp(TEST_EMAIL));
+
+        passwordResetService.requestPasswordReset(TEST_EMAIL);
+        PasswordReset pr = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
+        pr.setLastSentAt(LocalDateTime.now().minusSeconds(65));
+        passwordResetRepository.save(pr);
+
+        passwordResetService.resendOtp(TEST_EMAIL);
+        pr = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
+        assertEquals(1, pr.getResendCount());
+
+        // Fresh request within hourly window must NOT wipe resendCount back to 0
+        pr.setLastSentAt(LocalDateTime.now().minusSeconds(65));
+        passwordResetRepository.save(pr);
+        passwordResetService.requestPasswordReset(TEST_EMAIL);
+        pr = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
+        assertEquals(1, pr.getResendCount());
+
+        String knownOtp = "135790";
+        pr.setOtpHash(otpService.computeOtpHmac(testUser.getUserId(), pr.getChallengeId(), knownOtp));
+        passwordResetRepository.save(pr);
+        passwordResetService.verifyOtp(TEST_EMAIL, knownOtp);
+
+        // Resend must reject once challenge is already VERIFIED
+        assertThrows(IllegalArgumentException.class, () -> passwordResetService.resendOtp(TEST_EMAIL));
+    }
+
+    @Test
+    void testBUG07_CompletePasswordResetClearsLoginAttemptsAndRevokesActiveSession() {
+        for (int i = 0; i < 5; i++) {
+            loginAttemptService.recordFailure(TEST_EMAIL);
+        }
+        assertThrows(IllegalArgumentException.class, () -> loginAttemptService.checkNotLocked(TEST_EMAIL));
+
+        MockHttpSession session = new MockHttpSession();
+        sessionManagementService.registerSession(testUser.getUserId(), session);
+        assertTrue(sessionManagementService.isSessionValid(testUser.getUserId(), session));
+
+        passwordResetService.requestPasswordReset(TEST_EMAIL);
+        PasswordReset pr = passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).orElseThrow();
+        String knownOtp = "554433";
+        pr.setOtpHash(otpService.computeOtpHmac(testUser.getUserId(), pr.getChallengeId(), knownOtp));
+        passwordResetRepository.save(pr);
+
+        String token = passwordResetService.verifyOtp(TEST_EMAIL, knownOtp).getResetToken();
+        passwordResetService.completePasswordReset(token, "RecoveredPass@2026!", "RecoveredPass@2026!");
+
+        assertDoesNotThrow(() -> loginAttemptService.checkNotLocked(TEST_EMAIL));
+        assertEquals(0, loginAttemptService.getFailedAttempts(TEST_EMAIL));
+        assertFalse(sessionManagementService.isSessionValid(testUser.getUserId(), session));
+    }
+
+    @Test
+    void testBUG01_EmailVerificationAndPasswordResetChallengesStayIsolatedPerPurpose() {
+        PasswordReset emailVerPr = new PasswordReset(testUser.getUserId(), OtpPurpose.EMAIL_VERIFICATION, UUID.randomUUID().toString());
+        emailVerPr.setOtpHash(otpService.computeOtpHmac(testUser.getUserId(), OtpPurpose.EMAIL_VERIFICATION, emailVerPr.getChallengeId(), "111222"));
+        emailVerPr.setOtpExpiresAt(LocalDateTime.now().plusMinutes(5));
+        emailVerPr.setStatus(PasswordResetStatus.SENT);
+        passwordResetRepository.save(emailVerPr);
+
+        passwordResetService.requestPasswordReset(TEST_EMAIL);
+
+        // EMAIL_VERIFICATION OTP code must NOT verify PASSWORD_RESET challenge
+        assertThrows(IllegalArgumentException.class, () -> passwordResetService.verifyOtp(TEST_EMAIL, "111222"));
+
+        // Both purpose rows coexist cleanly for the same userId
+        assertTrue(passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.EMAIL_VERIFICATION).isPresent());
+        assertTrue(passwordResetRepository.findByUserIdAndPurpose(testUser.getUserId(), OtpPurpose.PASSWORD_RESET).isPresent());
+    }
 }
+

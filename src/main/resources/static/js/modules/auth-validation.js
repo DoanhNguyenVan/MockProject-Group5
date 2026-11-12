@@ -3,60 +3,39 @@
  */
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const PHONE_REGEX = /^\+?[0-9\s-]{9,15}$/;
+const PHONE_REGEX = /^\+?[0-9\s()-]{8,20}$/;
+const PASSWORD_MIN_LENGTH = 6;
+const PASSWORD_MAX_LENGTH = 128;
+const HAS_UPPERCASE_REGEX = /\p{Lu}/u;
+const HAS_NUMBER_REGEX = /\d/;
+const HAS_SPECIAL_CHAR_REGEX = /[^\p{L}\p{N}\s]/u;
 
-const GOOGLE_SVG = `
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.8C6.2 7.2 8.9 5 12 5z"/>
-    <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.6l3.7 2.9c2.2-2 3.7-5 3.7-8.7z"/>
-    <path fill="#FBBC05" d="M5.3 14.8c-.2-.8-.4-1.6-.4-2.5s.2-1.7.4-2.5L1.6 7C.6 9 0 11.2 0 13.5s.6 4.5 1.6 6.5l3.7-2.9z" transform="translate(0 -1.2)"/>
-    <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.1-6.7-5l-3.7 2.9C3.5 20.4 7.4 23 12 23z"/>
-  </svg>
-`;
-
-const FACEBOOK_SVG = `
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path fill="#1877F2" d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-  </svg>
-`;
-
-const SOCIAL_PRESETS = {
-  GOOGLE: [
-    {
-      providerId: "gg_1092837465",
-      fullName: "Alex Nguyen",
-      email: "alex.nguyen.cinema@gmail.com",
-      initials: "AN"
-    },
-    {
-      providerId: "gg_2093847561",
-      fullName: "Minh Anh Tran",
-      email: "minhanh.box@gmail.com",
-      initials: "MA"
-    }
-  ],
-  FACEBOOK: [
-    {
-      providerId: "fb_8837465912",
-      fullName: "Hoang Nam Le",
-      email: "hoangnam.fb@facebook.com",
-      initials: "HN"
-    },
-    {
-      providerId: "fb_7748291034",
-      fullName: "Thao Vy Pham",
-      email: "thaovy.fb@facebook.com",
-      initials: "TV"
-    }
-  ]
-};
+export function isValidPasswordPolicy(password) {
+  const passStr = String(password ?? "");
+  if (!passStr || !passStr.trim()) {
+    return { valid: false, message: "Password cannot be empty or blank whitespace." };
+  }
+  const codePointLength = Array.from(passStr).length;
+  if (codePointLength < PASSWORD_MIN_LENGTH) {
+    return { valid: false, message: "Password must be at least 6 characters long." };
+  }
+  if (codePointLength > PASSWORD_MAX_LENGTH) {
+    return { valid: false, message: "Password must not exceed 128 characters." };
+  }
+  if (!HAS_UPPERCASE_REGEX.test(passStr) || !HAS_NUMBER_REGEX.test(passStr) || !HAS_SPECIAL_CHAR_REGEX.test(passStr)) {
+    return { valid: false, message: "Password must include at least 1 uppercase letter, 1 number, and 1 special character." };
+  }
+  return { valid: true, message: "" };
+}
 
 export function isValidEmail(email) {
   return EMAIL_REGEX.test(String(email || "").trim());
 }
 
 export function isValidPhone(phone) {
-  return PHONE_REGEX.test(String(phone || "").trim());
+  const cleaned = String(phone || "").trim();
+  const digitsOnly = cleaned.replace(/\D/g, "");
+  return PHONE_REGEX.test(cleaned) && digitsOnly.length >= 8 && digitsOnly.length <= 15;
 }
 
 export function validateLoginFormData({ email, password }) {
@@ -64,8 +43,8 @@ export function validateLoginFormData({ email, password }) {
   if (!isValidEmail(email)) {
     errors.email = "Please enter a valid email address (e.g., alex@boxcinema.com).";
   }
-  if (!password || String(password).trim().length < 6) {
-    errors.password = "Password must be at least 6 characters long.";
+  if (!password || String(password).length < 1) {
+    errors.password = "Please enter your password.";
   }
   return {
     isValid: Object.keys(errors).length === 0,
@@ -89,10 +68,11 @@ export function validateRegisterFormData({
     errors.email = "Please enter a valid email address.";
   }
   if (!isValidPhone(phone)) {
-    errors.phone = "Please enter a valid phone number (9 to 15 digits).";
+    errors.phone = "Please enter a valid phone number (8 to 15 digits).";
   }
-  if (!password || String(password).length < 6) {
-    errors.password = "Password must be at least 6 characters long.";
+  const passCheck = isValidPasswordPolicy(password);
+  if (!passCheck.valid) {
+    errors.password = passCheck.message;
   }
   if (password !== confirmPassword || !confirmPassword) {
     errors.confirmPassword = "Passwords do not match.";
@@ -183,91 +163,232 @@ function initQuickDemoPills(doc = document) {
 }
 
 function initSocialOAuthModal(doc = document) {
-  const modal = doc.getElementById("socialAuthModal");
-  const closeBtn = doc.getElementById("closeSocialModalBtn");
-  const modalTitle = doc.getElementById("socialModalTitle");
-  const modalLogo = doc.getElementById("socialModalLogo");
-  const quickList = doc.getElementById("socialQuickAccounts");
-  const providerInput = doc.getElementById("socialProviderInput");
-  const providerIdInput = doc.getElementById("socialProviderIdInput");
-  const fullNameInput = doc.getElementById("socialFullName");
-  const emailInput = doc.getElementById("socialEmail");
-  const providerBtnLabel = doc.getElementById("socialProviderBtnLabel");
-  const customForm = doc.getElementById("socialCustomForm");
-
-  if (!modal || !customForm) {
-    return;
-  }
-
-  const openModalForProvider = (providerName) => {
-    const upper = String(providerName || "GOOGLE").toUpperCase();
-    const isFacebook = upper === "FACEBOOK";
-    const displayProvider = isFacebook ? "Facebook" : "Google";
-
-    if (providerInput) providerInput.value = upper;
-    if (providerIdInput) providerIdInput.value = "";
-    if (modalTitle) modalTitle.textContent = `Continue with ${displayProvider}`;
-    if (providerBtnLabel) providerBtnLabel.textContent = displayProvider;
-    if (modalLogo) modalLogo.innerHTML = isFacebook ? FACEBOOK_SVG : GOOGLE_SVG;
-    if (emailInput) {
-      emailInput.placeholder = isFacebook ? "yourname@facebook.com" : "yourname@gmail.com";
-      emailInput.value = "";
-    }
-    if (fullNameInput) {
-      fullNameInput.value = "";
-    }
-
-    if (quickList) {
-      quickList.innerHTML = "";
-      const presets = SOCIAL_PRESETS[upper] || SOCIAL_PRESETS.GOOGLE;
-      presets.forEach((acc) => {
-        const btn = doc.createElement("button");
-        btn.type = "button";
-        btn.className = "social-account-item";
-        btn.innerHTML = `
-          <span class="social-avatar">${acc.initials}</span>
-          <span class="social-account-meta">
-            <span class="social-account-name">${acc.fullName}</span>
-            <span class="social-account-email">${acc.email}</span>
-          </span>
-          <span class="small text-glow-red fw-bold">&#8594;</span>
-        `;
-        btn.addEventListener("click", () => {
-          if (providerInput) providerInput.value = upper;
-          if (providerIdInput) providerIdInput.value = acc.providerId;
-          if (fullNameInput) fullNameInput.value = acc.fullName;
-          if (emailInput) emailInput.value = acc.email;
-          customForm.submit();
-        });
-        quickList.appendChild(btn);
-      });
-    }
-
-    modal.classList.remove("d-none");
-  };
-
   const socialButtons = doc.querySelectorAll("[data-social-provider]");
   socialButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
-      const provider = btn.getAttribute("data-social-provider") || "GOOGLE";
-      const oauthConfigured = btn.getAttribute("data-oauth-configured") === "true";
-      if (oauthConfigured && typeof window !== "undefined") {
-        window.location.href = `/auth/oauth2/${provider.toLowerCase()}`;
+      const provider = String(btn.getAttribute("data-social-provider") || "GOOGLE").toUpperCase();
+      if (provider !== "GOOGLE") {
         return;
       }
-      openModalForProvider(provider);
+      if (typeof window !== "undefined") {
+        window.location.href = "/oauth2/authorization/google";
+      }
+    });
+  });
+}
+
+function getJsonHeaders(doc = document) {
+  const headers = { "Content-Type": "application/json" };
+  const csrfToken = doc.querySelector('meta[name="_csrf"]')?.getAttribute("content");
+  const csrfHeader = doc.querySelector('meta[name="_csrf_header"]')?.getAttribute("content") || "X-CSRF-TOKEN";
+  if (csrfToken) {
+    headers[csrfHeader] = csrfToken;
+  }
+  return headers;
+}
+
+function createAlertIconSvg(doc, type) {
+  const svgNs = "http://www.w3.org/2000/svg";
+  const svg = doc.createElementNS(svgNs, "svg");
+  svg.setAttribute("class", "auth-alert-icon");
+  svg.setAttribute("width", "20");
+  svg.setAttribute("height", "20");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "2");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
+
+  if (type === "success") {
+    const path = doc.createElementNS(svgNs, "path");
+    path.setAttribute("d", "M22 11.08V12a10 10 0 1 1-5.93-9.14");
+    const polyline = doc.createElementNS(svgNs, "polyline");
+    polyline.setAttribute("points", "22 4 12 14.01 9 11.01");
+    svg.appendChild(path);
+    svg.appendChild(polyline);
+  } else {
+    const circle = doc.createElementNS(svgNs, "circle");
+    circle.setAttribute("cx", "12");
+    circle.setAttribute("cy", "12");
+    circle.setAttribute("r", "10");
+    const line1 = doc.createElementNS(svgNs, "line");
+    line1.setAttribute("x1", "12");
+    line1.setAttribute("y1", "8");
+    line1.setAttribute("x2", "12");
+    line1.setAttribute("y2", "12");
+    const line2 = doc.createElementNS(svgNs, "line");
+    line2.setAttribute("x1", "12");
+    line2.setAttribute("y1", "16");
+    line2.setAttribute("x2", "12.01");
+    line2.setAttribute("y2", "16");
+    svg.appendChild(circle);
+    svg.appendChild(line1);
+    svg.appendChild(line2);
+  }
+
+  return svg;
+}
+
+function buildOtpDispatchedMessage(actionLabel, isResend = false) {
+  if (isResend) {
+    return "New verification code sent — valid for 5 minutes.\nEnter the latest 6-digit code sent to your Gmail.";
+  }
+  return `Verification code sent — valid for 5 minutes.\nEnter the 6-digit code from your Gmail to ${actionLabel}.`;
+}
+
+function startResendCooldownTimer({
+  buttonEl,
+  countdownEl,
+  secondsEl,
+  seconds,
+  existingTimer = null,
+  onFinish
+}) {
+  if (existingTimer) {
+    clearInterval(existingTimer);
+  }
+  if (!buttonEl || !countdownEl || !secondsEl || !seconds || seconds <= 0) {
+    return null;
+  }
+
+  let remaining = seconds;
+  buttonEl.disabled = true;
+  countdownEl.classList.remove("d-none");
+  secondsEl.textContent = String(remaining);
+
+  const timer = setInterval(() => {
+    remaining -= 1;
+    if (remaining <= 0) {
+      clearInterval(timer);
+      buttonEl.disabled = false;
+      countdownEl.classList.add("d-none");
+      onFinish?.();
+    } else {
+      secondsEl.textContent = String(remaining);
+    }
+  }, 1000);
+
+  return timer;
+}
+
+function bindOtpDigitGrid(doc, {
+  containerEl,
+  hiddenInputEl,
+  errorId,
+  onEnter
+}) {
+  const digitInputs = containerEl
+    ? Array.from(containerEl.querySelectorAll(".otp-digit-input"))
+    : [];
+
+  const clearInvalid = () => {
+    digitInputs.forEach((input) => input.classList.remove("is-invalid"));
+    if (errorId) {
+      setFieldFeedback(doc, hiddenInputEl?.id || "", errorId, "");
+    }
+  };
+
+  const sync = () => {
+    const combined = digitInputs.map((el) => (el.value || "").trim()).join("");
+    if (hiddenInputEl) {
+      hiddenInputEl.value = combined;
+    }
+    return combined;
+  };
+
+  const focusFirst = () => {
+    digitInputs[0]?.focus();
+  };
+
+  const focusFirstEmpty = () => {
+    const emptyEl = digitInputs.find((el) => !el.value) || digitInputs[digitInputs.length - 1];
+    emptyEl?.focus();
+  };
+
+  const fillDigits = (codeStr) => {
+    const clean = String(codeStr || "").replace(/\D/g, "").slice(0, digitInputs.length);
+    digitInputs.forEach((input, idx) => {
+      input.value = clean[idx] || "";
+    });
+    clearInvalid();
+    sync();
+    if (digitInputs.length > 0) {
+      const focusIdx = Math.min(clean.length, digitInputs.length - 1);
+      digitInputs[focusIdx]?.focus();
+    }
+  };
+
+  const clear = () => {
+    digitInputs.forEach((input) => {
+      input.value = "";
+    });
+    clearInvalid();
+    sync();
+  };
+
+  const setInvalid = (message) => {
+    digitInputs.forEach((input) => {
+      if (!input.value) {
+        input.classList.add("is-invalid");
+      }
+    });
+    if (digitInputs.length > 0 && digitInputs.every((el) => Boolean(el.value))) {
+      digitInputs.forEach((input) => input.classList.add("is-invalid"));
+    }
+    if (errorId && message) {
+      setFieldFeedback(doc, hiddenInputEl?.id || "", errorId, message);
+    }
+    focusFirstEmpty();
+  };
+
+  digitInputs.forEach((input, index) => {
+    input.addEventListener("input", (e) => {
+      const val = e.target.value.replace(/\D/g, "");
+      if (val.length > 1) {
+        fillDigits(val);
+        return;
+      }
+      e.target.value = val;
+      clearInvalid();
+      sync();
+      if (val && index < digitInputs.length - 1) {
+        digitInputs[index + 1].focus();
+      }
+    });
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Backspace" && !input.value && index > 0) {
+        digitInputs[index - 1].focus();
+      } else if (e.key === "ArrowLeft" && index > 0) {
+        e.preventDefault();
+        digitInputs[index - 1].focus();
+      } else if (e.key === "ArrowRight" && index < digitInputs.length - 1) {
+        e.preventDefault();
+        digitInputs[index + 1].focus();
+      } else if (e.key === "Enter" && typeof onEnter === "function") {
+        e.preventDefault();
+        onEnter();
+      }
+    });
+
+    input.addEventListener("paste", (e) => {
+      e.preventDefault();
+      const pasted = (e.clipboardData || window.clipboardData)?.getData("text") || "";
+      fillDigits(pasted);
     });
   });
 
-  if (closeBtn) {
-    closeBtn.addEventListener("click", () => modal.classList.add("d-none"));
-  }
-
-  modal.addEventListener("click", (e) => {
-    if (e.target === modal) {
-      modal.classList.add("d-none");
-    }
-  });
+  return {
+    digitInputs,
+    sync,
+    fillDigits,
+    clear,
+    clearInvalid,
+    focusFirst,
+    focusFirstEmpty,
+    setInvalid
+  };
 }
 
 function initForgotPasswordModal(doc = document) {
@@ -280,6 +401,7 @@ function initForgotPasswordModal(doc = document) {
   }
 
   const alertBox = doc.getElementById("forgotModalAlert");
+  const step2Header = doc.getElementById("forgotStep2Header");
   const step1 = doc.getElementById("forgotStep1");
   const step2 = doc.getElementById("forgotStep2");
   const step3 = doc.getElementById("forgotStep3");
@@ -287,12 +409,14 @@ function initForgotPasswordModal(doc = document) {
 
   const emailInput = doc.getElementById("resetEmail");
   const otpInput = doc.getElementById("resetOtpInput");
+  const otpDigitGrid = doc.getElementById("forgotOtpDigitGrid");
   const newPassInput = doc.getElementById("resetNewPassword");
   const confirmPassInput = doc.getElementById("resetConfirmPassword");
 
   const btnSendOtp = doc.getElementById("btnSendForgotOtp");
   const btnVerifyOtp = doc.getElementById("btnVerifyForgotOtp");
   const btnResendOtp = doc.getElementById("btnResendForgotOtp");
+  const btnBackToEmail = doc.getElementById("btnBackToForgotEmail");
   const btnComplete = doc.getElementById("btnCompleteForgotReset");
   const btnFinish = doc.getElementById("btnFinishForgotSuccess");
 
@@ -304,10 +428,41 @@ function initForgotPasswordModal(doc = document) {
   let currentResetToken = "";
   let cooldownTimer = null;
 
+  const otpGridApi = otpDigitGrid
+    ? bindOtpDigitGrid(doc, {
+        containerEl: otpDigitGrid,
+        hiddenInputEl: otpInput,
+        errorId: "resetOtpError",
+        onEnter: () => btnVerifyOtp?.click()
+      })
+    : null;
+
   function showAlert(type, message) {
     if (!alertBox) return;
     alertBox.className = `auth-alert auth-alert-${type} mb-3`;
-    alertBox.textContent = message;
+    const iconBox = doc.createElement("span");
+    iconBox.className = "auth-alert-icon-box";
+    iconBox.setAttribute("aria-hidden", "true");
+    iconBox.appendChild(createAlertIconSvg(doc, type));
+
+    const body = doc.createElement("div");
+    body.className = "auth-alert-body";
+    const lines = String(message || "").split("\n").filter(Boolean);
+    const titleEl = doc.createElement("span");
+    titleEl.className = "auth-alert-title";
+    titleEl.textContent = lines[0] || "";
+    body.appendChild(titleEl);
+
+    if (lines.length > 1) {
+      const descEl = doc.createElement("span");
+      descEl.className = "auth-alert-desc";
+      descEl.textContent = lines.slice(1).join(" ");
+      body.appendChild(descEl);
+    }
+
+    alertBox.textContent = "";
+    alertBox.appendChild(iconBox);
+    alertBox.appendChild(body);
     alertBox.classList.remove("d-none");
   }
 
@@ -317,8 +472,22 @@ function initForgotPasswordModal(doc = document) {
     alertBox.textContent = "";
   }
 
+  function stopCooldown() {
+    if (cooldownTimer) {
+      clearInterval(cooldownTimer);
+      cooldownTimer = null;
+    }
+    if (btnResendOtp) {
+      btnResendOtp.disabled = false;
+    }
+    countdownSpan?.classList.add("d-none");
+  }
+
   function showStep(stepNum) {
     hideAlert();
+    if (step2Header) {
+      step2Header.classList.toggle("d-none", stepNum !== 2);
+    }
     [step1, step2, step3, step4].forEach((s, idx) => {
       if (s) {
         if (idx + 1 === stepNum) {
@@ -328,55 +497,74 @@ function initForgotPasswordModal(doc = document) {
         }
       }
     });
+    if (stepNum === 2 && otpGridApi) {
+      otpGridApi.clear();
+      otpGridApi.focusFirst();
+    }
   }
 
   function startCooldown(seconds = 60) {
-    if (cooldownTimer) clearInterval(cooldownTimer);
-    if (!btnResendOtp || !countdownSpan || !countdownSec) return;
-
-    btnResendOtp.disabled = true;
-    btnResendOtp.classList.add("text-muted");
-    btnResendOtp.classList.remove("text-glow-red");
-    countdownSpan.classList.remove("d-none");
-    countdownSec.textContent = String(seconds);
-
-    let remaining = seconds;
-    cooldownTimer = setInterval(() => {
-      remaining -= 1;
-      if (remaining <= 0) {
-        clearInterval(cooldownTimer);
+    cooldownTimer = startResendCooldownTimer({
+      buttonEl: btnResendOtp,
+      countdownEl: countdownSpan,
+      secondsEl: countdownSec,
+      seconds,
+      existingTimer: cooldownTimer,
+      onFinish: () => {
         cooldownTimer = null;
-        btnResendOtp.disabled = false;
-        btnResendOtp.classList.remove("text-muted");
-        btnResendOtp.classList.add("text-glow-red");
-        countdownSpan.classList.add("d-none");
-      } else {
-        countdownSec.textContent = String(remaining);
       }
-    }, 1000);
+    });
   }
 
-  openBtn.addEventListener("click", () => {
+  const openForgotModal = () => {
+    stopCooldown();
+    otpGridApi?.clear();
     const loginEmail = doc.getElementById("loginEmail")?.value || "";
     if (emailInput && loginEmail) {
       emailInput.value = loginEmail;
     }
     showStep(1);
     modal.classList.remove("d-none");
+    emailInput?.focus();
+  };
+
+  openBtn.addEventListener("click", openForgotModal);
+  if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("forgot") === "true") {
+    openForgotModal();
+  }
+
+  emailInput?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      btnSendOtp?.click();
+    }
+  });
+  confirmPassInput?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      btnComplete?.click();
+    }
   });
 
   if (closeBtn) {
     closeBtn.addEventListener("click", () => {
-      if (cooldownTimer) clearInterval(cooldownTimer);
+      stopCooldown();
       modal.classList.add("d-none");
     });
   }
 
   modal.addEventListener("click", (e) => {
     if (e.target === modal) {
-      if (cooldownTimer) clearInterval(cooldownTimer);
+      stopCooldown();
       modal.classList.add("d-none");
     }
+  });
+
+  btnBackToEmail?.addEventListener("click", () => {
+    stopCooldown();
+    otpGridApi?.clear();
+    showStep(1);
+    emailInput?.focus();
   });
 
   // Step 1: Send OTP
@@ -394,9 +582,9 @@ function initForgotPasswordModal(doc = document) {
       btnSendOtp.innerHTML = "<span>Sending code...</span>";
 
       try {
-        const res = await fetch("/api/auth/password-reset/request", {
+        const res = await fetch("/api/auth/forgot-password", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: getJsonHeaders(doc),
           body: JSON.stringify({ email })
         });
         const data = await res.json();
@@ -405,9 +593,14 @@ function initForgotPasswordModal(doc = document) {
           currentEmail = email;
           if (displayTargetEmail) displayTargetEmail.textContent = email;
           showStep(2);
-          startCooldown(60);
-          showAlert("success", data.message || "A verification code has been dispatched.");
+          startCooldown(data.cooldownSeconds || 60);
+          showAlert("success", buildOtpDispatchedMessage("reset your password", false));
         } else {
+          if (data.cooldownSeconds) {
+            currentEmail = email;
+            if (displayTargetEmail) displayTargetEmail.textContent = email;
+            startCooldown(data.cooldownSeconds);
+          }
           showAlert("danger", data.message || "Failed to request verification code. Please try again.");
         }
       } catch (err) {
@@ -423,8 +616,9 @@ function initForgotPasswordModal(doc = document) {
   if (btnVerifyOtp) {
     btnVerifyOtp.addEventListener("click", async () => {
       hideAlert();
-      const otp = otpInput?.value?.trim() || "";
+      const otp = otpGridApi ? otpGridApi.sync().trim() : (otpInput?.value?.trim() || "");
       if (!otp || otp.length !== 6 || !/^\d{6}$/.test(otp)) {
+        otpGridApi?.setInvalid("Please enter all 6 digits of the verification code.");
         showAlert("danger", "Please enter the 6-digit numeric verification code.");
         return;
       }
@@ -434,18 +628,20 @@ function initForgotPasswordModal(doc = document) {
       btnVerifyOtp.innerHTML = "<span>Verifying code...</span>";
 
       try {
-        const res = await fetch("/api/auth/password-reset/verify", {
+        const res = await fetch("/api/auth/forgot-password/verify", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: getJsonHeaders(doc),
           body: JSON.stringify({ email: currentEmail, otp })
         });
         const data = await res.json();
 
         if (res.ok && data.success && data.resetToken) {
           currentResetToken = data.resetToken;
+          stopCooldown();
           showStep(3);
           showAlert("success", "Code verified! Please create your new password.");
         } else {
+          otpGridApi?.setInvalid(data.message || "Invalid or expired verification code.");
           showAlert("danger", data.message || "Invalid or expired verification code.");
         }
       } catch (err) {
@@ -464,18 +660,24 @@ function initForgotPasswordModal(doc = document) {
       btnResendOtp.disabled = true;
 
       try {
-        const res = await fetch("/api/auth/password-reset/resend", {
+        const res = await fetch("/api/auth/forgot-password/resend", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: getJsonHeaders(doc),
           body: JSON.stringify({ email: currentEmail })
         });
         const data = await res.json();
 
         if (res.ok && data.success) {
-          startCooldown(60);
-          showAlert("success", data.message || "A fresh code has been sent.");
+          otpGridApi?.clear();
+          otpGridApi?.focusFirst();
+          startCooldown(data.cooldownSeconds || 60);
+          showAlert("success", buildOtpDispatchedMessage("reset your password", true));
         } else {
-          btnResendOtp.disabled = false;
+          if (data.cooldownSeconds) {
+            startCooldown(data.cooldownSeconds);
+          } else {
+            btnResendOtp.disabled = false;
+          }
           showAlert("danger", data.message || "Failed to resend code.");
         }
       } catch (err) {
@@ -492,8 +694,9 @@ function initForgotPasswordModal(doc = document) {
       const newPassword = newPassInput?.value || "";
       const confirmPassword = confirmPassInput?.value || "";
 
-      if (newPassword.length < 8) {
-        showAlert("danger", "Password must be at least 8 characters long.");
+      const passCheck = isValidPasswordPolicy(newPassword);
+      if (!passCheck.valid) {
+        showAlert("danger", passCheck.message);
         return;
       }
       if (newPassword !== confirmPassword) {
@@ -506,9 +709,9 @@ function initForgotPasswordModal(doc = document) {
       btnComplete.innerHTML = "<span>Updating password...</span>";
 
       try {
-        const res = await fetch("/api/auth/password-reset/complete", {
+        const res = await fetch("/api/auth/forgot-password/reset", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: getJsonHeaders(doc),
           body: JSON.stringify({
             resetToken: currentResetToken,
             newPassword,
@@ -554,71 +757,35 @@ function initOtpVerificationForm(doc = document) {
     return;
   }
 
-  const digitInputs = Array.from(otpForm.querySelectorAll(".otp-digit-input"));
   const hiddenOtpInput = doc.getElementById("otpCodeHidden");
-  const autoFillBtn = doc.getElementById("autoFillDemoOtpBtn");
+  const resendBtn = doc.getElementById("verifyResendBtn");
+  const resendCountdown = doc.getElementById("verifyResendCountdown");
+  const resendSec = doc.getElementById("verifyResendSec");
 
-  const syncHiddenOtp = () => {
-    const combined = digitInputs.map((el) => (el.value || "").trim()).join("");
-    if (hiddenOtpInput) {
-      hiddenOtpInput.value = combined;
+  if (resendBtn && resendCountdown && resendSec) {
+    const initialCooldown = Number.parseInt(resendBtn.getAttribute("data-cooldown") || "0", 10);
+    if (!Number.isNaN(initialCooldown) && initialCooldown > 0) {
+      startResendCooldownTimer({
+        buttonEl: resendBtn,
+        countdownEl: resendCountdown,
+        secondsEl: resendSec,
+        seconds: initialCooldown
+      });
     }
-    return combined;
-  };
-
-  const fillDigits = (codeStr) => {
-    const clean = String(codeStr || "").replace(/\D/g, "").slice(0, 6);
-    digitInputs.forEach((input, idx) => {
-      input.value = clean[idx] || "";
-    });
-    syncHiddenOtp();
-    const focusIdx = Math.min(clean.length, digitInputs.length - 1);
-    digitInputs[focusIdx]?.focus();
-  };
-
-  digitInputs.forEach((input, index) => {
-    input.addEventListener("input", (e) => {
-      const val = e.target.value.replace(/\D/g, "");
-      if (val.length > 1) {
-        fillDigits(val);
-        return;
-      }
-      e.target.value = val;
-      syncHiddenOtp();
-      if (val && index < digitInputs.length - 1) {
-        digitInputs[index + 1].focus();
-      }
-    });
-
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Backspace" && !input.value && index > 0) {
-        digitInputs[index - 1].focus();
-      }
-    });
-
-    input.addEventListener("paste", (e) => {
-      e.preventDefault();
-      const pasted = (e.clipboardData || window.clipboardData)?.getData("text") || "";
-      fillDigits(pasted);
-    });
-  });
-
-  if (autoFillBtn) {
-    autoFillBtn.addEventListener("click", () => {
-      const demoOtp = autoFillBtn.getAttribute("data-otp") || "";
-      fillDigits(demoOtp);
-      setFieldFeedback(doc, "otpCodeHidden", "otpCodeError", "");
-    });
   }
 
-  digitInputs[0]?.focus();
+  const otpGridApi = bindOtpDigitGrid(doc, {
+    containerEl: otpForm.querySelector(".otp-digit-grid"),
+    hiddenInputEl: hiddenOtpInput,
+    errorId: "otpCodeError"
+  });
+  otpGridApi.focusFirst();
 
   otpForm.addEventListener("submit", (event) => {
-    const code = syncHiddenOtp();
+    const code = otpGridApi.sync();
     if (code.length !== 6) {
       event.preventDefault();
-      setFieldFeedback(doc, "otpCodeHidden", "otpCodeError", "Please enter all 6 digits of the verification code.");
-      digitInputs.find((el) => !el.value)?.focus();
+      otpGridApi.setInvalid("Please enter all 6 digits of the verification code.");
       return;
     }
     const submitBtn = doc.getElementById("verifyOtpSubmitBtn");
@@ -707,6 +874,59 @@ export function initAuthAndContactForms(doc = document) {
   // 2. Register / Sign Up Form
   const registerForm = doc.getElementById("registerForm");
   if (registerForm) {
+    const regPassInput = doc.getElementById("regPassword");
+    const regConfirmInput = doc.getElementById("regConfirmPassword");
+
+    const validateRegPasswordField = (showEmptyError = false) => {
+      if (!regPassInput) return;
+      const val = regPassInput.value || "";
+      if (!val && !showEmptyError) {
+        setFieldFeedback(doc, "regPassword", "regPasswordError", "");
+        return;
+      }
+      const policy = isValidPasswordPolicy(val);
+      setFieldFeedback(doc, "regPassword", "regPasswordError", policy.valid ? "" : policy.message);
+    };
+
+    const validateRegConfirmField = (showEmptyError = false) => {
+      if (!regConfirmInput) return;
+      const confirmVal = regConfirmInput.value || "";
+      const passVal = regPassInput?.value || "";
+      if (!confirmVal && !showEmptyError) {
+        setFieldFeedback(doc, "regConfirmPassword", "regConfirmPasswordError", "");
+        return;
+      }
+      const mismatch = passVal !== confirmVal || !confirmVal;
+      setFieldFeedback(doc, "regConfirmPassword", "regConfirmPasswordError", mismatch ? "Passwords do not match." : "");
+    };
+
+    regPassInput?.addEventListener("blur", () => {
+      if (regPassInput.value) {
+        validateRegPasswordField(false);
+      }
+    });
+
+    regPassInput?.addEventListener("input", () => {
+      if (regPassInput.classList.contains("is-invalid-dark")) {
+        validateRegPasswordField(true);
+      }
+      if (regConfirmInput?.classList.contains("is-invalid-dark")) {
+        validateRegConfirmField(true);
+      }
+    });
+
+    regConfirmInput?.addEventListener("blur", () => {
+      if (regConfirmInput.value) {
+        validateRegConfirmField(false);
+      }
+    });
+
+    regConfirmInput?.addEventListener("input", () => {
+      if (regConfirmInput.classList.contains("is-invalid-dark")) {
+        validateRegConfirmField(true);
+      }
+    });
+
     registerForm.addEventListener("submit", (event) => {
       const fullName = doc.getElementById("regFullName")?.value || "";
       const email = doc.getElementById("regEmail")?.value || "";
@@ -788,6 +1008,35 @@ export function initAuthAndContactForms(doc = document) {
       if (submitBtn) {
         submitBtn.textContent = "Sending message...";
         setTimeout(() => { submitBtn.disabled = true; }, 50);
+      }
+    });
+  }
+
+  // 4. Complete Profile Form (Google Registration Onboarding)
+  const completeProfileForm = doc.getElementById("completeProfileForm");
+  if (completeProfileForm) {
+    completeProfileForm.addEventListener("submit", (event) => {
+      const fullName = doc.getElementById("completeFullName")?.value || "";
+      const phone = doc.getElementById("phoneInput")?.value || "";
+      let valid = true;
+
+      if (String(fullName).trim().length < 2) {
+        setFieldFeedback(doc, "completeFullName", "completeFullNameError", "Please enter your full name (at least 2 characters).");
+        valid = false;
+      } else {
+        setFieldFeedback(doc, "completeFullName", "completeFullNameError", "");
+      }
+
+      if (!isValidPhone(phone)) {
+        setFieldFeedback(doc, "phoneInput", "completePhoneError", "Please enter a valid phone number (8 to 15 digits).");
+        valid = false;
+      } else {
+        setFieldFeedback(doc, "phoneInput", "completePhoneError", "");
+      }
+
+      if (!valid) {
+        event.preventDefault();
+        completeProfileForm.querySelector('[aria-invalid="true"]')?.focus();
       }
     });
   }

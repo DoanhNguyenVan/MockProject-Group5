@@ -55,16 +55,32 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public boolean sendVerificationOtpEmail(String toEmail, String fullName, String otpCode) {
-        log.info("=================================================================");
-        log.info("[GMAIL VERIFICATION OTP] Recipient: {} ({}) | OTP Code: {}", fullName, toEmail, otpCode);
-        log.info("=================================================================");
+        log.info("[GMAIL VERIFICATION OTP] Dispatching verification email to {}", com.boxcinema.service.AuthAuditService.maskEmail(toEmail));
 
         return sendHtmlEmail(
                 toEmail,
                 fullName,
-                "BOX Cinema - Verify Your Account (OTP: " + otpCode + ")",
+                "BOX Cinema - Verify Your Account",
                 buildVerificationEmailHtml(fullName, otpCode)
         );
+    }
+
+    @Override
+    public boolean sendGoogleAutoLinkOtpEmail(String toEmail, String fullName, String otpCode) {
+        log.info("[GOOGLE AUTO-LINK OTP] Dispatching one-time verification code to {}", com.boxcinema.service.AuthAuditService.maskEmail(toEmail));
+
+        return sendHtmlEmail(
+                toEmail,
+                fullName,
+                "BOX Cinema - Verify Email to Link Google Sign-In",
+                buildGoogleAutoLinkOtpEmailHtml(fullName, otpCode)
+        );
+    }
+
+    @Async("emailTaskExecutor")
+    @Override
+    public void sendVerificationOtpEmailAsync(String toEmail, String fullName, String otpCode) {
+        sendVerificationOtpEmail(toEmail, fullName, otpCode);
     }
 
     @Override
@@ -91,14 +107,12 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public boolean sendPasswordResetOtpEmail(String toEmail, String fullName, String otpCode) {
-        log.info("=================================================================");
-        log.info("[PASSWORD RESET OTP] Recipient: {} ({}) | OTP Code: {}", fullName, toEmail, otpCode);
-        log.info("=================================================================");
+        log.info("[PASSWORD RESET OTP] Dispatching reset code email to {}", com.boxcinema.service.AuthAuditService.maskEmail(toEmail));
 
         return sendHtmlEmail(
                 toEmail,
                 fullName,
-                "BOX Cinema - Password Reset Code (OTP: " + otpCode + ")",
+                "BOX Cinema - Password Reset Verification Code",
                 buildPasswordResetOtpEmailHtml(fullName, otpCode)
         );
     }
@@ -124,6 +138,38 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendPasswordResetConfirmationEmailAsync(String toEmail, String fullName) {
         sendPasswordResetConfirmationEmail(toEmail, fullName);
+    }
+
+    @Async("emailTaskExecutor")
+    @Override
+    public void sendGoogleLinkedNotificationEmailAsync(String toEmail, String fullName) {
+        log.info("[SECURITY ALERT] Google account linked notification for {}", com.boxcinema.service.AuthAuditService.maskEmail(toEmail));
+        sendHtmlEmail(
+                toEmail,
+                fullName,
+                "BOX Cinema - Google Account Linked",
+                buildSecurityNoticeHtml(
+                        fullName,
+                        "Google Sign-In Linked",
+                        "A Google account was just linked to your BOX Cinema profile. You can now sign in with either your email & password or Google."
+                )
+        );
+    }
+
+    @Async("emailTaskExecutor")
+    @Override
+    public void sendGoogleUnlinkedNotificationEmailAsync(String toEmail, String fullName) {
+        log.info("[SECURITY ALERT] Google account unlinked notification for {}", com.boxcinema.service.AuthAuditService.maskEmail(toEmail));
+        sendHtmlEmail(
+                toEmail,
+                fullName,
+                "BOX Cinema - Google Account Unlinked",
+                buildSecurityNoticeHtml(
+                        fullName,
+                        "Google Sign-In Unlinked",
+                        "Google sign-in has been removed from your BOX Cinema account. You can continue signing in using your email and password."
+                )
+        );
     }
 
     private boolean sendHtmlEmail(String toEmail, String toName, String subject, String htmlBody) {
@@ -200,7 +246,7 @@ public class EmailServiceImpl implements EmailService {
                       <span style="font-size: 34px; font-weight: 900; letter-spacing: 10px; color: #ffffff;">%s</span>
                     </div>
                     <p style="font-size: 13px; color: #94a3b8; margin-bottom: 0;">
-                      This code will expire in <strong>10 minutes</strong>. If you did not create a BOX Cinema account, you can safely ignore this email.
+                      This code will expire in <strong>5 minutes</strong>. If you did not create a BOX Cinema account, you can safely ignore this email.
                     </p>
                   </div>
                 </div>
@@ -247,6 +293,7 @@ public class EmailServiceImpl implements EmailService {
 
     private String buildPasswordResetOtpEmailHtml(String fullName, String otpCode) {
         String safeName = escapeHtml(fullName != null && !fullName.isBlank() ? fullName : "Member");
+        String safeOtp = escapeHtml(otpCode);
         return """
                 <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; background: #141418; color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #2e2e38;">
                   <div style="background: linear-gradient(135deg, #C91934 0%%, #7a0d1e 100%%); padding: 28px 32px; text-align: center;">
@@ -272,7 +319,51 @@ public class EmailServiceImpl implements EmailService {
                     <p style="margin: 0; font-size: 12px; color: #64748b;">BOX Cinema Vietnam · Secure Account Recovery</p>
                   </div>
                 </div>
-                """.formatted(safeName, otpCode);
+                """.formatted(safeName, safeOtp);
+    }
+
+    private String buildGoogleAutoLinkOtpEmailHtml(String fullName, String otpCode) {
+        String safeName = escapeHtml(fullName != null && !fullName.isBlank() ? fullName : "Member");
+        String safeOtp = escapeHtml(otpCode);
+        return """
+                <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; background: #141418; color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #2e2e38;">
+                  <div style="background: linear-gradient(135deg, #C91934 0%%, #7a0d1e 100%%); padding: 28px 32px; text-align: center;">
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: 0.04em;">BOX CINEMA</h1>
+                    <p style="margin: 6px 0 0; font-size: 13px; color: #ffd7de;">Google Sign-In Verification</p>
+                  </div>
+                  <div style="padding: 32px;">
+                    <p style="font-size: 16px; margin-top: 0; color: #e2e8f0;">Hi <strong>%s</strong>,</p>
+                    <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">
+                      We received a request to link <strong>Google Sign-In</strong> to your existing <strong>BOX Cinema</strong> account. Please enter this one-time 6-digit verification code to confirm ownership of your email:
+                    </p>
+                    <div style="margin: 28px 0; padding: 20px; background: #1f2029; border: 2px dashed #C91934; border-radius: 12px; text-align: center;">
+                      <span style="font-size: 34px; font-weight: 900; letter-spacing: 10px; color: #ffffff;">%s</span>
+                    </div>
+                    <p style="font-size: 13px; color: #94a3b8; margin-bottom: 0;">
+                      This code expires in <strong>5 minutes</strong>. If you did not try to sign in with Google, please ignore this email or sign in using your BOX Cinema password.
+                    </p>
+                  </div>
+                </div>
+                """.formatted(safeName, safeOtp);
+    }
+
+    private String buildSecurityNoticeHtml(String fullName, String title, String message) {
+        String safeName = escapeHtml(fullName != null && !fullName.isBlank() ? fullName : "Member");
+        return """
+                <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; background: #141418; color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #2e2e38;">
+                  <div style="background: linear-gradient(135deg, #C91934 0%%, #7a0d1e 100%%); padding: 26px 30px; text-align: center;">
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: 0.04em;">BOX CINEMA</h1>
+                    <p style="margin: 6px 0 0; font-size: 13px; color: #ffd7de;">%s</p>
+                  </div>
+                  <div style="padding: 30px;">
+                    <p style="font-size: 15px; margin-top: 0; color: #e2e8f0;">Hi <strong>%s</strong>,</p>
+                    <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">%s</p>
+                    <p style="font-size: 13px; color: #94a3b8; margin-bottom: 0;">
+                      If this was not you, please reset your password immediately or contact <strong>1900 6868</strong>.
+                    </p>
+                  </div>
+                </div>
+                """.formatted(escapeHtml(title), safeName, escapeHtml(message));
     }
 
     private String buildPasswordResetEmailHtml(String fullName) {
