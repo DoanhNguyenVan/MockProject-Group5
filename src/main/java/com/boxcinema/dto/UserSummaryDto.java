@@ -10,6 +10,9 @@ public class UserSummaryDto implements Serializable {
     private String email;
     private String phone;
     private String role;
+    private String accountStatus;
+    private boolean hasPassword;
+    private boolean googleLinked;
 
     public UserSummaryDto() {
     }
@@ -60,6 +63,30 @@ public class UserSummaryDto implements Serializable {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getAccountStatus() {
+        return accountStatus;
+    }
+
+    public void setAccountStatus(String accountStatus) {
+        this.accountStatus = accountStatus;
+    }
+
+    public boolean isHasPassword() {
+        return hasPassword;
+    }
+
+    public void setHasPassword(boolean hasPassword) {
+        this.hasPassword = hasPassword;
+    }
+
+    public boolean isGoogleLinked() {
+        return googleLinked;
+    }
+
+    public void setGoogleLinked(boolean googleLinked) {
+        this.googleLinked = googleLinked;
     }
 }
 

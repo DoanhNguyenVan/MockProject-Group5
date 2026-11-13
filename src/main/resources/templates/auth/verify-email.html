@@ -10,8 +10,13 @@
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
     rel="stylesheet"
   >
+<<<<<<< HEAD
+  <link rel="stylesheet" href="/css/main.css?v=20261113c" th:href="@{/css/main.css(v='20261113c')}">
+  <link rel="stylesheet" href="/css/auth.css?v=20261113c" th:href="@{/css/auth.css(v='20261113c')}">
+=======
   <link rel="stylesheet" href="/css/main.css" th:href="@{/css/main.css(v='2.3')}">
-  <link rel="stylesheet" href="/css/auth.css" th:href="@{/css/auth.css(v='2.3')}">
+  <link rel="stylesheet" href="/css/auth.css" th:href="@{/css/auth.css(v='2.6')}">
+>>>>>>> a017fb9326ab70b68caea1298aa61d943c3bcf5a
   <style>
     /* Critical SVG & layout guards to guarantee correct sizing regardless of browser cache */
     .auth-perk-list { list-style: none !important; padding: 0 !important; margin: 0 !important; display: grid !important; gap: 0.65rem !important; }
@@ -62,8 +67,8 @@
                     </svg>
                   </span>
                   <div>
-                    <strong>Valid for 10 Minutes</strong>
-                    <span>You can request a fresh code anytime if it expires</span>
+                    <strong>Valid for 5 Minutes</strong>
+                    <span>You can request a fresh code after cooldown if it expires</span>
                   </div>
                 </li>
               </ul>
@@ -78,7 +83,6 @@
         <!-- Right OTP Verification Column -->
         <div class="auth-form-col">
           <div class="auth-header-block mb-3">
-            <span class="badge-box-red d-inline-block mb-2">STEP 2 OF 2 · GMAIL OTP</span>
             <h1 class="h3 fw-bold text-white mb-1">Enter 6-Digit Verification Code</h1>
             <p class="small text-secondary mb-0">
               We sent a 6-digit OTP code to
@@ -92,12 +96,16 @@
             class="auth-alert auth-alert-danger mb-3"
             role="alert"
           >
-            <svg class="auth-alert-icon" width="20" height="20" style="width:20px;height:20px;max-width:20px;max-height:20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="8" x2="12" y2="12"></line>
-              <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-            <span th:text="${errorMessage}">Invalid verification code.</span>
+            <span class="auth-alert-icon-box" aria-hidden="true">
+              <svg class="auth-alert-icon" width="18" height="18" style="width:18px;height:18px;max-width:18px;max-height:18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </span>
+            <div class="auth-alert-body">
+              <span class="auth-alert-title" th:text="${errorMessage}">Invalid verification code.</span>
+            </div>
           </div>
 
           <!-- Server-side Success Banner -->
@@ -106,35 +114,15 @@
             class="auth-alert auth-alert-success mb-3"
             role="alert"
           >
-            <svg class="auth-alert-icon" width="20" height="20" style="width:20px;height:20px;max-width:20px;max-height:20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-              <polyline points="22 4 12 14.01 9 11.01"></polyline>
-            </svg>
-            <span th:text="${successMessage}">Verification code sent!</span>
-          </div>
-
-          <!-- Local Dev OTP Preview Banner (only shown if Gmail SMTP credentials are not configured yet) -->
-          <div
-            th:if="${demoOtpCode != null}"
-            class="otp-dev-preview mb-3"
-          >
-            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-              <div>
-                <span class="otp-dev-badge">DEV / LOCAL PREVIEW</span>
-                <p class="small text-secondary mb-0 mt-1">
-                  Configure <code>spring.mail.username</code> &amp; <code>spring.mail.password</code> in <code>application.properties</code> to send real Gmail emails. Current OTP:
-                </p>
-              </div>
-              <button
-                type="button"
-                class="otp-dev-code-btn"
-                id="autoFillDemoOtpBtn"
-                th:attr="data-otp=${demoOtpCode}"
-                title="Click to auto-fill OTP"
-              >
-                <span th:text="${demoOtpCode}">123456</span>
-                <small>Auto-fill</small>
-              </button>
+            <span class="auth-alert-icon-box" aria-hidden="true">
+              <svg class="auth-alert-icon" width="18" height="18" style="width:18px;height:18px;max-width:18px;max-height:18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            </span>
+            <div class="auth-alert-body">
+              <span class="auth-alert-title" th:text="${successMessage}">Verification code sent!</span>
+              <span class="auth-alert-desc" th:if="${successDetail != null}" th:text="${successDetail}"></span>
             </div>
           </div>
 
@@ -142,14 +130,8 @@
 
           <!-- 6-Digit OTP Verification Form -->
           <form id="verifyOtpForm" action="/verify-email" th:action="@{/verify-email}" method="post" novalidate>
-            <input
-              type="hidden"
-              name="_csrf"
-              th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}"
-              th:value="${_csrf != null ? _csrf.token : 'demo-csrf-token'}"
-              value="demo-csrf-token"
-            >
             <input type="hidden" name="email" th:value="${verifyEmail}">
+            <input type="hidden" name="challengeId" th:value="${challengeId}">
             <input type="hidden" name="otpCode" id="otpCodeHidden" value="">
 
             <label class="form-label small text-secondary fw-semibold mb-2">6-Digit OTP Code *</label>
@@ -170,20 +152,18 @@
           </form>
 
           <!-- Resend OTP Form -->
-          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2 border-top border-secondary border-opacity-25">
-            <span class="small text-secondary">Didn't receive the code in your Gmail?</span>
-            <form action="/verify-email/resend" th:action="@{/verify-email/resend}" method="post" class="d-inline">
-              <input
-                type="hidden"
-                name="_csrf"
-                th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}"
-                th:value="${_csrf != null ? _csrf.token : 'demo-csrf-token'}"
-                value="demo-csrf-token"
-              >
+          <div class="d-flex align-items-center justify-content-center flex-wrap gap-2 pt-2 border-top border-secondary border-opacity-25">
+            <form id="resendOtpForm" action="/verify-email/resend" th:action="@{/verify-email/resend}" method="post" class="d-inline">
               <input type="hidden" name="email" th:value="${verifyEmail}">
-              <button type="submit" class="btn-link-reset small text-glow-red fw-bold">
+              <input type="hidden" name="challengeId" th:value="${challengeId}">
+              <button
+                type="submit"
+                id="verifyResendBtn"
+                th:attr="data-cooldown=${cooldownSeconds != null ? cooldownSeconds : 0}"
+                class="btn-link-reset small text-glow-red fw-bold">
                 Resend 6-Digit OTP &#8635;
               </button>
+              <span id="verifyResendCountdown" class="d-none text-secondary small ms-1">(<span id="verifyResendSec">60</span>s)</span>
             </form>
           </div>
 
@@ -199,8 +179,13 @@
   <!-- Shared Footer -->
   <footer th:replace="~{fragments/footer :: footer}"></footer>
 
-  <script type="module" src="/js/modules/navbar.js" th:src="@{/js/modules/navbar.js}"></script>
+<<<<<<< HEAD
+  <script type="module" src="/js/modules/navbar.js?v=20261113a" th:src="@{/js/modules/navbar.js(v='20261113a')}"></script>
   <script type="module" src="/js/modules/auth-validation.js?v=2.3" th:src="@{/js/modules/auth-validation.js(v='2.3')}"></script>
+=======
+  <script type="module" src="/js/modules/navbar.js" th:src="@{/js/modules/navbar.js}"></script>
+  <script type="module" src="/js/modules/auth-validation.js?v=2.8" th:src="@{/js/modules/auth-validation.js(v='2.8')}"></script>
+>>>>>>> a017fb9326ab70b68caea1298aa61d943c3bcf5a
 </body>
 </html>
 

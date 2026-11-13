@@ -100,8 +100,15 @@ function initAboutHeroAnim() {
     defaults: { ease: 'power3.inOut' }
   });
 
+  function getNeutralLeadColor() {
+    return document.documentElement.getAttribute('data-theme') === 'light'
+      ? '#0f172a'
+      : '#ffffff';
+  }
+
   // Reset function executed at start of each loop
   function setInitialFrame() {
+    const neutralColor = getNeutralLeadColor();
     gsap.set([tailB, tailO, tailX], { width: 0, opacity: 0 });
 
     if (stageCenterShift !== 0) {
@@ -125,7 +132,7 @@ function initAboutHeroAnim() {
       y: 0,
       opacity: 0,
       filter: 'blur(8px)',
-      color: '#ffffff',
+      color: neutralColor,
       textShadow: 'none'
     });
 
@@ -134,7 +141,7 @@ function initAboutHeroAnim() {
       y: deltaY_O,
       opacity: 0,
       filter: 'blur(8px)',
-      color: '#ffffff',
+      color: neutralColor,
       textShadow: 'none'
     });
 
@@ -143,7 +150,7 @@ function initAboutHeroAnim() {
       y: deltaY_X,
       opacity: 0,
       filter: 'blur(8px)',
-      color: '#ffffff',
+      color: neutralColor,
       textShadow: 'none'
     });
 
@@ -276,6 +283,16 @@ function initAboutHeroAnim() {
   stage.setAttribute('title', 'Click to replay animation');
   stage.addEventListener('click', () => {
     tl.restart();
+  });
+
+  document.addEventListener('box:theme-changed', () => {
+    const neutralColor = getNeutralLeadColor();
+    [charB, charO, charX].forEach((el) => {
+      const currentColor = el.style.color;
+      if (currentColor && currentColor !== 'rgb(229, 9, 20)' && currentColor !== '#e50914') {
+        el.style.color = neutralColor;
+      }
+    });
   });
 }
 

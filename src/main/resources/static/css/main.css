@@ -1,4 +1,10 @@
 :root {
+  color-scheme: dark;
+  --box-text-on-accent: #ffffff;
+  --bs-body-color: var(--box-text-primary);
+  --bs-body-bg: var(--box-bg-primary);
+  --bs-secondary-color: var(--box-text-muted);
+  --bs-border-color: var(--box-border-color);
   --box-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --box-accent: #C91934;
   --box-accent-rgb: 201 25 52;
@@ -22,6 +28,27 @@
   --box-radius-md: 0.875rem;
   --box-radius-lg: 1.25rem;
   --box-transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html[data-theme="light"] {
+  --bs-body-color: var(--box-text-primary);
+  --bs-body-bg: var(--box-bg-primary);
+  --bs-secondary-color: var(--box-text-muted);
+  --bs-border-color: var(--box-border-color);
+  color-scheme: light;
+  --box-bg-primary: #f8fafc;
+  --box-bg-secondary: #f1f5f9;
+  --box-bg-card: #ffffff;
+  --box-bg-elevated: #f1f5f9;
+  --box-bg-glass: rgb(255 255 255 / 90%);
+  --box-red-glow: rgb(var(--box-accent-rgb) / 24%);
+  --box-red-subtle: rgb(var(--box-accent-rgb) / 10%);
+  --box-text-primary: #0f172a;
+  --box-text-secondary: #334155;
+  --box-text-muted: #64748b;
+  --box-border-color: rgb(15 23 42 / 12%);
+  --box-border-red: rgb(var(--box-accent-rgb) / 38%);
+  --box-gold: #92400e;
 }
 
 *,
@@ -1353,3 +1380,348 @@ body .alert-danger {
   display: inline-block !important;
 }
 
+/* ==========================================================================
+   Theme Toggle Button & Light Mode Support
+   ========================================================================== */
+.nav-theme-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  padding: 0;
+  border-radius: 50%;
+  background: #0c0d12;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #f8fafc;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.22s ease, border-color 0.22s ease, color 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.nav-theme-btn:hover {
+  background: #181920;
+  border-color: rgba(255, 255, 255, 0.45);
+  transform: translateY(-1px);
+}
+
+.nav-theme-btn .theme-icon,
+.nav-mobile-theme-icons .theme-icon {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  display: block;
+}
+
+.theme-icon-moon {
+  display: none !important;
+}
+
+html[data-theme="light"] .theme-icon-sun {
+  display: none !important;
+}
+
+html[data-theme="light"] .theme-icon-moon {
+  display: block !important;
+}
+
+.nav-mobile-theme-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.55rem 0.85rem;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.nav-mobile-theme-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.nav-mobile-theme-icons {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Light Mode Global Overrides (Unified light frosted navbar & shared components) */
+html[data-theme="light"] .cinema-nav {
+  background: rgba(255, 255, 255, 0.94);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.07);
+}
+
+html[data-theme="light"] .cinema-nav .box-brand img {
+  filter: brightness(0);
+}
+
+html[data-theme="light"] .cinema-nav-menu a {
+  color: #334155;
+}
+
+html[data-theme="light"] .cinema-nav-menu a:hover,
+html[data-theme="light"] .cinema-nav-menu [aria-current="page"] {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .nav-cinema-select {
+  background-color: #ffffff;
+  color: #0f172a;
+  border-color: rgba(15, 23, 42, 0.16);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+html[data-theme="light"] .nav-cinema-select:hover,
+html[data-theme="light"] .nav-cinema-select:focus,
+html[data-theme="light"] .nav-cinema-select:focus-visible,
+html[data-theme="light"] .nav-cinema-select:active {
+  background-color: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.3);
+}
+
+html[data-theme="light"] .nav-cinema-select optgroup,
+html[data-theme="light"] .nav-cinema-select option {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+html[data-theme="light"] .nav-auth-pill {
+  color: #334155;
+}
+
+html[data-theme="light"] .nav-auth-pill:hover {
+  color: #0f172a;
+  border-color: rgba(15, 23, 42, 0.3);
+}
+
+html[data-theme="light"] .nav-auth-pill[data-nav-route="register"] {
+  border-color: rgba(15, 23, 42, 0.28);
+  color: #0f172a;
+}
+
+html[data-theme="light"] .cinema-nav-account:has([data-nav-route="login"].active) .nav-auth-pill[data-nav-route="register"],
+html[data-theme="light"] .cinema-nav-mobile-account:has([data-nav-route="login"].active) .nav-auth-pill[data-nav-route="register"] {
+  border-color: transparent;
+  color: #334155;
+}
+
+html[data-theme="light"] .nav-auth-pill.active {
+  color: #0f172a !important;
+  border-color: var(--box-accent) !important;
+  background: rgba(201, 25, 52, 0.08);
+  box-shadow: 0 2px 10px rgba(201, 25, 52, 0.14);
+}
+
+html[data-theme="light"] .nav-search-form {
+  background: #f1f5f9;
+  border-color: rgba(15, 23, 42, 0.16);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme="light"] .nav-search-form:not(.active):hover {
+  background: #e2e8f0;
+  border-color: rgba(15, 23, 42, 0.3);
+}
+
+html[data-theme="light"] .nav-search-form.active {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.22);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.14);
+}
+
+html[data-theme="light"] .nav-search-btn {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .nav-theme-btn {
+  background: #f1f5f9;
+  border-color: rgba(15, 23, 42, 0.16);
+  color: #0f172a;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme="light"] .nav-theme-btn:hover {
+  background: #e2e8f0;
+  border-color: rgba(15, 23, 42, 0.3);
+}
+
+html[data-theme="light"] .cinema-nav .box-navbar-toggler {
+  background: rgba(15, 23, 42, 0.06);
+  border-color: rgba(15, 23, 42, 0.18);
+  color: #0f172a;
+}
+
+html[data-theme="light"] .nav-mobile-theme-btn {
+  background: #f1f5f9;
+  border-color: rgba(15, 23, 42, 0.16);
+  color: #0f172a;
+}
+
+html[data-theme="light"] .nav-mobile-theme-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+@media (width <= 760px) {
+  html[data-theme="light"] .cinema-nav-account {
+    border-top-color: rgba(15, 23, 42, 0.12);
+  }
+}
+
+/* Shared Light Mode Components */
+html[data-theme="light"] .btn-box-outline {
+  background: rgba(15, 23, 42, 0.04);
+  color: #0f172a;
+  border-color: var(--box-border-red);
+}
+
+html[data-theme="light"] .btn-box-outline:hover,
+html[data-theme="light"] .btn-box-outline:focus {
+  color: var(--box-accent);
+  background: var(--box-red-subtle);
+}
+
+html[data-theme="light"] .form-select-dark,
+html[data-theme="light"] .form-control-dark {
+  background-color: #ffffff;
+  border-color: rgba(15, 23, 42, 0.18);
+  color: #0f172a;
+}
+
+html[data-theme="light"] .form-select-dark::placeholder,
+html[data-theme="light"] .form-control-dark::placeholder {
+  color: #64748b;
+}
+
+html[data-theme="light"] .form-select-dark:focus,
+html[data-theme="light"] .form-control-dark:focus {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+html[data-theme="light"] .form-select-dark option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+html[data-theme="light"] .movie-card:hover {
+  box-shadow: 0 16px 36px rgb(15 23 42 / 14%), 0 0 22px rgb(var(--box-accent-rgb) / 14%);
+}
+
+html[data-theme="light"] .movie-title {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .box-surface-card {
+  box-shadow: 0 8px 24px rgb(15 23 42 / 6%);
+}
+
+html[data-theme="light"] .box-surface-card:hover {
+  box-shadow: 0 12px 30px rgb(15 23 42 / 10%), 0 0 18px rgb(var(--box-accent-rgb) / 10%);
+}
+
+html[data-theme="light"] .voucher-ticket {
+  background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+}
+
+html[data-theme="light"] .stat-card {
+  background: linear-gradient(145deg, rgb(var(--box-accent-rgb) / 8%) 0%, #ffffff 100%);
+}
+
+html[data-theme="light"] .map-frame-dark {
+  background:
+    radial-gradient(circle at 50% 50%, rgb(var(--box-accent-rgb) / 12%) 0%, transparent 65%),
+    repeating-linear-gradient(0deg, rgb(15 23 42 / 4%) 0, rgb(15 23 42 / 4%) 1px, transparent 1px, transparent 32px),
+    repeating-linear-gradient(90deg, rgb(15 23 42 / 4%) 0, rgb(15 23 42 / 4%) 1px, transparent 1px, transparent 32px),
+    #f1f5f9;
+}
+
+html[data-theme="light"] .box-footer {
+  background: #f1f5f9;
+  border-top: 1px solid rgba(15, 23, 42, 0.1);
+  color: #475569;
+}
+
+html[data-theme="light"] .box-footer .box-brand-logo {
+  filter: brightness(0);
+}
+
+html[data-theme="light"] .footer-heading {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .box-footer .text-white {
+  color: #0f172a !important;
+}
+
+html[data-theme="light"] body .text-secondary {
+  color: #475569 !important;
+}
+
+html[data-theme="light"] body .alert-danger {
+  color: #991b1b;
+  background-color: #fef2f2;
+  border-color: var(--box-accent);
+}
+
+html[data-theme="light"] :where(a, button, select, input, textarea, [tabindex]):focus-visible {
+  outline: 3px solid #C91934 !important;
+  outline-offset: 3px;
+}
+
+/* Text on plain surfaces follows the theme; artwork and solid buttons keep
+   their own foreground colors. */
+html[data-theme="light"] .hero-title {
+  color: var(--box-text-primary);
+  text-shadow: none;
+}
+html[data-theme="light"] .box-surface-card .text-white {
+  color: var(--box-text-primary) !important;
+}
+html[data-theme="light"] .cinema-nav :is(.cinema-nav-account, .cinema-nav-mobile-account) .nav-auth-pill {
+  color: var(--box-text-secondary);
+}
+html[data-theme="light"] .cinema-nav :is(.cinema-nav-account, .cinema-nav-mobile-account) .nav-auth-pill.active {
+  color: var(--box-accent) !important;
+  border-color: var(--box-accent) !important;
+  background: var(--box-red-subtle);
+}
+html[data-theme="light"] .cinema-nav-menu .nav-auth-pill[data-nav-route="register"] {
+  color: var(--box-text-primary);
+  border-color: var(--box-border-color);
+}
+html[data-theme="light"] .btn-cinema-selector,
+html[data-theme="light"] .cinema-cascading-menu {
+  color: var(--box-text-primary);
+  background: var(--box-bg-card);
+  border-color: var(--box-border-color);
+  box-shadow: 0 12px 32px rgb(15 23 42 / 12%);
+}
+html[data-theme="light"] .cinema-city-list {
+  background: var(--box-bg-secondary);
+  border-color: var(--box-border-color);
+}
+html[data-theme="light"] :is(.cinema-all-btn, .cinema-city-item, .branch-name) {
+  color: var(--box-text-secondary);
+}
+html[data-theme="light"] .cinema-all-btn:is(:hover, .active) {
+  color: var(--box-accent);
+  background: var(--box-red-subtle);
+}
+html[data-theme="light"] .cinema-city-item:is(:hover, .active) {
+  color: var(--box-text-on-accent);
+  background: var(--box-accent);
+}
+html[data-theme="light"] .cinema-branch-item:hover {
+  background: var(--box-bg-secondary);
+  border-color: var(--box-border-color);
+}
