@@ -4,9 +4,9 @@ public interface EmailService {
     /**
      * Sends a 6-digit verification OTP to the user's email (Gmail).
      *
-     * @param toEmail   recipient email address
-     * @param fullName  recipient full name
-     * @param otpCode   6-digit OTP verification code
+     * @param toEmail  recipient email address
+     * @param fullName recipient full name
+     * @param otpCode  6-digit OTP verification code
      * @return true if sent via real SMTP server, false if running in local fallback mode
      */
     boolean sendVerificationOtpEmail(String toEmail, String fullName, String otpCode);
@@ -14,14 +14,93 @@ public interface EmailService {
     /**
      * Sends a confirmation email to customer after submitting a contact/support inquiry.
      *
-     * @param toEmail      customer email address
-     * @param fullName     customer full name
-     * @param inquiryId    inquiry reference ticket ID
-     * @param topic        inquiry topic
-     * @param userMessage  customer message content
+     * @param toEmail     customer email address
+     * @param fullName    customer full name
+     * @param inquiryId   inquiry reference ticket ID
+     * @param topic       inquiry topic
+     * @param userMessage customer message content
      * @return true if sent via real SMTP server, false if running in local fallback mode
      */
-    default boolean sendInquiryConfirmationEmail(String toEmail, String fullName, Long inquiryId, String topic, String userMessage) {
+    default boolean sendInquiryConfirmationEmail(String toEmail, String fullName, Long inquiryId, String topic,
+            String userMessage) {
         return false;
+    }
+
+    /**
+     * Dispatches the inquiry confirmation email asynchronously on the background mail executor
+     * so HTTP responses return immediately after DB persistence.
+     */
+    default void sendInquiryConfirmationEmailAsync(String toEmail, String fullName, Long inquiryId, String topic,
+            String userMessage) {
+        sendInquiryConfirmationEmail(toEmail, fullName, inquiryId, topic, userMessage);
+    }
+
+    /**
+     * Sends a 6-digit password reset OTP to the user's email.
+     *
+     * @param toEmail  recipient email
+     * @param fullName recipient full name
+     * @param otpCode  6-digit OTP
+     * @return true if sent via real SMTP server, false if running in local fallback mode
+     */
+    default boolean sendPasswordResetOtpEmail(String toEmail, String fullName, String otpCode) {
+        return false;
+    }
+
+    /**
+     * Sends a security notification email confirming that the user's password was reset.
+     *
+     * @param toEmail  customer email address
+     * @param fullName customer full name
+     * @return true if sent via real SMTP server, false if running in local fallback mode
+     */
+    default boolean sendPasswordResetConfirmationEmail(String toEmail, String fullName) {
+        return false;
+    }
+
+    /**
+     * Dispatches the password reset confirmation email asynchronously on the background mail executor.
+     */
+    default void sendPasswordResetConfirmationEmailAsync(String toEmail, String fullName) {
+        sendPasswordResetConfirmationEmail(toEmail, fullName);
+    }
+
+    /**
+     * Sends a security notification email when a user's password has been successfully reset.
+     *
+     * @param toEmail  recipient email
+     * @param fullName recipient full name
+     * @return true if sent via real SMTP server, false if running in local fallback mode
+     */
+    default boolean sendPasswordResetSuccessEmail(String toEmail, String fullName) {
+        return sendPasswordResetConfirmationEmail(toEmail, fullName);
+    }
+
+    /**
+     * Dispatches a verification OTP email asynchronously on the background mail executor.
+     */
+    default void sendVerificationOtpEmailAsync(String toEmail, String fullName, String otpCode) {
+        sendVerificationOtpEmail(toEmail, fullName, otpCode);
+    }
+
+    /**
+     * Sends a 6-digit OTP to verify email ownership before one-time Google account linking.
+     */
+    default boolean sendGoogleAutoLinkOtpEmail(String toEmail, String fullName, String otpCode) {
+        return sendVerificationOtpEmail(toEmail, fullName, otpCode);
+    }
+
+    /**
+     * Dispatches a security alert asynchronously when a Google account is linked.
+     */
+    default void sendGoogleLinkedNotificationEmailAsync(String toEmail, String fullName) {
+        // Optional security notification
+    }
+
+    /**
+     * Dispatches a security alert asynchronously when a Google account is unlinked.
+     */
+    default void sendGoogleUnlinkedNotificationEmailAsync(String toEmail, String fullName) {
+        // Optional security notification
     }
 }

@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 @Transactional
@@ -28,16 +30,16 @@ public class InquiryServiceImpl implements InquiryService {
     @Override
     public Inquiry createInquiry(String fullName, String email, String phone, String topic, String message, Long userId) {
         if (fullName == null || fullName.trim().length() < 2) {
-            throw new IllegalArgumentException("Vui lòng nhập họ và tên (tối thiểu 2 ký tự).");
+            throw new IllegalArgumentException("Please enter your full name (at least 2 characters).");
         }
         if (email == null || email.trim().isBlank()) {
-            throw new IllegalArgumentException("Vui lòng nhập địa chỉ email hợp lệ.");
+            throw new IllegalArgumentException("Please enter a valid email address.");
         }
         if (topic == null || topic.trim().isBlank()) {
-            throw new IllegalArgumentException("Vui lòng chọn chủ đề liên hệ.");
+            throw new IllegalArgumentException("Please select an inquiry topic.");
         }
         if (message == null || message.trim().length() < 6) {
-            throw new IllegalArgumentException("Nội dung tin nhắn cần tối thiểu 6 ký tự.");
+            throw new IllegalArgumentException("Please enter a message with at least 6 characters.");
         }
 
         Inquiry inquiry = new Inquiry(
@@ -48,24 +50,38 @@ public class InquiryServiceImpl implements InquiryService {
                 message.trim()
         );
         inquiry.setUserId(userId);
-        inquiry = inquiryRepository.save(inquiry);
+        Inquiry saved = inquiryRepository.save(inquiry);
 
-        // Send confirmation email to customer
+        // Dispatch confirmation email asynchronously after transaction commits
+        // so the web UI shows instant success while SMTP runs on the background pool.
         if (emailService != null) {
-            try {
-                emailService.sendInquiryConfirmationEmail(
-                        inquiry.getEmail(),
-                        inquiry.getFullName(),
-                        inquiry.getInquiryId(),
-                        inquiry.getInquiryTopic(),
-                        inquiry.getMessage()
-                );
-            } catch (Exception ex) {
-                log.warn("Could not dispatch confirmation email for inquiry #{}: {}", inquiry.getInquiryId(), ex.getMessage());
+            Runnable sendEmailTask = () -> {
+                try {
+                    emailService.sendInquiryConfirmationEmailAsync(
+                            saved.getEmail(),
+                            saved.getFullName(),
+                            saved.getInquiryId(),
+                            saved.getInquiryTopic(),
+                            saved.getMessage()
+                    );
+                } catch (Exception ex) {
+                    log.warn("Could not schedule confirmation email for inquiry #{}: {}", saved.getInquiryId(), ex.getMessage());
+                }
+            };
+
+            if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        sendEmailTask.run();
+                    }
+                });
+            } else {
+                sendEmailTask.run();
             }
         }
 
-        return inquiry;
+        return saved;
     }
 }
 

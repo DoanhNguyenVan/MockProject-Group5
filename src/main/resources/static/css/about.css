@@ -19,7 +19,7 @@
 body.about-page {
   background-color: var(--about-bg);
   color: var(--about-text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--box-font);
   min-height: 100vh;
   overflow-x: hidden;
 }
@@ -125,20 +125,6 @@ body.about-page {
   opacity: 0;
   will-change: transform, opacity, filter;
   text-shadow: 0 0 25px rgba(236, 28, 36, 0.45);
-}
-  position: relative;
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-  text-align: left;
-  font-size: clamp(2.4rem, 6.2vw, 4.4rem);
-  font-weight: 900;
-  letter-spacing: 0.02em;
-  line-height: 1.08;
-  margin: 0 auto 1.5rem auto;
-  text-transform: uppercase;
-  min-height: calc(3 * 1.08em);
-  user-select: none;
 }
 
 .brand-line {
@@ -824,4 +810,213 @@ body.about-page {
   .about-cta-box {
     padding: 2.5rem 1.25rem;
   }
+}
+
+/* =====================================================
+   LIGHT MODE OVERRIDES
+   ===================================================== */
+html[data-theme="light"] {
+  --about-bg: var(--box-bg-primary);
+  --about-surface: var(--box-bg-card);
+  --about-surface-card: var(--box-bg-card);
+  --about-surface-hover: var(--box-bg-elevated);
+  --about-border: var(--box-border-color);
+  --about-border-hover: var(--box-border-red);
+  --about-text-primary: var(--box-text-primary);
+  --about-text-secondary: var(--box-text-secondary);
+  --about-text-muted: var(--box-text-muted);
+}
+
+html[data-theme="light"] .about-hero {
+  background:
+    radial-gradient(ellipse 68% 54% at 50% 24%, rgb(229 9 20 / 8%) 0%, transparent 72%),
+    radial-gradient(ellipse 90% 60% at 50% 95%, rgb(15 23 42 / 4%) 0%, transparent 70%),
+    #f8fafc;
+}
+
+html[data-theme="light"] .about-hero-eyebrow {
+  background: rgb(229 9 20 / 8%);
+  border-color: rgb(229 9 20 / 28%);
+  color: #b91c1c;
+}
+
+html[data-theme="light"] .about-hero-title {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .tail-inner {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .brand-cinema-intro {
+  color: #475569;
+}
+
+html[data-theme="light"] .about-tagline {
+  color: #334155;
+}
+
+html[data-theme="light"] .btn-about-outline {
+  color: #0f172a;
+  background: #ffffff;
+  border-color: rgb(15 23 42 / 16%);
+}
+
+html[data-theme="light"] .btn-about-outline:hover {
+  color: #0f172a;
+  background: #f1f5f9;
+  border-color: rgb(15 23 42 / 28%);
+}
+
+html[data-theme="light"] .about-stats-bar {
+  box-shadow: 0 8px 24px rgb(15 23 42 / 6%);
+  background: #f1f5f9;
+  border-top-color: rgb(15 23 42 / 8%);
+  border-bottom-color: rgb(15 23 42 / 8%);
+}
+
+html[data-theme="light"] .stats-live-indicator {
+  color: #475569;
+}
+
+html[data-theme="light"] .about-stat-card {
+  background: #ffffff;
+  border-color: rgb(15 23 42 / 10%);
+  box-shadow: 0 8px 24px rgb(15 23 42 / 5%);
+}
+
+html[data-theme="light"] .about-stat-number {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .about-stat-label {
+  color: #475569;
+}
+
+html[data-theme="light"] .about-stat-desc {
+  color: #64748b;
+}
+
+html[data-theme="light"] .about-section-title {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .about-section-subtitle {
+  color: #475569;
+}
+
+html[data-theme="light"] .tech-card {
+  background: #ffffff;
+  border-color: rgb(15 23 42 / 10%);
+  box-shadow: 0 10px 28px rgb(15 23 42 / 6%);
+}
+
+html[data-theme="light"] .tech-card:hover {
+  border-color: rgb(229 9 20 / 35%);
+  box-shadow: 0 16px 36px rgb(15 23 42 / 10%);
+}
+
+html[data-theme="light"] .tech-card-title {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .tech-card-desc {
+  color: #475569;
+}
+
+html[data-theme="light"] .tech-chip {
+  background: #f8fafc;
+  border-color: rgb(15 23 42 / 12%);
+  color: #334155;
+}
+
+html[data-theme="light"] .vnpay-feature-card {
+  background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);
+  border-color: rgb(15 23 42 / 12%);
+  box-shadow: 0 16px 40px rgb(15 23 42 / 8%);
+}
+
+html[data-theme="light"] .vnpay-feature-title {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .vnpay-feature-desc {
+  color: #475569;
+}
+
+html[data-theme="light"] .vnpay-perk-item {
+  background: #ffffff;
+  border-color: rgb(15 23 42 / 10%);
+}
+
+html[data-theme="light"] .vnpay-perk-title {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .vnpay-perk-sub {
+  color: #475569;
+}
+
+html[data-theme="light"] .vnpay-flow-card {
+  background: #ffffff;
+  border-color: rgb(15 23 42 / 12%);
+  box-shadow: 0 8px 24px rgb(15 23 42 / 6%);
+}
+
+html[data-theme="light"] .vnpay-flow-card .text-white {
+  color: #0f172a !important;
+}
+
+html[data-theme="light"] .flow-step-title {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .flow-step-desc {
+  color: #475569;
+}
+
+html[data-theme="light"] .flow-step-item:not(:last-child)::after {
+  background: rgb(15 23 42 / 14%);
+}
+
+html[data-theme="light"] .fnb-card {
+  background: #ffffff;
+  border-color: rgb(15 23 42 / 10%);
+  box-shadow: 0 10px 28px rgb(15 23 42 / 6%);
+}
+
+html[data-theme="light"] .fnb-card-title {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .fnb-card-desc {
+  color: #475569;
+}
+
+html[data-theme="light"] .about-cta-section {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+html[data-theme="light"] .about-cta-box {
+  background: radial-gradient(circle at 50% 0%, rgb(229 9 20 / 8%) 0%, transparent 70%), #ffffff;
+  border-color: rgb(229 9 20 / 25%);
+  box-shadow: 0 18px 44px rgb(15 23 42 / 8%);
+}
+
+html[data-theme="light"] .about-cta-title {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .about-cta-sub {
+  color: #475569;
+}
+
+html[data-theme="light"] .tech-card:hover .tech-chip {
+  color: var(--box-accent);
+  background: var(--box-red-subtle);
+}
+
+html[data-theme="light"] .char-lead {
+  color: var(--box-accent);
+  text-shadow: none;
 }

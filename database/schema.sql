@@ -12,6 +12,7 @@ USE box_cinema;
 -- Tắt kiểm tra khóa ngoại tạm thời để drop bảng an toàn nếu cần tái tạo
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS PASSWORD_RESET;
 DROP TABLE IF EXISTS INQUIRIES;
 DROP TABLE IF EXISTS BOOKING_ITEMS;
 DROP TABLE IF EXISTS TICKETS;
@@ -336,4 +337,38 @@ CREATE INDEX idx_movie_genres_genre ON MOVIE_GENRES (genre_id, movie_id);
 CREATE INDEX idx_inquiries_status ON INQUIRIES (inquiry_status, created_at);
 CREATE INDEX idx_inquiries_user ON INQUIRIES (user_id);
 CREATE INDEX idx_inquiries_assigned ON INQUIRIES (assigned_to);
+
+-- -----------------------------------------------------------------------------
+-- 19. BẢNG PASSWORD_RESET (OTP dùng chung: PASSWORD_RESET & EMAIL_VERIFICATION)
+-- Khóa chính (user_id, purpose) đảm bảo 2 luồng OTP tách biệt hoàn toàn
+-- và mỗi (user_id, purpose) chỉ có duy nhất 1 OTP đang hoạt động.
+-- -----------------------------------------------------------------------------
+CREATE TABLE PASSWORD_RESET (
+    user_id BIGINT NOT NULL,
+    purpose VARCHAR(30) NOT NULL DEFAULT 'PASSWORD_RESET',
+    challenge_id CHAR(36) NOT NULL,
+    otp_hash CHAR(64) NULL,
+    status VARCHAR(20) NOT NULL,
+    failed_attempts INT NOT NULL DEFAULT 0,
+    resend_count INT NOT NULL DEFAULT 0,
+    send_count_in_window INT NOT NULL DEFAULT 0,
+    send_window_started_at DATETIME(6) NULL,
+    last_sent_at DATETIME(6) NULL,
+    otp_expires_at DATETIME(6) NULL,
+    locked_until DATETIME(6) NULL,
+    verified_at DATETIME(6) NULL,
+    reset_token_hash CHAR(64) NULL,
+    reset_token_expires_at DATETIME(6) NULL,
+    completed_at DATETIME(6) NULL,
+    created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    updated_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    PRIMARY KEY (user_id, purpose),
+    UNIQUE KEY uq_password_reset_challenge (challenge_id),
+    UNIQUE KEY uq_password_reset_token (reset_token_hash),
+    CONSTRAINT fk_password_reset_user FOREIGN KEY (user_id) REFERENCES USERS(user_id) ON DELETE CASCADE,
+    CONSTRAINT chk_password_reset_attempts CHECK (failed_attempts >= 0),
+    CONSTRAINT chk_password_reset_resend CHECK (resend_count >= 0),
+    CONSTRAINT chk_password_reset_purpose CHECK (purpose IN ('PASSWORD_RESET', 'EMAIL_VERIFICATION')),
+    CONSTRAINT chk_password_reset_status CHECK (status IN ('PENDING', 'SENT', 'VERIFIED', 'COMPLETED', 'EXPIRED', 'LOCKED', 'DELIVERY_FAILED', 'REVOKED'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

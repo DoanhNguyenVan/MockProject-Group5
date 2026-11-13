@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complete Google Profile | BOX Cinema</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/main.css" th:href="@{/css/main.css(v='2.4')}">
+  <link rel="stylesheet" href="/css/auth.css" th:href="@{/css/auth.css(v='2.4')}">
+  <style>
+    .auth-theater {
+      position: relative !important;
+      overflow: hidden !important;
+    }
+
+    .auth-poster-slideshow {
+      position: absolute !important;
+      inset: 0 !important;
+      z-index: 0 !important;
+      pointer-events: none !important;
+      background: #0d0e14;
+    }
+
+    .auth-poster-slide {
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover !important;
+      object-position: center 20% !important;
+      opacity: 0;
+      transform: scale(1.03);
+      transition: opacity 0.9s ease-in-out, transform 4.5s ease-out;
+    }
+
+    .auth-poster-slide.active {
+      opacity: 1 !important;
+      transform: scale(1) !important;
+    }
+
+    .auth-theater-scrim {
+      position: absolute !important;
+      inset: 0 !important;
+      z-index: 1 !important;
+      pointer-events: none !important;
+      background: radial-gradient(circle at 75% 20%, rgb(201 25 52 / 28%) 0%, transparent 55%), linear-gradient(180deg, rgb(10 11 18 / 12%) 0%, rgb(10 11 18 / 55%) 58%, rgb(10 11 18 / 95%) 100%) !important;
+    }
+
+    .auth-theater-overlay {
+      position: relative !important;
+      z-index: 2 !important;
+    }
+
+    .auth-input-group {
+      position: relative !important;
+      display: block !important;
+      width: 100% !important;
+    }
+
+    .auth-input-icon {
+      position: absolute !important;
+      left: 0.85rem !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      width: 18px !important;
+      height: 18px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      color: #64748b !important;
+      pointer-events: none !important;
+      z-index: 2 !important;
+    }
+
+    .form-control-dark.has-leading-icon {
+      padding-left: 2.55rem !important;
+    }
+  </style>
+</head>
+
+<body>
+  <header th:replace="~{fragments/navbar :: navbar}"></header>
+
+  <main id="main-content" tabindex="-1">
+    <section class="auth-page-section" aria-label="Complete Registration">
+      <div class="auth-split-shell">
+        <aside class="auth-welcome" aria-label="Welcome">
+          <div class="auth-theater" aria-hidden="true">
+            <div class="auth-poster-slideshow" th:if="${authPosters != null and !authPosters.isEmpty()}">
+              <img th:each="posterUrl, iter : ${authPosters}" th:src="${posterUrl}"
+                th:classappend="${iter.index == 0 ? ' active' : ''}" alt="" class="auth-poster-slide" loading="eager"
+                onerror="this.remove()">
+            </div>
+            <div class="auth-theater-scrim"></div>
+            <div class="auth-theater-overlay">
+              <h2 class="auth-showcase-title">Almost there!</h2>
+              <p class="auth-showcase-sub">
+                Complete your Google registration to book cinema tickets and receive instant e-ticket SMS alerts.
+              </p>
+            </div>
+          </div>
+          <div class="auth-brand">
+            <img src="/assets/img/box-cinema-logo.png" th:src="@{/assets/img/box-cinema-logo.png}" width="180"
+              height="60" alt="BOX Cinema">
+            <p>Welcome to BOX Cinema!</p>
+          </div>
+        </aside>
+
+        <div class="auth-form-col">
+          <div class="mb-4">
+            <h1 class="h4 fw-bold text-white mb-2">Complete Your Profile</h1>
+            <p class="text-secondary small mb-0">
+              Your Google identity is verified. Please provide a phone number to complete your BOX Cinema membership.
+            </p>
+          </div>
+
+          <div th:if="${errorMessage != null}" class="auth-alert auth-alert-danger mb-3" role="alert">
+            <span th:text="${errorMessage}">Error message</span>
+          </div>
+
+          <form id="completeProfileForm" action="/auth/google/complete-profile"
+            th:action="@{/auth/google/complete-profile}" method="post" novalidate>
+            <input type="hidden" name="_csrf" th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}"
+              th:value="${_csrf != null ? _csrf.token : ''}">
+
+            <div class="mb-3">
+              <label for="completeFullName" class="form-label small text-secondary fw-semibold">Full Name *</label>
+              <input type="text" id="completeFullName" name="fullName" class="form-control form-control-dark"
+                th:value="${enteredFullName != null ? enteredFullName : pendingGoogleName}"
+                placeholder="Confirm your full name" minlength="2" maxlength="100" required>
+              <div id="completeFullNameError" class="field-error-msg"></div>
+            </div>
+
+            <div class="mb-3">
+              <label for="completeEmail" class="form-label small text-secondary fw-semibold">Email Address (Verified by
+                Google)</label>
+              <input type="email" id="completeEmail" class="form-control form-control-dark"
+                th:value="${pendingGoogleEmail}"
+                style="background-color: #141622; color: #cbd5e1; border-color: #2b2f42;" readonly>
+            </div>
+
+            <div class="mb-4">
+              <label for="phoneInput" class="form-label small text-secondary fw-semibold">Phone Number *</label>
+              <div class="auth-input-group">
+                <span class="auth-input-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                      d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
+                    </path>
+                  </svg>
+                </span>
+                <input type="tel" id="phoneInput" name="phone" th:value="${enteredPhone}"
+                  class="form-control form-control-dark has-leading-icon" placeholder="+84 901 234 567" required
+                  autofocus>
+              </div>
+              <div id="completePhoneError" class="field-error-msg"></div>
+              <div class="form-text text-secondary small">Required for e-ticket booking confirmations and security
+                alerts.</div>
+            </div>
+
+            <button type="submit" id="completeProfileSubmitBtn" class="btn btn-box-primary w-100 py-2 fw-semibold">
+              Complete Registration &amp; Sign In
+            </button>
+          </form>
+
+          <hr class="border-secondary opacity-25 my-4">
+
+          <div class="p-3 rounded-3" style="background: #141622; border: 1px solid #2b2f42;">
+            <div class="d-flex justify-content-between align-items-center gap-2">
+              <div>
+                <h2 class="h6 fw-bold text-white mb-1">Already have a BOX Cinema account?</h2>
+                <p class="text-secondary small mb-0">
+                  Use a different email on your Google account? Verify your existing BOX Cinema account once to link Google Sign-In automatically.
+                </p>
+              </div>
+              <button type="button" id="toggleLinkExistingBtn"
+                class="btn btn-outline-light btn-sm text-nowrap"
+                onclick="document.getElementById('linkExistingSection').classList.toggle('d-none')">
+                Link Existing Account
+              </button>
+            </div>
+
+            <div id="linkExistingSection" th:class="${openLinkTab ? 'mt-3 pt-3 border-top border-secondary border-opacity-25' : 'mt-3 pt-3 border-top border-secondary border-opacity-25 d-none'}">
+              <div th:if="${linkErrorMessage != null}" class="auth-alert auth-alert-danger mb-3" role="alert">
+                <span th:text="${linkErrorMessage}">Link verification error</span>
+              </div>
+              <div th:if="${successMessage != null}" class="alert alert-success py-2 px-3 small mb-3" role="status">
+                <span th:text="${successMessage}">Verification code sent.</span>
+              </div>
+
+              <div class="d-flex gap-2 mb-3">
+                <button type="button" id="case3TabPasswordBtn"
+                  class="btn btn-sm flex-fill fw-semibold"
+                  th:classappend="${linkAuthMethod == 'otp' ? 'btn-outline-secondary text-light' : 'btn-danger'}"
+                  onclick="switchCase3Method('password')">
+                  Email &amp; Password
+                </button>
+                <button type="button" id="case3TabOtpBtn"
+                  class="btn btn-sm flex-fill fw-semibold"
+                  th:classappend="${linkAuthMethod == 'otp' ? 'btn-danger' : 'btn-outline-secondary text-light'}"
+                  onclick="switchCase3Method('otp')">
+                  Email OTP (Customer)
+                </button>
+              </div>
+
+              <form id="case3PasswordForm" action="/auth/google/complete-profile/link-existing"
+                th:action="@{/auth/google/complete-profile/link-existing}" method="post"
+                th:class="${linkAuthMethod == 'otp' ? 'd-none' : ''}">
+                <input type="hidden" name="_csrf" th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}"
+                  th:value="${_csrf != null ? _csrf.token : ''}">
+                <input type="hidden" name="authMethod" value="password">
+                <div class="mb-3">
+                  <label for="case3BoxEmail" class="form-label small text-secondary fw-semibold">Existing BOX Cinema Email *</label>
+                  <input type="email" id="case3BoxEmail" name="boxEmail" th:value="${enteredBoxEmail}"
+                    class="form-control form-control-dark" placeholder="your-box-email@example.com" required>
+                </div>
+                <div class="mb-3">
+                  <label for="case3BoxPassword" class="form-label small text-secondary fw-semibold">BOX Cinema Password *</label>
+                  <input type="password" id="case3BoxPassword" name="password"
+                    class="form-control form-control-dark" placeholder="Enter your BOX Cinema password" required>
+                </div>
+                <button type="submit" id="case3LinkPasswordBtn" class="btn btn-box-primary w-100 py-2 fw-semibold">
+                  Verify Password &amp; Link Google Account
+                </button>
+              </form>
+
+              <div id="case3OtpPanel" th:class="${linkAuthMethod == 'otp' ? '' : 'd-none'}">
+                <p class="small text-secondary mb-2">
+                  Verify your customer email with a one-time 6-digit code (Staff/Manager/Admin accounts must use Email &amp; Password).
+                </p>
+                <div class="mb-3">
+                  <label for="case3OtpEmail" class="form-label small text-secondary fw-semibold">Existing BOX Cinema Email *</label>
+                  <div class="input-group">
+                    <input type="email" id="case3OtpEmail" class="form-control form-control-dark"
+                      th:value="${enteredBoxEmail}" placeholder="your-box-email@example.com">
+                    <button type="button" id="case3SendOtpBtn" class="btn btn-outline-light btn-sm"
+                      onclick="sendCase3Otp()">
+                      Send OTP
+                    </button>
+                  </div>
+                  <div id="case3OtpStatus" class="small mt-2"></div>
+                </div>
+
+                <form id="case3OtpForm" action="/auth/google/complete-profile/link-existing"
+                  th:action="@{/auth/google/complete-profile/link-existing}" method="post">
+                  <input type="hidden" name="_csrf" th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}"
+                    th:value="${_csrf != null ? _csrf.token : ''}">
+                  <input type="hidden" name="authMethod" value="otp">
+                  <input type="hidden" id="case3OtpHiddenEmail" name="boxEmail" th:value="${enteredBoxEmail}">
+                  <input type="hidden" id="case3ChallengeId" name="challengeId" th:value="${activeChallengeId}">
+                  <div class="mb-3">
+                    <label for="case3OtpCode" class="form-label small text-secondary fw-semibold">6-Digit OTP Code *</label>
+                    <input type="text" id="case3OtpCode" name="otp" inputmode="numeric" maxlength="6"
+                      class="form-control form-control-dark" placeholder="123456" required
+                      oninput="document.getElementById('case3OtpHiddenEmail').value = document.getElementById('case3OtpEmail').value">
+                  </div>
+                  <button type="submit" id="case3LinkOtpBtn" class="btn btn-box-primary w-100 py-2 fw-semibold"
+                    onclick="document.getElementById('case3OtpHiddenEmail').value = document.getElementById('case3OtpEmail').value">
+                    Verify OTP &amp; Link Google Account
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer th:replace="~{fragments/footer :: footer}"></footer>
+  <script type="module" src="/js/modules/navbar.js" th:src="@{/js/modules/navbar.js}"></script>
+  <script type="module" src="/js/modules/auth-validation.js?v=2.6" th:src="@{/js/modules/auth-validation.js(v='2.6')}"></script>
+  <script>
+    function switchCase3Method(method) {
+      const pwForm = document.getElementById('case3PasswordForm');
+      const otpPanel = document.getElementById('case3OtpPanel');
+      const pwBtn = document.getElementById('case3TabPasswordBtn');
+      const otpBtn = document.getElementById('case3TabOtpBtn');
+      if (method === 'otp') {
+        pwForm.classList.add('d-none');
+        otpPanel.classList.remove('d-none');
+        pwBtn.classList.remove('btn-danger');
+        pwBtn.classList.add('btn-outline-secondary', 'text-light');
+        otpBtn.classList.add('btn-danger');
+        otpBtn.classList.remove('btn-outline-secondary', 'text-light');
+      } else {
+        otpPanel.classList.add('d-none');
+        pwForm.classList.remove('d-none');
+        otpBtn.classList.remove('btn-danger');
+        otpBtn.classList.add('btn-outline-secondary', 'text-light');
+        pwBtn.classList.add('btn-danger');
+        pwBtn.classList.remove('btn-outline-secondary', 'text-light');
+      }
+    }
+
+    async function sendCase3Otp() {
+      const emailInput = document.getElementById('case3OtpEmail');
+      const statusEl = document.getElementById('case3OtpStatus');
+      const challengeInput = document.getElementById('case3ChallengeId');
+      const hiddenEmail = document.getElementById('case3OtpHiddenEmail');
+      const csrfInput = document.querySelector('#case3OtpForm input[name]');
+      const emailVal = (emailInput.value || '').trim();
+      if (!emailVal) {
+        statusEl.innerHTML = '<span class="text-danger">Please enter your BOX Cinema email first.</span>';
+        return;
+      }
+      hiddenEmail.value = emailVal;
+      statusEl.innerHTML = '<span class="text-secondary">Sending 6-digit verification code...</span>';
+      const body = new URLSearchParams();
+      body.set('boxEmail', emailVal);
+      if (csrfInput && csrfInput.name) {
+        body.set(csrfInput.name, csrfInput.value);
+      }
+      try {
+        const res = await fetch('/auth/google/verify-link/send-otp', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: body.toString()
+        });
+        const data = await res.json();
+        if (data.challengeId) {
+          challengeInput.value = data.challengeId;
+        }
+        statusEl.innerHTML = data.success
+          ? '<span class="text-success">' + (data.message || 'Verification code sent.') + '</span>'
+          : '<span class="text-warning">' + (data.message || 'Unable to send OTP right now.') + '</span>';
+      } catch (err) {
+        statusEl.innerHTML = '<span class="text-danger">Request failed. Please try again or use Email &amp; Password.</span>';
+      }
+    }
+  </script>
+</body>
+
+</html>

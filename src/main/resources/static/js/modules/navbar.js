@@ -1,6 +1,7 @@
 /**
  * BOX Cinema - Module 01 Navbar & Cinemê-style Home Page Interactions
  */
+import { initThemeToggle } from "../core/theme.js";
 
 export function resolveActiveRoute(pathname = "/") {
   const cleanPath = pathname.replace(/\/+$/, "") || "/";
@@ -99,6 +100,9 @@ export function initNavbar(doc = document, currentPath = window.location.pathnam
   // Expanding Search Bar Interactions
   initNavSearch(doc, navEl);
 
+  // Theme Toggle (Dark / Light mode)
+  initThemeToggle(doc);
+
   // Cinema Branch Selector (Beta Cinema Style Cascading Flyout Menu)
   initCinemaSelector(doc);
 
@@ -147,7 +151,26 @@ function initNavSearch(doc, navEl) {
       return;
     }
 
+    if (typeof window !== "undefined" && window.__boxCinemaShowtimes?.setSearchQuery) {
+      window.__boxCinemaShowtimes.setSearchQuery(query, scrollTo);
+      return;
+    }
+
     const q = query.toLowerCase();
+    const showtimeCards = doc.querySelectorAll("#showtimeMoviesGrid .showtime-movie-card");
+    if (showtimeCards.length > 0) {
+      showtimeCards.forEach((card) => {
+        const title = (card.querySelector(".showtime-movie-title")?.textContent || "").toLowerCase();
+        const meta = (card.querySelector(".showtime-movie-meta")?.textContent || "").toLowerCase();
+        const matches = !q || title.includes(q) || meta.includes(q);
+        card.style.display = matches ? "" : "none";
+      });
+      if (scrollTo) {
+        doc.getElementById("showtimeMoviesGrid")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+      return;
+    }
+
     const catalogCards = doc.querySelectorAll("#catalogGrid .catalog-card");
     catalogCards.forEach((card) => {
       const title = (card.querySelector(".catalog-movie-title")?.textContent || "").toLowerCase();

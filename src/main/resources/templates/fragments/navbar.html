@@ -6,6 +6,13 @@
 </head>
 <body>
   <header th:fragment="navbar">
+    <script>
+      try {
+        var _boxTheme = localStorage.getItem("box_cinema_theme") === "light" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", _boxTheme);
+        document.documentElement.setAttribute("data-bs-theme", _boxTheme);
+      } catch (_) {}
+    </script>
     <style>
       .nav-user-pill {
         display: inline-flex;
@@ -67,6 +74,7 @@
         color: #cbd5e1 !important;
         transition: all 0.2s ease;
         flex-shrink: 0;
+        cursor: pointer;
       }
       .nav-logout-icon-btn svg {
         width: 14px;
@@ -80,6 +88,23 @@
         color: #ffffff !important;
         transform: scale(1.05);
         box-shadow: 0 2px 8px rgba(201, 25, 52, 0.55);
+      }
+      html[data-theme="light"] .nav-user-pill {
+        background: rgba(241, 245, 249, 0.95);
+        border-color: rgba(15, 23, 42, 0.14);
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+      }
+      html[data-theme="light"] .nav-user-pill:hover {
+        background: #e2e8f0;
+        border-color: rgba(15, 23, 42, 0.24);
+      }
+      html[data-theme="light"] .nav-user-name {
+        color: #0f172a;
+      }
+      html[data-theme="light"] .nav-user-pill .nav-logout-icon-btn {
+        background: rgba(15, 23, 42, 0.07);
+        border-color: rgba(15, 23, 42, 0.12);
+        color: #334155 !important;
       }
     </style>
     <a class="skip-link" href="#main-content">Skip to content</a>
@@ -111,40 +136,66 @@
             <a href="/contact" th:href="@{/contact}" data-nav-route="contact">Contact</a>
           </div>
 
-          <!-- Mobile Only: Account Links inside dropdown menu -->
+          <!-- Mobile Only: Account Links & Theme Toggle inside dropdown menu -->
           <div class="cinema-nav-mobile-account d-md-none">
-            <th:block th:if="${session.currentUser == null}">
+            <th:block th:if="${currentUser == null and session.currentUser == null}">
               <div class="d-flex align-items-center gap-2 pt-2 border-top border-secondary border-opacity-25 mt-2">
                 <a href="/login" th:href="@{/login}" data-nav-route="login" class="nav-auth-pill" th:classappend="${activePage == 'login' ? 'active' : ''}">Sign In</a>
                 <a href="/register" th:href="@{/register}" data-nav-route="register" class="nav-auth-pill" th:classappend="${activePage == 'register' ? 'active' : ''}">Sign Up</a>
               </div>
             </th:block>
-            <th:block th:if="${session.currentUser != null}">
+            <th:block th:if="${currentUser != null or session.currentUser != null}">
               <div class="d-flex align-items-center justify-content-between pt-2 border-top border-secondary border-opacity-25 mt-2">
                 <div class="nav-user-pill">
-                  <span class="nav-user-avatar" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                  </span>
-                  <span class="nav-user-name" th:text="${session.currentUser.fullName}">Account</span>
-                  <a href="/logout" th:href="@{/logout}" class="nav-logout-icon-btn" title="Sign Out" aria-label="Sign Out">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                      <polyline points="16 17 21 12 16 7"></polyline>
-                      <line x1="21" y1="12" x2="9" y2="12"></line>
-                    </svg>
+                  <a href="/profile" th:href="@{/profile}" class="d-inline-flex align-items-center gap-2 text-decoration-none text-white" title="Account Settings">
+                    <span class="nav-user-avatar" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                    </span>
+                    <span class="nav-user-name" th:text="${currentUser != null ? currentUser.fullName : session.currentUser.fullName}">Account</span>
                   </a>
+                  <form action="/logout" th:action="@{/logout}" method="post" class="d-inline-flex m-0 p-0">
+                    <button type="submit" class="nav-logout-icon-btn" title="Sign Out" aria-label="Sign Out">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                      </svg>
+                    </button>
+                  </form>
                 </div>
               </div>
             </th:block>
+            <div class="pt-2 mt-2 border-top border-secondary border-opacity-25">
+              <button type="button"
+                      class="nav-mobile-theme-btn"
+                      id="mobileThemeToggle"
+                      data-theme-toggle
+                      aria-label="Switch to light mode"
+                      aria-pressed="false">
+                <span class="nav-mobile-theme-icons" aria-hidden="true">
+                  <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="4"></circle>
+                    <path d="M12 2v2"></path><path d="M12 20v2"></path>
+                    <path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path>
+                    <path d="M2 12h2"></path><path d="M20 12h2"></path>
+                    <path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
+                  </svg>
+                  <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+                  </svg>
+                </span>
+                <span data-theme-label>Dark Mode</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- Right Side: Search Icon (LEFT of login/register) + Account (Desktop) + Hamburger (Mobile) -->
+        <!-- Right Side: Search Icon + Theme Toggle + Account (Desktop) + Hamburger (Mobile) -->
         <div class="cinema-nav-right-tools">
-          <!-- Expanding Search Bar (To the LEFT of Sign In / Sign Up) -->
+          <!-- Expanding Search Bar (To the LEFT of Theme Toggle & Sign In / Sign Up) -->
           <div class="nav-search-wrap" id="navSearchWrap">
             <form class="nav-search-form" id="navSearchForm" role="search" onsubmit="return false;">
               <input type="text" class="nav-search-input" id="navSearchInput" placeholder="Search movies, genres..." autocomplete="off" aria-label="Search movies">
@@ -157,28 +208,52 @@
             </form>
           </div>
 
+          <!-- Theme Toggle Button (Dark / Light mode) -->
+          <button type="button"
+                  class="nav-theme-btn"
+                  id="navThemeToggle"
+                  data-theme-toggle
+                  aria-label="Switch to light mode"
+                  aria-pressed="false"
+                  title="Switch to light mode">
+            <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="4"></circle>
+              <path d="M12 2v2"></path><path d="M12 20v2"></path>
+              <path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path>
+              <path d="M2 12h2"></path><path d="M20 12h2"></path>
+              <path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
+            </svg>
+            <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+            </svg>
+          </button>
+
           <!-- Desktop Account (Sign In, Sign Up / Unified Dynamic Pill) -->
           <div class="cinema-nav-account d-none d-md-flex align-items-center gap-2">
-            <th:block th:if="${session.currentUser == null}">
+            <th:block th:if="${currentUser == null and session.currentUser == null}">
               <a href="/login" th:href="@{/login}" data-nav-route="login" class="nav-auth-pill" th:classappend="${activePage == 'login' ? 'active' : ''}">Sign In</a>
               <a href="/register" th:href="@{/register}" data-nav-route="register" class="nav-auth-pill" th:classappend="${activePage == 'register' ? 'active' : ''}">Sign Up</a>
             </th:block>
-            <th:block th:if="${session.currentUser != null}">
+            <th:block th:if="${currentUser != null or session.currentUser != null}">
               <div class="nav-user-pill">
-                <span class="nav-user-avatar" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                </span>
-                <span class="nav-user-name" th:text="${session.currentUser.fullName}">Account</span>
-                <a href="/logout" th:href="@{/logout}" class="nav-logout-icon-btn" title="Sign Out" aria-label="Sign Out">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                    <polyline points="16 17 21 12 16 7"></polyline>
-                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                  </svg>
+                <a href="/profile" th:href="@{/profile}" class="d-inline-flex align-items-center gap-2 text-decoration-none text-white" title="Account Settings">
+                  <span class="nav-user-avatar" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                  </span>
+                  <span class="nav-user-name" th:text="${currentUser != null ? currentUser.fullName : session.currentUser.fullName}">Account</span>
                 </a>
+                <form action="/logout" th:action="@{/logout}" method="post" class="d-inline-flex m-0 p-0">
+                  <button type="submit" class="nav-logout-icon-btn" title="Sign Out" aria-label="Sign Out">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                      <polyline points="16 17 21 12 16 7"></polyline>
+                      <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                  </button>
+                </form>
               </div>
             </th:block>
           </div>
