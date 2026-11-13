@@ -134,6 +134,7 @@
             <a href="/showtimes" th:href="@{/showtimes}" data-nav-route="showtimes">Showtimes</a>
             <a href="/about" th:href="@{/about}" data-nav-route="about">About</a>
             <a href="/contact" th:href="@{/contact}" data-nav-route="contact">Contact</a>
+            <a href="/admin" th:href="@{/admin}" th:if="${(currentUser != null and currentUser.role == 'ADMIN') or (session.currentUser != null and session.currentUser.role == 'ADMIN')}" th:classappend="${activePage == 'admin' ? 'active' : ''}">Admin</a>
           </div>
 
           <!-- Mobile Only: Account Links & Theme Toggle inside dropdown menu -->
