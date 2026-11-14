@@ -1,15 +1,13 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : 'demo-csrf-token'}" content="demo-csrf-token">
   <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}" content="X-CSRF-TOKEN">
   <title>BOX Cinema | Premium Cinematic Experience</title>
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  >
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/css/main.css?v=20261109b" th:href="@{/css/main.css(v='20261109b')}">
   <link rel="stylesheet" href="/css/home.css?v=20261110b" th:href="@{/css/home.css(v='20261110b')}">
   <link rel="stylesheet" href="/css/home.css?v=20261110b" th:href="@{/css/home.css(v='20261110b')}">
@@ -23,6 +21,7 @@
       min-width: 0;
       overflow: visible;
     }
+
     .hero-coverflow-wrapper {
       position: relative;
       width: 100%;
@@ -38,6 +37,7 @@
       touch-action: pan-y;
       pointer-events: none;
     }
+
     .hero-coverflow-stage {
       position: relative;
       width: 100%;
@@ -48,6 +48,7 @@
       justify-content: center;
       pointer-events: none;
     }
+
     .coverflow-card,
     .hot-mini-card {
       position: absolute;
@@ -56,10 +57,10 @@
       width: 160px;
       transform: translate(-50%, -50%);
       transform-origin: center center;
-      transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), 
-                  opacity 0.45s ease, 
-                  filter 0.45s ease, 
-                  box-shadow 0.45s ease;
+      transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.45s ease,
+        filter 0.45s ease,
+        box-shadow 0.45s ease;
       will-change: transform, opacity;
       cursor: pointer;
       user-select: none;
@@ -68,6 +69,7 @@
       flex-direction: column;
       align-items: center;
     }
+
     .coverflow-thumb,
     .hot-thumb-container {
       position: relative;
@@ -83,6 +85,7 @@
       transform-style: preserve-3d;
       -webkit-box-reflect: below 8px linear-gradient(to bottom, transparent 65%, rgba(0, 0, 0, 0.35) 100%);
     }
+
     .coverflow-thumb img,
     .hot-thumb-container img {
       width: 100%;
@@ -90,46 +93,70 @@
       object-fit: cover;
       display: block;
     }
+
     .coverflow-card.active .coverflow-thumb,
     .coverflow-card.active .hot-thumb-container {
       border-color: rgba(236, 28, 36, 0.95);
-      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.9), 
-                  0 0 35px rgba(236, 28, 36, 0.5), 
-                  0 0 10px rgba(255, 255, 255, 0.2);
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.9),
+        0 0 35px rgba(236, 28, 36, 0.5),
+        0 0 10px rgba(255, 255, 255, 0.2);
     }
+
     .coverflow-title,
     .hot-mini-title {
       display: none !important;
     }
+
     /* Flanking clickable cards (up to ~2 on each side of center) */
     .coverflow-card[data-clickable="true"] {
       cursor: pointer !important;
     }
+
     .coverflow-card[data-clickable="true"]:not(.active):hover .coverflow-thumb {
       border-color: rgba(255, 255, 255, 0.65) !important;
       box-shadow: 0 16px 36px rgba(0, 0, 0, 0.85), 0 0 25px rgba(236, 28, 36, 0.4) !important;
       transform: scale(1.05);
     }
+
     .coverflow-card[data-clickable="true"]:not(.active):hover {
       filter: brightness(1.15) contrast(1.02) !important;
       opacity: 0.98 !important;
       z-index: 25 !important;
     }
+
     .coverflow-card:not([data-clickable="true"]) {
       cursor: default !important;
       pointer-events: none !important;
     }
+
     .coverflow-pagination {
       pointer-events: auto !important;
     }
+
     @media (max-width: 768px) {
-      .hero-coverflow-wrapper { height: 260px; }
-      .hero-coverflow-stage { height: 220px; }
-      .coverflow-card, .hot-mini-card { width: 105px; }
-      .coverflow-thumb, .hot-thumb-container { width: 105px; height: 158px; border-radius: 8px; }
+      .hero-coverflow-wrapper {
+        height: 260px;
+      }
+
+      .hero-coverflow-stage {
+        height: 220px;
+      }
+
+      .coverflow-card,
+      .hot-mini-card {
+        width: 105px;
+      }
+
+      .coverflow-thumb,
+      .hot-thumb-container {
+        width: 105px;
+        height: 158px;
+        border-radius: 8px;
+      }
     }
   </style>
 </head>
+
 <body class="cinema-home">
   <!-- Top Navigation Bar -->
   <header th:replace="~{fragments/navbar :: navbar}"></header>
@@ -141,7 +168,7 @@
     <section class="hero-spotlight" id="heroSpotlight" aria-label="Phim nổi bật">
       <!-- Dynamic Backdrop Layer (Updated when user picks a film in the rail) -->
       <div class="hero-backdrop-layer" id="heroBackdrop"
-           th:style="${spotlightMovies != null and !spotlightMovies.isEmpty() and spotlightMovies[0].bannerUrl != null ? 'background-image: url(' + spotlightMovies[0].bannerUrl + ');' : ''}">
+        th:style="${spotlightMovies != null and !spotlightMovies.isEmpty() and spotlightMovies[0].bannerUrl != null ? 'background-image: url(' + spotlightMovies[0].bannerUrl + ');' : ''}">
       </div>
 
       <!-- Floating Hero Slide Navigation Arrows (Prev / Next) -->
@@ -158,35 +185,39 @@
           <!-- Left Column: Spotlight Movie Details (1 nửa) -->
           <div class="hero-content-wrap">
             <th:block th:if="${spotlightMovies != null and !spotlightMovies.isEmpty()}">
-              <h1 class="hero-movie-title" id="heroTitle" th:text="${spotlightMovies[0].title}">Dune: Hành Tinh Cát - Phần 2</h1>
-              <p class="hero-movie-synopsis" id="heroSynopsis" th:text="${spotlightMovies[0].synopsis}">Tóm tắt nội dung phim...</p>
-              
+              <h1 class="hero-movie-title" id="heroTitle" th:text="${spotlightMovies[0].title}">Dune: Hành Tinh Cát -
+                Phần 2</h1>
+              <p class="hero-movie-synopsis" id="heroSynopsis" th:text="${spotlightMovies[0].synopsis}">Tóm tắt nội dung
+                phim...</p>
+
               <div class="hero-movie-meta" id="heroMeta">
                 <span class="meta-badge" id="heroAge"
-                      th:classappend="${spotlightMovies[0].ageRating == 'P' ? 'badge-age-p' : (spotlightMovies[0].ageRating == 'T13' ? 'badge-age-t13' : (spotlightMovies[0].ageRating == 'T16' ? 'badge-age-t16' : 'badge-age-t18'))}"
-                      th:text="${spotlightMovies[0].ageRating}">T16</span>
+                  th:classappend="${spotlightMovies[0].ageRating == 'P' ? 'badge-age-p' : (spotlightMovies[0].ageRating == 'T13' ? 'badge-age-t13' : (spotlightMovies[0].ageRating == 'T16' ? 'badge-age-t16' : 'badge-age-t18'))}"
+                  th:text="${spotlightMovies[0].ageRating}">T16</span>
                 <span id="heroDuration" th:text="${spotlightMovies[0].durationMinutes + ' mins'}">166 mins</span>
                 <span>·</span>
                 <span id="heroGenres" th:text="${spotlightMovies[0].genreNamesDisplay}">Action / Sci-Fi</span>
                 <span th:if="${spotlightMovies[0].language != null}">·</span>
-                <span id="heroLang" th:if="${spotlightMovies[0].language != null}" th:text="${spotlightMovies[0].language}">English - Vietnamese Sub</span>
+                <span id="heroLang" th:if="${spotlightMovies[0].language != null}"
+                  th:text="${spotlightMovies[0].language}">English - Vietnamese Sub</span>
               </div>
 
               <div class="hero-actions">
                 <!-- Orange/Red Buy Ticket Button (Matching Image 1) -->
-                <a class="btn-cta-buy" id="heroBuyBtn" href="/booking/buy-tickets" th:href="@{/booking/buy-tickets(movieId=${spotlightMovies[0].movieId})}"
-                   th:data-book-id="${spotlightMovies[0].movieId}" 
-                   th:data-book-title="${spotlightMovies[0].title}">
+                <a class="btn-cta-buy" id="heroBuyBtn" href="/booking/buy-tickets"
+                  th:href="@{/booking/buy-tickets(movieId=${spotlightMovies[0].movieId})}"
+                  th:data-book-id="${spotlightMovies[0].movieId}" th:data-book-title="${spotlightMovies[0].title}">
                   <span>🎟</span> Buy Tickets
                 </a>
                 <!-- Glass Detail Button (Matching Image 1) -->
-                <a class="btn-cta-detail" id="heroDetailBtn" th:href="@{/movies/{id}(id=${spotlightMovies[0].movieId})}">
+                <a class="btn-cta-detail" id="heroDetailBtn"
+                  th:href="@{/movies/{id}(id=${spotlightMovies[0].movieId})}">
                   <span>ℹ</span> Details
                 </a>
                 <!-- Trailer Button (If available in DB) -->
                 <button type="button" class="btn-cta-detail" id="heroTrailerBtn"
-                        th:if="${spotlightMovies[0].trailerUrl != null}"
-                        th:data-trailer-url="${spotlightMovies[0].trailerUrl}">
+                  th:if="${spotlightMovies[0].trailerUrl != null}"
+                  th:data-trailer-url="${spotlightMovies[0].trailerUrl}">
                   <span>▶</span> Trailer
                 </button>
               </div>
@@ -197,25 +228,21 @@
           <div class="hero-hot-col" th:if="${spotlightMovies != null and !spotlightMovies.isEmpty()}">
             <div class="hero-coverflow-wrapper" id="heroCoverflowWrapper">
               <div class="hero-coverflow-stage" id="heroCoverflowStage">
-                <div th:each="movie, iter : ${spotlightMovies}"
-                     class="coverflow-card hot-mini-card"
-                     th:classappend="${iter.index == 0 ? 'active' : ''}"
-                     th:data-index="${iter.index}"
-                     th:data-clickable="${iter.index <= 2 || iter.index >= spotlightMovies.size() - 2 ? 'true' : 'false'}"
-                     onclick="if(window.coverflowGoToSlide){window.coverflowGoToSlide(this.dataset.index);}"
-                     th:data-movie-id="${movie.movieId}"
-                     th:data-title="${movie.title}"
-                     th:data-synopsis="${movie.synopsis}"
-                     th:data-age="${movie.ageRating}"
-                     th:data-duration="${movie.durationMinutes + ' mins'}"
-                     th:data-genres="${movie.genreNamesDisplay}"
-                     th:data-lang="${movie.language}"
-                     th:data-banner="${movie.bannerUrl != null and !#strings.isEmpty(movie.bannerUrl) ? movie.bannerUrl : movie.posterUrl}"
-                     th:data-trailer="${movie.trailerUrl}">
+                <div th:each="movie, iter : ${spotlightMovies}" class="coverflow-card hot-mini-card"
+                  th:classappend="${iter.index == 0 ? 'active' : ''}" th:data-index="${iter.index}"
+                  th:data-clickable="${iter.index <= 2 || iter.index >= spotlightMovies.size() - 2 ? 'true' : 'false'}"
+                  onclick="if(window.coverflowGoToSlide){window.coverflowGoToSlide(this.dataset.index);}"
+                  th:data-movie-id="${movie.movieId}" th:data-title="${movie.title}"
+                  th:data-synopsis="${movie.synopsis}" th:data-age="${movie.ageRating}"
+                  th:data-duration="${movie.durationMinutes + ' mins'}" th:data-genres="${movie.genreNamesDisplay}"
+                  th:data-lang="${movie.language}"
+                  th:data-banner="${movie.bannerUrl != null and !#strings.isEmpty(movie.bannerUrl) ? movie.bannerUrl : movie.posterUrl}"
+                  th:data-trailer="${movie.trailerUrl}">
                   <div class="coverflow-thumb hot-thumb-container">
                     <!-- Rank Badge 1, 2, 3... -->
                     <span class="coverflow-rank hot-rank-badge" th:text="${iter.count}">1</span>
-                    <img th:src="${movie.posterUrl}" th:alt="${movie.title}" loading="lazy" onerror="this.style.display='none'">
+                    <img th:src="${movie.posterUrl}" th:alt="${movie.title}" loading="lazy"
+                      onerror="this.style.display='none'">
                     <div class="coverflow-glass-glare"></div>
                   </div>
                   <p class="coverflow-title hot-mini-title" th:text="${movie.title}">Movie Title</p>
@@ -224,18 +251,15 @@
 
               <!-- Pagination Dots Indicator -->
               <div class="coverflow-pagination" id="coverflowPagination" aria-label="Slide indicators">
-                <button th:each="movie, iter : ${spotlightMovies}"
-                        type="button"
-                        class="coverflow-dot"
-                        th:classappend="${iter.index == 0 ? 'active' : ''}"
-                        th:data-index="${iter.index}"
-                        th:aria-label="${'Phim ' + iter.count}"></button>
+                <button th:each="movie, iter : ${spotlightMovies}" type="button" class="coverflow-dot"
+                  th:classappend="${iter.index == 0 ? 'active' : ''}" th:data-index="${iter.index}"
+                  th:aria-label="${'Phim ' + iter.count}"></button>
               </div>
             </div>
 
             <!-- Inline Instant Layout Script - 0ms Render Guaranteed -->
             <script>
-              (function() {
+              (function () {
                 try {
                   var cards = document.querySelectorAll('.coverflow-card, .hot-mini-card');
                   var stage = document.getElementById('heroCoverflowStage');
@@ -246,7 +270,7 @@
                   var activeScale = isMobile ? 1.05 : 1.06;
 
                   function renderLayout(activeIndex) {
-                    cards.forEach(function(card, idx) {
+                    cards.forEach(function (card, idx) {
                       var diff = idx - activeIndex;
                       if (diff > cards.length / 2) diff -= cards.length;
                       if (diff < -cards.length / 2) diff += cards.length;
@@ -284,7 +308,7 @@
                     });
                   }
 
-                  window.coverflowGoToSlide = function(index) {
+                  window.coverflowGoToSlide = function (index) {
                     var idx = parseInt(index, 10);
                     if (isNaN(idx)) return;
                     if (window._navbarGoToSlide) {
@@ -297,7 +321,7 @@
                   renderLayout(0);
 
                   if (stage) {
-                    stage.addEventListener('click', function(e) {
+                    stage.addEventListener('click', function (e) {
                       var targetCard = e.target.closest('.coverflow-card, .hot-mini-card');
                       if (!targetCard) return;
                       var idx = targetCard.dataset.index;
@@ -307,7 +331,7 @@
                       }
                     });
                   }
-                } catch(e) {}
+                } catch (e) { }
               })();
             </script>
           </div>
@@ -404,22 +428,20 @@
         <!-- 4-Column Grid of Movie Cards (Image 2 Layout) -->
         <div class="catalog-grid" id="catalogGrid">
           <th:block th:each="movie : ${allMovies}">
-            <div class="catalog-card"
-                 th:data-movie-id="${movie.movieId}"
-                 th:data-status="${movie.status == 'NOW_SHOWING' ? 'now-showing' : 'coming-soon'}"
-                 th:data-title="${movie.title}"
-                 th:data-genres="${movie.genreNamesDisplay}"
-                 th:data-age="${movie.ageRating}"
-                 th:data-release="${movie.releaseDate}"
-                 th:data-duration="${movie.durationMinutes}"
-                 th:data-cinemas="${movie.status == 'COMING_SOON' ? 'all' : (movieCinemaIdsMap != null and movieCinemaIdsMap[movie.movieId] != null ? movieCinemaIdsMap[movie.movieId] : '')}">
+            <div class="catalog-card" th:data-movie-id="${movie.movieId}"
+              th:data-status="${movie.status == 'NOW_SHOWING' ? 'now-showing' : 'coming-soon'}"
+              th:data-title="${movie.title}" th:data-genres="${movie.genreNamesDisplay}"
+              th:data-age="${movie.ageRating}" th:data-release="${movie.releaseDate}"
+              th:data-duration="${movie.durationMinutes}"
+              th:data-cinemas="${movie.status == 'COMING_SOON' ? 'all' : (movieCinemaIdsMap != null and movieCinemaIdsMap[movie.movieId] != null ? movieCinemaIdsMap[movie.movieId] : '')}">
               <!-- Poster Card Frame -->
               <div class="catalog-poster-frame">
                 <span class="card-badge-age"
-                      th:classappend="${movie.ageRating == 'P' ? 'badge-age-p' : (movie.ageRating == 'T13' ? 'badge-age-t13' : (movie.ageRating == 'T16' ? 'badge-age-t16' : 'badge-age-t18'))}"
-                      th:text="${movie.ageRating}">T16</span>
+                  th:classappend="${movie.ageRating == 'P' ? 'badge-age-p' : (movie.ageRating == 'T13' ? 'badge-age-t13' : (movie.ageRating == 'T16' ? 'badge-age-t16' : 'badge-age-t18'))}"
+                  th:text="${movie.ageRating}">T16</span>
                 <span class="card-badge-duration" th:text="${movie.durationMinutes + ' mins'}">120'</span>
-                <img th:src="${movie.posterUrl}" th:alt="${movie.title}" loading="lazy" onerror="this.style.display='none'">
+                <img th:src="${movie.posterUrl}" th:alt="${movie.title}" loading="lazy"
+                  onerror="this.style.display='none'">
               </div>
 
               <!-- Movie Basic Info Under Poster -->
@@ -428,7 +450,8 @@
                 <p class="catalog-movie-meta">
                   <span th:text="${movie.genreNamesDisplay}">Genre</span>
                   <span th:if="${movie.status == 'COMING_SOON' and movie.releaseDate != null}">
-                    · <span class="text-warning" th:text="${'Release: ' + #temporals.format(movie.releaseDate, 'dd/MM/yyyy')}">Release</span>
+                    · <span class="text-warning"
+                      th:text="${'Release: ' + #temporals.format(movie.releaseDate, 'dd/MM/yyyy')}">Release</span>
                   </span>
                 </p>
               </div>
@@ -436,27 +459,22 @@
               <!-- Floating Popover / Hover Preview Card (Matching Image 2 Popover) -->
               <div class="card-hover-popover" aria-hidden="true">
                 <div class="popover-backdrop"
-                     th:style="'background-image: url(' + (${movie.bannerUrl != null and !#strings.isEmpty(movie.bannerUrl)} ? ${movie.bannerUrl} : ${movie.posterUrl}) + ');'">
+                  th:style="'background-image: url(' + (${movie.bannerUrl != null and !#strings.isEmpty(movie.bannerUrl)} ? ${movie.bannerUrl} : ${movie.posterUrl}) + ');'">
                 </div>
                 <div class="popover-body">
                   <h4 class="popover-title" th:text="${movie.title}">Movie Title</h4>
                   <p class="popover-subtitle" th:text="${movie.genreNamesDisplay}">Genre</p>
                   <p class="popover-synopsis" th:text="${movie.synopsis}">Movie synopsis from database...</p>
                   <div class="popover-actions">
-                    <a th:if="${movie.status == 'NOW_SHOWING'}"
-                       class="btn-pop-buy" href="#moviesSection"
-                       th:data-book-id="${movie.movieId}"
-                       th:data-book-title="${movie.title}">
+                    <a th:if="${movie.status == 'NOW_SHOWING'}" class="btn-pop-buy" href="#moviesSection"
+                      th:data-book-id="${movie.movieId}" th:data-book-title="${movie.title}">
                       🎟 Buy Tickets
                     </a>
-                    <button type="button" class="btn-pop-detail" 
-                            th:data-book-id="${movie.movieId}"
-                            onclick="location.href='#moviesSection'">
-                      ℹ Details
-                    </button>
-                    <button type="button" class="btn-pop-trailer"
-                            th:if="${movie.trailerUrl != null}"
-                            th:data-trailer-url="${movie.trailerUrl}">
+                    <a class="btn-pop-detail" th:href="@{/movies/{id}(id=${movie.movieId})}">
+                      Details
+                    </a>
+                    <button type="button" class="btn-pop-trailer" th:if="${movie.trailerUrl != null}"
+                      th:data-trailer-url="${movie.trailerUrl}">
                       ▶ Trailer
                     </button>
                   </div>
@@ -477,7 +495,8 @@
         <!-- Pagination Controls (12 movies / page) -->
         <div class="catalog-pagination-wrap" id="catalogPagination" aria-label="Movie list pagination">
           <button type="button" class="pagination-arrow-btn" id="paginationPrev" aria-label="Previous page">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="page-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+              stroke-linejoin="round" class="page-icon">
               <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
             <span class="d-none d-sm-inline">Prev</span>
@@ -487,7 +506,8 @@
 
           <button type="button" class="pagination-arrow-btn" id="paginationNext" aria-label="Next page">
             <span class="d-none d-sm-inline">Next</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="page-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+              stroke-linejoin="round" class="page-icon">
               <polyline points="9 18 15 12 9 6"></polyline>
             </svg>
           </button>
@@ -568,7 +588,9 @@
     <div class="trailer-modal-content">
       <button type="button" class="trailer-modal-close" id="trailerModalClose" aria-label="Close trailer">×</button>
       <div class="trailer-video-frame">
-        <iframe id="trailerIframe" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <iframe id="trailerIframe" src=""
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen></iframe>
       </div>
     </div>
   </div>
@@ -579,10 +601,11 @@
   <div class="welcome-cinema-backdrop" id="welcomeCinemaModal" aria-hidden="true" role="dialog" aria-modal="true">
     <div class="welcome-cinema-modal">
       <button type="button" class="welcome-modal-close" id="welcomeModalClose" aria-label="Đóng cửa sổ">×</button>
-      
+
       <div class="welcome-modal-header">
         <h3 class="welcome-modal-title">CHỌN CƠ SỞ RẠP CHIẾU</h3>
-        <p class="welcome-modal-subtitle">Vui lòng chọn khu vực và cụm rạp để cập nhật lịch chiếu và giá vé chính xác nhất</p>
+        <p class="welcome-modal-subtitle">Vui lòng chọn khu vực và cụm rạp để cập nhật lịch chiếu và giá vé chính xác
+          nhất</p>
       </div>
 
       <div class="welcome-modal-body">
@@ -592,7 +615,8 @@
             <div class="welcome-select-wrapper">
               <select id="welcomeCitySelect" class="welcome-select">
                 <option value="">-- Chọn Tỉnh / Thành phố --</option>
-                <option th:each="entry : ${cinemasByCity}" th:value="${entry.key}" th:text="${entry.key}">Hà Nội</option>
+                <option th:each="entry : ${cinemasByCity}" th:value="${entry.key}" th:text="${entry.key}">Hà Nội
+                </option>
               </select>
             </div>
           </div>
@@ -603,10 +627,8 @@
               <select id="welcomeCinemaSelect" class="welcome-select" disabled>
                 <option value="">-- Chọn rạp --</option>
                 <th:block th:each="entry : ${cinemasByCity}">
-                  <option th:each="c : ${entry.value}"
-                          th:value="${c.cinemaId}"
-                          th:data-city="${entry.key}"
-                          th:text="${c.cinemaName}">Tên rạp</option>
+                  <option th:each="c : ${entry.value}" th:value="${c.cinemaId}" th:data-city="${entry.key}"
+                    th:text="${c.cinemaName}">Tên rạp</option>
                 </th:block>
               </select>
             </div>
@@ -628,7 +650,10 @@
   <!-- Shared Footer -->
   <footer th:replace="~{fragments/footer :: footer}"></footer>
 
-  <script type="module" src="/js/modules/navbar.js?v=20261113a" th:src="@{/js/modules/navbar.js(v='20261113a')}"></script>
-  <script type="module" src="/js/modules/booking-links.js?v=1.1" th:src="@{/js/modules/booking-links.js(v='1.1')}"></script>
+  <script type="module" src="/js/modules/navbar.js?v=20261113a"
+    th:src="@{/js/modules/navbar.js(v='20261113a')}"></script>
+  <script type="module" src="/js/modules/booking-links.js?v=1.1"
+    th:src="@{/js/modules/booking-links.js(v='1.1')}"></script>
 </body>
+
 </html>
