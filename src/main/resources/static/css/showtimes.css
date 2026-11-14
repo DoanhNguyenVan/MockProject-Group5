@@ -728,3 +728,243 @@
   margin-top: 1rem;
 }
 
+/* =====================================================
+   LIGHT MODE OVERRIDES
+   ===================================================== */
+html[data-theme="light"] .showtimes-page {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+html[data-theme="light"] .showtimes-hero-bar {
+  background-color: #141418;
+  border-bottom-color: var(--box-border-color);
+}
+
+html[data-theme="light"] .showtimes-hero-bar::before {
+  opacity: 0.85;
+  filter: brightness(0.85) saturate(1.05);
+}
+
+html[data-theme="light"] .showtimes-hero-bar::after {
+  background: linear-gradient(90deg, rgb(12 13 18 / 85%), rgb(12 13 18 / 35%)), linear-gradient(0deg, rgb(12 13 18 / 70%), transparent 75%);
+}
+
+html[data-theme="light"] .showtimes-page-title {
+  color: #ffffff;
+  text-shadow: 0 2px 12px rgb(0 0 0 / 60%);
+}
+
+html[data-theme="light"] .showtimes-hero-bar p.text-secondary {
+  color: #e2e8f0 !important;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 60%);
+}
+
+html[data-theme="light"] .showtimes-cinema-switch {
+  background: #ffffff;
+  border-color: rgb(15 23 42 / 14%);
+  box-shadow: 0 6px 20px rgb(15 23 42 / 8%);
+}
+
+html[data-theme="light"] .switch-label {
+  color: #64748b;
+}
+
+html[data-theme="light"] .switch-select {
+  background-color: #f8fafc;
+  color: #0f172a;
+  border-color: rgb(15 23 42 / 15%);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+html[data-theme="light"] .switch-select option {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+html[data-theme="light"] .showtime-date-nav-wrapper {
+  background: rgb(255 255 255 / 92%);
+  border-bottom-color: rgb(15 23 42 / 10%);
+}
+
+html[data-theme="light"] .showtime-date-tab {
+  background: #ffffff;
+  border-color: rgb(15 23 42 / 12%);
+  color: #475569;
+}
+
+html[data-theme="light"] .showtime-date-tab:hover {
+  background: #f1f5f9;
+  border-color: rgb(15 23 42 / 22%);
+  color: #0f172a;
+}
+
+html[data-theme="light"] .showtime-date-tab.active {
+  background: linear-gradient(135deg, #e50914 0%, #b80710 100%);
+  border-color: #e50914;
+  color: #ffffff;
+}
+
+html[data-theme="light"] .showtime-date-tab .date-day {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .showtime-date-tab.active .date-day,
+html[data-theme="light"] .showtime-date-tab.active .date-weekday,
+html[data-theme="light"] .showtime-date-tab.active .date-month {
+  color: #ffffff;
+}
+
+html[data-theme="light"] .showtime-legend-bar {
+  background: #ffffff;
+  border-color: rgb(15 23 42 / 10%);
+  box-shadow: 0 4px 16px rgb(15 23 42 / 5%);
+}
+
+html[data-theme="light"] .legend-text {
+  color: #475569;
+}
+
+html[data-theme="light"] .legend-swatch.swatch-normal {
+  background: #f1f5f9;
+  border-color: rgb(15 23 42 / 22%);
+}
+
+html[data-theme="light"] .legend-swatch.swatch-late {
+  background: rgb(245 158 11 / 12%);
+  border-color: rgb(217 119 6 / 55%);
+}
+
+html[data-theme="light"] .showtime-movie-card {
+  background: #ffffff;
+  border-color: rgb(15 23 42 / 10%);
+  box-shadow: 0 10px 28px rgb(15 23 42 / 7%);
+}
+
+html[data-theme="light"] .showtime-movie-card:hover {
+  border-color: rgb(15 23 42 / 18%);
+  box-shadow: 0 16px 36px rgb(15 23 42 / 11%);
+}
+
+html[data-theme="light"] .showtime-poster-frame {
+  background: #e2e8f0;
+  border-color: rgb(15 23 42 / 10%);
+}
+
+html[data-theme="light"] .showtime-movie-title {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .showtime-movie-title:hover {
+  color: #C91934;
+}
+
+html[data-theme="light"] .showtime-movie-meta {
+  color: #475569;
+}
+
+html[data-theme="light"] .showtime-movie-desc {
+  color: #334155;
+}
+
+html[data-theme="light"] .showtime-format-title {
+  color: #475569;
+  border-left-color: #C91934;
+}
+
+html[data-theme="light"] .showtime-slot-btn {
+  background: #f8fafc;
+  border-color: rgb(15 23 42 / 14%);
+  color: #0f172a;
+}
+
+html[data-theme="light"] .showtime-slot-btn:hover {
+  background: #C91934;
+  border-color: #C91934;
+  color: #ffffff;
+}
+
+html[data-theme="light"] .showtime-slot-btn .slot-seats {
+  color: #64748b;
+}
+
+html[data-theme="light"] .showtime-slot-btn:hover .slot-seats {
+  color: #f8fafc;
+}
+
+html[data-theme="light"] .showtime-slot-btn.slot-late {
+  background: rgb(245 158 11 / 10%);
+  border-color: rgb(217 119 6 / 45%);
+  color: #92400e;
+}
+
+html[data-theme="light"] .showtime-slot-btn.slot-late .slot-seats {
+  color: #b45309;
+}
+
+html[data-theme="light"] .showtime-slot-btn.slot-late:hover {
+  background: #92400e;
+  border-color: #92400e;
+  color: #ffffff;
+}
+
+html[data-theme="light"] .showtime-slot-btn.slot-late:hover .slot-seats {
+  color: #ffffff;
+}
+
+html[data-theme="light"] .showtimes-empty-state {
+  background: #ffffff;
+  border-color: rgb(15 23 42 / 14%);
+}
+
+html[data-theme="light"] .showtimes-empty-title {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .showtimes-empty-state p {
+  color: #475569;
+}
+
+html[data-theme="light"] .booking-confirm-backdrop {
+  background: rgb(15 23 42 / 55%);
+}
+
+html[data-theme="light"] .booking-confirm-modal {
+  background: #ffffff;
+  border-color: rgb(15 23 42 / 12%);
+  box-shadow: 0 24px 60px rgb(15 23 42 / 24%);
+}
+
+html[data-theme="light"] .confirm-modal-title {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .confirm-modal-subtitle,
+html[data-theme="light"] .confirm-detail-label {
+  color: #475569;
+}
+
+html[data-theme="light"] .confirm-detail-box {
+  background: #f8fafc;
+  border-color: rgb(15 23 42 / 10%);
+}
+
+html[data-theme="light"] .confirm-detail-value {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .btn-confirm-cancel {
+  background: #f1f5f9;
+  border-color: rgb(15 23 42 / 14%);
+  color: #0f172a;
+}
+
+html[data-theme="light"] .btn-confirm-cancel:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+html[data-theme="light"] .showtime-slot-btn .slot-time,
+html[data-theme="light"] .showtime-slot-btn.slot-late .slot-date-sub {
+  color: inherit;
+}

@@ -1,6 +1,7 @@
 /**
  * BOX Cinema - Module 01 Navbar & Cinemê-style Home Page Interactions
  */
+import { initThemeToggle } from "../core/theme.js";
 
 export function resolveActiveRoute(pathname = "/") {
   const cleanPath = pathname.replace(/\/+$/, "") || "/";
@@ -98,6 +99,9 @@ export function initNavbar(doc = document, currentPath = window.location.pathnam
 
   // Expanding Search Bar Interactions
   initNavSearch(doc, navEl);
+
+  // Theme Toggle (Dark / Light mode)
+  initThemeToggle(doc);
 
   // Cinema Branch Selector (Beta Cinema Style Cascading Flyout Menu)
   initCinemaSelector(doc);
