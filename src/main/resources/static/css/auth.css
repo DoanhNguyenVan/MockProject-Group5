@@ -87,9 +87,8 @@
 }
 
 .auth-theater-overlay {
-  position: relative;
   width: 100%;
-  z-index: 2;
+  z-index: 1;
 }
 
 .auth-cinema-badge {
@@ -854,10 +853,7 @@
   .auth-providers {
     grid-template-columns: minmax(0, 1fr);
   }
-
-  .otp-digit-grid {
-    gap: 0.45rem;
-  }
+}
 
   .otp-digit-input {
     height: 3rem;

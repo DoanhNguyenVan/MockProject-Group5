@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}" content="">
+  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}" content="X-CSRF-TOKEN">
+  <title>Buy Tickets | BOX Cinema</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/main.css?v=20261113c" th:href="@{/css/main.css(v='20261113c')}">
+  <link rel="stylesheet" href="/css/booking.css?v=20261113c" th:href="@{/css/booking.css(v='20261113c')}">
+  <link rel="stylesheet" href="/css/booking-payment.css?v=1.0" th:href="@{/css/booking-payment.css(v='1.0')}">
+  <link rel="stylesheet" href="/css/booking-screenings.css?v=20261113a" th:href="@{/css/booking-screenings.css(v='20261113a')}">
+</head>
+<body class="booking-page">
+  <header th:replace="~{fragments/navbar :: navbar}"></header>
+  <main id="main-content" tabindex="-1">
+    <div class="booking-shell" id="bookingApp">
+      <a class="booking-back" href="/showtimes" th:href="@{/showtimes}">&#8592; Back to showtimes</a>
+      <div class="booking-heading"><div><p class="booking-eyebrow">YOUR NEXT BIG-SCREEN MOMENT</p><h1>Buy tickets<span>.</span></h1></div><p>Great stories. Your favourite seat.</p></div>
+      <div class="booking-notice" id="bookingPreviewNotice" hidden><strong>Preview experience</strong><span>Sample seats and prices. No seats are reserved and no payment is taken.</span></div>
+      <section class="screening-layout" id="bookingPicker" aria-labelledby="pickerTitle" hidden
+               th:data-movie-id="${bookingMovie != null ? bookingMovie.movieId : ''}"
+               th:data-movie-missing="${bookingMovieMissing == true}">
+        <aside class="screening-film" aria-labelledby="screeningMovieTitle">
+          <div class="screening-poster-frame">
+            <span class="screening-poster-empty">BOX<br><small>CINEMA</small></span>
+            <img id="screeningPoster" th:if="${bookingMovie != null and bookingMovie.posterUrl != null and !#strings.isEmpty(bookingMovie.posterUrl)}"
+                 th:src="${bookingMovie != null ? bookingMovie.posterUrl : ''}" th:alt="${bookingMovie != null ? bookingMovie.title : ''}" width="320" height="480">
+            <span class="screening-poster-label">THE BIG SCREEN IS CALLING</span>
+          </div>
+          <div class="screening-film-info">
+            <p class="booking-eyebrow">YOUR SELECTED MOVIE</p>
+            <h2 id="screeningMovieTitle" th:text="${bookingMovie != null ? bookingMovie.title : 'Find your next movie'}">Find your next movie</h2>
+            <div class="screening-film-meta" th:if="${bookingMovie != null}">
+              <span class="screening-rating" th:text="${bookingMovie != null ? bookingMovie.ageRating : ''}"></span>
+              <span th:text="${bookingMovie != null ? bookingMovie.durationMinutes + ' min' : ''}"></span>
+              <span th:text="${bookingMovie != null ? bookingMovie.language : ''}"></span>
+            </div>
+            <p class="screening-genres" th:text="${bookingMovie != null ? bookingMovie.genreNamesDisplay : ''}"></p>
+            <a href="/home#moviesSection" class="screening-change">Choose another movie &#8599;</a>
+          </div>
+        </aside>
+        <div class="screening-browser">
+          <div class="screening-intro"><p class="booking-eyebrow">PLAN YOUR MOVIE NIGHT</p><h2 id="pickerTitle">Find your screening</h2><p>Pick a date. Find your cinema. Make it a movie night.</p></div>
+          <div id="screeningMovieChooser" hidden><label for="screeningMovieSelect">Movie</label><select id="screeningMovieSelect" class="form-control-dark"><option value="">Choose a movie</option></select></div>
+          <section class="screening-date-section" aria-labelledby="screeningDateLabel">
+            <div class="screening-section-label"><h3 id="screeningDateLabel">01 <span>Select a date</span></h3><span id="screeningMonth"></span></div>
+            <div id="screeningDates" class="screening-dates" role="group" aria-label="Screening date"></div>
+          </section>
+          <section aria-labelledby="screeningCinemaLabel">
+            <div class="screening-section-label"><h3 id="screeningCinemaLabel">02 <span>Find a cinema</span></h3></div>
+            <label class="screening-search-label" for="screeningSearch">Search by cinema or city</label>
+            <div class="screening-search"><span aria-hidden="true">&#9906;</span><input id="screeningSearch" type="search" placeholder="Search all cinemas or cities..." autocomplete="off" aria-controls="screeningResults"><button id="screeningClear" type="button" aria-label="Clear cinema search" hidden>&#10005;</button></div>
+            <div id="screeningCities" class="screening-cities" role="group" aria-label="Filter by city"></div>
+            <div class="screening-results-heading"><h3 id="screeningResultsTitle">Suggested cinemas</h3><span id="screeningResultCount" role="status" aria-live="polite"></span></div>
+            <p id="screeningMessage" class="screening-message" role="status" aria-live="polite"></p>
+            <button id="screeningRetry" class="booking-secondary" type="button" hidden>Try again</button>
+            <div id="screeningResults" class="screening-results"></div>
+            <button id="screeningMore" class="screening-more" type="button" hidden>Show more cinemas</button>
+          </section>
+          <p class="screening-footnote">Select a showtime to choose your seats. All times are local to the cinema.</p>
+        </div>
+      </section>
+      <p id="bookingStatus" class="booking-status" role="alert" hidden></p>
+      <section id="bookingEmpty" class="booking-panel booking-empty" hidden>
+        <span class="booking-empty-icon" aria-hidden="true">&#9678;</span><h2 id="bookingEmptyTitle">Choose your showtime</h2>
+        <p id="bookingEmptyText">Select a movie, cinema and screening above to begin.</p>
+        <div class="booking-empty-actions"><button type="button" class="booking-secondary" id="bookingRetry" hidden>Try again</button><a class="booking-primary" href="/showtimes">Choose another showtime</a></div>
+      </section>
+      <div id="bookingContent" hidden>
+        <button id="bookingChangeScreening" class="booking-secondary" type="button">&#8592; Change screening</button>
+        <nav class="booking-progress" aria-label="Booking progress"><ol class="booking-steps"><li aria-current="step" data-step-marker="0"><span>01</span> Choose seats</li><li data-step-marker="1"><span>02</span> Snacks &amp; drinks</li><li data-step-marker="2"><span>03</span> Review</li><li data-step-marker="3"><span>04</span> Payment</li></ol></nav>
+        <div class="booking-layout">
+          <div class="booking-workspace">
+            <section class="booking-panel" data-booking-step="0" aria-labelledby="seatTitle">
+              <div class="booking-section-heading"><div><p class="booking-eyebrow">MAKE YOURSELF COMFORTABLE</p><h2 id="seatTitle" tabindex="-1">Choose your seats</h2></div><span class="booking-tag">Up to 8 seats</span></div>
+              <p class="booking-muted">Tap a seat to select it. Tap again to remove it.</p>
+              <div class="booking-screen" aria-hidden="true"><div></div><span>SCREEN THIS WAY</span></div>
+              <div class="booking-seat-scroll" tabindex="0" role="region" aria-label="Seat map. Scroll horizontally on smaller screens."><div id="bookingSeats" class="booking-seats"></div></div>
+              <p class="booking-scroll-hint">Swipe horizontally to see all seats.</p>
+              <ul class="booking-legend" aria-label="Seat legend"><li><i class="seat-key" aria-hidden="true"></i>Standard</li><li><i class="seat-key vip" aria-hidden="true"></i>VIP</li><li><i class="seat-key selected" aria-hidden="true"></i>Selected</li><li><i class="seat-key unavailable" aria-hidden="true"></i>Unavailable</li></ul>
+              <p class="booking-seat-note">Your selection is an estimate. Seats are only reserved after a confirmed hold.</p>
+            </section>
+            <section class="booking-panel" data-booking-step="1" aria-labelledby="comboTitle" hidden>
+              <div class="booking-section-heading"><div><p class="booking-eyebrow">THE PERFECT MOVIE PAIRING</p><h2 id="comboTitle" tabindex="-1">Snacks &amp; drinks</h2></div><span class="booking-tag">Optional</span></div>
+              <p class="booking-muted">A little crunch. A refreshing sip. Make it a movie night.</p><div id="bookingProducts" class="booking-products"></div>
+            </section>
+            <section class="booking-panel" data-booking-step="2" aria-labelledby="reviewTitle" hidden>
+              <p class="booking-eyebrow">ONE LAST LOOK</p><h2 id="reviewTitle" tabindex="-1">Review your selection</h2>
+              <p class="booking-muted">Check your screening, seats and extras below.</p><dl id="bookingReview" class="booking-review"></dl>
+              <p class="booking-muted">Continue to choose cash or VNPay QR.</p>
+            </section>
+            <section class="booking-panel" id="bookingPayment" data-booking-step="3" aria-labelledby="paymentTitle" hidden>
+              <p class="booking-eyebrow">YOUR WAY TO PAY</p><h2 id="paymentTitle" tabindex="-1">Payment</h2>
+              <p class="booking-muted">Choose how you would like to pay for your movie night.</p>
+              <fieldset class="payment-methods">
+                <legend>Payment method</legend>
+                <div class="payment-options">
+                  <label class="payment-option"><input type="radio" name="paymentMethod" value="CASH" checked aria-controls="paymentCash"><span><strong>Cash</strong><small>Pay at the cinema counter</small></span></label>
+                  <label class="payment-option"><input type="radio" name="paymentMethod" value="VNPAY" aria-controls="paymentVnpay"><span><strong>VNPay QR</strong><small>Scan with your banking app</small></span></label>
+                </div>
+              </fieldset>
+              <div id="paymentCash" class="payment-detail" data-payment-method="CASH">
+                <span class="booking-tag">AT THE COUNTER</span><h3>Pay with cash</h3>
+                <p>Complete your cash payment with a member of our cinema team.</p>
+                <ol><li>Visit the ticket counter at your selected cinema.</li><li>Ask staff to check your screening, seats and snacks.</li><li>Pay in cash and collect your tickets after confirmation.</li></ol>
+                <div class="payment-amount"><span>Estimated cash amount</span><strong data-payment-total></strong></div>
+              </div>
+              <div id="paymentVnpay" class="payment-detail" data-payment-method="VNPAY" hidden>
+                <span class="booking-tag">VNPAY QR</span><h3>Scan to pay</h3>
+                <div class="payment-qr-layout">
+                  <div class="payment-qr-placeholder" role="img" aria-label="QR code unavailable. Payment is not connected yet.">
+                    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 5H5v11m27-11h11v11M5 32v11h11m27-11v11H32"/><rect x="17" y="22" width="14" height="12" rx="2"/><path d="M20 22v-5a4 4 0 0 1 8 0v5"/></svg>
+                    <span>QR not available yet</span>
+                  </div>
+                  <div><p>A payment QR code will appear here when checkout is available.</p><ol><li>Open a banking app that supports VNPay QR.</li><li>Scan the code and check the payment details.</li><li>Confirm in your app and wait for the payment result.</li></ol></div>
+                </div>
+                <div class="payment-amount"><span>Estimated transfer amount</span><strong data-payment-total></strong></div>
+              </div>
+              <p class="payment-availability" id="bookingPaymentAvailability">Payment is not available yet. You can explore both methods, but no booking is confirmed, no seats are reserved and no money is collected.</p>
+              <button type="button" id="bookingPaymentAction" class="booking-primary" aria-describedby="bookingPaymentAvailability" disabled>Confirm cash payment</button>
+            </section>
+            <div class="booking-navigation"><button type="button" id="bookingPrevious" class="booking-secondary" hidden>&#8592; Back</button><span id="bookingStepHint">Choose at least one seat to continue.</span></div>
+          </div>
+          <aside class="booking-panel booking-summary" aria-labelledby="summaryTitle">
+            <p class="booking-eyebrow">YOUR MOVIE NIGHT</p><h2 id="summaryTitle">Booking summary</h2>
+            <div class="booking-movie"><img id="bookingPoster" src="/assets/img/crimson-horizon.webp" alt="" width="76" height="110"><div><span id="bookingRating" class="badge-age-t16">T16</span><h3 id="bookingTitle"></h3><p id="bookingFormat" class="booking-muted"></p></div></div>
+            <dl class="booking-details"><div><dt>Cinema</dt><dd id="bookingCinemaName"></dd></div><div><dt>Screening</dt><dd id="bookingScreening"></dd></div><div><dt>Room</dt><dd id="bookingRoom"></dd></div></dl>
+            <div class="booking-selection"><div class="booking-line"><span>Selected seats</span><strong id="bookingSeatCount">0 tickets</strong></div><p id="bookingSelectedSeats" aria-live="polite">No seats selected</p></div>
+            <div class="booking-line"><span>Tickets</span><strong id="bookingTicketTotal">0 ₫</strong></div><div class="booking-line"><span>Snacks &amp; drinks</span><strong id="bookingProductTotal">0 ₫</strong></div><div id="bookingExtras" class="booking-muted"></div>
+            <div class="booking-total" aria-live="polite"><span>Estimated total<small>All prices in VND</small></span><strong id="bookingTotal">0 ₫</strong></div>
+            <button type="button" class="booking-primary" id="bookingNext" disabled>Continue to snacks &#8594;</button><p id="bookingCheckoutNote" class="booking-summary-note">Select your seats to get started.</p>
+          </aside>
+        </div>
+      </div>
+      <noscript><p class="booking-notice">Enable JavaScript to choose your screening and seats.</p></noscript>
+    </div>
+  </main>
+  <footer th:replace="~{fragments/footer :: footer}"></footer>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module" src="/js/modules/navbar.js?v=20261113a" th:src="@{/js/modules/navbar.js(v='20261113a')}"></script>
+  <script type="module" src="/js/modules/booking.js?v=1.4" th:src="@{/js/modules/booking.js(v='1.4')}"></script>
+</body>
+</html>
