@@ -27,26 +27,35 @@
           </div>
         </div>
 
+        <!-- Toolbar: Search (Standard Admin Suite) -->
+        <div class="admin-toolbar">
+          <div class="admin-search-wrap">
+            <input type="search" id="genreSearch" class="admin-input" placeholder="Search genres by name, description...">
+          </div>
+          <button type="button" id="clearGenreFilters" class="admin-button">Clear</button>
+        </div>
+
         <!-- Genre Table Panel -->
         <div class="admin-table-panel">
           <div class="d-flex justify-content-between align-items-center px-4 py-3" style="border-bottom: 1px solid var(--box-border-color); background: var(--box-bg-elevated);">
             <h2 style="font-size: 15px; font-weight: 700; margin: 0; color: var(--box-text-primary);">All Genres</h2>
-            <span style="font-size: 12px; color: var(--box-text-muted);" th:text="'Total: ' + ${#lists.size(genres)}">Total: 0</span>
+            <span id="genreTotalCount" style="font-size: 12px; color: var(--box-text-muted);" th:text="'Total: ' + ${#lists.size(genres)}">Total: 0</span>
           </div>
 
           <div class="admin-table-scroll">
-            <table class="admin-table">
+            <table class="admin-table admin-genre-table">
               <thead>
                 <tr>
-                  <th style="min-width: 80px;">ID</th>
-                  <th style="min-width: 200px;">Genre Name</th>
+                  <th style="width: 60px; min-width: 60px; text-align: center;">ID</th>
+                  <th style="width: 250px; min-width: 180px;">Genre Name</th>
                   <th>Description</th>
-                  <th style="min-width: 150px;">Actions</th>
+                  <th style="width: 140px; min-width: 140px; text-align: center;">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                <tr th:each="genre : ${genres}">
-                  <td th:text="${genre.genreId}"></td>
+                <tr th:each="genre : ${genres}" class="genre-row"
+                    th:attr="data-name=${#strings.toLowerCase(genre.genreName)},data-desc=${genre.description != null ? #strings.toLowerCase(genre.description) : ''}">
+                  <td style="text-align: center;" th:text="${genre.genreId}"></td>
                   <td>
                     <div style="font-weight: 700; color: var(--box-text-primary);" th:text="${genre.genreName}"></div>
                   </td>
@@ -54,8 +63,8 @@
                     <span style="color: var(--box-text-secondary); font-size: 13px;"
                           th:text="${genre.description != null and !#strings.isEmpty(genre.description) ? genre.description : 'No description'}"></span>
                   </td>
-                  <td>
-                    <div class="d-flex align-items-center gap-2">
+                  <td style="text-align: center;">
+                    <div class="d-flex align-items-center justify-content-center gap-2">
                       <button type="button" class="admin-btn-action admin-btn-action-edit"
                               th:attr="data-id=${genre.genreId},data-name=${genre.genreName},data-desc=${genre.description}"
                               onclick="openEditGenreModal(this)">
@@ -74,6 +83,11 @@
                     </div>
                   </td>
                 </tr>
+                <tr id="noGenreResultsRow" style="display: none;">
+                  <td colspan="4" class="text-center py-5" style="color: var(--box-text-muted);">
+                    No genres match your search criteria.
+                  </td>
+                </tr>
                 <tr th:if="${#lists.isEmpty(genres)}">
                   <td colspan="4" class="text-center py-5" style="color: var(--box-text-muted);">
                     No genres found. Add your first genre!
@@ -81,6 +95,15 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="admin-pagination">
+            <p id="genrePageInfo">Showing records</p>
+            <div class="d-flex gap-2">
+              <button type="button" id="genrePrevious" class="admin-button">Previous</button>
+              <button type="button" id="genreNext" class="admin-button">Next</button>
+            </div>
           </div>
         </div>
       </div>
@@ -153,6 +176,87 @@
         if (!isInDialog) modal.close();
       });
     }
+
+    // Real-time Search and Pagination for Genres
+    let currentGenrePage = 1;
+    const genrePageSize = 8;
+    let filteredGenreRows = [];
+
+    function renderGenrePage() {
+      const allRows = Array.from(document.querySelectorAll('.genre-row'));
+      const query = (document.getElementById('genreSearch')?.value || '').trim().toLowerCase();
+
+      filteredGenreRows = allRows.filter(row => {
+        const name = row.getAttribute('data-name') || '';
+        const desc = row.getAttribute('data-desc') || '';
+        return !query || name.includes(query) || desc.includes(query);
+      });
+
+      const totalRecords = filteredGenreRows.length;
+      const totalPages = Math.max(1, Math.ceil(totalRecords / genrePageSize));
+      currentGenrePage = Math.min(totalPages, Math.max(1, currentGenrePage));
+
+      const startIdx = (currentGenrePage - 1) * genrePageSize;
+      const endIdx = startIdx + genrePageSize;
+
+      allRows.forEach(row => { row.style.display = 'none'; });
+      filteredGenreRows.slice(startIdx, endIdx).forEach(row => { row.style.display = ''; });
+
+      const emptyRow = document.getElementById('noGenreResultsRow');
+      if (emptyRow) {
+        emptyRow.style.display = (totalRecords === 0 && allRows.length > 0) ? '' : 'none';
+      }
+
+      const countBadge = document.getElementById('genreTotalCount');
+      if (countBadge) {
+        if (query) {
+          countBadge.textContent = `Showing ${totalRecords} of ${allRows.length} genres`;
+        } else {
+          countBadge.textContent = `Total: ${allRows.length}`;
+        }
+      }
+
+      const pageInfo = document.getElementById('genrePageInfo');
+      if (pageInfo) {
+        pageInfo.textContent = `${totalRecords} records · Page ${currentGenrePage} of ${totalPages}`;
+      }
+
+      const prevBtn = document.getElementById('genrePrevious');
+      const nextBtn = document.getElementById('genreNext');
+      if (prevBtn) prevBtn.disabled = currentGenrePage <= 1;
+      if (nextBtn) nextBtn.disabled = currentGenrePage >= totalPages;
+    }
+
+    function resetGenrePageAndRender() {
+      currentGenrePage = 1;
+      renderGenrePage();
+    }
+
+    document.getElementById('genrePrevious')?.addEventListener('click', () => {
+      if (currentGenrePage > 1) {
+        currentGenrePage--;
+        renderGenrePage();
+      }
+    });
+
+    document.getElementById('genreNext')?.addEventListener('click', () => {
+      const totalPages = Math.max(1, Math.ceil(filteredGenreRows.length / genrePageSize));
+      if (currentGenrePage < totalPages) {
+        currentGenrePage++;
+        renderGenrePage();
+      }
+    });
+
+    document.getElementById('genreSearch')?.addEventListener('input', resetGenrePageAndRender);
+
+    document.getElementById('clearGenreFilters')?.addEventListener('click', () => {
+      const s = document.getElementById('genreSearch');
+      if (s) s.value = '';
+      resetGenrePageAndRender();
+    });
+
+    document.addEventListener('DOMContentLoaded', renderGenrePage);
+    renderGenrePage();
   </script>
 </body>
 

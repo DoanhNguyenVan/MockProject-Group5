@@ -52,19 +52,19 @@
           </div>
 
           <div class="admin-table-scroll">
-            <table class="admin-table">
+            <table class="admin-table admin-movie-table">
               <thead>
                 <tr>
-                  <th style="min-width: 60px;">ID</th>
-                  <th style="min-width: 80px;">Poster</th>
-                  <th>Title</th>
-                  <th>Genres</th>
-                  <th>Duration</th>
-                  <th>Age</th>
-                  <th>Language</th>
-                  <th>Release Date</th>
-                  <th>Status</th>
-                  <th style="min-width: 150px;">Actions</th>
+                  <th style="width: 50px; min-width: 50px; text-align: center;">ID</th>
+                  <th style="width: 65px; min-width: 65px; text-align: center;">Poster</th>
+                  <th style="min-width: 160px;">Title</th>
+                  <th style="min-width: 130px;">Genres</th>
+                  <th style="width: 85px; text-align: center;">Duration</th>
+                  <th style="width: 60px; text-align: center;">Age</th>
+                  <th style="min-width: 130px;">Language</th>
+                  <th style="width: 105px;">Release Date</th>
+                  <th style="width: 125px; text-align: center;">Status</th>
+                  <th style="width: 140px; min-width: 140px; text-align: center;">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -73,14 +73,14 @@
                              data-language=${#strings.toLowerCase(movie.language != null ? movie.language : '')},
                              data-genres=${movie.genreNamesDisplay != null ? #strings.toLowerCase(movie.genreNamesDisplay) : ''},
                              data-status=${movie.status}">
-                  <td th:text="${movie.movieId}"></td>
-                  <td>
+                  <td style="text-align: center;" th:text="${movie.movieId}"></td>
+                  <td style="text-align: center;">
                     <img th:if="${movie.posterUrl != null and !#strings.isEmpty(movie.posterUrl)}"
                          th:src="${movie.posterUrl}"
-                         style="width: 50px; height: 72px; object-fit: cover; border-radius: 6px; border: 1px solid var(--box-border-color);"
+                         style="width: 44px; height: 64px; object-fit: cover; border-radius: 6px; border: 1px solid var(--box-border-color);"
                          alt="Poster">
                     <div th:unless="${movie.posterUrl != null and !#strings.isEmpty(movie.posterUrl)}"
-                         style="width: 50px; height: 72px; border-radius: 6px; background: var(--box-bg-elevated); border: 1px solid var(--box-border-color); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--box-text-muted);">
+                         style="width: 44px; height: 64px; border-radius: 6px; background: var(--box-bg-elevated); border: 1px solid var(--box-border-color); display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--box-text-muted);">
                       No img
                     </div>
                   </td>
@@ -91,23 +91,23 @@
                     <span style="color: var(--box-text-secondary); font-size: 13px;"
                           th:text="${movie.genreNamesDisplay != null and !#strings.isEmpty(movie.genreNamesDisplay) ? movie.genreNamesDisplay : 'No genre'}"></span>
                   </td>
-                  <td th:text="${movie.durationMinutes} + ' min'"></td>
-                  <td>
+                  <td style="text-align: center;" th:text="${movie.durationMinutes} + ' min'"></td>
+                  <td style="text-align: center;">
                     <span class="badge bg-secondary" style="font-weight: 600;" th:text="${movie.ageRating}"></span>
                   </td>
                   <td>
                     <span style="font-size: 13px; color: var(--box-text-secondary);" th:text="${movie.language != null ? movie.language : '-'}"></span>
                   </td>
                   <td th:text="${movie.releaseDate}"></td>
-                  <td>
+                  <td style="text-align: center;">
                     <span class="admin-status-pill"
                           th:classappend="${movie.status == 'NOW_SHOWING' ? 'admin-status-now_showing' : (movie.status == 'COMING_SOON' ? 'admin-status-coming_soon' : 'admin-status-ended')}">
                       <span class="admin-status-dot"></span>
                       <span th:text="${movie.status}"></span>
                     </span>
                   </td>
-                  <td>
-                    <div class="d-flex align-items-center gap-2">
+                  <td style="text-align: center;">
+                    <div class="d-flex align-items-center justify-content-center gap-2">
                       <button type="button" class="admin-btn-action admin-btn-action-edit"
                               th:attr="data-id=${movie.movieId},
                                        data-title=${movie.title},
@@ -150,6 +150,15 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="admin-pagination">
+            <p id="moviePageInfo">Showing records</p>
+            <div class="d-flex gap-2">
+              <button type="button" id="moviePrevious" class="admin-button">Previous</button>
+              <button type="button" id="movieNext" class="admin-button">Next</button>
+            </div>
           </div>
         </div>
       </div>
@@ -343,16 +352,18 @@
       });
     }
 
-    // Real-time Search and Filtering
-    function filterMovies() {
+    // Real-time Search, Filtering and Pagination
+    let currentPage = 1;
+    const pageSize = 8;
+    let currentFilteredRows = [];
+
+    function renderMoviePage() {
+      const allRows = Array.from(document.querySelectorAll('.movie-row'));
       const searchQuery = (document.getElementById('movieSearch')?.value || '').trim().toLowerCase();
       const selectedGenre = (document.getElementById('genreFilter')?.value || '').trim().toLowerCase();
       const selectedStatus = (document.getElementById('statusFilter')?.value || '').trim();
 
-      const rows = document.querySelectorAll('.movie-row');
-      let visibleCount = 0;
-
-      rows.forEach(row => {
+      currentFilteredRows = allRows.filter(row => {
         const title = row.getAttribute('data-title') || '';
         const language = row.getAttribute('data-language') || '';
         const genres = row.getAttribute('data-genres') || '';
@@ -362,32 +373,67 @@
         const matchesGenre = !selectedGenre || genres.includes(selectedGenre);
         const matchesStatus = !selectedStatus || status === selectedStatus;
 
-        if (matchesSearch && matchesGenre && matchesStatus) {
-          row.style.display = '';
-          visibleCount++;
-        } else {
-          row.style.display = 'none';
-        }
+        return matchesSearch && matchesGenre && matchesStatus;
       });
+
+      const totalRecords = currentFilteredRows.length;
+      const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+      currentPage = Math.min(totalPages, Math.max(1, currentPage));
+
+      const startIdx = (currentPage - 1) * pageSize;
+      const endIdx = startIdx + pageSize;
+
+      allRows.forEach(row => { row.style.display = 'none'; });
+      currentFilteredRows.slice(startIdx, endIdx).forEach(row => { row.style.display = ''; });
 
       const emptyRow = document.getElementById('noFilterResultsRow');
       if (emptyRow) {
-        emptyRow.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
+        emptyRow.style.display = (totalRecords === 0 && allRows.length > 0) ? '' : 'none';
       }
 
       const countBadge = document.getElementById('movieTotalCount');
       if (countBadge) {
         if (searchQuery || selectedGenre || selectedStatus) {
-          countBadge.textContent = `Showing ${visibleCount} of ${rows.length} movies`;
+          countBadge.textContent = `Showing ${totalRecords} of ${allRows.length} movies`;
         } else {
-          countBadge.textContent = `Total: ${rows.length}`;
+          countBadge.textContent = `Total: ${allRows.length}`;
         }
       }
+
+      const pageInfo = document.getElementById('moviePageInfo');
+      if (pageInfo) {
+        pageInfo.textContent = `${totalRecords} records · Page ${currentPage} of ${totalPages}`;
+      }
+
+      const prevBtn = document.getElementById('moviePrevious');
+      const nextBtn = document.getElementById('movieNext');
+      if (prevBtn) prevBtn.disabled = currentPage <= 1;
+      if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
     }
 
-    document.getElementById('movieSearch')?.addEventListener('input', filterMovies);
-    document.getElementById('genreFilter')?.addEventListener('change', filterMovies);
-    document.getElementById('statusFilter')?.addEventListener('change', filterMovies);
+    function resetToFirstPageAndRender() {
+      currentPage = 1;
+      renderMoviePage();
+    }
+
+    document.getElementById('moviePrevious')?.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderMoviePage();
+      }
+    });
+
+    document.getElementById('movieNext')?.addEventListener('click', () => {
+      const totalPages = Math.max(1, Math.ceil(currentFilteredRows.length / pageSize));
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderMoviePage();
+      }
+    });
+
+    document.getElementById('movieSearch')?.addEventListener('input', resetToFirstPageAndRender);
+    document.getElementById('genreFilter')?.addEventListener('change', resetToFirstPageAndRender);
+    document.getElementById('statusFilter')?.addEventListener('change', resetToFirstPageAndRender);
 
     document.getElementById('clearMovieFilters')?.addEventListener('click', () => {
       const s = document.getElementById('movieSearch');
@@ -396,8 +442,12 @@
       if (s) s.value = '';
       if (g) g.value = '';
       if (st) st.value = '';
-      filterMovies();
+      resetToFirstPageAndRender();
     });
+
+    // Initial render on load
+    document.addEventListener('DOMContentLoaded', renderMoviePage);
+    renderMoviePage();
   </script>
 </body>
 </html>
