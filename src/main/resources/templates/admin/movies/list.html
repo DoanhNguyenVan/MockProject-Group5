@@ -46,7 +46,8 @@
                   <th>Title</th>
                   <th>Genres</th>
                   <th>Duration</th>
-                  <th>Age Rating</th>
+                  <th>Age</th>
+                  <th>Language</th>
                   <th>Release Date</th>
                   <th>Status</th>
                   <th style="min-width: 150px;">Actions</th>
@@ -76,6 +77,9 @@
                   <td>
                     <span class="badge bg-secondary" style="font-weight: 600;" th:text="${movie.ageRating}"></span>
                   </td>
+                  <td>
+                    <span style="font-size: 13px; color: var(--box-text-secondary);" th:text="${movie.language != null ? movie.language : '-'}"></span>
+                  </td>
                   <td th:text="${movie.releaseDate}"></td>
                   <td>
                     <span class="admin-status-pill"
@@ -92,6 +96,7 @@
                                        data-synopsis=${movie.synopsis},
                                        data-duration=${movie.durationMinutes},
                                        data-agerating=${movie.ageRating},
+                                       data-language=${movie.language},
                                        data-releasedate=${movie.releaseDate},
                                        data-enddate=${movie.endDate},
                                        data-status=${movie.status},
@@ -116,7 +121,7 @@
                   </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(movies)}">
-                  <td colspan="9" class="text-center py-5" style="color: var(--box-text-muted);">
+                  <td colspan="10" class="text-center py-5" style="color: var(--box-text-muted);">
                     No movies found. Add your first movie!
                   </td>
                 </tr>
@@ -176,6 +181,25 @@
           </select>
         </div>
 
+        <div>
+          <label for="modalMovieLanguage" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
+            Language *
+          </label>
+          <input type="text" class="admin-input" id="modalMovieLanguage" name="language" maxlength="50"
+                 placeholder="Example: English, Vietnamese" required>
+        </div>
+
+        <div>
+          <label for="modalMovieStatus" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
+            Movie status *
+          </label>
+          <select class="admin-input" id="modalMovieStatus" name="status" required>
+            <option value="NOW_SHOWING">Now Showing</option>
+            <option value="COMING_SOON">Coming Soon</option>
+            <option value="ENDED">Ended</option>
+          </select>
+        </div>
+
         <div class="admin-field-wide">
           <label style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
             Genres
@@ -209,17 +233,6 @@
         </div>
 
         <div>
-          <label for="modalMovieStatus" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
-            Movie status *
-          </label>
-          <select class="admin-input" id="modalMovieStatus" name="status" required>
-            <option value="NOW_SHOWING">Now Showing</option>
-            <option value="COMING_SOON">Coming Soon</option>
-            <option value="ENDED">Ended</option>
-          </select>
-        </div>
-
-        <div>
           <label for="modalMoviePosterUrl" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
             Poster URL
           </label>
@@ -235,7 +248,7 @@
                  placeholder="https://example.com/banner.jpg">
         </div>
 
-        <div>
+        <div class="admin-field-wide">
           <label for="modalMovieTrailerUrl" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
             Trailer URL
           </label>
@@ -260,6 +273,7 @@
       document.getElementById('modalMovieSynopsis').value = '';
       document.getElementById('modalMovieDuration').value = '';
       document.getElementById('modalMovieAgeRating').value = 'P';
+      document.getElementById('modalMovieLanguage').value = '';
       document.getElementById('modalMovieReleaseDate').value = '';
       document.getElementById('modalMovieEndDate').value = '';
       document.getElementById('modalMovieStatus').value = 'NOW_SHOWING';
@@ -279,6 +293,7 @@
       document.getElementById('modalMovieSynopsis').value = btn.getAttribute('data-synopsis') || '';
       document.getElementById('modalMovieDuration').value = btn.getAttribute('data-duration') || '';
       document.getElementById('modalMovieAgeRating').value = btn.getAttribute('data-agerating') || 'P';
+      document.getElementById('modalMovieLanguage').value = btn.getAttribute('data-language') || '';
       document.getElementById('modalMovieReleaseDate').value = btn.getAttribute('data-releasedate') || '';
       document.getElementById('modalMovieEndDate').value = btn.getAttribute('data-enddate') || '';
       document.getElementById('modalMovieStatus').value = btn.getAttribute('data-status') || 'NOW_SHOWING';

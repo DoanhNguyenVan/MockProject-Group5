@@ -66,13 +66,12 @@ public class AdminMovieController {
 
         } catch (IllegalArgumentException e) {
 
-            model.addAttribute("genres", movieService.getAllGenres());
-            model.addAttribute("formTitle", "Add New Movie");
-            model.addAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    e.getMessage()
+            );
 
-            setSelectedGenres(movie, genreIds);
-
-            return "admin/movies/form";
+            return "redirect:/admin/movies";
         }
     }
 
@@ -124,15 +123,12 @@ public class AdminMovieController {
 
         } catch (IllegalArgumentException e) {
 
-            movie.setMovieId(id);
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    e.getMessage()
+            );
 
-            model.addAttribute("genres", movieService.getAllGenres());
-            model.addAttribute("formTitle", "Edit Movie");
-            model.addAttribute("errorMessage", e.getMessage());
-
-            setSelectedGenres(movie, genreIds);
-
-            return "admin/movies/form";
+            return "redirect:/admin/movies";
         }
     }
 
