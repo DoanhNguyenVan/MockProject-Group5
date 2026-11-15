@@ -20,9 +20,9 @@
             <p>Curate and manage movies in BOX Cinema</p>
           </div>
           <div>
-            <a th:href="@{/admin/movies/create}" class="admin-button admin-button-primary">
-              + Add Movie
-            </a>
+            <button type="button" class="admin-button admin-button-primary" onclick="openAddMovieModal()">
+              + Add movie
+            </button>
           </div>
         </div>
 
@@ -86,11 +86,23 @@
                   </td>
                   <td>
                     <div class="d-flex align-items-center gap-2">
-                      <a th:href="@{/admin/movies/edit/{id}(id=${movie.movieId})}"
-                         class="admin-btn-action admin-btn-action-edit">
+                      <button type="button" class="admin-btn-action admin-btn-action-edit"
+                              th:attr="data-id=${movie.movieId},
+                                       data-title=${movie.title},
+                                       data-synopsis=${movie.synopsis},
+                                       data-duration=${movie.durationMinutes},
+                                       data-agerating=${movie.ageRating},
+                                       data-releasedate=${movie.releaseDate},
+                                       data-enddate=${movie.endDate},
+                                       data-status=${movie.status},
+                                       data-poster=${movie.posterUrl},
+                                       data-banner=${movie.bannerUrl},
+                                       data-trailer=${movie.trailerUrl},
+                                       data-genres=${movie.genres != null ? #strings.listJoin(movie.genres.![genreId], ',') : ''}"
+                              onclick="openEditMovieModal(this)">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                         <span>Sửa</span>
-                      </a>
+                      </button>
                       <form th:action="@{/admin/movies/delete/{id}(id=${movie.movieId})}"
                             method="post" class="m-0 p-0 d-inline"
                             onsubmit="return confirm('Are you sure you want to delete this movie?')">
@@ -115,5 +127,183 @@
       </div>
     </section>
   </div>
+
+  <!-- Modal Dialog: Add / Edit Movie -->
+  <dialog id="movieModal" class="admin-dialog" style="max-width: 680px; width: min(680px, calc(100% - 28px));">
+    <div class="admin-dialog-heading">
+      <h2 id="movieModalTitle">Add movie</h2>
+      <button type="button" class="admin-icon-button" aria-label="Close dialog" onclick="this.closest('dialog').close()">×</button>
+    </div>
+    <form id="movieModalForm" method="post" th:action="@{/admin/movies/create}">
+      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+      <div class="admin-form-grid" style="margin: 16px 0;">
+        <div class="admin-field-wide">
+          <label for="modalMovieTitle" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
+            Movie title *
+          </label>
+          <input type="text" class="admin-input" id="modalMovieTitle" name="title" maxlength="200"
+                 placeholder="Enter movie title..." required>
+        </div>
+
+        <div class="admin-field-wide">
+          <label for="modalMovieSynopsis" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
+            Synopsis
+          </label>
+          <textarea class="admin-input" style="min-height: 80px; resize: vertical;" id="modalMovieSynopsis" name="synopsis"
+                    rows="3" placeholder="Enter movie synopsis..."></textarea>
+        </div>
+
+        <div>
+          <label for="modalMovieDuration" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
+            Duration (minutes) *
+          </label>
+          <input type="number" class="admin-input" id="modalMovieDuration" name="durationMinutes" min="1"
+                 placeholder="120" required>
+        </div>
+
+        <div>
+          <label for="modalMovieAgeRating" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
+            Age rating *
+          </label>
+          <select class="admin-input" id="modalMovieAgeRating" name="ageRating" required>
+            <option value="P">P - General Audience</option>
+            <option value="K">K - Under 13 with parents</option>
+            <option value="T13">T13 - 13 years and older</option>
+            <option value="T16">T16 - 16 years and older</option>
+            <option value="T18">T18 - 18 years and older</option>
+            <option value="C">C - Prohibited from screening</option>
+          </select>
+        </div>
+
+        <div class="admin-field-wide">
+          <label style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
+            Genres
+          </label>
+          <div class="p-3 rounded" style="background: var(--box-bg-secondary); border: 1px solid var(--box-border-color); max-height: 140px; overflow-y: auto;">
+            <div class="row g-2">
+              <div class="col-md-4 col-sm-6" th:each="genre : ${genres}">
+                <div class="form-check">
+                  <input class="form-check-input modal-genre-checkbox" type="checkbox" name="genreIds"
+                         th:id="'modal-genre-' + ${genre.genreId}" th:value="${genre.genreId}">
+                  <label class="form-check-label" th:for="'modal-genre-' + ${genre.genreId}" th:text="${genre.genreName}"
+                         style="color: var(--box-text-primary); font-size: 12.5px; cursor: pointer;"></label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label for="modalMovieReleaseDate" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
+            Release date *
+          </label>
+          <input type="date" class="admin-input" id="modalMovieReleaseDate" name="releaseDate" required>
+        </div>
+
+        <div>
+          <label for="modalMovieEndDate" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
+            End date
+          </label>
+          <input type="date" class="admin-input" id="modalMovieEndDate" name="endDate">
+        </div>
+
+        <div>
+          <label for="modalMovieStatus" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
+            Movie status *
+          </label>
+          <select class="admin-input" id="modalMovieStatus" name="status" required>
+            <option value="NOW_SHOWING">Now Showing</option>
+            <option value="COMING_SOON">Coming Soon</option>
+            <option value="ENDED">Ended</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="modalMoviePosterUrl" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
+            Poster URL
+          </label>
+          <input type="url" class="admin-input" id="modalMoviePosterUrl" name="posterUrl" maxlength="500"
+                 placeholder="https://example.com/poster.jpg">
+        </div>
+
+        <div>
+          <label for="modalMovieBannerUrl" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
+            Banner URL
+          </label>
+          <input type="url" class="admin-input" id="modalMovieBannerUrl" name="bannerUrl" maxlength="500"
+                 placeholder="https://example.com/banner.jpg">
+        </div>
+
+        <div>
+          <label for="modalMovieTrailerUrl" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
+            Trailer URL
+          </label>
+          <input type="url" class="admin-input" id="modalMovieTrailerUrl" name="trailerUrl" maxlength="500"
+                 placeholder="https://youtube.com/...">
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-4 pt-3" style="border-top: 1px solid var(--box-border-color);">
+        <button type="button" class="admin-button" onclick="this.closest('dialog').close()">Cancel</button>
+        <button type="submit" class="admin-button admin-button-primary">Save Changes</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    function openAddMovieModal() {
+      const form = document.getElementById('movieModalForm');
+      form.action = '/admin/movies/create';
+      document.getElementById('movieModalTitle').textContent = 'Add movie';
+      document.getElementById('modalMovieTitle').value = '';
+      document.getElementById('modalMovieSynopsis').value = '';
+      document.getElementById('modalMovieDuration').value = '';
+      document.getElementById('modalMovieAgeRating').value = 'P';
+      document.getElementById('modalMovieReleaseDate').value = '';
+      document.getElementById('modalMovieEndDate').value = '';
+      document.getElementById('modalMovieStatus').value = 'NOW_SHOWING';
+      document.getElementById('modalMoviePosterUrl').value = '';
+      document.getElementById('modalMovieBannerUrl').value = '';
+      document.getElementById('modalMovieTrailerUrl').value = '';
+      document.querySelectorAll('.modal-genre-checkbox').forEach(cb => cb.checked = false);
+      document.getElementById('movieModal').showModal();
+    }
+
+    function openEditMovieModal(btn) {
+      const id = btn.getAttribute('data-id');
+      const form = document.getElementById('movieModalForm');
+      form.action = '/admin/movies/edit/' + id;
+      document.getElementById('movieModalTitle').textContent = 'Edit movie';
+      document.getElementById('modalMovieTitle').value = btn.getAttribute('data-title') || '';
+      document.getElementById('modalMovieSynopsis').value = btn.getAttribute('data-synopsis') || '';
+      document.getElementById('modalMovieDuration').value = btn.getAttribute('data-duration') || '';
+      document.getElementById('modalMovieAgeRating').value = btn.getAttribute('data-agerating') || 'P';
+      document.getElementById('modalMovieReleaseDate').value = btn.getAttribute('data-releasedate') || '';
+      document.getElementById('modalMovieEndDate').value = btn.getAttribute('data-enddate') || '';
+      document.getElementById('modalMovieStatus').value = btn.getAttribute('data-status') || 'NOW_SHOWING';
+      document.getElementById('modalMoviePosterUrl').value = btn.getAttribute('data-poster') || '';
+      document.getElementById('modalMovieBannerUrl').value = btn.getAttribute('data-banner') || '';
+      document.getElementById('modalMovieTrailerUrl').value = btn.getAttribute('data-trailer') || '';
+
+      const genreIdsStr = btn.getAttribute('data-genres') || '';
+      const genreIds = genreIdsStr.split(',').filter(Boolean);
+      document.querySelectorAll('.modal-genre-checkbox').forEach(cb => {
+        cb.checked = genreIds.includes(cb.value);
+      });
+
+      document.getElementById('movieModal').showModal();
+    }
+
+    const movieModal = document.getElementById('movieModal');
+    if (movieModal) {
+      movieModal.addEventListener('click', (e) => {
+        const rect = movieModal.getBoundingClientRect();
+        const isInDialog = (rect.top <= e.clientY && e.clientY <= rect.top + rect.height
+          && rect.left <= e.clientX && e.clientX <= rect.left + rect.width);
+        if (!isInDialog) movieModal.close();
+      });
+    }
+  </script>
 </body>
 </html>

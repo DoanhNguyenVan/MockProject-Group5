@@ -1,82 +1,103 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{admin/fragments/admin-shell :: head(${formTitle})}"></head>
+
 <body class="admin-page">
-  <div class="admin-shell">
-    <!-- Sidebar Navigation -->
-    <aside th:replace="~{admin/fragments/admin-shell :: sidebar('movies')}"></aside>
+    <div class="admin-shell">
+        <!-- Sidebar Navigation -->
+        <aside th:replace="~{admin/fragments/admin-shell :: sidebar('movies')}"></aside>
 
-    <!-- Main Content Area -->
-    <section class="admin-content">
-      <!-- Standardized Docked Topbar -->
-      <header th:replace="~{admin/fragments/admin-shell :: topbar('Movies', ${formTitle}, '/admin/movies')}"></header>
+        <!-- Main Content Area -->
+        <section class="admin-content">
+            <!-- Standardized Docked Topbar -->
+            <header th:replace="~{admin/fragments/admin-shell :: topbar('Movies', ${formTitle}, '/admin/movies')}">
+            </header>
 
-      <div class="admin-content-body">
-        <!-- Page Heading -->
-        <div class="admin-page-heading mb-4">
-          <div>
-            <p class="admin-eyebrow">ADMINISTRATION</p>
-            <h1 th:text="${formTitle}">Add New Movie</h1>
-            <p>Enter movie information for BOX Cinema</p>
-          </div>
-          <div>
-            <a th:href="@{/admin/movies}" class="admin-button">
-              ← Back to List
-            </a>
-          </div>
-        </div>
+            <div class="admin-content-body">
+                <!-- Page Heading -->
+                <div class="admin-page-heading mb-4">
+                    <div>
+                        <p class="admin-eyebrow">ADMINISTRATION</p>
+                        <h1 th:text="${formTitle}">Add New Movie</h1>
+                        <p>Enter movie information for BOX Cinema</p>
+                    </div>
+                    <div>
+                        <a th:href="@{/admin/movies}" class="admin-button">
+                            ← Back to List
+                        </a>
+                    </div>
+                </div>
 
-        <!-- Error Message -->
-        <div th:if="${errorMessage}" class="alert alert-danger mb-4" th:text="${errorMessage}"></div>
+                <!-- Error Message -->
+                <div th:if="${errorMessage}" class="alert alert-danger mb-4" th:text="${errorMessage}"></div>
 
-        <!-- Movie Form Card -->
-        <div class="admin-table-panel p-4" style="max-width: 960px;">
-          <form method="post"
-                th:action="${movie.movieId == null} ? @{/admin/movies/create} : @{/admin/movies/edit/{id}(id=${movie.movieId})}">
-            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <!-- Movie Form Card -->
+                <div class="admin-table-panel p-4" style="max-width: 960px;">
+                    <form method="post"
+                        th:action="${movie.movieId == null} ? @{/admin/movies/create} : @{/admin/movies/edit/{id}(id=${movie.movieId})}">
+                        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}"
+                            th:value="${_csrf.token}" />
 
-            <!-- Basic Information -->
-            <div class="mb-4 pb-2" style="border-bottom: 1px solid var(--box-border-color);">
-              <h2 style="font-size: 15px; font-weight: 700; color: var(--box-accent); margin: 0 0 4px;">Basic Information</h2>
-              <p style="font-size: 12px; color: var(--box-text-muted); margin: 0;">Title, synopsis and duration</p>
-            </div>
+                        <!-- Basic Information -->
+                        <div class="mb-4 pb-2" style="border-bottom: 1px solid var(--box-border-color);">
+                            <h2 style="font-size: 15px; font-weight: 700; color: var(--box-accent); margin: 0 0 4px;">
+                                Basic Information</h2>
+                            <p style="font-size: 12px; color: var(--box-text-muted); margin: 0;">Title, synopsis and
+                                duration</p>
+                        </div>
 
-            <div class="mb-3">
-              <label for="title" class="form-label" style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">Movie Title *</label>
-              <input type="text" class="admin-input" id="title" name="title" maxlength="200"
-                     placeholder="Enter movie title..." th:value="${movie.title}" required>
-            </div>
+                        <div class="mb-3">
+                            <label for="title" class="form-label"
+                                style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">Movie Title
+                                *</label>
+                            <input type="text" class="admin-input" id="title" name="title" maxlength="200"
+                                placeholder="Enter movie title..." th:value="${movie.title}" required>
+                        </div>
 
-            <div class="mb-3">
-              <label for="synopsis" class="form-label" style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">Synopsis</label>
-              <textarea class="admin-input" style="min-height: 90px; padding: 10px 14px;" id="synopsis" name="synopsis" rows="4"
-                        placeholder="Enter movie synopsis..." th:text="${movie.synopsis}"></textarea>
-            </div>
+                        <div class="mb-3">
+                            <label for="synopsis" class="form-label"
+                                style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">Synopsis</label>
+                            <textarea class="admin-input" style="min-height: 90px; padding: 10px 14px;" id="synopsis"
+                                name="synopsis" rows="4" placeholder="Enter movie synopsis..."
+                                th:text="${movie.synopsis}"></textarea>
+                        </div>
 
-            <div class="row g-3 mb-4">
-              <div class="col-md-6">
-                <label for="durationMinutes" class="form-label" style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">Duration (minutes) *</label>
-                <input type="number" class="admin-input" id="durationMinutes" name="durationMinutes" min="1"
-                       th:value="${movie.durationMinutes}" required>
-              </div>
-              <div class="col-md-6">
-                <label for="ageRating" class="form-label" style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">Age Rating *</label>
-                <select class="admin-input" id="ageRating" name="ageRating" required>
-                  <option value="P" th:selected="${movie.ageRating == 'P'}">P - General Audience</option>
-                  <option value="K" th:selected="${movie.ageRating == 'K'}">K - Under 13 with parents</option>
-                  <option value="T13" th:selected="${movie.ageRating == 'T13'}">T13 - 13 years and older</option>
-                  <option value="T16" th:selected="${movie.ageRating == 'T16'}">T16 - 16 years and older</option>
-                  <option value="T18" th:selected="${movie.ageRating == 'T18'}">T18 - 18 years and older</option>
-                  <option value="C" th:selected="${movie.ageRating == 'C'}">C - Prohibited from screening</option>
-                </select>
-              </div>
-            </div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label for="durationMinutes" class="form-label"
+                                    style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">Duration
+                                    (minutes) *</label>
+                                <input type="number" class="admin-input" id="durationMinutes" name="durationMinutes"
+                                    min="1" th:value="${movie.durationMinutes}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="ageRating" class="form-label"
+                                    style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">Age
+                                    Rating *</label>
+                                <select class="admin-input" id="ageRating" name="ageRating" required>
+                                    <option value="P" th:selected="${movie.ageRating == 'P'}">P - General Audience
+                                    </option>
+                                    <option value="K" th:selected="${movie.ageRating == 'K'}">K - Under 13 with parents
+                                    </option>
+                                    <option value="T13" th:selected="${movie.ageRating == 'T13'}">T13 - 13 years and
+                                        older</option>
+                                    <option value="T16" th:selected="${movie.ageRating == 'T16'}">T16 - 16 years and
+                                        older</option>
+                                    <option value="T18" th:selected="${movie.ageRating == 'T18'}">T18 - 18 years and
+                                        older</option>
+                                    <option value="C" th:selected="${movie.ageRating == 'C'}">C - Prohibited from
+                                        screening</option>
+                                </select>
+                            </div>
+                        </div>
 
-            <!-- Genres -->
-            <div class="mb-4 pb-2" style="border-bottom: 1px solid var(--box-border-color);">
-              <h2 style="font-size: 15px; font-weight: 700; color: var(--box-accent); margin: 0 0 4px;">Movie Genres</h2>
-              <p style="font-size: 12px; color: var(--box-text-muted); margin: 0;">Select one or more genres for this movie</p>
-            </div>
+                        <!-- Genres -->
+                        <div class="mb-4 pb-2" style="border-bottom: 1px solid var(--box-border-color);">
+                            <h2 style="font-size: 15px; font-weight: 700; color: var(--box-accent); margin: 0 0 4px;">
+                                Movie Genres</h2>
+                            <p style="font-size: 12px; color: var(--box-text-muted); margin: 0;">Select one or more
+                                genres for this movie</p>
+                        </div>
 
             <div class="mb-4 p-3 rounded" style="background: var(--box-bg-secondary); border: 1px solid var(--box-border-color); max-height: 220px; overflow-y: auto;">
               <div class="row g-2">
@@ -117,17 +138,39 @@
               </div>
             </div>
 
-            <!-- Media Information -->
-            <div class="mb-4 pb-2" style="border-bottom: 1px solid var(--box-border-color);">
-              <h2 style="font-size: 15px; font-weight: 700; color: var(--box-accent); margin: 0 0 4px;">Media Information</h2>
-              <p style="font-size: 12px; color: var(--box-text-muted); margin: 0;">Posters, backdrop banners and trailers</p>
-            </div>
+                                <div class="col-md-4">
+                                    <label for="endDate" class="form-label"
+                                        style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">End
+                                        Date</label>
+                                    <input type="date" class="admin-input" id="endDate" name="endDate"
+                                        th:value="${movie.endDate}">
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="status" class="form-label"
+                                        style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">Movie
+                                        Status *</label>
+                                    <select class="admin-input" id="status" name="status" required>
+                                        <option value="NOW_SHOWING" th:selected="${movie.status == 'NOW_SHOWING'}">Now
+                                            Showing</option>
+                                        <option value="COMING_SOON" th:selected="${movie.status == 'COMING_SOON'}">
+                                            Coming Soon</option>
+                                        <option value="ENDED" th:selected="${movie.status == 'ENDED'}">Ended</option>
+                                    </select>
+                                </div>
+                                <input type="text" id="language" th:field="*{language}" class="form-control"
+                                    id="language" name="language" maxlength="50" placeholder="Example: English"
+                                    th:value="${movie.language}" required>
+                                placeholder="e.g. English">
+                            </div>
 
-            <div class="mb-3">
-              <label for="posterUrl" class="form-label" style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">Poster URL</label>
-              <input type="url" class="admin-input" id="posterUrl" name="posterUrl" maxlength="500"
-                     placeholder="https://example.com/poster.jpg" th:value="${movie.posterUrl}">
-            </div>
+                        </div>
+                        <!-- Media Information -->
+                        <div class="mb-4 pb-2" style="border-bottom: 1px solid var(--box-border-color);">
+                            <h2 style="font-size: 15px; font-weight: 700; color: var(--box-accent); margin: 0 0 4px;">
+                                Media Information</h2>
+                            <p style="font-size: 12px; color: var(--box-text-muted); margin: 0;">Posters, backdrop
+                                banners and trailers</p>
+                        </div>
 
             <div class="mb-3">
               <label for="bannerUrl" class="form-label" style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">Banner URL</label>
