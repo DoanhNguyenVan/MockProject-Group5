@@ -39,16 +39,16 @@ html[data-theme="light"] {
   --box-bg-primary: #f8fafc;
   --box-bg-secondary: #f1f5f9;
   --box-bg-card: #ffffff;
-  --box-bg-elevated: #f1f5f9;
-  --box-bg-glass: rgb(255 255 255 / 90%);
-  --box-red-glow: rgb(var(--box-accent-rgb) / 24%);
-  --box-red-subtle: rgb(var(--box-accent-rgb) / 10%);
+  --box-bg-elevated: #ffffff;
+  --box-bg-glass: rgb(255 255 255 / 92%);
+  --box-red-glow: rgb(var(--box-accent-rgb) / 22%);
+  --box-red-subtle: rgb(var(--box-accent-rgb) / 8%);
   --box-text-primary: #0f172a;
   --box-text-secondary: #334155;
   --box-text-muted: #64748b;
-  --box-border-color: rgb(15 23 42 / 12%);
-  --box-border-red: rgb(var(--box-accent-rgb) / 38%);
-  --box-gold: #92400e;
+  --box-border-color: rgb(15 23 42 / 10%);
+  --box-border-red: rgb(var(--box-accent-rgb) / 32%);
+  --box-gold: #b45309;
 }
 
 *,
@@ -906,7 +906,7 @@ a:hover {
   padding-left: 4px;
 }
 
-@media (width <= 991.98px) {
+@media (width <=991.98px) {
   .hero-slide {
     padding: 3rem 0 4.5rem;
     min-height: auto;
@@ -968,7 +968,9 @@ body:not(.cinema-home) {
   height: auto;
 }
 
-.cinema-nav-menu, .cinema-nav-links, .cinema-nav-account {
+.cinema-nav-menu,
+.cinema-nav-links,
+.cinema-nav-account {
   display: flex;
   align-items: center;
   gap: clamp(0.4rem, 2vw, 2rem);
@@ -989,7 +991,8 @@ body:not(.cinema-home) {
   font-weight: 600;
 }
 
-.cinema-nav-menu a:hover, .cinema-nav-menu [aria-current="page"] {
+.cinema-nav-menu a:hover,
+.cinema-nav-menu [aria-current="page"] {
   color: #fff;
 }
 
@@ -1115,10 +1118,10 @@ body:not(.cinema-home) {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
   overflow: hidden;
   transition: width 0.38s cubic-bezier(0.4, 0, 0.2, 1),
-              background 0.35s ease,
-              border-color 0.35s ease,
-              border-radius 0.35s ease,
-              box-shadow 0.35s ease;
+    background 0.35s ease,
+    border-color 0.35s ease,
+    border-radius 0.35s ease,
+    box-shadow 0.35s ease;
 }
 
 .nav-search-input {
@@ -1153,7 +1156,8 @@ body:not(.cinema-home) {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff; /* White magnifying glass icon */
+  color: #ffffff;
+  /* White magnifying glass icon */
   cursor: pointer;
   padding: 0;
   z-index: 2;
@@ -1177,7 +1181,8 @@ body:not(.cinema-home) {
 .nav-search-form.active {
   width: 260px;
   border-radius: 20px;
-  background: #ffffff; /* Turns white! */
+  background: #ffffff;
+  /* Turns white! */
   border-color: #ffffff;
   box-shadow: 0 6px 25px rgba(0, 0, 0, 0.55);
 }
@@ -1188,7 +1193,8 @@ body:not(.cinema-home) {
 }
 
 .nav-search-form.active .nav-search-btn {
-  color: #0c0d12; /* Turns black! */
+  color: #0c0d12;
+  /* Turns black! */
 }
 
 @media (max-width: 768px) {
@@ -1275,7 +1281,7 @@ body .text-secondary {
   border: 0;
 }
 
-@media (width <= 760px) {
+@media (width <=760px) {
   .cinema-nav-inner {
     flex-wrap: wrap;
     justify-content: space-between;
@@ -1326,15 +1332,17 @@ body .text-secondary {
     scroll-behavior: auto;
   }
 
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
 }
 
 /* Align the informational pages and footer with the film catalogue. */
-main > section > .container,
-.box-footer > .container {
+main>section>.container,
+.box-footer>.container {
   width: min(90%, 82rem);
   max-width: none;
   margin-inline: auto;
@@ -1453,125 +1461,117 @@ html[data-theme="light"] .theme-icon-moon {
   justify-content: center;
 }
 
-/* Light Mode Global Overrides (Unified light frosted navbar & shared components) */
-html[data-theme="light"] .cinema-nav {
-  background: rgba(255, 255, 255, 0.94);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.1);
-  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.07);
+/* =============================================================================
+   LIGHT MODE OVERRIDES - MAIN & GLOBAL
+   Polished Luxury Cinema Palette Synchronized with Dark Mode Standards
+   ============================================================================= */
+
+/* Universal Cinema Navbar: Preserves Dark Luxury Aesthetic in Both Modes */
+.cinema-nav {
+  color: #f1f5f9;
 }
 
-html[data-theme="light"] .cinema-nav .box-brand img {
-  filter: brightness(0);
+body:not(.cinema-home) .cinema-nav {
+  background: #0e1016 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.55) !important;
 }
 
-html[data-theme="light"] .cinema-nav-menu a {
-  color: #334155;
+/* Ensure Logo Always Uses the Crisp Transparent White Master Logo */
+:is(.box-brand-logo, .box-brand img) {
+  filter: none !important;
 }
 
-html[data-theme="light"] .cinema-nav-menu a:hover,
-html[data-theme="light"] .cinema-nav-menu [aria-current="page"] {
-  color: #0f172a;
+/* Navbar Elements Inside Dark Bar Maintain High Contrast in Both Modes */
+.cinema-nav .cinema-nav-menu a {
+  color: #cbd5e1;
+  font-weight: 600;
 }
 
-html[data-theme="light"] .nav-cinema-select {
-  background-color: #ffffff;
-  color: #0f172a;
-  border-color: rgba(15, 23, 42, 0.16);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+.cinema-nav .cinema-nav-menu a:hover,
+.cinema-nav .cinema-nav-menu [aria-current="page"] {
+  color: #ffffff;
 }
 
-html[data-theme="light"] .nav-cinema-select:hover,
-html[data-theme="light"] .nav-cinema-select:focus,
-html[data-theme="light"] .nav-cinema-select:focus-visible,
-html[data-theme="light"] .nav-cinema-select:active {
-  background-color: #f8fafc;
-  border-color: rgba(15, 23, 42, 0.3);
+.cinema-nav .cinema-nav-menu [aria-current="page"]::after {
+  background: var(--box-accent);
 }
 
-html[data-theme="light"] .nav-cinema-select optgroup,
-html[data-theme="light"] .nav-cinema-select option {
+.cinema-nav .nav-cinema-select {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.16);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23C91934' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+.cinema-nav .nav-cinema-select:hover,
+.cinema-nav .nav-cinema-select:focus {
+  background-color: rgba(255, 255, 255, 0.14);
+  border-color: var(--box-accent);
+  color: #ffffff;
+}
+
+.cinema-nav .nav-cinema-select optgroup,
+.cinema-nav .nav-cinema-select option {
+  background-color: #161822;
+  color: #ffffff;
+}
+
+.cinema-nav .nav-search-form {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.cinema-nav .nav-search-form:not(.active):hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(var(--box-accent-rgb) / 50%);
+}
+
+.cinema-nav .nav-search-form.active {
   background: #ffffff;
-  color: #0f172a;
+  border-color: #ffffff;
 }
 
-html[data-theme="light"] .nav-auth-pill {
-  color: #334155;
+.cinema-nav .nav-search-form.active .nav-search-input {
+  color: #0c0d12;
 }
 
-html[data-theme="light"] .nav-auth-pill:hover {
-  color: #0f172a;
-  border-color: rgba(15, 23, 42, 0.3);
+.cinema-nav .nav-search-form.active .nav-search-btn {
+  color: #0c0d12;
 }
 
-html[data-theme="light"] .nav-auth-pill[data-nav-route="register"] {
-  border-color: rgba(15, 23, 42, 0.28);
-  color: #0f172a;
+.cinema-nav .nav-theme-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #f59e0b;
 }
 
-html[data-theme="light"] .cinema-nav-account:has([data-nav-route="login"].active) .nav-auth-pill[data-nav-route="register"],
-html[data-theme="light"] .cinema-nav-mobile-account:has([data-nav-route="login"].active) .nav-auth-pill[data-nav-route="register"] {
-  border-color: transparent;
-  color: #334155;
+.cinema-nav .nav-theme-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: #f59e0b;
+  color: #fbbf24;
 }
 
-html[data-theme="light"] .nav-auth-pill.active {
-  color: #0f172a !important;
+.cinema-nav .nav-auth-pill {
+  color: #cbd5e1;
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.cinema-nav .nav-auth-pill:hover {
+  color: #ffffff;
+  border-color: var(--box-accent);
+  background: rgba(var(--box-accent-rgb) / 18%);
+}
+
+.cinema-nav .nav-auth-pill.active {
+  color: #ffffff !important;
   border-color: var(--box-accent) !important;
-  background: rgba(201, 25, 52, 0.08);
-  box-shadow: 0 2px 10px rgba(201, 25, 52, 0.14);
+  background: var(--box-accent) !important;
+  box-shadow: 0 3px 12px rgba(var(--box-accent-rgb) / 45%);
 }
 
-html[data-theme="light"] .nav-search-form {
-  background: #f1f5f9;
-  border-color: rgba(15, 23, 42, 0.16);
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-}
-
-html[data-theme="light"] .nav-search-form:not(.active):hover {
-  background: #e2e8f0;
-  border-color: rgba(15, 23, 42, 0.3);
-}
-
-html[data-theme="light"] .nav-search-form.active {
-  background: #ffffff;
-  border-color: rgba(15, 23, 42, 0.22);
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.14);
-}
-
-html[data-theme="light"] .nav-search-btn {
-  color: #0f172a;
-}
-
-html[data-theme="light"] .nav-theme-btn {
-  background: #f1f5f9;
-  border-color: rgba(15, 23, 42, 0.16);
-  color: #0f172a;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
-}
-
-html[data-theme="light"] .nav-theme-btn:hover {
-  background: #e2e8f0;
-  border-color: rgba(15, 23, 42, 0.3);
-}
-
-html[data-theme="light"] .cinema-nav .box-navbar-toggler {
-  background: rgba(15, 23, 42, 0.06);
-  border-color: rgba(15, 23, 42, 0.18);
-  color: #0f172a;
-}
-
-html[data-theme="light"] .nav-mobile-theme-btn {
-  background: #f1f5f9;
-  border-color: rgba(15, 23, 42, 0.16);
-  color: #0f172a;
-}
-
-html[data-theme="light"] .nav-mobile-theme-btn:hover {
-  background: #e2e8f0;
-  color: #0f172a;
-}
-
-@media (width <= 760px) {
+@media (width <=760px) {
   html[data-theme="light"] .cinema-nav-account {
     border-top-color: rgba(15, 23, 42, 0.12);
   }
@@ -1579,15 +1579,17 @@ html[data-theme="light"] .nav-mobile-theme-btn:hover {
 
 /* Shared Light Mode Components */
 html[data-theme="light"] .btn-box-outline {
-  background: rgba(15, 23, 42, 0.04);
-  color: #0f172a;
-  border-color: var(--box-border-red);
+  background: #ffffff;
+  color: var(--box-accent);
+  border-color: var(--box-accent);
+  box-shadow: 0 2px 6px rgba(var(--box-accent-rgb) / 10%);
 }
 
 html[data-theme="light"] .btn-box-outline:hover,
 html[data-theme="light"] .btn-box-outline:focus {
-  color: var(--box-accent);
-  background: var(--box-red-subtle);
+  color: #ffffff;
+  background: var(--box-accent);
+  box-shadow: 0 4px 14px rgba(var(--box-accent-rgb) / 35%);
 }
 
 html[data-theme="light"] .form-select-dark,
@@ -1595,17 +1597,20 @@ html[data-theme="light"] .form-control-dark {
   background-color: #ffffff;
   border-color: rgba(15, 23, 42, 0.18);
   color: #0f172a;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
 html[data-theme="light"] .form-select-dark::placeholder,
 html[data-theme="light"] .form-control-dark::placeholder {
-  color: #64748b;
+  color: #94a3b8;
 }
 
 html[data-theme="light"] .form-select-dark:focus,
 html[data-theme="light"] .form-control-dark:focus {
   background-color: #ffffff;
   color: #0f172a;
+  border-color: var(--box-accent);
+  box-shadow: 0 0 0 3px rgba(var(--box-accent-rgb) / 16%);
 }
 
 html[data-theme="light"] .form-select-dark option {
@@ -1613,8 +1618,15 @@ html[data-theme="light"] .form-select-dark option {
   color: #0f172a;
 }
 
+html[data-theme="light"] .movie-card {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
 html[data-theme="light"] .movie-card:hover {
-  box-shadow: 0 16px 36px rgb(15 23 42 / 14%), 0 0 22px rgb(var(--box-accent-rgb) / 14%);
+  border-color: rgba(var(--box-accent-rgb) / 35%);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.12), 0 0 22px rgba(var(--box-accent-rgb) / 14%);
 }
 
 html[data-theme="light"] .movie-title {
@@ -1622,37 +1634,41 @@ html[data-theme="light"] .movie-title {
 }
 
 html[data-theme="light"] .box-surface-card {
-  box-shadow: 0 8px 24px rgb(15 23 42 / 6%);
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
 }
 
 html[data-theme="light"] .box-surface-card:hover {
-  box-shadow: 0 12px 30px rgb(15 23 42 / 10%), 0 0 18px rgb(var(--box-accent-rgb) / 10%);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.1), 0 0 18px rgba(var(--box-accent-rgb) / 10%);
 }
 
 html[data-theme="light"] .voucher-ticket {
-  background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #fff1f2 100%);
+  border: 1px dashed rgba(var(--box-accent-rgb) / 40%);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
 }
 
 html[data-theme="light"] .stat-card {
-  background: linear-gradient(145deg, rgb(var(--box-accent-rgb) / 8%) 0%, #ffffff 100%);
+  background: linear-gradient(145deg, rgba(var(--box-accent-rgb) / 6%) 0%, #ffffff 100%);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
 }
 
 html[data-theme="light"] .map-frame-dark {
   background:
-    radial-gradient(circle at 50% 50%, rgb(var(--box-accent-rgb) / 12%) 0%, transparent 65%),
-    repeating-linear-gradient(0deg, rgb(15 23 42 / 4%) 0, rgb(15 23 42 / 4%) 1px, transparent 1px, transparent 32px),
-    repeating-linear-gradient(90deg, rgb(15 23 42 / 4%) 0, rgb(15 23 42 / 4%) 1px, transparent 1px, transparent 32px),
-    #f1f5f9;
+    radial-gradient(circle at 50% 50%, rgba(var(--box-accent-rgb) / 8%) 0%, transparent 65%),
+    repeating-linear-gradient(0deg, rgba(15, 23, 42, 0.04) 0, rgba(15, 23, 42, 0.04) 1px, transparent 1px, transparent 32px),
+    repeating-linear-gradient(90deg, rgba(15, 23, 42, 0.04) 0, rgba(15, 23, 42, 0.04) 1px, transparent 1px, transparent 32px),
+    #f8fafc;
+  border-color: rgba(15, 23, 42, 0.1);
 }
 
 html[data-theme="light"] .box-footer {
   background: #f1f5f9;
-  border-top: 1px solid rgba(15, 23, 42, 0.1);
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 -1px 0 rgba(var(--box-accent-rgb) / 15%);
   color: #475569;
-}
-
-html[data-theme="light"] .box-footer .box-brand-logo {
-  filter: brightness(0);
 }
 
 html[data-theme="light"] .footer-heading {
@@ -1663,6 +1679,14 @@ html[data-theme="light"] .box-footer .text-white {
   color: #0f172a !important;
 }
 
+html[data-theme="light"] .box-footer a {
+  color: #475569;
+}
+
+html[data-theme="light"] .box-footer a:hover {
+  color: var(--box-accent);
+}
+
 html[data-theme="light"] body .text-secondary {
   color: #475569 !important;
 }
@@ -1670,58 +1694,99 @@ html[data-theme="light"] body .text-secondary {
 html[data-theme="light"] body .alert-danger {
   color: #991b1b;
   background-color: #fef2f2;
-  border-color: var(--box-accent);
+  border-color: rgba(201, 25, 52, 0.35);
+  box-shadow: 0 4px 12px rgba(201, 25, 52, 0.08);
 }
 
 html[data-theme="light"] :where(a, button, select, input, textarea, [tabindex]):focus-visible {
-  outline: 3px solid #C91934 !important;
+  outline: 3px solid var(--box-accent) !important;
   outline-offset: 3px;
 }
 
-/* Text on plain surfaces follows the theme; artwork and solid buttons keep
-   their own foreground colors. */
+/* Text on plain surfaces follows the theme; artwork and solid buttons keep their own foreground colors */
 html[data-theme="light"] .hero-title {
   color: var(--box-text-primary);
   text-shadow: none;
 }
+
 html[data-theme="light"] .box-surface-card .text-white {
   color: var(--box-text-primary) !important;
 }
-html[data-theme="light"] .cinema-nav :is(.cinema-nav-account, .cinema-nav-mobile-account) .nav-auth-pill {
-  color: var(--box-text-secondary);
+
+html[data-theme="light"] .btn-cinema-selector {
+  color: #0f172a;
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.16);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
 }
-html[data-theme="light"] .cinema-nav :is(.cinema-nav-account, .cinema-nav-mobile-account) .nav-auth-pill.active {
-  color: var(--box-accent) !important;
-  border-color: var(--box-accent) !important;
-  background: var(--box-red-subtle);
+
+html[data-theme="light"] .btn-cinema-selector:hover,
+html[data-theme="light"] .cinema-selector-dropdown.open .btn-cinema-selector {
+  color: #ffffff;
+  background: var(--box-accent);
+  border-color: var(--box-accent);
+  box-shadow: 0 4px 14px rgba(var(--box-accent-rgb) / 38%);
 }
-html[data-theme="light"] .cinema-nav-menu .nav-auth-pill[data-nav-route="register"] {
-  color: var(--box-text-primary);
-  border-color: var(--box-border-color);
-}
-html[data-theme="light"] .btn-cinema-selector,
+
 html[data-theme="light"] .cinema-cascading-menu {
-  color: var(--box-text-primary);
-  background: var(--box-bg-card);
-  border-color: var(--box-border-color);
-  box-shadow: 0 12px 32px rgb(15 23 42 / 12%);
+  color: #0f172a;
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.12);
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.14), 0 0 1px rgba(15, 23, 42, 0.2);
 }
+
+html[data-theme="light"] .cinema-menu-header {
+  border-bottom-color: rgba(15, 23, 42, 0.08);
+  background: #f8fafc;
+}
+
 html[data-theme="light"] .cinema-city-list {
-  background: var(--box-bg-secondary);
-  border-color: var(--box-border-color);
+  background: #f8fafc;
+  border-right-color: rgba(15, 23, 42, 0.08);
 }
+
 html[data-theme="light"] :is(.cinema-all-btn, .cinema-city-item, .branch-name) {
-  color: var(--box-text-secondary);
+  color: #334155;
 }
-html[data-theme="light"] .cinema-all-btn:is(:hover, .active) {
+
+html[data-theme="light"] .cinema-all-btn:hover {
   color: var(--box-accent);
   background: var(--box-red-subtle);
+  border-color: rgba(var(--box-accent-rgb) / 35%);
 }
-html[data-theme="light"] .cinema-city-item:is(:hover, .active) {
-  color: var(--box-text-on-accent);
+
+html[data-theme="light"] .cinema-all-btn.active {
+  color: #ffffff;
   background: var(--box-accent);
+  border-color: var(--box-accent);
 }
+
+html[data-theme="light"] .cinema-city-item:hover,
+html[data-theme="light"] .cinema-city-item.active {
+  color: #ffffff;
+  background: var(--box-accent);
+  font-weight: 700;
+}
+
+html[data-theme="light"] .cinema-branch-item {
+  color: #0f172a;
+}
+
 html[data-theme="light"] .cinema-branch-item:hover {
-  background: var(--box-bg-secondary);
-  border-color: var(--box-border-color);
+  background: #f8fafc;
+  border-color: rgba(var(--box-accent-rgb) / 35%);
+}
+
+html[data-theme="light"] .cinema-branch-item:hover .branch-name {
+  color: var(--box-accent);
+}
+
+html[data-theme="light"] .cinema-branch-item.active {
+  background: var(--box-red-subtle);
+  border-color: var(--box-accent);
+}
+
+html[data-theme="light"] .cinema-branch-item.active .branch-name {
+  color: var(--box-accent);
+  font-weight: 700;
 }

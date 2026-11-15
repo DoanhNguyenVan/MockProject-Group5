@@ -729,7 +729,8 @@
 }
 
 /* =====================================================
-   LIGHT MODE OVERRIDES
+   LIGHT MODE OVERRIDES - SHOWTIMES BY CINEMA
+   Cinematic Pearl Luxury Theme Synchronized with Dark Mode
    ===================================================== */
 html[data-theme="light"] .showtimes-page {
   background: #f8fafc;
@@ -737,33 +738,46 @@ html[data-theme="light"] .showtimes-page {
 }
 
 html[data-theme="light"] .showtimes-hero-bar {
-  background-color: #141418;
-  border-bottom-color: var(--box-border-color);
+  background-color: #f1f5f9;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 html[data-theme="light"] .showtimes-hero-bar::before {
-  opacity: 0.85;
-  filter: brightness(0.85) saturate(1.05);
+  opacity: 0.16;
+  filter: brightness(1.05) saturate(1.1);
 }
 
 html[data-theme="light"] .showtimes-hero-bar::after {
-  background: linear-gradient(90deg, rgb(12 13 18 / 85%), rgb(12 13 18 / 35%)), linear-gradient(0deg, rgb(12 13 18 / 70%), transparent 75%);
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(248, 250, 252, 0.65) 0%, rgba(241, 245, 249, 0.95) 85%),
+    linear-gradient(180deg, rgba(248, 250, 252, 0.5) 0%, rgba(241, 245, 249, 0.98) 100%),
+    radial-gradient(ellipse at 15% 45%, rgba(201, 25, 52, 0.08) 0%, transparent 55%);
 }
 
 html[data-theme="light"] .showtimes-page-title {
-  color: #ffffff;
-  text-shadow: 0 2px 12px rgb(0 0 0 / 60%);
+  color: #0f172a;
+  text-shadow: none;
+}
+
+html[data-theme="light"] .showtimes-page-title::before {
+  background: var(--box-accent);
+  box-shadow: 0 0 12px rgba(var(--box-accent-rgb) / 60%);
 }
 
 html[data-theme="light"] .showtimes-hero-bar p.text-secondary {
-  color: #e2e8f0 !important;
-  text-shadow: 0 1px 8px rgb(0 0 0 / 60%);
+  color: #475569 !important;
+  text-shadow: none;
 }
 
 html[data-theme="light"] .showtimes-cinema-switch {
   background: #ffffff;
-  border-color: rgb(15 23 42 / 14%);
-  box-shadow: 0 6px 20px rgb(15 23 42 / 8%);
+  border-color: rgba(15, 23, 42, 0.14);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06), 0 0 14px rgba(var(--box-accent-rgb) / 8%);
+}
+
+html[data-theme="light"] .showtimes-cinema-switch:focus-within {
+  border-color: var(--box-accent);
+  box-shadow: 0 0 0 3px rgba(var(--box-accent-rgb) / 20%), 0 8px 24px rgba(15, 23, 42, 0.1);
 }
 
 html[data-theme="light"] .switch-label {
@@ -773,8 +787,13 @@ html[data-theme="light"] .switch-label {
 html[data-theme="light"] .switch-select {
   background-color: #f8fafc;
   color: #0f172a;
-  border-color: rgb(15 23 42 / 15%);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  border-color: rgba(15, 23, 42, 0.15);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23C91934' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+html[data-theme="light"] .switch-select:focus {
+  background-color: #ffffff;
+  border-color: var(--box-accent);
 }
 
 html[data-theme="light"] .switch-select option {
@@ -783,30 +802,53 @@ html[data-theme="light"] .switch-select option {
 }
 
 html[data-theme="light"] .showtime-date-nav-wrapper {
-  background: rgb(255 255 255 / 92%);
-  border-bottom-color: rgb(15 23 42 / 10%);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+}
+
+html[data-theme="light"] .date-nav-arrow {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.14);
+  color: #0f172a;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+html[data-theme="light"] .date-nav-arrow:hover:not(:disabled) {
+  background: #fff1f2;
+  border-color: var(--box-accent);
+  color: var(--box-accent);
 }
 
 html[data-theme="light"] .showtime-date-tab {
   background: #ffffff;
-  border-color: rgb(15 23 42 / 12%);
-  color: #475569;
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #64748b;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
 }
 
 html[data-theme="light"] .showtime-date-tab:hover {
-  background: #f1f5f9;
-  border-color: rgb(15 23 42 / 22%);
-  color: #0f172a;
+  background: #fff1f2;
+  border-color: rgba(var(--box-accent-rgb) / 45%);
+  color: var(--box-accent);
+  box-shadow: 0 4px 12px rgba(var(--box-accent-rgb) / 12%);
 }
 
 html[data-theme="light"] .showtime-date-tab.active {
-  background: linear-gradient(135deg, #e50914 0%, #b80710 100%);
-  border-color: #e50914;
+  background: linear-gradient(135deg, #C91934 0%, #a00e24 100%);
+  border-color: #C91934;
   color: #ffffff;
+  box-shadow: 0 6px 18px rgba(var(--box-accent-rgb) / 38%);
 }
 
 html[data-theme="light"] .showtime-date-tab .date-day {
   color: #0f172a;
+}
+
+html[data-theme="light"] .showtime-date-tab:hover .date-day {
+  color: var(--box-accent);
 }
 
 html[data-theme="light"] .showtime-date-tab.active .date-day,
@@ -817,8 +859,8 @@ html[data-theme="light"] .showtime-date-tab.active .date-month {
 
 html[data-theme="light"] .showtime-legend-bar {
   background: #ffffff;
-  border-color: rgb(15 23 42 / 10%);
-  box-shadow: 0 4px 16px rgb(15 23 42 / 5%);
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
 }
 
 html[data-theme="light"] .legend-text {
@@ -826,29 +868,30 @@ html[data-theme="light"] .legend-text {
 }
 
 html[data-theme="light"] .legend-swatch.swatch-normal {
-  background: #f1f5f9;
-  border-color: rgb(15 23 42 / 22%);
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.2);
 }
 
 html[data-theme="light"] .legend-swatch.swatch-late {
-  background: rgb(245 158 11 / 12%);
-  border-color: rgb(217 119 6 / 55%);
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(217, 119, 6, 0.55);
 }
 
 html[data-theme="light"] .showtime-movie-card {
   background: #ffffff;
-  border-color: rgb(15 23 42 / 10%);
-  box-shadow: 0 10px 28px rgb(15 23 42 / 7%);
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
 }
 
 html[data-theme="light"] .showtime-movie-card:hover {
-  border-color: rgb(15 23 42 / 18%);
-  box-shadow: 0 16px 36px rgb(15 23 42 / 11%);
+  border-color: rgba(var(--box-accent-rgb) / 35%);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.1), 0 0 20px rgba(var(--box-accent-rgb) / 10%);
 }
 
 html[data-theme="light"] .showtime-poster-frame {
-  background: #e2e8f0;
-  border-color: rgb(15 23 42 / 10%);
+  background: #f1f5f9;
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
 }
 
 html[data-theme="light"] .showtime-movie-title {
@@ -856,7 +899,7 @@ html[data-theme="light"] .showtime-movie-title {
 }
 
 html[data-theme="light"] .showtime-movie-title:hover {
-  color: #C91934;
+  color: var(--box-accent);
 }
 
 html[data-theme="light"] .showtime-movie-meta {
@@ -868,20 +911,22 @@ html[data-theme="light"] .showtime-movie-desc {
 }
 
 html[data-theme="light"] .showtime-format-title {
-  color: #475569;
-  border-left-color: #C91934;
+  color: #334155;
+  border-left-color: var(--box-accent);
 }
 
 html[data-theme="light"] .showtime-slot-btn {
-  background: #f8fafc;
-  border-color: rgb(15 23 42 / 14%);
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.14);
   color: #0f172a;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
 }
 
 html[data-theme="light"] .showtime-slot-btn:hover {
-  background: #C91934;
-  border-color: #C91934;
+  background: var(--box-accent);
+  border-color: var(--box-accent);
   color: #ffffff;
+  box-shadow: 0 4px 14px rgba(var(--box-accent-rgb) / 35%);
 }
 
 html[data-theme="light"] .showtime-slot-btn .slot-seats {
@@ -889,12 +934,12 @@ html[data-theme="light"] .showtime-slot-btn .slot-seats {
 }
 
 html[data-theme="light"] .showtime-slot-btn:hover .slot-seats {
-  color: #f8fafc;
+  color: #ffe4e6;
 }
 
 html[data-theme="light"] .showtime-slot-btn.slot-late {
-  background: rgb(245 158 11 / 10%);
-  border-color: rgb(217 119 6 / 45%);
+  background: #fffbeb;
+  border-color: rgba(217, 119, 6, 0.45);
   color: #92400e;
 }
 
@@ -903,9 +948,10 @@ html[data-theme="light"] .showtime-slot-btn.slot-late .slot-seats {
 }
 
 html[data-theme="light"] .showtime-slot-btn.slot-late:hover {
-  background: #92400e;
-  border-color: #92400e;
+  background: #b45309;
+  border-color: #b45309;
   color: #ffffff;
+  box-shadow: 0 4px 14px rgba(180, 83, 9, 0.35);
 }
 
 html[data-theme="light"] .showtime-slot-btn.slot-late:hover .slot-seats {
@@ -914,7 +960,8 @@ html[data-theme="light"] .showtime-slot-btn.slot-late:hover .slot-seats {
 
 html[data-theme="light"] .showtimes-empty-state {
   background: #ffffff;
-  border-color: rgb(15 23 42 / 14%);
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
 }
 
 html[data-theme="light"] .showtimes-empty-title {
@@ -926,13 +973,13 @@ html[data-theme="light"] .showtimes-empty-state p {
 }
 
 html[data-theme="light"] .booking-confirm-backdrop {
-  background: rgb(15 23 42 / 55%);
+  background: rgba(15, 23, 42, 0.55);
 }
 
 html[data-theme="light"] .booking-confirm-modal {
   background: #ffffff;
-  border-color: rgb(15 23 42 / 12%);
-  box-shadow: 0 24px 60px rgb(15 23 42 / 24%);
+  border-color: rgba(15, 23, 42, 0.12);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
 }
 
 html[data-theme="light"] .confirm-modal-title {
@@ -946,7 +993,7 @@ html[data-theme="light"] .confirm-detail-label {
 
 html[data-theme="light"] .confirm-detail-box {
   background: #f8fafc;
-  border-color: rgb(15 23 42 / 10%);
+  border-color: rgba(15, 23, 42, 0.1);
 }
 
 html[data-theme="light"] .confirm-detail-value {
@@ -955,7 +1002,7 @@ html[data-theme="light"] .confirm-detail-value {
 
 html[data-theme="light"] .btn-confirm-cancel {
   background: #f1f5f9;
-  border-color: rgb(15 23 42 / 14%);
+  border-color: rgba(15, 23, 42, 0.14);
   color: #0f172a;
 }
 
