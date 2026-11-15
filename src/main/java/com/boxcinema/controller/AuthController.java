@@ -2207,4 +2207,104 @@ public class AuthController {
         }
         return scheme + "://" + host + ":" + port;
     }
+
+    //edit profile
+
+    @GetMapping("/profile/edit")
+    public String editProfilePage(
+            HttpServletRequest request,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+
+        UserSummaryDto currentUser = resolveAuthenticatedUser(request);
+
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+
+        model.addAttribute("fullName", currentUser.getFullName());
+        model.addAttribute("phone", currentUser.getPhone());
+        model.addAttribute("activePage", "profile");
+
+        return "customer/profile-edit";
+    }
+
+    @PostMapping("/profile/edit")
+    public String updateProfile(
+            @RequestParam("fullName") String fullName,
+            @RequestParam("phone") String phone,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+
+        UserSummaryDto currentUser = resolveAuthenticatedUser(request);
+
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            UserSummaryDto updatedUser = userService.updateCustomerProfile(
+                    currentUser.getUserId(),
+                    fullName,
+                    phone
+            );
+
+            syncSessionCustomerProfile(request, updatedUser);
+
+            redirectAttributes.addFlashAttribute(
+                    "successMessage",
+                    "Your profile has been updated successfully!"
+            );
+
+            return "redirect:/profile";
+
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+
+            redirectAttributes.addFlashAttribute(
+                    "errorMessage",
+                    ex.getMessage()
+            );
+
+            return "redirect:/profile/edit";
+        }
+    }
+
+    // Synchronize updated profile information with the current session
+    private void syncSessionCustomerProfile(
+            HttpServletRequest request,
+            UserSummaryDto updatedUser) {
+
+        if (updatedUser == null) {
+            return;
+        }
+
+        UserSummaryDto currentUser = resolveAuthenticatedUser(request);
+
+        if (currentUser != null) {
+            currentUser.setFullName(updatedUser.getFullName());
+            currentUser.setPhone(updatedUser.getPhone());
+        }
+
+        HttpSession session = request != null
+                ? request.getSession(false)
+                : null;
+
+        if (session != null
+                && session.getAttribute("currentUser") instanceof UserSummaryDto sessionUser) {
+
+            sessionUser.setFullName(updatedUser.getFullName());
+            sessionUser.setPhone(updatedUser.getPhone());
+        }
+
+        Authentication auth =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth != null
+                && auth.getPrincipal() instanceof BoxCinemaUserDetails details
+                && details.getUserSummary() != null) {
+
+            details.getUserSummary().setFullName(updatedUser.getFullName());
+            details.getUserSummary().setPhone(updatedUser.getPhone());
+        }
+    }
 }

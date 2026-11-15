@@ -1,0 +1,379 @@
+
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Movie Form | BOX Cinema</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+    <style>
+        body {
+            background: #111;
+            color: #eee;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 950px;
+            margin-top: 45px;
+            margin-bottom: 50px;
+        }
+
+        .form-card {
+            background: #1d1d1d;
+            border: 1px solid #333;
+            border-radius: 14px;
+            padding: 35px;
+        }
+
+        .page-title {
+            color: #e50914;
+            font-weight: bold;
+        }
+
+        .form-label {
+            color: #ddd;
+            font-weight: bold;
+        }
+
+        .form-control,
+        .form-select {
+            background: #292929;
+            border: 1px solid #444;
+            color: white;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background: #292929;
+            color: white;
+            border-color: #e50914;
+            box-shadow: 0 0 0 0.2rem rgba(229, 9, 20, 0.2);
+        }
+
+        .form-control::placeholder {
+            color: #888;
+        }
+
+        .form-select option {
+            background: #292929;
+            color: white;
+        }
+
+        .genre-box {
+            background: #292929;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .form-check-label {
+            color: #ddd;
+        }
+
+        .btn-save {
+            background: #e50914;
+            color: white;
+            border: none;
+        }
+
+        .btn-save:hover {
+            background: #b80710;
+            color: white;
+        }
+
+        .section-heading {
+            color: #e50914;
+            font-size: 17px;
+            font-weight: bold;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+            margin: 28px 0 20px;
+        }
+
+        .help-text {
+            color: #888;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="form-card">
+
+        <!-- Header -->
+        <h2 class="page-title mb-2"
+            th:text="${formTitle}">
+            Add New Movie
+        </h2>
+
+        <p class="text-secondary mb-4">
+            Enter movie information for BOX Cinema.
+        </p>
+
+        <!-- Error Message -->
+        <div th:if="${errorMessage}"
+             class="alert alert-danger"
+             th:text="${errorMessage}">
+        </div>
+
+        <!-- Movie Form -->
+        <form method="post"
+              th:action="${movie.movieId == null}
+                  ? @{/admin/movies/create}
+                  : @{/admin/movies/edit/{id}(id=${movie.movieId})}">
+
+            <!-- Basic Information -->
+            <h5 class="section-heading">Basic Information</h5>
+
+            <div class="mb-3">
+                <label for="title" class="form-label">
+                    Movie Title *
+                </label>
+
+                <input type="text"
+                       class="form-control"
+                       id="title"
+                       name="title"
+                       maxlength="200"
+                       placeholder="Enter movie title..."
+                       th:value="${movie.title}"
+                       required>
+            </div>
+
+            <div class="mb-3">
+                <label for="synopsis" class="form-label">
+                    Synopsis
+                </label>
+
+                <textarea class="form-control"
+                          id="synopsis"
+                          name="synopsis"
+                          rows="4"
+                          placeholder="Enter movie synopsis..."
+                          th:text="${movie.synopsis}"></textarea>
+            </div>
+
+            <div class="row g-3">
+
+                <div class="col-md-4">
+                    <label for="durationMinutes" class="form-label">
+                        Duration (minutes) *
+                    </label>
+
+                    <input type="number"
+                           class="form-control"
+                           id="durationMinutes"
+                           name="durationMinutes"
+                           min="1"
+                           th:value="${movie.durationMinutes}"
+                           required>
+                </div>
+
+                <div class="col-md-4">
+                    <label for="ageRating" class="form-label">
+                        Age Rating *
+                    </label>
+
+                    <input type="text"
+                           class="form-control"
+                           id="ageRating"
+                           name="ageRating"
+                           maxlength="10"
+                           placeholder="Example: T13"
+                           th:value="${movie.ageRating}"
+                           required>
+                </div>
+
+                <div class="col-md-4">
+                    <label for="language" class="form-label">
+                        Language *
+                    </label>
+
+                    <input type="text"
+                           class="form-control"
+                           id="language"
+                           name="language"
+                           maxlength="50"
+                           placeholder="Example: English"
+                           th:value="${movie.language}"
+                           required>
+                </div>
+
+            </div>
+
+            <!-- Genres -->
+            <h5 class="section-heading">Movie Genres</h5>
+
+            <p class="help-text mb-2">
+                Select one or more genres for this movie.
+            </p>
+
+            <div class="genre-box">
+
+                <div th:if="${#lists.isEmpty(genres)}"
+                     class="text-secondary">
+                    No genres available. Please create a genre first.
+                </div>
+
+                <div class="row g-2">
+
+                    <div class="col-md-4"
+                         th:each="genre : ${genres}">
+
+                        <div class="form-check">
+
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   name="genreIds"
+                                   th:id="'genre-' + ${genre.genreId}"
+                                   th:value="${genre.genreId}"
+                                   th:checked="${movie.genres != null and #lists.contains(movie.genres.![genreId], genre.genreId)}">
+
+                            <label class="form-check-label"
+                                   th:for="'genre-' + ${genre.genreId}"
+                                   th:text="${genre.genreName}">
+                            </label>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Release Information -->
+            <h5 class="section-heading">Release Information</h5>
+
+            <div class="row g-3">
+
+                <div class="col-md-4">
+                    <label for="releaseDate" class="form-label">
+                        Release Date *
+                    </label>
+
+                    <input type="date"
+                           class="form-control"
+                           id="releaseDate"
+                           name="releaseDate"
+                           th:value="${movie.releaseDate}"
+                           required>
+                </div>
+
+                <div class="col-md-4">
+                    <label for="endDate" class="form-label">
+                        End Date
+                    </label>
+
+                    <input type="date"
+                           class="form-control"
+                           id="endDate"
+                           name="endDate"
+                           th:value="${movie.endDate}">
+                </div>
+
+                <div class="col-md-4">
+                    <label for="status" class="form-label">
+                        Movie Status *
+                    </label>
+
+                    <select class="form-select"
+                            id="status"
+                            name="status"
+                            required>
+
+                        <option value="NOW_SHOWING"
+                                th:selected="${movie.status == 'NOW_SHOWING'}">
+                            Now Showing
+                        </option>
+
+                        <option value="COMING_SOON"
+                                th:selected="${movie.status == 'COMING_SOON'}">
+                            Coming Soon
+                        </option>
+
+                        <option value="ENDED"
+                                th:selected="${movie.status == 'ENDED'}">
+                            Ended
+                        </option>
+
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- Media -->
+            <h5 class="section-heading">Media Information</h5>
+
+            <div class="mb-3">
+                <label for="posterUrl" class="form-label">
+                    Poster URL
+                </label>
+
+                <input type="url"
+                       class="form-control"
+                       id="posterUrl"
+                       name="posterUrl"
+                       maxlength="500"
+                       placeholder="https://example.com/poster.jpg"
+                       th:value="${movie.posterUrl}">
+            </div>
+
+            <div class="mb-3">
+                <label for="bannerUrl" class="form-label">
+                    Banner URL
+                </label>
+
+                <input type="url"
+                       class="form-control"
+                       id="bannerUrl"
+                       name="bannerUrl"
+                       maxlength="500"
+                       placeholder="https://example.com/banner.jpg"
+                       th:value="${movie.bannerUrl}">
+            </div>
+
+            <div class="mb-4">
+                <label for="trailerUrl" class="form-label">
+                    Trailer URL
+                </label>
+
+                <input type="url"
+                       class="form-control"
+                       id="trailerUrl"
+                       name="trailerUrl"
+                       maxlength="500"
+                       placeholder="https://youtube.com/..."
+                       th:value="${movie.trailerUrl}">
+            </div>
+
+            <!-- Buttons -->
+            <div class="d-flex gap-2">
+
+                <button type="submit" class="btn btn-save px-4">
+                    Save Movie
+                </button>
+
+                <a th:href="@{/admin/movies}"
+                   class="btn btn-outline-secondary px-4">
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+</html>

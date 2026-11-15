@@ -90,7 +90,19 @@
     </div>
 
     <div class="profile-card mb-4">
-      <h2 class="h5 fw-bold text-white mb-3 pb-2 border-bottom border-secondary border-opacity-25">Profile Information</h2>
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3 pb-2 border-bottom border-secondary border-opacity-25">
+        <h2 class="h5 fw-bold text-white mb-0">Profile Information</h2>
+        <a th:href="@{/profile/edit}"
+           class="btn btn-outline-light btn-sm px-3 d-inline-flex align-items-center gap-2">
+          <svg width="16" height="16" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"></path>
+            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
+          </svg>
+          Edit Profile
+        </a>
+      </div>
       <div class="row g-3">
         <div class="col-md-6">
           <label class="form-label text-secondary small fw-semibold">Full Name</label>

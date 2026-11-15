@@ -43,7 +43,12 @@ public class BookingContextApiController {
             "#e11d48"  // 16. Crimson
     );
 
-    public BookingContextApiController(ShowtimeRepository showtimes, JdbcTemplate jdbcTemplate) {
+    public BookingContextApiController(ShowtimeRepository showtimes) {
+        this(showtimes, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public BookingContextApiController(ShowtimeRepository showtimes, @org.springframework.beans.factory.annotation.Autowired(required = false) JdbcTemplate jdbcTemplate) {
         this.showtimes = showtimes;
         this.jdbcTemplate = jdbcTemplate;
     }
