@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Edit Profile | BOX Cinema</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+    <link rel="stylesheet" href="/css/main.css" th:href="@{/css/main.css(v='2.4')}">
+    <link rel="stylesheet" href="/css/auth.css" th:href="@{/css/auth.css(v='2.4')}">
+
+    <style>
+        .profile-edit-page {
+            width: min(94%, 50rem);
+            min-height: 70vh;
+            margin-inline: auto;
+            padding-block: clamp(2.5rem, 6vw, 4.5rem);
+        }
+
+        .profile-edit-card {
+            padding: clamp(1.35rem, 4vw, 2.25rem);
+            background: #141622;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .profile-edit-card .form-label {
+            color: #cbd5e1;
+            font-size: 0.88rem;
+            font-weight: 650;
+            margin-bottom: 0.5rem;
+        }
+
+        .profile-edit-card .form-control {
+            min-height: 48px;
+            color: #f8fafc;
+            background: #0d1017;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 0.65rem;
+            padding: 0.7rem 0.9rem;
+        }
+
+        .profile-edit-card .form-control::placeholder {
+            color: #64748b;
+        }
+
+        .profile-edit-card .form-control:focus {
+            color: #fff;
+            background: #0d1017;
+            border-color: #c91934;
+            box-shadow: 0 0 0 0.2rem rgba(201, 25, 52, 0.2);
+        }
+
+        .profile-edit-note {
+            color: #94a3b8;
+            font-size: 0.82rem;
+        }
+
+        .btn-profile-save {
+            color: #fff;
+            background: #c91934;
+            border: 1px solid #c91934;
+            font-weight: 700;
+            padding: 0.7rem 1.35rem;
+            border-radius: 0.6rem;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+
+        .btn-profile-save:hover {
+            color: #fff;
+            background: #a9152c;
+            border-color: #a9152c;
+            transform: translateY(-1px);
+        }
+
+        .btn-profile-cancel {
+            color: #e2e8f0;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-weight: 650;
+            padding: 0.7rem 1.2rem;
+            border-radius: 0.6rem;
+        }
+
+        .btn-profile-cancel:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(255, 255, 255, 0.35);
+        }
+    </style>
+</head>
+
+<body>
+<header th:replace="~{fragments/navbar :: navbar}"></header>
+
+<main class="profile-edit-page">
+    <div class="mb-4">
+        <p class="text-uppercase small fw-bold mb-2" style="color: #e05a6d; letter-spacing: 0.12em;">
+            Account settings
+        </p>
+        <h1 class="h3 fw-bold text-white mb-2">Edit Profile</h1>
+        <p class="text-secondary mb-0">
+            Update the personal information associated with your BOX Cinema account.
+        </p>
+    </div>
+
+    <div th:if="${errorMessage != null}"
+         class="auth-alert auth-alert-danger mb-4"
+         role="alert">
+        <span th:text="${errorMessage}">Unable to update your profile.</span>
+    </div>
+
+    <div th:if="${successMessage != null}"
+         class="auth-alert auth-alert-success mb-4"
+         role="status">
+        <span th:text="${successMessage}">Your profile has been updated.</span>
+    </div>
+
+    <section class="profile-edit-card">
+        <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom border-secondary border-opacity-25">
+            <div class="d-flex align-items-center justify-content-center rounded-3"
+                 style="width: 46px; height: 46px; color: #ff6478; background: rgba(201, 25, 52, 0.14); border: 1px solid rgba(201, 25, 52, 0.3);">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
+                </svg>
+            </div>
+            <div>
+                <h2 class="h5 fw-bold text-white mb-1">Personal Information</h2>
+                <p class="small text-secondary mb-0">Your name and contact number</p>
+            </div>
+        </div>
+
+        <form th:action="@{/profile/edit}" method="post">
+            <input type="hidden"
+                   th:if="${_csrf != null}"
+                   th:name="${_csrf.parameterName}"
+                   th:value="${_csrf.token}">
+
+            <div class="mb-4">
+                <label for="fullName" class="form-label">Full Name</label>
+                <input
+                    type="text"
+                    class="form-control"
+                    id="fullName"
+                    name="fullName"
+                    th:value="${fullName}"
+                    placeholder="Enter your full name"
+                    minlength="2"
+                    maxlength="100"
+                    autocomplete="name"
+                    required>
+                <div class="form-text profile-edit-note">
+                    Your name must contain between 2 and 100 characters.
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label for="phone" class="form-label">Phone Number</label>
+                <input
+                    type="tel"
+                    class="form-control"
+                    id="phone"
+                    name="phone"
+                    th:value="${phone}"
+                    placeholder="Enter your phone number"
+                    autocomplete="tel"
+                    required>
+                <div class="form-text profile-edit-note">
+                    Use a valid phone number. The system will validate and normalize it when you save.
+                </div>
+            </div>
+
+            <div class="d-flex flex-column flex-sm-row justify-content-end gap-2 pt-3 border-top border-secondary border-opacity-25">
+                <a th:href="@{/profile}" class="btn btn-profile-cancel text-center">
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-profile-save">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
