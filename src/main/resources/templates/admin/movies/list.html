@@ -26,11 +26,29 @@
           </div>
         </div>
 
+        <!-- Toolbar: Search & Filters (Standard Admin Suite) -->
+        <div class="admin-toolbar">
+          <div class="admin-search-wrap">
+            <input type="search" id="movieSearch" class="admin-input" placeholder="Search movies by title, language...">
+          </div>
+          <select id="genreFilter" class="admin-input" style="width: 190px;" aria-label="Filter genre">
+            <option value="">All genres</option>
+            <option th:each="g : ${genres}" th:value="${g.genreName}" th:text="${g.genreName}">Action</option>
+          </select>
+          <select id="statusFilter" class="admin-input" style="width: 170px;" aria-label="Filter status">
+            <option value="">All statuses</option>
+            <option value="NOW_SHOWING">Now Showing</option>
+            <option value="COMING_SOON">Coming Soon</option>
+            <option value="ENDED">Ended</option>
+          </select>
+          <button type="button" id="clearMovieFilters" class="admin-button">Clear</button>
+        </div>
+
         <!-- Movie Table Panel -->
         <div class="admin-table-panel">
           <div class="d-flex justify-content-between align-items-center px-4 py-3" style="border-bottom: 1px solid var(--box-border-color); background: var(--box-bg-elevated);">
             <h2 style="font-size: 15px; font-weight: 700; margin: 0; color: var(--box-text-primary);">All Movies</h2>
-            <span style="font-size: 12px; color: var(--box-text-muted);" th:text="'Total: ' + ${#lists.size(movies)}">Total: 0</span>
+            <span id="movieTotalCount" style="font-size: 12px; color: var(--box-text-muted);" th:text="'Total: ' + ${#lists.size(movies)}">Total: 0</span>
           </div>
 
           <div class="admin-table-scroll">
@@ -50,7 +68,11 @@
                 </tr>
               </thead>
               <tbody>
-                <tr th:each="movie : ${movies}">
+                <tr th:each="movie : ${movies}" class="movie-row"
+                    th:attr="data-title=${#strings.toLowerCase(movie.title)},
+                             data-language=${#strings.toLowerCase(movie.language != null ? movie.language : '')},
+                             data-genres=${movie.genreNamesDisplay != null ? #strings.toLowerCase(movie.genreNamesDisplay) : ''},
+                             data-status=${movie.status}">
                   <td th:text="${movie.movieId}"></td>
                   <td>
                     <img th:if="${movie.posterUrl != null and !#strings.isEmpty(movie.posterUrl)}"
@@ -114,6 +136,11 @@
                         </button>
                       </form>
                     </div>
+                  </td>
+                </tr>
+                <tr id="noFilterResultsRow" style="display: none;">
+                  <td colspan="10" class="text-center py-5" style="color: var(--box-text-muted);">
+                    No movies match your search and filter criteria.
                   </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(movies)}">
@@ -315,6 +342,62 @@
         if (!isInDialog) movieModal.close();
       });
     }
+
+    // Real-time Search and Filtering
+    function filterMovies() {
+      const searchQuery = (document.getElementById('movieSearch')?.value || '').trim().toLowerCase();
+      const selectedGenre = (document.getElementById('genreFilter')?.value || '').trim().toLowerCase();
+      const selectedStatus = (document.getElementById('statusFilter')?.value || '').trim();
+
+      const rows = document.querySelectorAll('.movie-row');
+      let visibleCount = 0;
+
+      rows.forEach(row => {
+        const title = row.getAttribute('data-title') || '';
+        const language = row.getAttribute('data-language') || '';
+        const genres = row.getAttribute('data-genres') || '';
+        const status = row.getAttribute('data-status') || '';
+
+        const matchesSearch = !searchQuery || title.includes(searchQuery) || language.includes(searchQuery);
+        const matchesGenre = !selectedGenre || genres.includes(selectedGenre);
+        const matchesStatus = !selectedStatus || status === selectedStatus;
+
+        if (matchesSearch && matchesGenre && matchesStatus) {
+          row.style.display = '';
+          visibleCount++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      const emptyRow = document.getElementById('noFilterResultsRow');
+      if (emptyRow) {
+        emptyRow.style.display = (visibleCount === 0 && rows.length > 0) ? '' : 'none';
+      }
+
+      const countBadge = document.getElementById('movieTotalCount');
+      if (countBadge) {
+        if (searchQuery || selectedGenre || selectedStatus) {
+          countBadge.textContent = `Showing ${visibleCount} of ${rows.length} movies`;
+        } else {
+          countBadge.textContent = `Total: ${rows.length}`;
+        }
+      }
+    }
+
+    document.getElementById('movieSearch')?.addEventListener('input', filterMovies);
+    document.getElementById('genreFilter')?.addEventListener('change', filterMovies);
+    document.getElementById('statusFilter')?.addEventListener('change', filterMovies);
+
+    document.getElementById('clearMovieFilters')?.addEventListener('click', () => {
+      const s = document.getElementById('movieSearch');
+      const g = document.getElementById('genreFilter');
+      const st = document.getElementById('statusFilter');
+      if (s) s.value = '';
+      if (g) g.value = '';
+      if (st) st.value = '';
+      filterMovies();
+    });
   </script>
 </body>
 </html>
