@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
+
 <head th:replace="~{admin/fragments/admin-shell :: head('Genre Management')}"></head>
 <body class="admin-page">
   <div class="admin-shell">
@@ -26,9 +27,9 @@
           </div>
         </div>
 
-        <!-- Messages -->
-        <div th:if="${successMessage}" class="alert alert-success mb-3" th:text="${successMessage}"></div>
-        <div th:if="${errorMessage}" class="alert alert-danger mb-3" th:text="${errorMessage}"></div>
+                <!-- Messages -->
+                <div th:if="${successMessage}" class="alert alert-success mb-3" th:text="${successMessage}"></div>
+                <div th:if="${errorMessage}" class="alert alert-danger mb-3" th:text="${errorMessage}"></div>
 
         <!-- Genre Table Panel -->
         <div class="admin-table-panel">
@@ -158,4 +159,5 @@
     }
   </script>
 </body>
+
 </html>
