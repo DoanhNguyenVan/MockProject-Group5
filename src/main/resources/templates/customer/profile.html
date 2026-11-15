@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,6 +18,7 @@
       padding: 2rem;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
     }
+
     .account-link-item {
       display: flex;
       align-items: center;
@@ -27,41 +29,50 @@
       border-radius: 0.75rem;
       margin-bottom: 0.75rem;
     }
+
     html[data-theme="light"] .profile-card {
       background: #ffffff;
       border: 1px solid rgba(15, 23, 42, 0.08);
       box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
     }
+
     html[data-theme="light"] .profile-card h1,
     html[data-theme="light"] .profile-card h2,
     html[data-theme="light"] .profile-card .text-white,
     html[data-theme="light"] main h1.text-white {
       color: #0f172a !important;
     }
+
     html[data-theme="light"] .profile-card .border-secondary {
       border-color: rgba(15, 23, 42, 0.1) !important;
     }
+
     html[data-theme="light"] .account-link-item {
       background: #f8fafc;
       border: 1px solid rgba(15, 23, 42, 0.08);
     }
+
     html[data-theme="light"] .account-link-item:hover {
       background: #f1f5f9;
       border-color: rgba(15, 23, 42, 0.16);
     }
+
     html[data-theme="light"] .account-link-item .text-white {
       color: #0f172a !important;
     }
+
     html[data-theme="light"] .account-link-item .bg-dark {
       background-color: #f1f5f9 !important;
       border-color: rgba(15, 23, 42, 0.14) !important;
       color: #0f172a !important;
     }
+
     html[data-theme="light"] .account-link-item .btn-outline-light {
       background-color: #ffffff;
       border-color: rgba(15, 23, 42, 0.2);
       color: #0f172a;
     }
+
     html[data-theme="light"] .account-link-item .btn-outline-light:hover {
       background-color: #f1f5f9;
       border-color: rgba(15, 23, 42, 0.35);
@@ -69,6 +80,7 @@
     }
   </style>
 </head>
+
 <body>
   <header th:replace="~{fragments/navbar :: navbar}"></header>
 
@@ -82,7 +94,9 @@
     <div th:if="${errorMessage != null}" class="auth-alert auth-alert-danger mb-4" role="alert">
       <span th:text="${errorMessage}">Error message</span>
     </div>
-    <div th:if="${infoMessage != null}" class="auth-alert mb-4" style="background: rgba(59, 130, 246, 0.14); border: 1px solid rgba(59, 130, 246, 0.35); color: #bfdbfe;" role="status">
+    <div th:if="${infoMessage != null}" class="auth-alert mb-4"
+      style="background: rgba(59, 130, 246, 0.14); border: 1px solid rgba(59, 130, 246, 0.35); color: #bfdbfe;"
+      role="status">
       <span th:text="${infoMessage}">Info message</span>
     </div>
     <div th:if="${successMessage != null}" class="auth-alert auth-alert-success mb-4" role="alert">
@@ -90,19 +104,23 @@
     </div>
 
     <div class="profile-card mb-4">
-      <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3 pb-2 border-bottom border-secondary border-opacity-25">
+
+      <!--      Added link to profile-->
+      <div
+        class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3 pb-2 border-bottom border-secondary border-opacity-25">
         <h2 class="h5 fw-bold text-white mb-0">Profile Information</h2>
-        <a th:href="@{/profile/edit}"
-           class="btn btn-outline-light btn-sm px-3 d-inline-flex align-items-center gap-2">
-          <svg width="16" height="16" viewBox="0 0 24 24"
-               fill="none" stroke="currentColor" stroke-width="2"
-               stroke-linecap="round" stroke-linejoin="round">
+
+        <a th:href="@{/profile/edit}" class="btn btn-outline-light btn-sm px-3 d-inline-flex align-items-center gap-2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 20h9"></path>
             <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
           </svg>
           Edit Profile
         </a>
       </div>
+
+
       <div class="row g-3">
         <div class="col-md-6">
           <label class="form-label text-secondary small fw-semibold">Full Name</label>
@@ -114,7 +132,9 @@
         </div>
         <div class="col-md-6">
           <label class="form-label text-secondary small fw-semibold">Phone Number</label>
-          <div class="text-white fw-medium" th:text="${user.phone != null and #strings.startsWith(user.phone, 'GG') ? 'Not set (Google account)' : user.phone}">0901234567</div>
+          <div class="text-white fw-medium"
+            th:text="${user.phone != null and #strings.startsWith(user.phone, 'GG') ? 'Not set (Google account)' : user.phone}">
+            0901234567</div>
         </div>
         <div class="col-md-6">
           <label class="form-label text-secondary small fw-semibold">Membership Tier</label>
@@ -124,8 +144,10 @@
     </div>
 
     <div class="profile-card">
-      <h2 class="h5 fw-bold text-white mb-3 pb-2 border-bottom border-secondary border-opacity-25">Linked Sign-in Methods</h2>
-      <p class="text-secondary small mb-3">You can connect multiple login methods to access the same BOX Cinema account.</p>
+      <h2 class="h5 fw-bold text-white mb-3 pb-2 border-bottom border-secondary border-opacity-25">Linked Sign-in
+        Methods</h2>
+      <p class="text-secondary small mb-3">You can connect multiple login methods to access the same BOX Cinema account.
+      </p>
 
       <!-- Password Sign-in -->
       <div class="account-link-item">
@@ -138,21 +160,18 @@
           </div>
           <div>
             <div class="text-white fw-semibold">Password Authentication</div>
-            <div class="text-secondary small" th:text="${hasPassword ? 'Standard Email & Password login enabled' : 'No password set (Google-only account)'}">Status</div>
+            <div class="text-secondary small"
+              th:text="${hasPassword ? 'Standard Email & Password login enabled' : 'No password set (Google-only account)'}">
+              Status</div>
           </div>
         </div>
         <div class="d-flex align-items-center gap-2">
           <span th:if="${hasPassword}" class="badge bg-success bg-opacity-75 text-white px-3 py-2">Connected</span>
           <th:block th:unless="${hasPassword}">
             <span class="badge bg-secondary text-white px-2 py-2">Not Set</span>
-            <button
-              type="button"
-              id="openSetPasswordModalBtn"
-              class="btn btn-outline-light btn-sm px-3"
-              th:attr="data-set-password-ready=${setPasswordReady}"
-              th:disabled="${googleOAuthConfigured == false}"
-              th:title="${googleOAuthConfigured == false ? 'Configure Google OAuth2 client credentials to verify your Google session first' : 'Verify with Google and set a BOX Cinema password'}"
-            >
+            <button type="button" id="openSetPasswordModalBtn" class="btn btn-outline-light btn-sm px-3"
+              th:attr="data-set-password-ready=${setPasswordReady}" th:disabled="${googleOAuthConfigured == false}"
+              th:title="${googleOAuthConfigured == false ? 'Configure Google OAuth2 client credentials to verify your Google session first' : 'Verify with Google and set a BOX Cinema password'}">
               Set Password
             </button>
           </th:block>
@@ -162,41 +181,41 @@
       <!-- Google Sign-in -->
       <div class="account-link-item">
         <div class="d-flex align-items-center gap-3">
-          <div class="p-2 rounded bg-white text-dark d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+          <div class="p-2 rounded bg-white text-dark d-flex align-items-center justify-content-center"
+            style="width: 38px; height: 38px;">
             <svg width="20" height="20" viewBox="0 0 48 48">
-              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              <path fill="#EA4335"
+                d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+              <path fill="#4285F4"
+                d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+              <path fill="#FBBC05"
+                d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+              <path fill="#34A853"
+                d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
             </svg>
           </div>
           <div>
             <div class="text-white fw-semibold">Google Account</div>
-            <div id="googleStatusSubtext" class="text-secondary small" th:text="${isGoogleLinked ? 'Google account connected' : 'Not connected'}">Not connected</div>
+            <div id="googleStatusSubtext" class="text-secondary small"
+              th:text="${isGoogleLinked ? 'Google account connected' : 'Not connected'}">Not connected</div>
           </div>
         </div>
         <div class="d-flex align-items-center gap-2 flex-wrap">
-          <span id="googleStatusBadge" th:if="${isGoogleLinked}" class="badge bg-success bg-opacity-75 text-white px-3 py-2">Connected</span>
-          <span id="googleStatusBadge" th:unless="${isGoogleLinked}" class="badge bg-secondary text-white px-3 py-2">Not connected</span>
+          <span id="googleStatusBadge" th:if="${isGoogleLinked}"
+            class="badge bg-success bg-opacity-75 text-white px-3 py-2">Connected</span>
+          <span id="googleStatusBadge" th:unless="${isGoogleLinked}" class="badge bg-secondary text-white px-3 py-2">Not
+            connected</span>
           <th:block th:if="${isGoogleLinked}">
-            <button
-              type="button"
-              id="openUnlinkGoogleModalBtn"
-              class="btn btn-outline-danger btn-sm px-3"
+            <button type="button" id="openUnlinkGoogleModalBtn" class="btn btn-outline-danger btn-sm px-3"
               th:disabled="${!hasPassword}"
-              th:title="${!hasPassword ? 'Set a BOX Cinema password first before disconnecting Google' : 'Disconnect Google Sign-In'}"
-            >
+              th:title="${!hasPassword ? 'Set a BOX Cinema password first before disconnecting Google' : 'Disconnect Google Sign-In'}">
               Disconnect Google
             </button>
           </th:block>
           <th:block th:unless="${isGoogleLinked}">
-            <button
-              type="button"
-              id="openLinkGoogleModalBtn"
-              class="btn btn-outline-light btn-sm px-3"
+            <button type="button" id="openLinkGoogleModalBtn" class="btn btn-outline-light btn-sm px-3"
               th:disabled="${googleOAuthConfigured == false}"
-              th:title="${googleOAuthConfigured == false ? 'Configure Google OAuth2 client credentials in application-local.properties' : 'Connect your Google account'}"
-            >
+              th:title="${googleOAuthConfigured == false ? 'Configure Google OAuth2 client credentials in application-local.properties' : 'Connect your Google account'}">
               Connect Google
             </button>
           </th:block>
@@ -210,29 +229,27 @@
   </main>
 
   <!-- Password Re-Authentication Modal for Google Link / Unlink (Decision 4A) -->
-  <div class="auth-modal-backdrop d-none" id="googleReauthModal" role="dialog" aria-modal="true" aria-labelledby="googleReauthTitle">
+  <div class="auth-modal-backdrop d-none" id="googleReauthModal" role="dialog" aria-modal="true"
+    aria-labelledby="googleReauthTitle">
     <div class="auth-modal-card">
       <div class="auth-modal-header">
         <div>
           <h3 id="googleReauthTitle" class="h6 fw-bold text-white mb-0">Confirm Your Password</h3>
           <p id="googleReauthSubtitle" class="small text-secondary mb-0">Enter your BOX Cinema password to continue.</p>
         </div>
-        <button type="button" class="auth-modal-close" id="closeGoogleReauthModalBtn" aria-label="Close">&times;</button>
+        <button type="button" class="auth-modal-close" id="closeGoogleReauthModalBtn"
+          aria-label="Close">&times;</button>
       </div>
       <div class="auth-modal-body">
         <form id="googleReauthActionForm" action="/auth/account/link/google" method="post">
-          <input type="hidden" name="_csrf" th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}" th:value="${_csrf != null ? _csrf.token : ''}">
+          <input type="hidden" name="_csrf" th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}"
+            th:value="${_csrf != null ? _csrf.token : ''}">
           <div id="googleReauthInlineError" class="auth-alert auth-alert-danger small mb-3 d-none" role="alert"></div>
           <div class="mb-3">
-            <label for="reauthPasswordInput" class="form-label small text-secondary fw-semibold">Current Password *</label>
-            <input
-              type="password"
-              id="reauthPasswordInput"
-              name="password"
-              class="form-control form-control-dark"
-              placeholder="Enter your current password"
-              required
-            >
+            <label for="reauthPasswordInput" class="form-label small text-secondary fw-semibold">Current Password
+              *</label>
+            <input type="password" id="reauthPasswordInput" name="password" class="form-control form-control-dark"
+              placeholder="Enter your current password" required>
           </div>
           <button type="submit" id="googleReauthSubmitBtn" class="btn btn-box-primary w-100 py-2">
             Confirm &amp; Continue
@@ -243,44 +260,34 @@
   </div>
 
   <!-- Set Password Modal for Google-only Accounts -->
-  <div class="auth-modal-backdrop d-none" id="setPasswordModal" role="dialog" aria-modal="true" aria-labelledby="setPasswordTitle">
+  <div class="auth-modal-backdrop d-none" id="setPasswordModal" role="dialog" aria-modal="true"
+    aria-labelledby="setPasswordTitle">
     <div class="auth-modal-card">
       <div class="auth-modal-header">
         <div>
           <h3 id="setPasswordTitle" class="h6 fw-bold text-white mb-0">Set BOX Cinema Password</h3>
-          <p class="small text-secondary mb-0">Create a password (at least 6 characters, including 1 uppercase letter, 1 number, and 1 special character) so you can also sign in with email &amp; password.</p>
+          <p class="small text-secondary mb-0">Create a password (at least 6 characters, including 1 uppercase letter, 1
+            number, and 1 special character) so you can also sign in with email &amp; password.</p>
         </div>
         <button type="button" class="auth-modal-close" id="closeSetPasswordModalBtn" aria-label="Close">&times;</button>
       </div>
       <div class="auth-modal-body">
         <form id="setPasswordForm" action="/auth/account/set-password" method="post">
-          <input type="hidden" name="_csrf" th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}" th:value="${_csrf != null ? _csrf.token : ''}">
+          <input type="hidden" name="_csrf" th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}"
+            th:value="${_csrf != null ? _csrf.token : ''}">
           <div id="setPasswordInlineError" class="auth-alert auth-alert-danger small mb-3 d-none" role="alert"></div>
           <div class="mb-3">
-            <label for="setNewPasswordInput" class="form-label small text-secondary fw-semibold">New Password (Min 6 chars) *</label>
-            <input
-              type="password"
-              id="setNewPasswordInput"
-              name="newPassword"
-              class="form-control form-control-dark"
-              placeholder="At least 6 characters"
-              minlength="6"
-              maxlength="128"
-              required
-            >
+            <label for="setNewPasswordInput" class="form-label small text-secondary fw-semibold">New Password (Min 6
+              chars) *</label>
+            <input type="password" id="setNewPasswordInput" name="newPassword" class="form-control form-control-dark"
+              placeholder="At least 6 characters" minlength="6" maxlength="128" required>
           </div>
           <div class="mb-3">
-            <label for="setConfirmPasswordInput" class="form-label small text-secondary fw-semibold">Confirm Password *</label>
-            <input
-              type="password"
-              id="setConfirmPasswordInput"
-              name="confirmPassword"
-              class="form-control form-control-dark"
-              placeholder="Re-enter your new password"
-              minlength="6"
-              maxlength="128"
-              required
-            >
+            <label for="setConfirmPasswordInput" class="form-label small text-secondary fw-semibold">Confirm Password
+              *</label>
+            <input type="password" id="setConfirmPasswordInput" name="confirmPassword"
+              class="form-control form-control-dark" placeholder="Re-enter your new password" minlength="6"
+              maxlength="128" required>
           </div>
           <button type="submit" class="btn btn-box-primary w-100 py-2">
             Save Password
@@ -577,5 +584,5 @@
     })();
   </script>
 </body>
-</html>
 
+</html>
