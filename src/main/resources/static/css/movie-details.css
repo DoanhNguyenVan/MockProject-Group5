@@ -40,3 +40,65 @@
 .movie-details-page .movie-details-buy,
 .movie-details-page .movie-details-buy:hover,
 #movieTrailerPlay { color: var(--box-text-on-accent); }
+
+/* =====================================================
+   LIGHT MODE OVERRIDES - MOVIE DETAILS
+   ===================================================== */
+html[data-theme="light"] .movie-details-poster {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: 0 12px 36px rgba(15, 23, 42, 0.1);
+}
+
+html[data-theme="light"] .movie-details h1,
+html[data-theme="light"] .movie-details h2 {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .movie-details-rating {
+  background: rgba(var(--box-accent-rgb) / 8%);
+  border-color: rgba(var(--box-accent-rgb) / 32%);
+  color: #b91c1c;
+}
+
+html[data-theme="light"] .movie-details-synopsis {
+  color: #334155;
+}
+
+html[data-theme="light"] .movie-details-buy,
+html[data-theme="light"] #movieTrailerPlay {
+  background: var(--box-accent);
+  border-color: var(--box-accent);
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(var(--box-accent-rgb) / 38%);
+}
+
+html[data-theme="light"] .movie-details-buy:hover,
+html[data-theme="light"] #movieTrailerPlay:hover {
+  background: var(--box-accent);
+  color: #ffffff !important;
+  box-shadow: 0 6px 18px rgba(var(--box-accent-rgb) / 45%);
+}
+
+html[data-theme="light"] .movie-details-watch {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.18);
+  color: #0f172a;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+}
+
+html[data-theme="light"] .movie-details-watch:hover {
+  background: #fff1f2;
+  border-color: var(--box-accent);
+  color: var(--box-accent);
+}
+
+html[data-theme="light"] .movie-trailer-frame {
+  background: radial-gradient(ellipse at center, rgba(var(--box-accent-rgb) / 6%), #ffffff 70%);
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+}
+
+html[data-theme="light"] .movie-trailer-empty p {
+  color: #64748b;
+}

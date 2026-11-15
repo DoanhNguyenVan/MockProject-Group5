@@ -17,6 +17,8 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
            "WHERE s.movie.movieId = :movieId " +
            "AND s.startAt >= :fromTime " +
            "AND s.status = 'ACTIVE' " +
+           "AND s.room.status = 'ACTIVE' " +
+           "AND s.room.cinema.status = 'ACTIVE' " +
            "ORDER BY s.room.cinema.cinemaName ASC")
     List<Cinema> findCinemasByMovie(@Param("movieId") Long movieId, @Param("fromTime") LocalDateTime fromTime);
 
@@ -27,6 +29,8 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
            "AND c.cinemaId = :cinemaId " +
            "AND s.startAt BETWEEN :start AND :end " +
            "AND s.status = 'ACTIVE' " +
+           "AND r.status = 'ACTIVE' " +
+           "AND c.status = 'ACTIVE' " +
            "ORDER BY s.startAt ASC")
     List<Showtime> findShowtimesByMovieCinemaAndDate(
             @Param("movieId") Long movieId,
@@ -39,11 +43,15 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
            "WHERE s.movie.movieId = :movieId " +
            "AND s.startAt >= :fromTime " +
            "AND s.status = 'ACTIVE' " +
+           "AND s.room.status = 'ACTIVE' " +
+           "AND s.room.cinema.status = 'ACTIVE' " +
            "ORDER BY s.startAt ASC")
     List<Showtime> findUpcomingShowtimesByMovie(@Param("movieId") Long movieId, @Param("fromTime") LocalDateTime fromTime);
 
     @Query("SELECT DISTINCT s.movie.movieId, s.room.cinema.cinemaId FROM Showtime s " +
-           "WHERE s.status = 'ACTIVE'")
+           "WHERE s.status = 'ACTIVE' " +
+           "AND s.room.status = 'ACTIVE' " +
+           "AND s.room.cinema.status = 'ACTIVE'")
     List<Object[]> findActiveMovieCinemaPairs();
 
     @Query("SELECT s FROM Showtime s " +
@@ -53,6 +61,8 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
            "WHERE (:cinemaId IS NULL OR c.cinemaId = :cinemaId) " +
            "AND s.startAt BETWEEN :start AND :end " +
            "AND s.status = 'ACTIVE' " +
+           "AND r.status = 'ACTIVE' " +
+           "AND c.status = 'ACTIVE' " +
            "ORDER BY m.title ASC, s.startAt ASC")
     List<Showtime> findShowtimesByCinemaAndDate(
             @Param("cinemaId") Long cinemaId,
@@ -62,7 +72,9 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
 
     @Query("SELECT COUNT(s) FROM Showtime s " +
            "WHERE s.startAt BETWEEN :start AND :end " +
-           "AND s.status = 'ACTIVE'")
+           "AND s.status = 'ACTIVE' " +
+           "AND s.room.status = 'ACTIVE' " +
+           "AND s.room.cinema.status = 'ACTIVE'")
     long countShowtimesBetween(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end

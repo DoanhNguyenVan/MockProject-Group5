@@ -14,7 +14,7 @@ import java.util.Set;
 public class AdminPageController {
     private static final Set<String> SECTIONS = Set.of(
             "dashboard", "movies", "genres", "cinemas", "rooms", "seats", "showtimes",
-            "pricing", "promotions", "combos", "staff", "reports");
+            "pricing", "promotions", "combos", "bookings", "staff", "reports");
 
     @GetMapping({"/admin", "/admin/"})
     public String dashboard(Model model) {

@@ -4,7 +4,7 @@ const select = (key, label, options) => ({ key, label, type: 'select', options, 
 const reference = (key, label, source) => ({ key, label, type: 'reference', source, required: true });
 const number = (key, label, min = 0, max = 999999999) => ({ key, label, type: 'number', min, max, required: true });
 const date = (key, label, type = 'date', required = true) => ({ key, label, type, required });
-const status = select('status', 'Status', ['ACTIVE', 'INACTIVE']);
+const status = select('status', 'Status', ['ACTIVE', 'INACTIVE', 'STOP_BOOKING']);
 
 export const ADMIN_SECTIONS = {
   dashboard: { title: 'Overview', group: 'WORKSPACE', icon: '◫', description: 'A clear view of your cinema business.' },
@@ -18,11 +18,25 @@ export const ADMIN_SECTIONS = {
   genres: { title: 'Genres', singular: 'genre', group: 'PROGRAMMING', icon: '◇', description: 'Organize the collection by genre.', columns: ['genreName', 'description'], fields: [text('genreName', 'Genre name', 50), { ...text('description', 'Description', 500, false), type: 'textarea' }] },
   showtimes: { title: 'Showtimes', singular: 'showtime', group: 'PROGRAMMING', icon: '◷', description: 'Plan the next great night at the movies.', columns: ['movieId', 'roomId', 'startAt', 'basePrice', 'status'], fields: [reference('movieId', 'Movie', 'movies'), reference('roomId', 'Room', 'rooms'), date('startAt', 'Starts at', 'datetime-local'), date('endAt', 'Ends at', 'datetime-local'), number('basePrice', 'Base price (VND)', 1000), status] },
   cinemas: { title: 'Cinemas', singular: 'cinema', group: 'CINEMA OPERATIONS', icon: '⌂', description: 'One workspace for every BOX Cinema location.', columns: ['cinemaName', 'city', 'address', 'status'], fields: [text('cinemaName', 'Cinema name'), text('city', 'City', 100), text('address', 'Address', 255), text('phone', 'Phone', 20), { ...text('email', 'Email', 255), type: 'email' }, status] },
-  rooms: { title: 'Rooms', singular: 'room', group: 'CINEMA OPERATIONS', icon: '▤', description: 'Manage screening rooms and their seat layouts.', columns: ['roomName', 'cinemaId', 'roomType', 'status'], fields: [text('roomName', 'Room name', 50), reference('cinemaId', 'Cinema', 'cinemas'), select('roomType', 'Format', ['2D', '3D', 'IMAX']), status] },
+  rooms: { title: 'Rooms', singular: 'room', group: 'CINEMA OPERATIONS', icon: '▤', description: 'Manage screening rooms and their seat layouts.', columns: ['roomName', 'cinemaId', 'roomType', 'status'], fields: [text('roomName', 'Room name', 50), reference('cinemaId', 'Cinema', 'cinemas'), select('roomType', 'Format', ['2D Standard', '3D Digital', '2D Dolby Atmos', 'IMAX Laser', '4DX Motion', 'Gold Class']), status] },
   seats: { title: 'Seat layouts', group: 'CINEMA OPERATIONS', icon: '▦', description: 'Make every seat part of the experience.' },
-  pricing: { title: 'Seat pricing', singular: 'seat type', group: 'CINEMA OPERATIONS', icon: '₫', description: 'Set surcharges. Base ticket prices are managed in Showtimes.', columns: ['typeName', 'priceSurcharge', 'description'], fields: [text('typeName', 'Seat type', 50), number('priceSurcharge', 'Surcharge (VND)'), text('description', 'Description', 500, false)] },
+  pricing: {
+    title: 'Seat pricing & Types',
+    singular: 'seat type',
+    group: 'CINEMA OPERATIONS',
+    icon: '₫',
+    description: 'Quản lý danh mục loại ghế, hình dáng nhận diện trực quan và phụ phí vé tương ứng.',
+    columns: ['typeName', 'priceSurcharge', 'description'],
+    fields: [
+      text('typeName', 'Loại ghế (Seat type)', 50),
+      select('shapeType', 'Hình dáng (Shape)', ['standard', 'vip', 'sweetbox', 'imax', '4dx', 'recliner', 'wheelchair']),
+      number('priceSurcharge', 'Phụ phí (Surcharge VND)'),
+      text('description', 'Mô tả tính năng', 500, false)
+    ]
+  },
   promotions: { title: 'Promotions', singular: 'promotion', group: 'BUSINESS', icon: '✧', description: 'Create a little more reason to come back.', columns: ['promotionName', 'voucherCode', 'discountValue', 'endAt', 'status'], fields: [text('promotionName', 'Promotion name'), text('voucherCode', 'Voucher code', 50), select('discountType', 'Discount type', ['PERCENT', 'FIXED']), number('discountValue', 'Discount value', 1), number('maxDiscount', 'Maximum discount (VND)', 1), number('minOrderAmount', 'Minimum order (VND)'), date('startAt', 'Starts at', 'datetime-local'), date('endAt', 'Ends at', 'datetime-local'), number('usageLimit', 'Total redemptions', 1, 1000000), number('perUserLimit', 'Redemptions per customer', 1, 1000), status] },
   combos: { title: 'Snacks & combos', singular: 'product', group: 'BUSINESS', icon: '♧', description: 'The perfect companions to a great film.', columns: ['productName', 'productType', 'price', 'status'], fields: [text('productName', 'Product name'), select('productType', 'Category', ['COMBO', 'FOOD', 'DRINK']), number('price', 'Price (VND)', 1000), text('description', 'Description', 500, false), status] },
+  bookings: { title: 'Ticket orders', singular: 'order', group: 'BUSINESS', icon: '🧾', description: 'Review live ticket purchases, customer orders, and electronic invoices.' },
   staff: { title: 'Staff & roles', singular: 'staff member', group: 'BUSINESS', icon: '♙', description: 'Bring your cinema team together.', columns: ['fullName', 'email', 'cinemaId', 'role', 'status'], fields: [text('fullName', 'Full name', 100), { ...text('email', 'Email', 255), type: 'email' }, text('phone', 'Phone', 20), reference('cinemaId', 'Cinema', 'cinemas'), select('role', 'Role', ['STAFF', 'MANAGER', 'ADMIN']), status] },
   reports: { title: 'Reports', group: 'BUSINESS', icon: '↗', description: 'Understand what brings your audience back.' }
 };

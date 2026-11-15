@@ -57,6 +57,80 @@
 @media (max-width: 380px) { .screening-film { grid-template-columns: 95px minmax(0, 1fr); gap: 14px; } .screening-film-info h2 { font-size: 1.1rem; } .screening-results-heading { align-items: start; flex-direction: column; gap: 5px; } }
 
 /* Light mode overrides */
+html[data-theme="light"] .screening-browser {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+html[data-theme="light"] .screening-intro h2,
+html[data-theme="light"] .screening-film-info h2,
+html[data-theme="light"] .screening-cinema h4 {
+  color: #0f172a;
+}
+
+html[data-theme="light"] .screening-date {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.12);
+  color: #0f172a;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+html[data-theme="light"] .screening-date:hover {
+  background: #fff1f2;
+  border-color: var(--box-accent);
+}
+
+html[data-theme="light"] .screening-date[aria-pressed="true"] {
+  background: var(--box-accent);
+  border-color: var(--box-accent);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(var(--box-accent-rgb) / 38%);
+}
+
+html[data-theme="light"] .screening-search {
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.14);
+}
+
+html[data-theme="light"] .screening-search:focus-within {
+  background: #ffffff;
+  border-color: var(--box-accent);
+  box-shadow: 0 0 0 3px rgba(var(--box-accent-rgb) / 16%);
+}
+
+html[data-theme="light"] .screening-city {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.14);
+  color: #334155;
+}
+
+html[data-theme="light"] .screening-city:hover {
+  background: #fff1f2;
+  border-color: var(--box-accent);
+  color: var(--box-accent);
+}
+
+html[data-theme="light"] .screening-city[aria-pressed="true"] {
+  background: var(--box-accent);
+  border-color: var(--box-accent);
+  color: #ffffff;
+}
+
+html[data-theme="light"] .screening-time {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.14);
+  color: #0f172a;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+html[data-theme="light"] .screening-time:hover {
+  background: var(--box-accent);
+  border-color: var(--box-accent);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(var(--box-accent-rgb) / 35%);
+}
+
 html[data-theme="light"] .screening-date[aria-pressed="true"],
 html[data-theme="light"] .screening-poster-label {
   color: #ffffff;
