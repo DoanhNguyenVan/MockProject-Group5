@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
+
 <head th:replace="~{admin/fragments/admin-shell :: head(${formTitle})}"></head>
 <body class="admin-page">
   <div class="admin-shell">
@@ -127,6 +128,7 @@
               <h2 style="font-size: 15px; font-weight: 700; color: var(--box-accent); margin: 0 0 4px;">Media Information</h2>
               <p style="font-size: 12px; color: var(--box-text-muted); margin: 0;">Posters, backdrop banners and trailers</p>
             </div>
+                        </div>
 
             <div class="mb-3">
               <label for="posterUrl" class="form-label" style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">Poster URL</label>
@@ -134,31 +136,97 @@
                      placeholder="https://example.com/poster.jpg" th:value="${movie.posterUrl}">
             </div>
 
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label for="releaseDate" class="form-label"
+                                    style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">Release
+                                    Date *</label>
+                                <input type="date" class="admin-input" id="releaseDate" name="releaseDate"
+                                    th:value="${movie.releaseDate}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="endDate" class="form-label"
+                                    style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">End
+                                    Date</label>
+                                <input type="date" class="admin-input" id="endDate" name="endDate"
+                                    th:value="${movie.endDate}">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="status" class="form-label"
+                                    style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">Movie
+                                    Status *</label>
+                                <select class="admin-input" id="status" name="status" required>
+                                    <option value="NOW_SHOWING" th:selected="${movie.status == 'NOW_SHOWING'}">Now
+                                        Showing</option>
+                                    <option value="COMING_SOON" th:selected="${movie.status == 'COMING_SOON'}">Coming
+                                        Soon</option>
+                                    <option value="ENDED" th:selected="${movie.status == 'ENDED'}">Ended</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="endDate" class="form-label"
+                                style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">End
+                                Date</label>
+                            <input type="date" class="admin-input" id="endDate" name="endDate"
+                                th:value="${movie.endDate}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="status" class="form-label"
+                                style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">Movie
+                                Status *</label>
+                            <select class="admin-input" id="status" name="status" required>
+                                <option value="NOW_SHOWING" th:selected="${movie.status == 'NOW_SHOWING'}">Now
+                                    Showing</option>
+                                <option value="COMING_SOON" th:selected="${movie.status == 'COMING_SOON'}">
+                                    Coming Soon</option>
+                                <option value="ENDED" th:selected="${movie.status == 'ENDED'}">Ended</option>
+                            </select>
+                        </div>
+                        <input type="text" id="language" th:field="*{language}" class="form-control" id="language"
+                            name="language" maxlength="50" placeholder="Example: English" th:value="${movie.language}"
+                            required>
+                        placeholder="e.g. English">
+                </div>
+
+            </div>
+            <!-- Media Information -->
+            <div class="mb-4 pb-2" style="border-bottom: 1px solid var(--box-border-color);">
+                <h2 style="font-size: 15px; font-weight: 700; color: var(--box-accent); margin: 0 0 4px;">
+                    Media Information</h2>
+                <p style="font-size: 12px; color: var(--box-text-muted); margin: 0;">Posters, backdrop
+                    banners and trailers</p>
+            </div>
+
             <div class="mb-3">
-              <label for="bannerUrl" class="form-label" style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">Banner URL</label>
-              <input type="url" class="admin-input" id="bannerUrl" name="bannerUrl" maxlength="500"
-                     placeholder="https://example.com/banner.jpg" th:value="${movie.bannerUrl}">
+                <label for="bannerUrl" class="form-label"
+                    style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">Banner URL</label>
+                <input type="url" class="admin-input" id="bannerUrl" name="bannerUrl" maxlength="500"
+                    placeholder="https://example.com/banner.jpg" th:value="${movie.bannerUrl}">
             </div>
 
             <div class="mb-4">
-              <label for="trailerUrl" class="form-label" style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">Trailer URL</label>
-              <input type="url" class="admin-input" id="trailerUrl" name="trailerUrl" maxlength="500"
-                     placeholder="https://youtube.com/..." th:value="${movie.trailerUrl}">
+                <label for="trailerUrl" class="form-label"
+                    style="font-weight: 600; font-size: 13px; color: var(--box-text-primary);">Trailer URL</label>
+                <input type="url" class="admin-input" id="trailerUrl" name="trailerUrl" maxlength="500"
+                    placeholder="https://youtube.com/..." th:value="${movie.trailerUrl}">
             </div>
 
             <!-- Actions -->
             <div class="d-flex align-items-center gap-3 pt-3" style="border-top: 1px solid var(--box-border-color);">
-              <button type="submit" class="admin-button admin-button-primary px-4">
-                Save Movie
-              </button>
-              <a th:href="@{/admin/movies}" class="admin-button px-4">
-                Cancel
-              </a>
+                <button type="submit" class="admin-button admin-button-primary px-4">
+                    Save Movie
+                </button>
+                <a th:href="@{/admin/movies}" class="admin-button px-4">
+                    Cancel
+                </a>
             </div>
-          </form>
-        </div>
-      </div>
+            </form>
+    </div>
+    </div>
     </section>
-  </div>
+    </div>
 </body>
+
 </html>
