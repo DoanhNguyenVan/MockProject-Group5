@@ -28,6 +28,7 @@ public class AdminMovieController {
     public String listMovies(Model model) {
 
         model.addAttribute("movies", movieService.getAllMovies());
+        model.addAttribute("genres", movieService.getAllGenres());
 
         return "admin/movies/list";
     }
