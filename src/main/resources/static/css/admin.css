@@ -168,11 +168,25 @@ html[data-theme="light"] .admin-page { --admin-green: #18704b; --admin-vip: #8c6
   pointer-events: none;
 }
 
+.admin-status.admin-status-error {
+  background: rgba(239, 68, 68, 0.16);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.5), 0 0 15px rgba(239, 68, 68, 0.2);
+}
+
 html[data-theme="light"] .admin-status {
   background: #ecfdf5;
   color: #065f46;
   border: 1px solid #a7f3d0;
   box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(16, 185, 129, 0.15);
+}
+
+html[data-theme="light"] .admin-status.admin-status-error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.12), 0 4px 10px rgba(239, 68, 68, 0.15);
 }
 .admin-muted { color: var(--box-text-muted); font-size: 12px; }
 .admin-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 20px 0 24px; }
