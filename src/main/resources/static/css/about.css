@@ -860,12 +860,14 @@ html[data-theme="light"] .btn-about-outline {
   color: #0f172a;
   background: #ffffff;
   border-color: rgb(15 23 42 / 16%);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
 }
 
 html[data-theme="light"] .btn-about-outline:hover {
-  color: #0f172a;
-  background: #f1f5f9;
-  border-color: rgb(15 23 42 / 28%);
+  color: var(--box-accent);
+  background: var(--box-red-subtle);
+  border-color: var(--box-accent);
+  box-shadow: 0 4px 14px rgba(var(--box-accent-rgb) / 25%);
 }
 
 html[data-theme="light"] .about-stats-bar {
