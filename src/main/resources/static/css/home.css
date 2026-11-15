@@ -2086,13 +2086,14 @@ body.cinema-home .cinema-nav.search-active::before {
 }
 
 /* =====================================================
-   LIGHT MODE OVERRIDES
+   LIGHT MODE OVERRIDES - HOME PAGE
+   Cinema Light Luxury Experience Synchronized with Dark Mode
    ===================================================== */
 html[data-theme="light"] {
   --cinema-bg: #f8fafc;
   --cinema-surface: #ffffff;
   --cinema-card: #ffffff;
-  --cinema-card-hover: #f1f5f9;
+  --cinema-card-hover: #ffffff;
   --cinema-border: rgb(15 23 42 / 10%);
   --cinema-border-strong: rgb(15 23 42 / 18%);
   --cinema-text: #0f172a;
@@ -2100,202 +2101,10 @@ html[data-theme="light"] {
   --cinema-text-dim: #64748b;
 }
 
-/* Home navbar stays bright frosted white in light mode (even before scroll) */
-html[data-theme="light"] body.cinema-home .cinema-nav,
-html[data-theme="light"] body.cinema-home .cinema-nav.nav-scrolled,
-html[data-theme="light"] body.cinema-home .cinema-nav.search-active,
-html[data-theme="light"] body.cinema-home .cinema-nav.menu-open {
-  background: rgb(255 255 255 / 90%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgb(15 23 42 / 10%);
-  box-shadow: 0 4px 20px rgb(15 23 42 / 7%);
-}
-
-html[data-theme="light"] body.cinema-home .cinema-nav::before {
-  opacity: 0;
-}
-
-html[data-theme="light"] body.cinema-home .cinema-nav .box-brand img {
-  filter: brightness(0);
-}
-
-html[data-theme="light"] body.cinema-home .cinema-nav-menu a {
-  color: #334155;
-}
-
-html[data-theme="light"] body.cinema-home .cinema-nav-menu a:hover,
-html[data-theme="light"] body.cinema-home .cinema-nav-menu [aria-current="page"] {
-  color: #0f172a;
-}
-
-html[data-theme="light"] body.cinema-home .nav-cinema-select {
-  color: #0f172a;
-  background-color: #ffffff;
-  border-color: rgb(15 23 42 / 16%);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-}
-
-html[data-theme="light"] body.cinema-home .nav-cinema-select:hover,
-html[data-theme="light"] body.cinema-home .nav-cinema-select:focus,
-html[data-theme="light"] body.cinema-home .nav-cinema-select:focus-visible,
-html[data-theme="light"] body.cinema-home .nav-cinema-select:active {
-  background-color: #f8fafc;
-  border-color: rgb(15 23 42 / 30%);
-}
-
-html[data-theme="light"] body.cinema-home .nav-cinema-select optgroup,
-html[data-theme="light"] body.cinema-home .nav-cinema-select option {
-  background-color: #ffffff;
-  color: #0f172a;
-}
-
-html[data-theme="light"] body.cinema-home .nav-search-form {
-  background: #f1f5f9;
-  border-color: rgb(15 23 42 / 16%);
-  box-shadow: 0 2px 8px rgb(15 23 42 / 8%);
-}
-
-html[data-theme="light"] body.cinema-home .nav-search-form:not(.active):hover {
-  background: #e2e8f0;
-  border-color: rgb(15 23 42 / 30%);
-}
-
-html[data-theme="light"] body.cinema-home .nav-search-form.active {
-  background: #ffffff;
-  border-color: rgb(15 23 42 / 22%);
-  box-shadow: 0 6px 20px rgb(15 23 42 / 14%);
-}
-
-html[data-theme="light"] body.cinema-home .nav-search-btn,
-html[data-theme="light"] body.cinema-home .nav-search-input {
-  color: #0f172a;
-}
-
-html[data-theme="light"] body.cinema-home .nav-search-input::placeholder {
-  color: #64748b;
-}
-
-html[data-theme="light"] body.cinema-home .nav-theme-btn {
-  color: #0f172a;
-  background: #f1f5f9;
-  border-color: rgb(15 23 42 / 16%);
-  box-shadow: 0 2px 8px rgb(15 23 42 / 8%);
-}
-
-html[data-theme="light"] body.cinema-home .nav-theme-btn:hover {
-  background: #e2e8f0;
-  border-color: rgb(15 23 42 / 30%);
-}
-
-html[data-theme="light"] body.cinema-home .cinema-nav .box-navbar-toggler {
-  color: #0f172a;
-  background: rgb(15 23 42 / 6%);
-  border-color: rgb(15 23 42 / 18%);
-}
-
-html[data-theme="light"] body.cinema-home .nav-mobile-theme-btn {
-  background: #f1f5f9;
-  border-color: rgb(15 23 42 / 16%);
-  color: #0f172a;
-}
-
-html[data-theme="light"] body.cinema-home .cinema-nav-account .nav-auth-pill,
-html[data-theme="light"] body.cinema-home .cinema-nav-mobile-account .nav-auth-pill {
-  color: #334155;
-  background: transparent;
-}
-
-html[data-theme="light"] body.cinema-home .cinema-nav-account .nav-auth-pill:hover,
-html[data-theme="light"] body.cinema-home .cinema-nav-mobile-account .nav-auth-pill:hover {
-  color: #0f172a;
-  border-color: rgb(15 23 42 / 30%);
-}
-
-html[data-theme="light"] body.cinema-home .cinema-nav-account .nav-auth-pill[data-nav-route="register"],
-html[data-theme="light"] body.cinema-home .cinema-nav-mobile-account .nav-auth-pill[data-nav-route="register"] {
-  color: #0f172a;
-  border-color: rgb(15 23 42 / 28%);
-}
-
-html[data-theme="light"] body.cinema-home .cinema-nav.menu-open .cinema-nav-menu {
-  background: rgb(255 255 255 / 98%);
-  border-bottom-color: rgb(15 23 42 / 10%);
-}
-
-/* Preserve the movie artwork as a dark photo area inside the light page. */
-html[data-theme="light"] .hero-spotlight {
-  background-color: #0c0d12;
-  --cinema-text: #ffffff;
-  --cinema-text-muted: #e2e8f0;
-}
-
-html[data-theme="light"] .hero-backdrop-layer::before {
-  background: linear-gradient(90deg, rgb(12 13 18 / 85%) 0%, rgb(12 13 18 / 55%) 34%, rgb(12 13 18 / 8%) 65%, rgb(12 13 18 / 20%) 100%);
-}
-
-html[data-theme="light"] .hero-backdrop-layer::after {
-  background: linear-gradient(0deg, #0c0d12 0%, rgb(12 13 18 / 80%) 18%, rgb(12 13 18 / 12%) 52%, transparent 75%);
-}
-
-html[data-theme="light"] .hero-movie-title {
+/* Home Navbar & Hero Spotlight: Strictly Preserved in Full Dark Cinematic Splendor in Both Modes */
+/* As requested: identical to dark mode Interstellar / John Wick hero banner & dark frosted navbar */
+body.cinema-home .cinema-nav {
   color: #ffffff;
-  text-shadow: 0 2px 16px rgb(0 0 0 / 65%);
-}
-
-html[data-theme="light"] .hero-movie-synopsis {
-  color: #e2e8f0;
-  text-shadow: 0 1px 8px rgb(0 0 0 / 65%);
-}
-
-html[data-theme="light"] .hero-movie-meta {
-  color: #e2e8f0;
-}
-
-html[data-theme="light"] .hero-movie-meta .meta-badge:not(.badge-age-p):not(.badge-age-t13):not(.badge-age-t16):not(.badge-age-t18) {
-  background: rgb(12 13 18 / 65%);
-  color: #ffffff;
-  border-color: rgb(255 255 255 / 35%);
-}
-
-html[data-theme="light"] .btn-cta-detail {
-  background: rgb(255 255 255 / 90%);
-  color: #0f172a !important;
-  border-color: rgb(15 23 42 / 22%);
-  box-shadow: 0 4px 14px rgb(15 23 42 / 10%);
-}
-
-html[data-theme="light"] .btn-cta-detail:hover {
-  background: #ffffff;
-  border-color: #C91934;
-  color: #C91934 !important;
-}
-
-html[data-theme="light"] .hero-slide-arrow {
-  background: rgb(255 255 255 / 86%);
-  border-color: rgb(15 23 42 / 18%);
-  color: #0f172a;
-  box-shadow: 0 6px 18px rgb(15 23 42 / 12%);
-  opacity: 0.78;
-}
-
-html[data-theme="light"] .coverflow-thumb,
-html[data-theme="light"] .hot-thumb-container {
-  background-color: #e2e8f0;
-  border-color: rgb(15 23 42 / 14%);
-  box-shadow: 0 12px 28px rgb(15 23 42 / 20%);
-}
-
-html[data-theme="light"] .coverflow-dot {
-  background: rgb(15 23 42 / 26%);
-}
-
-html[data-theme="light"] .coverflow-dot:hover {
-  background: rgb(15 23 42 / 55%);
-}
-
-html[data-theme="light"] .marquee-strip {
-  box-shadow: 0 6px 24px rgb(201 25 52 / 20%);
 }
 
 /* Catalog Section */
@@ -2304,7 +2113,7 @@ html[data-theme="light"] .movies-catalog-section {
 }
 
 html[data-theme="light"] .catalog-header {
-  border-bottom-color: rgb(15 23 42 / 10%);
+  border-bottom-color: rgba(15, 23, 42, 0.08);
 }
 
 html[data-theme="light"] .catalog-title {
@@ -2313,20 +2122,20 @@ html[data-theme="light"] .catalog-title {
 
 html[data-theme="light"] .catalog-filter-bar {
   background: #ffffff;
-  border-color: rgb(15 23 42 / 10%);
-  box-shadow: 0 8px 24px rgb(15 23 42 / 5%);
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
 }
 
 html[data-theme="light"] .filter-item {
   background: #f8fafc;
-  border-color: rgb(15 23 42 / 12%);
+  border-color: rgba(15, 23, 42, 0.12);
 }
 
 html[data-theme="light"] .filter-item:hover,
 html[data-theme="light"] .filter-item:focus-within {
   background: #ffffff;
-  border-color: rgb(201 25 52 / 45%);
-  box-shadow: 0 0 12px rgb(201 25 52 / 12%);
+  border-color: var(--box-accent);
+  box-shadow: 0 0 12px rgba(var(--box-accent-rgb) / 16%);
 }
 
 html[data-theme="light"] .filter-label {
@@ -2336,13 +2145,13 @@ html[data-theme="light"] .filter-label {
 html[data-theme="light"] .catalog-filter-select {
   appearance: none;
   background-repeat: no-repeat;
-  background-position: right 2px center;
+  background-position: right 6px center;
   background-size: 12px;
-  padding-right: 20px;
+  padding-right: 22px;
   background-color: #f8fafc;
   color: #0f172a;
-  border-color: rgb(15 23 42 / 15%);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  border-color: rgba(15, 23, 42, 0.14);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23C91934' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 }
 
 html[data-theme="light"] .catalog-filter-select option {
@@ -2353,13 +2162,13 @@ html[data-theme="light"] .catalog-filter-select option {
 html[data-theme="light"] .btn-filter-reset {
   background: #f1f5f9;
   color: #475569;
-  border-color: rgb(15 23 42 / 12%);
+  border-color: rgba(15, 23, 42, 0.12);
 }
 
 html[data-theme="light"] .btn-filter-reset:hover {
   background: #e2e8f0;
   color: #0f172a;
-  border-color: rgb(15 23 42 / 20%);
+  border-color: rgba(15, 23, 42, 0.22);
 }
 
 html[data-theme="light"] .btn-filter-tab {
@@ -2367,19 +2176,20 @@ html[data-theme="light"] .btn-filter-tab {
 }
 
 html[data-theme="light"] .btn-filter-tab:hover {
-  color: #0f172a;
-  background: rgb(15 23 42 / 5%);
+  color: var(--box-accent);
+  background: var(--box-red-subtle);
 }
 
 html[data-theme="light"] .btn-filter-tab.active {
-  background: var(--cinema-red);
+  background: var(--box-accent);
   color: #ffffff;
+  box-shadow: 0 4px 14px rgba(var(--box-accent-rgb) / 38%);
 }
 
 html[data-theme="light"] .catalog-poster-frame {
-  background-color: #e2e8f0;
-  border-color: rgb(15 23 42 / 8%);
-  box-shadow: 0 8px 20px rgb(15 23 42 / 8%);
+  background-color: #f1f5f9;
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
 }
 
 html[data-theme="light"] .catalog-movie-title {
@@ -2394,62 +2204,90 @@ html[data-theme="light"] .catalog-movie-meta .text-warning {
   color: #b45309 !important;
 }
 
+/* =============================================================================
+   CARD HOVER PREVIEW - CINEMA DARK LUXURY OVERLAY (SYNCHRONIZED WITH DARK MODE)
+   Movie artwork overlay strictly matches dark mode gold standard:
+   Obsidian frame, seamless dark vignette over poster, crisp white title,
+   glowing amber genre tags, legible silver synopsis, and ruby CTA.
+   ============================================================================= */
 html[data-theme="light"] .card-hover-popover {
-  background: #ffffff;
-  border-color: rgb(15 23 42 / 14%);
-  box-shadow: 0 24px 54px rgb(15 23 42 / 22%), 0 0 0 1px rgb(15 23 42 / 6%);
+  background: #14151b !important;
+  border: 1px solid rgba(229, 9, 20, 0.45) !important;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.65), 0 0 24px rgba(201, 25, 52, 0.3) !important;
 }
 
 html[data-theme="light"] .popover-backdrop::after {
-  background: linear-gradient(180deg, transparent 10%, #ffffff 100%);
+  background: linear-gradient(0deg, #14151b 0%, rgba(20, 21, 27, 0.25) 65%, transparent 100%) !important;
+}
+
+html[data-theme="light"] .popover-body {
+  background: #14151b !important;
 }
 
 html[data-theme="light"] .popover-title {
-  color: #0f172a;
+  color: #ffffff !important;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
-html[data-theme="light"] .popover-meta-row {
-  color: #475569;
+html[data-theme="light"] .popover-subtitle {
+  color: #ff5e1e !important;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 html[data-theme="light"] .popover-synopsis {
-  color: #334155;
+  color: #cbd5e1 !important;
+  line-height: 1.45;
+}
+
+html[data-theme="light"] .btn-pop-buy {
+  background: linear-gradient(135deg, #ff4e00 0%, #ec1c24 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 12px rgba(236, 28, 36, 0.4) !important;
 }
 
 html[data-theme="light"] :is(.btn-pop-detail, .btn-pop-trailer) {
-  background: var(--box-bg-secondary);
-  color: var(--box-text-primary) !important;
-  border-color: var(--box-border-color);
+  background: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
 }
 
 html[data-theme="light"] :is(.btn-pop-detail, .btn-pop-trailer):hover {
-  background: var(--box-bg-secondary);
-  color: var(--box-text-primary) !important;
-  border-color: var(--box-border-color);
+  background: rgba(255, 255, 255, 0.25) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(255, 255, 255, 0.15) !important;
 }
 
 /* Pagination & Empty State */
 html[data-theme="light"] .pagination-btn,
 html[data-theme="light"] .pagination-arrow-btn {
   background: #ffffff;
-  border-color: rgb(15 23 42 / 14%);
+  border-color: rgba(15, 23, 42, 0.14);
   color: #475569;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
 }
 
 html[data-theme="light"] .pagination-btn:hover:not(.active):not(:disabled),
 html[data-theme="light"] .pagination-arrow-btn:hover:not(:disabled) {
-  background: #f1f5f9;
-  border-color: rgb(15 23 42 / 24%);
-  color: #0f172a;
+  background: #fff1f2;
+  border-color: var(--box-accent);
+  color: var(--box-accent);
 }
 
 html[data-theme="light"] .pagination-btn.active {
+  background: var(--box-accent);
+  border-color: var(--box-accent);
   color: #ffffff;
+  box-shadow: 0 4px 14px rgba(var(--box-accent-rgb) / 38%);
 }
 
 html[data-theme="light"] .catalog-empty-state {
   background: #ffffff;
-  border-color: rgb(15 23 42 / 12%);
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
   color: #334155;
 }
 
@@ -2465,26 +2303,39 @@ html[data-theme="light"] .catalog-empty-state .text-secondary {
 
 /* Quick Booking Glass Panel & Modals */
 html[data-theme="light"] .booking-glass-panel {
-  background: rgb(255 255 255 / 92%);
-  border-color: rgb(15 23 42 / 12%);
-  box-shadow: 0 24px 60px rgb(15 23 42 / 15%);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(var(--box-accent-rgb) / 24%);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08), 0 0 24px rgba(var(--box-accent-rgb) / 10%);
 }
 
-html[data-theme="light"] .booking-label,
+html[data-theme="light"] .booking-label {
+  color: #0f172a;
+}
+
 html[data-theme="light"] .booking-field-label {
-  color: #475569;
+  color: #64748b;
 }
 
 html[data-theme="light"] .booking-select {
   background-color: #f8fafc;
   color: #0f172a;
-  border-color: rgb(15 23 42 / 15%);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  border-color: rgba(15, 23, 42, 0.15);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23C91934' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 }
 
 html[data-theme="light"] .booking-select:hover:not(:disabled) {
-  background-color: #f1f5f9;
-  border-color: rgb(15 23 42 / 25%);
+  background-color: #ffffff;
+  border-color: var(--box-accent);
+  box-shadow: 0 2px 10px rgba(var(--box-accent-rgb) / 14%);
+}
+
+html[data-theme="light"] .booking-select:focus {
+  background-color: #ffffff;
+  border-color: var(--box-accent);
+  box-shadow: 0 0 0 3px rgba(var(--box-accent-rgb) / 16%);
 }
 
 html[data-theme="light"] .booking-select option {
@@ -2493,13 +2344,13 @@ html[data-theme="light"] .booking-select option {
 }
 
 html[data-theme="light"] .welcome-cinema-backdrop {
-  background: rgb(15 23 42 / 55%);
+  background: rgba(15, 23, 42, 0.55);
 }
 
 html[data-theme="light"] .welcome-cinema-modal {
   background: #ffffff;
-  border-color: rgb(15 23 42 / 12%);
-  box-shadow: 0 24px 70px rgb(15 23 42 / 25%);
+  border-color: rgba(var(--box-accent-rgb) / 22%);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.2), 0 0 30px rgba(var(--box-accent-rgb) / 10%);
 }
 
 html[data-theme="light"] .welcome-title {
@@ -2513,14 +2364,14 @@ html[data-theme="light"] .btn-welcome-skip {
 }
 
 html[data-theme="light"] .btn-welcome-skip:hover {
-  color: #0f172a;
+  color: var(--box-accent);
 }
 
 html[data-theme="light"] .welcome-select {
   background-color: #f8fafc;
   color: #0f172a;
-  border-color: rgb(15 23 42 / 15%);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  border-color: rgba(15, 23, 42, 0.15);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23C91934' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
 }
 
 html[data-theme="light"] .welcome-select option {
@@ -2528,7 +2379,4 @@ html[data-theme="light"] .welcome-select option {
   color: #0f172a;
 }
 
-html[data-theme="light"] .hero-spotlight .coverflow-dot { background: rgb(255 255 255 / 55%); }
-html[data-theme="light"] .hero-spotlight .coverflow-dot.active { background: var(--box-accent); }
-html[data-theme="light"] .popover-subtitle { color: #a83b10; }
-html[data-theme="light"] .catalog-pagination-wrap { border-color: var(--box-border-color); }
+html[data-theme="light"] .catalog-pagination-wrap { border-color: rgba(15, 23, 42, 0.08); }

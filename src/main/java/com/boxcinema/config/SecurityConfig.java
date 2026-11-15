@@ -114,7 +114,8 @@ public class SecurityConfig {
                 .securityContext(sc -> sc.securityContextRepository(securityContextRepository))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(csrf -> csrf.ignoringRequestMatchers(
-                        "/api/quick-booking/**"
+                        "/api/quick-booking/**",
+                        "/admin/api/**"
                 ))
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .exceptionHandling(ex -> ex
@@ -149,6 +150,8 @@ public class SecurityConfig {
                                 "/api/auth/forgot-password", "/api/auth/forgot-password/**",
                                 "/api/auth/password-reset/**",
                                 "/api/quick-booking/**",
+                                "/api/booking/showtimes/**",
+                                "/booking/buy-tickets",
                                 "/css/**", "/js/**", "/assets/**", "/images/**", "/favicon.ico", "/error"
                         ).permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")

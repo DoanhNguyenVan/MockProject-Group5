@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}" content="">
+  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}" content="">
+  <title>BOX Cinema Admin</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/css/main.css" th:href="@{/css/main.css}">
+  <link rel="stylesheet" href="/css/admin.css?v=4.6" th:href="@{/css/admin.css(v='4.6')}">
+  <style>
+    /* Dedicated Admin Suite Topbar & Layout Enhancements */
+    html, body.admin-page {
+      background: var(--box-bg-primary);
+      color: var(--box-text-primary);
+      min-height: 100vh;
+      margin: 0 !important;
+      padding: 0 !important;
+      padding-top: 0 !important;
+    }
+    .admin-shell {
+      margin: 0 !important;
+      padding: 0 !important;
+      padding-top: 0 !important;
+    }
+    .admin-top-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .admin-user-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: var(--box-bg-elevated);
+      border: 1px solid var(--box-border-color);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--box-text-primary);
+    }
+    .admin-user-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--box-accent);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+    .admin-logout-btn {
+      background: transparent;
+      border: 1px solid var(--box-border-color);
+      border-radius: 7px;
+      color: var(--box-text-muted);
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .admin-logout-btn:hover {
+      background: #dc2626;
+      border-color: #dc2626;
+      color: #ffffff;
+    }
+    .admin-theme-btn {
+      background: var(--box-bg-elevated);
+      border: 1px solid var(--box-border-color);
+      border-radius: 7px;
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--box-gold);
+      cursor: pointer;
+      font-size: 16px;
+    }
+  </style>
+  <script>
+    try {
+      var _boxTheme = localStorage.getItem("box_cinema_theme") === "light" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", _boxTheme);
+      document.documentElement.setAttribute("data-bs-theme", _boxTheme);
+    } catch (_) {}
+  </script>
+</head>
+<body class="admin-page">
+  <!-- Admin Workspace Shell (No customer website header) -->
+  <main data-admin-section="dashboard" th:attr="data-admin-section=${adminSection}">
+    <input type="hidden" th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}" th:value="${_csrf != null ? _csrf.token : ''}" />
+
+    <!-- Live Status Banner -->
+    <div id="adminStatus" class="admin-status" role="status" hidden></div>
+
+    <div class="admin-shell">
+      <!-- Sidebar Navigation -->
+      <aside class="admin-sidebar">
+        <div class="admin-workspace-label">
+          <span class="admin-workspace-mark" aria-hidden="true">★</span>
+          <div>
+            <span>Admin Suite</span>
+            <small>BOX CINEMA</small>
+          </div>
+        </div>
+
+        <button type="button" id="adminMenuToggle" class="admin-button d-md-none w-100 mb-3" aria-expanded="false" aria-controls="adminNavigation">
+          Menu Navigation
+        </button>
+
+        <nav id="adminNavigation" class="admin-navigation" aria-label="Main navigation"></nav>
+
+        <div class="admin-sidebar-bottom">
+          <p class="mb-2"><span class="admin-sample-dot" style="background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,0.6)"></span>Live Database Active</p>
+          <a href="/" class="admin-text-button d-block mb-1 text-decoration-none">← Back to Website</a>
+          <button type="button" id="adminReset" class="admin-text-button">Refresh data</button>
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <section class="admin-content">
+        <!-- Standardized Docked Topbar -->
+        <header class="admin-topbar">
+          <div class="admin-breadcrumb">
+            <span class="admin-breadcrumb-root">Admin</span>
+            <span class="admin-breadcrumb-sep">/</span>
+            <span id="adminBreadcrumb" class="admin-breadcrumb-current">Dashboard</span>
+          </div>
+
+          <!-- Admin Quick Tools: View Website + Theme Toggle + User Pill + Logout -->
+          <div class="admin-top-actions">
+            <a href="/" class="admin-button" title="View customer website">← Back to Website</a>
+            
+            <button type="button" class="admin-theme-btn" id="adminThemeToggle" aria-label="Toggle theme" title="Toggle theme" onclick="
+              var curr = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+              document.documentElement.setAttribute('data-theme', curr);
+              document.documentElement.setAttribute('data-bs-theme', curr);
+              localStorage.setItem('box_cinema_theme', curr);
+            ">◐</button>
+
+            <div class="admin-user-badge">
+              <span class="admin-user-avatar">A</span>
+              <span th:text="${(currentUser != null ? currentUser.fullName : (session.currentUser != null ? session.currentUser.fullName : 'Administrator'))}">Administrator</span>
+            </div>
+
+            <form action="/logout" th:action="@{/logout}" method="post" class="m-0 p-0 d-inline">
+              <button type="submit" class="admin-logout-btn">Sign Out</button>
+            </form>
+          </div>
+        </header>
+
+        <div class="admin-content-body">
+          <!-- Page Heading -->
+          <div class="admin-page-heading mb-4">
+            <div>
+              <p class="admin-eyebrow">ADMINISTRATION</p>
+              <h1 id="adminTitle">Dashboard</h1>
+              <p id="adminDescription">Overview of cinema activities.</p>
+            </div>
+          </div>
+
+          <!-- 1. DASHBOARD SECTION (Shown when section === 'dashboard') -->
+          <div id="adminDashboard" class="admin-dashboard-container" hidden>
+            <div class="admin-metrics" id="adminMetrics"></div>
+            <div class="admin-dashboard-grid">
+              <div class="admin-panel">
+                <h2>Recent Revenue</h2>
+                <div id="adminRevenueChart" class="admin-chart"></div>
+              </div>
+              <div class="admin-panel">
+                <h2>Top Movies</h2>
+              <div id="adminTopMovies"></div>
+              <h2 class="mt-4">Upcoming Screenings</h2>
+              <div id="adminUpcoming"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. SEAT DESIGNER SECTION (Shown when section === 'seats') -->
+        <div id="adminSeats" class="admin-seats-container" hidden>
+          <div class="admin-panel mb-4">
+            <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-4">
+              <div>
+                <h2 id="adminSeatTitle" class="m-0">Room Layout Designer</h2>
+                <div class="d-flex flex-wrap gap-3 text-secondary small mt-1">
+                  <span id="adminSeatCount">0 available / 0 seats</span>
+                  <span id="adminSeatBreakdown" class="text-secondary"></span>
+                  <span id="adminSeatDirty" class="badge bg-secondary">No unsaved changes</span>
+                </div>
+              </div>
+              <div class="d-flex gap-2 align-items-center">
+                <button type="button" id="adminUndoSeats" class="admin-button" title="Quay lại bước vừa rồi (Ctrl+Z)" disabled>
+                  <span aria-hidden="true" style="font-size: 1.1em;">↶</span> Hoàn tác
+                </button>
+                <button type="button" id="adminRedoSeats" class="admin-button" title="Làm lại bước vừa hủy (Ctrl+Y)" disabled>
+                  <span aria-hidden="true" style="font-size: 1.1em;">↷</span> Làm lại
+                </button>
+                <button type="button" id="adminSaveSeats" class="admin-button admin-button-primary">Save Seat Matrix</button>
+              </div>
+            </div>
+
+            <!-- Unified Row 1: Rạp, Phòng & Kích thước Lưới -->
+            <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-3 pb-3" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+              <div class="d-flex flex-wrap gap-3 align-items-center">
+                <label class="d-flex align-items-center gap-2 m-0 text-secondary small fw-semibold">Rạp:
+                  <select id="adminSeatCinema" class="admin-input" style="min-width: 210px;"></select>
+                </label>
+                <label class="d-flex align-items-center gap-2 m-0 text-secondary small fw-semibold">Phòng:
+                  <select id="adminSeatRoom" class="admin-input" style="min-width: 210px;"></select>
+                </label>
+                <!-- Hidden sync select for script compatibility -->
+                <select id="adminSeatPaint" class="d-none" aria-hidden="true"></select>
+              </div>
+
+              <div class="d-flex align-items-center gap-2">
+                <span class="text-secondary small fw-semibold">Lưới:</span>
+                <input type="number" id="adminSeatRows" class="admin-input text-center" min="1" max="16" value="8" style="width: 52px; padding: 6px;" title="Số hàng">
+                <span class="text-muted">×</span>
+                <input type="number" id="adminSeatColumns" class="admin-input text-center" min="1" max="20" value="10" style="width: 52px; padding: 6px;" title="Số cột">
+                <button type="button" id="adminGenerateSeats" class="admin-button admin-button-sm">Tạo lưới mới</button>
+              </div>
+            </div>
+
+            <!-- Unified Row 2: Cọ vẽ nhanh (Visual Palette) & Mẫu thiết lập chuẩn (Contextual Presets) -->
+            <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-3">
+              <div class="d-flex flex-wrap gap-2 align-items-center">
+                <span class="text-secondary small fw-semibold me-1">Loại ghế:</span>
+                <div id="adminSeatPaintPalette" class="d-flex flex-wrap gap-2 align-items-center"></div>
+              </div>
+
+              <div class="admin-seat-presets d-flex flex-wrap gap-2 align-items-center">
+                <button type="button" id="btnPresetStandardLayout" class="admin-button admin-button-sm" style="background:#2563eb;color:#ffffff;font-weight:600;border-color:#3b82f6;">⚡ Tạo nhanh</button>
+                <button type="button" id="btnPresetReset" class="admin-button admin-button-sm text-danger-emphasis">Xóa trắng</button>
+              </div>
+            </div>
+
+            <!-- Seat Validation Alert Box -->
+            <div id="adminSeatValidationAlert" class="admin-seat-validation-box mb-3" hidden></div>
+
+            <!-- Screen Area & Seat Matrix Canvas -->
+            <div class="admin-matrix-canvas-wrapper">
+              <div class="admin-screen-banner">
+                <div class="admin-screen-arc"></div>
+                <div class="admin-screen-text">SCREEN THIS WAY</div>
+              </div>
+
+              <div id="adminSeatRowsContainer" class="admin-seat-rows-container"></div>
+
+              <!-- Legend matching the user image -->
+              <div id="adminSeatLegendBox" class="admin-seat-legend-box mt-4">
+                <div class="legend-item"><span class="legend-dot dot-standard"></span> Standard</div>
+                <div class="legend-item"><span class="legend-dot dot-vip"></span> VIP</div>
+                <div class="legend-item"><span class="legend-dot dot-sweetbox"></span> Sweetbox</div>
+                <div class="legend-item"><span class="legend-dot dot-unavailable"></span> Unavailable / Aisle (×)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. REPORTS SECTION (Shown when section === 'reports') -->
+        <div id="adminReports" class="admin-reports-container" hidden>
+          <div class="admin-panel mb-4">
+            <form id="adminReportFilters" class="admin-report-filters d-flex flex-wrap gap-3 align-items-end mb-4">
+              <label>From:
+                <input type="date" id="adminReportFrom" class="admin-input" value="2026-11-09">
+              </label>
+              <label>To:
+                <input type="date" id="adminReportTo" class="admin-input" value="2026-11-15">
+              </label>
+              <label>Cinema:
+                <select id="adminReportCinema" class="admin-input"></select>
+              </label>
+              <button type="submit" class="admin-button admin-button-primary">Filter Report</button>
+              <button type="button" id="adminExportReport" class="admin-button">Export CSV</button>
+            </form>
+
+            <div id="adminReportMetrics" class="admin-metrics mb-4"></div>
+            <div id="adminReportChart" class="admin-chart mb-4"></div>
+
+            <div class="admin-table-panel">
+              <div class="admin-table-scroll">
+                <table class="admin-table">
+                  <caption class="visually-hidden">Sales Reports</caption>
+                  <thead id="adminReportHead">
+                    <tr>
+                      <th scope="col">Movie</th>
+                      <th scope="col">Tickets</th>
+                      <th scope="col">Revenue</th>
+                      <th scope="col">Share</th>
+                    </tr>
+                  </thead>
+                  <tbody id="adminReportBody"></tbody>
+                </table>
+              </div>
+              <div id="adminReportEmpty" class="admin-empty" hidden>
+                <span>∅</span>
+                <h2>No Report Data</h2>
+                <p>No sales found for the selected filter period.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. GENERAL CATALOG SECTION (Movies, Genres, Cinemas, Rooms, Showtimes, Pricing, Promotions, Combos, Staff) -->
+        <div id="adminCatalog" class="admin-catalog-container" hidden>
+          <div class="admin-toolbar">
+            <div class="admin-search-wrap">
+              <input type="search" id="adminSearch" class="admin-input" placeholder="Search records…">
+            </div>
+            <select id="adminCinemaFilter" class="admin-input" style="width: 230px;" aria-label="Filter cinema" hidden></select>
+            <select id="adminFilter" class="admin-input" aria-label="Filter status"></select>
+            <button type="button" id="adminClearFilters" class="admin-button">Clear</button>
+            <button type="button" id="adminCreate" class="admin-button admin-button-primary">+ Add Record</button>
+          </div>
+
+          <div class="admin-panel admin-table-panel">
+            <div class="admin-table-scroll">
+              <table class="admin-table">
+                <caption id="adminTableCaption" class="visually-hidden">Catalog</caption>
+                <thead id="adminTableHead"></thead>
+                <tbody id="adminTableBody"></tbody>
+              </table>
+            </div>
+
+            <div id="adminEmpty" class="admin-empty" hidden>
+              <span>∅</span>
+              <h2>No Records Found</h2>
+              <p>Try clearing filters or create a new record.</p>
+            </div>
+
+            <div class="admin-pagination">
+              <p id="adminPageInfo">Showing records</p>
+              <div class="d-flex gap-2">
+                <button type="button" id="adminPrevious" class="admin-button">Previous</button>
+                <button type="button" id="adminNext" class="admin-button">Next</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. TICKET ORDERS & INVOICES SECTION (Shown when section === 'bookings') -->
+        <div id="adminBookings" class="admin-bookings-container" hidden>
+          <!-- KPI Metrics Cards (Standardized layout) -->
+          <div class="admin-metrics" id="adminBookingMetrics"></div>
+
+          <!-- Toolbar (Search, Cinema Filter, Status Filter) -->
+          <div class="admin-toolbar mb-4 flex-wrap">
+            <div class="admin-search-wrap" style="flex: 1; min-width: 250px;">
+              <input type="search" id="adminBookingSearch" class="admin-input w-100" placeholder="Tìm theo Mã đơn (BOX-...), Tên khách, SĐT, Tên phim…">
+            </div>
+            <select id="adminBookingCinemaFilter" class="admin-input" style="min-width: 200px;">
+              <option value="">Tất cả cụm rạp</option>
+            </select>
+            <select id="adminBookingStatusFilter" class="admin-input" style="min-width: 160px;">
+              <option value="">Tất cả trạng thái</option>
+              <option value="CONFIRMED">CONFIRMED (Thành công)</option>
+              <option value="CANCELLED">CANCELLED (Đã hủy)</option>
+              <option value="REFUNDED">REFUNDED (Đã hoàn tiền)</option>
+              <option value="HOLDING">HOLDING (Đang giữ chỗ)</option>
+            </select>
+            <button type="button" id="adminBookingClearFilters" class="admin-button">Xóa bộ lọc</button>
+          </div>
+
+          <!-- Bookings Table Panel -->
+          <div class="admin-panel admin-table-panel">
+            <div class="admin-table-scroll">
+              <table class="admin-table">
+                <caption class="visually-hidden">Danh sách đơn đặt vé &amp; Hóa đơn</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Mã đơn &amp; Ngày đặt</th>
+                    <th scope="col">Phim &amp; Suất chiếu</th>
+                    <th scope="col">Cụm rạp &amp; Phòng</th>
+                    <th scope="col">Khách hàng</th>
+                    <th scope="col">Ghế &amp; Combo</th>
+                    <th scope="col">Tổng tiền</th>
+                    <th scope="col">Trạng thái</th>
+                    <th scope="col">Hóa đơn</th>
+                  </tr>
+                </thead>
+                <tbody id="adminBookingTableBody"></tbody>
+              </table>
+            </div>
+
+            <div id="adminBookingEmpty" class="admin-empty" hidden>
+              <span>🧾</span>
+              <h2>Không tìm thấy giao dịch nào</h2>
+              <p>Thử tìm từ khóa khác hoặc xóa bộ lọc để xem toàn bộ danh sách.</p>
+            </div>
+
+            <div class="admin-pagination">
+              <p id="adminBookingPageInfo">Hiển thị đơn hàng</p>
+              <div class="d-flex gap-2">
+                <button type="button" id="adminBookingPrevious" class="admin-button">Trang trước</button>
+                <button type="button" id="adminBookingNext" class="admin-button">Trang sau</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        </div> <!-- /.admin-content-body -->
+      </section>
+    </div>
+
+    <!-- Deactivate Impact Safety Modal Dialog -->
+    <dialog id="adminDeactivateSafetyModal" class="admin-dialog" style="max-width: 720px; width: 95vw;">
+      <div class="admin-dialog-heading">
+        <div>
+          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #ef4444; background: rgba(239, 68, 68, 0.12); padding: 4px 10px; border-radius: 6px; margin-bottom: 6px; border: 1px solid rgba(239, 68, 68, 0.25);">
+            ⚠️ CẢNH BÁO AN TOÀN VÉ KHÁCH HÀNG
+          </span>
+          <h2 id="adminImpactModalTitle" style="margin: 0; font-size: 20px;">Dừng hoạt động cơ sở / phòng chiếu</h2>
+        </div>
+        <button type="button" id="adminImpactClose" class="admin-icon-button" aria-label="Close dialog" onclick="this.closest('dialog').close('cancel')">×</button>
+      </div>
+
+      <p style="color: var(--box-text-secondary); font-size: 13px; margin: 8px 0 16px;">
+        Hệ thống phát hiện có các đơn đặt vé đã thanh toán cho các suất chiếu sắp tới. Vui lòng chọn phương án giải quyết nghiệp vụ dưới đây:
+      </p>
+
+      <!-- Impact Metrics -->
+      <div class="admin-impact-grid">
+        <div class="admin-impact-card">
+          <div id="adminImpactBookingsCount" class="admin-impact-value">0</div>
+          <div class="admin-impact-label">Đơn vé ảnh hưởng</div>
+        </div>
+        <div class="admin-impact-card">
+          <div id="adminImpactTicketsCount" class="admin-impact-value">0</div>
+          <div class="admin-impact-label">Tổng số vé</div>
+        </div>
+        <div class="admin-impact-card">
+          <div id="adminImpactTotalAmount" class="admin-impact-value">0 đ</div>
+          <div class="admin-impact-label">Tiền cần hoàn</div>
+        </div>
+        <div class="admin-impact-card">
+          <div id="adminImpactShowtimesCount" class="admin-impact-value">0</div>
+          <div class="admin-impact-label">Suất chiếu tương lai</div>
+        </div>
+      </div>
+
+      <!-- Bookings preview table -->
+      <div style="font-size: 12px; font-weight: 600; color: var(--box-text-secondary); margin-bottom: 8px;">
+        Chi tiết các đơn vé bị ảnh hưởng:
+      </div>
+      <div class="admin-impact-bookings-box">
+        <table class="admin-impact-table">
+          <thead>
+            <tr>
+              <th>Mã đơn</th>
+              <th>Khách hàng</th>
+              <th>Phim &amp; Phòng</th>
+              <th>Suất chiếu</th>
+              <th>Số vé</th>
+              <th>Thành tiền</th>
+            </tr>
+          </thead>
+          <tbody id="adminImpactTableBody">
+            <!-- Dynamic rows -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Strategy Options -->
+      <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px;">Chọn phương án xử lý:</div>
+      <div class="admin-resolution-options">
+        <label class="admin-resolution-card selected" id="adminOptionRefundCard">
+          <input type="radio" name="adminDeactivateStrategy" value="REFUND_AND_CANCEL" checked>
+          <div>
+            <div style="font-weight: 600; color: #ef4444; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+              🔄 Phương án 1: Hủy khẩn cấp &amp; Tự động hoàn tiền 100% (Khuyên dùng khi đóng đột xuất)
+            </div>
+            <div style="font-size: 12px; color: var(--box-text-muted); margin-top: 4px;">
+              Hủy toàn bộ suất chiếu tương lai, tự động hoàn tiền 100% về tài khoản/thẻ khách hàng qua cổng thanh toán, gửi email xin lỗi và chuyển rạp/phòng sang Inactive ngay lập tức.
+            </div>
+          </div>
+        </label>
+
+        <label class="admin-resolution-card" id="adminOptionGracefulCard">
+          <input type="radio" name="adminDeactivateStrategy" value="GRACEFUL_DECOMMISSION">
+          <div>
+            <div style="font-weight: 600; color: #f59e0b; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+              ⏳ Phương án 2: Đóng theo lộ trình / Dừng nhận khách mới (Khuyên dùng khi đóng có kế hoạch)
+            </div>
+            <div style="font-size: 12px; color: var(--box-text-muted); margin-top: 4px;">
+              Chuyển rạp sang trạng thái STOP_BOOKING để chặn khách mới đặt vé. Giữ nguyên và phục vụ trọn vẹn các suất chiếu đã có người mua vé cho đến khi kết thúc.
+            </div>
+          </div>
+        </label>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-4">
+        <button type="button" id="adminImpactCancel" class="admin-button" onclick="this.closest('dialog').close('cancel')">Hủy bỏ thao tác</button>
+        <button type="button" id="adminImpactSubmit" class="admin-button admin-button-primary" style="background: #ef4444; border-color: #ef4444;">
+          Xác nhận thực hiện
+        </button>
+      </div>
+    </dialog>
+
+    <!-- Confirm Modal Dialog -->
+    <dialog id="adminConfirm" class="admin-dialog">
+      <div class="admin-dialog-heading">
+        <h2 id="adminConfirmTitle">Confirm Action</h2>
+      </div>
+      <p id="adminConfirmMessage">Are you sure you want to proceed?</p>
+      <div class="d-flex justify-content-end gap-2 mt-4">
+        <button type="button" id="adminConfirmCancel" class="admin-button" onclick="this.closest('dialog').close('cancel')">Cancel</button>
+        <button type="button" id="adminConfirmAccept" class="admin-button admin-button-primary" onclick="this.closest('dialog').close('confirm')">Confirm</button>
+      </div>
+    </dialog>
+
+    <!-- Editor Modal Dialog -->
+    <dialog id="adminEditor" class="admin-dialog">
+      <div class="admin-dialog-heading">
+        <h2 id="adminEditorTitle">Edit Record</h2>
+        <button type="button" id="adminEditorClose" class="admin-icon-button" aria-label="Close dialog" onclick="this.closest('dialog').close()">×</button>
+      </div>
+      <form id="adminEditorForm" method="dialog">
+        <div id="adminFormError" class="admin-field-error mb-3" hidden></div>
+        <div id="adminEditorFields" class="admin-form-grid"></div>
+        <div class="d-flex justify-content-end gap-2 mt-4">
+          <button type="button" id="adminEditorCancel" class="admin-button" onclick="this.closest('dialog').close()">Cancel</button>
+          <button type="submit" id="adminEditorSave" class="admin-button admin-button-primary">Save Changes</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- Electronic Invoice & Receipt Modal Dialog -->
+    <dialog id="adminInvoiceModal" class="admin-dialog" style="max-width: 680px; width: 95vw;">
+      <div class="admin-dialog-heading">
+        <div class="d-flex align-items-center gap-2">
+          <span style="font-size: 24px;">🧾</span>
+          <div>
+            <h2 style="margin: 0; font-size: 18px; font-weight: 700;">HÓA ĐƠN ĐIỆN TỬ</h2>
+            <p id="adminInvoiceSub" style="margin: 0; font-size: 12px; color: var(--box-text-muted);">BOX Cinema E-Receipt</p>
+          </div>
+        </div>
+        <button type="button" class="admin-icon-button" onclick="this.closest('dialog').close()">×</button>
+      </div>
+
+      <div id="adminInvoiceContent" class="admin-invoice-body mt-3">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mt-4 pt-3" style="border-top: 1px solid var(--box-border-color);">
+        <button type="button" class="admin-button" onclick="window.print()">🖨️ In hóa đơn</button>
+        <button type="button" class="admin-button admin-button-primary" onclick="this.closest('dialog').close()">Đóng</button>
+      </div>
+    </dialog>
+  </main>
+
+  <script type="module" src="/js/modules/admin.js?v=4.8" th:src="@{/js/modules/admin.js(v='4.8')}"></script>
+</body>
+</html>

@@ -6,10 +6,17 @@ export function recordLabel(section, record, state) {
   return String(record[RECORD_LABELS[section]] || record.id);
 }
 
-export function filterRecords(records, query = '', status = '') {
+export function filterRecords(records, query = '', status = '', cinemaId = '', section = '') {
   const normalize = value => String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
   const search = normalize(query.trim());
-  return records.filter(record => (!status || record.status === status) && normalize(Object.values(record).join(' ')).includes(search));
+  return records.filter(record => {
+    if (status && record.status !== status) return false;
+    if (cinemaId) {
+      if (section === 'cinemas' && String(record.id) !== String(cinemaId)) return false;
+      if (record.cinemaId && String(record.cinemaId) !== String(cinemaId)) return false;
+    }
+    return normalize(Object.values(record).join(' ')).includes(search);
+  });
 }
 
 export function paginateRecords(records, page = 1, pageSize = 6) {
@@ -87,9 +94,18 @@ export function summarizeSales(sales, from, to, cinemaId = '') {
   return { revenue: filtered.reduce((sum, sale) => sum + sale.revenue, 0), tickets: filtered.reduce((sum, sale) => sum + sale.tickets, 0), orders: filtered.length, days, movies: Object.values(movies).sort((a, b) => b.revenue - a.revenue), records: filtered };
 }
 
-export function createSeatLayout(rows, columns, typeId) {
-  if (!Number.isInteger(rows) || !Number.isInteger(columns) || rows < 1 || rows > 12 || columns < 1 || columns > 16 || !typeId) return [];
-  return Array.from({ length: rows * columns }, (_, index) => ({ row: String.fromCharCode(65 + Math.floor(index / columns)), number: index % columns + 1, typeId, status: 'ACTIVE' }));
+export function createSeatLayout(rows, columns, typeId, defaultStatus = 'UNAVAILABLE') {
+  if (!Number.isInteger(rows) || !Number.isInteger(columns) || rows < 1 || rows > 20 || columns < 1 || columns > 26 || !typeId) return [];
+  return Array.from({ length: rows * columns }, (_, index) => {
+    const col = (index % columns) + 1;
+    return {
+      row: String.fromCharCode(65 + Math.floor(index / columns)),
+      col: col,
+      number: col,
+      typeId,
+      status: defaultStatus
+    };
+  });
 }
 
 export function reportCsv(summary, state) {
