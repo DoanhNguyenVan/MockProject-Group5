@@ -86,6 +86,46 @@
       document.documentElement.setAttribute("data-theme", _boxTheme);
       document.documentElement.setAttribute("data-bs-theme", _boxTheme);
     } catch (_) {}
+
+    let notifyTimer = null;
+    function notify(message, isError = false) {
+      const el = document.getElementById('adminStatus');
+      if (!el) return;
+      el.textContent = message;
+      if (isError) {
+        el.classList.add('admin-status-error');
+      } else {
+        el.classList.remove('admin-status-error');
+      }
+      el.hidden = false;
+      el.classList.remove('admin-status-hide');
+      el.style.animation = 'none';
+      void el.offsetHeight;
+      el.style.animation = '';
+
+      if (notifyTimer) clearTimeout(notifyTimer);
+      notifyTimer = setTimeout(() => {
+        el.classList.add('admin-status-hide');
+        setTimeout(() => { el.hidden = true; }, 250);
+      }, 2800);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const el = document.getElementById('adminStatus');
+      if (!el) return;
+      el.addEventListener('click', () => {
+        el.classList.add('admin-status-hide');
+        setTimeout(() => { el.hidden = true; }, 200);
+      });
+
+      if (el.getAttribute('data-auto-show') === 'true') {
+        const msg = el.textContent ? el.textContent.trim() : '';
+        if (msg) {
+          const isErr = el.getAttribute('data-type') === 'error';
+          notify(msg, isErr);
+        }
+      }
+    });
   </script>
 </head>
 <body>
@@ -179,6 +219,12 @@
 
   <!-- Reusable Topbar Fragment -->
   <header th:fragment="topbar(sectionName, subName, sectionUrl)" class="admin-topbar">
+    <!-- Live Status Banner (Synchronized with Seat & Workspace pages) -->
+    <div id="adminStatus" class="admin-status" role="status" hidden
+         th:classappend="${errorMessage != null ? 'admin-status-error' : ''}"
+         th:text="${successMessage != null ? successMessage : (errorMessage != null ? errorMessage : '')}"
+         th:attr="data-auto-show=${(successMessage != null and !#strings.isEmpty(successMessage)) or (errorMessage != null and !#strings.isEmpty(errorMessage)) ? 'true' : 'false'},data-type=${errorMessage != null ? 'error' : 'success'}"></div>
+
     <div class="admin-breadcrumb">
       <span class="admin-breadcrumb-root">Admin</span>
       <span class="admin-breadcrumb-sep">/</span>
