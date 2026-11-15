@@ -297,6 +297,24 @@ html[data-theme="light"] .admin-status.admin-status-error {
 .admin-table td:last-child { min-width: 160px; }
 .admin-table .admin-actions { flex-wrap: nowrap; gap: 8px; }
 
+/* Movie and Genre specific table column balancing */
+.admin-movie-table td:first-child,
+.admin-movie-table th:first-child,
+.admin-genre-table td:first-child,
+.admin-genre-table th:first-child {
+  min-width: 50px !important;
+  width: 50px !important;
+  text-align: center;
+}
+
+.admin-movie-table td:last-child,
+.admin-movie-table th:last-child,
+.admin-genre-table td:last-child,
+.admin-genre-table th:last-child {
+  min-width: 140px;
+  width: 140px;
+}
+
 /* Unified Action Buttons in Data Tables */
 .admin-btn-action {
   display: inline-flex;

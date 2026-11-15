@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
 import java.text.Normalizer;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -109,13 +110,19 @@ public class BookingContextApiController {
     @Transactional(readOnly = true)
     public ResponseEntity<?> context(@PathVariable Long showtimeId) {
         Showtime showtime = showtimes.findById(showtimeId).orElse(null);
-        if (showtime == null || !"ACTIVE".equalsIgnoreCase(showtime.getStatus())) {
+        if (showtime == null) {
             return error(HttpStatus.NOT_FOUND, "SHOWTIME_NOT_FOUND", "This screening could not be found. Please choose another showtime.");
+        }
+        if (!"ACTIVE".equalsIgnoreCase(showtime.getStatus())
+                || (showtime.getRoom() != null && !"ACTIVE".equalsIgnoreCase(showtime.getRoom().getStatus()))
+                || (showtime.getRoom() != null && showtime.getRoom().getCinema() != null && !"ACTIVE".equalsIgnoreCase(showtime.getRoom().getCinema().getStatus()))
+                || (showtime.getStartAt() != null && !showtime.getStartAt().isAfter(LocalDateTime.now()))) {
+            return error(HttpStatus.CONFLICT, "SHOWTIME_UNAVAILABLE", "This screening has started or is no longer available. Please choose another showtime.");
         }
         var movie = showtime.getMovie();
         var room = showtime.getRoom();
         var cinema = room != null ? room.getCinema() : null;
-        if (room == null || !"ACTIVE".equalsIgnoreCase(room.getStatus()) || cinema == null || !"ACTIVE".equalsIgnoreCase(cinema.getStatus())) {
+        if (room == null || cinema == null) {
             return error(HttpStatus.NOT_FOUND, "SHOWTIME_NOT_AVAILABLE", "This screening is no longer available because the cinema or room has suspended operations.");
         }
         return ResponseEntity.ok()
