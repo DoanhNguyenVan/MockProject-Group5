@@ -1,0 +1,565 @@
+
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | BOX Cinema</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --primary: #e50914;
+            --background: #111;
+            --sidebar: #181818;
+            --card: #202020;
+            --border: #333;
+            --text: #f5f5f5;
+            --muted: #999;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--background);
+            color: var(--text);
+            font-family: Arial, sans-serif;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100vh;
+            background: var(--sidebar);
+            border-right: 1px solid var(--border);
+            padding: 25px 15px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .brand {
+            color: var(--primary);
+            font-size: 25px;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 40px;
+            letter-spacing: 1px;
+        }
+
+        .menu-label {
+            color: #777;
+            font-size: 11px;
+            font-weight: bold;
+            margin: 25px 12px 10px;
+            text-transform: uppercase;
+        }
+
+        .nav-link {
+            color: #aaa;
+            padding: 12px 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 5px;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: #351719;
+            color: white;
+        }
+
+        .nav-link.active i {
+            color: var(--primary);
+        }
+
+        .nav-link i {
+            font-size: 18px;
+            width: 22px;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 30px 35px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 25px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+
+        .page-heading {
+            font-size: 26px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .admin-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #ddd;
+        }
+
+        .admin-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .welcome {
+            background: linear-gradient(110deg, #451719, #211819);
+            border: 1px solid #612327;
+            padding: 30px;
+            border-radius: 14px;
+            margin-bottom: 30px;
+        }
+
+        .welcome h2 {
+            font-size: 27px;
+            font-weight: bold;
+        }
+
+        .welcome p {
+            color: #ccc;
+            margin-bottom: 0;
+        }
+
+        .section-title {
+            font-size: 19px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .dashboard-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 23px;
+            height: 100%;
+            transition: 0.2s;
+        }
+
+        .dashboard-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-3px);
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            background: #3a191b;
+            color: var(--primary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 23px;
+            margin-bottom: 18px;
+        }
+
+        .dashboard-card h5 {
+            font-size: 17px;
+            font-weight: bold;
+        }
+
+        .dashboard-card p {
+            color: var(--muted);
+            font-size: 13px;
+            min-height: 38px;
+        }
+
+        .card-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .card-link:hover {
+            color: #ff6068;
+        }
+
+        .quick-panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 30px;
+        }
+
+        .quick-link {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #ddd;
+            text-decoration: none;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .quick-link:last-child {
+            border-bottom: none;
+        }
+
+        .quick-link:hover {
+            color: var(--primary);
+        }
+
+        .footer {
+            color: #666;
+            text-align: center;
+            font-size: 12px;
+            margin-top: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+                padding: 20px 8px;
+            }
+
+            .brand {
+                font-size: 12px;
+            }
+
+            .nav-link {
+                justify-content: center;
+                padding: 12px 5px;
+                font-size: 0;
+            }
+
+            .nav-link i {
+                font-size: 20px;
+            }
+
+            .menu-label {
+                display: none;
+            }
+
+            .main-content {
+                margin-left: 70px;
+                padding: 20px 15px;
+            }
+
+            .admin-info span {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+
+    <div class="brand">
+        BOX CINEMA
+    </div>
+
+    <div class="menu-label">Main Menu</div>
+
+    <a th:href="@{/admin}"
+       class="nav-link"
+       th:classappend="${adminSection == null or adminSection == 'dashboard'} ? 'active' : ''">
+        <i class="bi bi-grid"></i>
+        Dashboard
+    </a>
+
+    <div class="menu-label">Management</div>
+
+    <a th:href="@{/admin/movies}" class="nav-link"
+       th:classappend="${adminSection == 'movies'} ? 'active' : ''">
+        <i class="bi bi-film"></i>
+        Movies
+    </a>
+
+    <a th:href="@{/admin/genres}" class="nav-link">
+        <i class="bi bi-tags"></i>
+        Genres
+    </a>
+
+    <a th:href="@{/admin/cinemas}" class="nav-link">
+        <i class="bi bi-building"></i>
+        Cinemas
+    </a>
+
+    <a th:href="@{/admin/rooms}" class="nav-link">
+        <i class="bi bi-door-open"></i>
+        Rooms
+    </a>
+
+    <a th:href="@{/admin/seats}" class="nav-link">
+        <i class="bi bi-grid-3x3"></i>
+        Seats
+    </a>
+
+    <a th:href="@{/admin/showtimes}" class="nav-link">
+        <i class="bi bi-calendar-event"></i>
+        Showtimes
+    </a>
+
+    <div class="menu-label">Business</div>
+
+    <a th:href="@{/admin/pricing}" class="nav-link">
+        <i class="bi bi-cash-stack"></i>
+        Pricing
+    </a>
+
+    <a th:href="@{/admin/promotions}" class="nav-link">
+        <i class="bi bi-ticket-perforated"></i>
+        Promotions
+    </a>
+
+    <a th:href="@{/admin/combos}" class="nav-link">
+        <i class="bi bi-cup-straw"></i>
+        Combos
+    </a>
+
+    <div class="menu-label">System</div>
+
+    <a th:href="@{/admin/staff}" class="nav-link">
+        <i class="bi bi-people"></i>
+        Staff
+    </a>
+
+    <a th:href="@{/admin/reports}" class="nav-link">
+        <i class="bi bi-bar-chart"></i>
+        Reports
+    </a>
+
+    <a th:href="@{/}" class="nav-link">
+        <i class="bi bi-house"></i>
+        Back to Website
+    </a>
+
+</aside>
+
+
+<!-- MAIN CONTENT -->
+<main class="main-content">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+
+        <div>
+            <h1 class="page-heading"
+                th:text="${adminSection == null or adminSection == 'dashboard' ? 'Dashboard' : #strings.capitalize(adminSection)}">
+                Dashboard
+            </h1>
+
+            <small class="text-secondary">
+                BOX Cinema Administration
+            </small>
+        </div>
+
+        <div class="admin-info">
+            <div class="text-end">
+                <div class="fw-bold">Administrator</div>
+                <small class="text-secondary">ADMIN</small>
+            </div>
+
+            <div class="admin-avatar">
+                A
+            </div>
+        </div>
+
+    </header>
+
+
+    <!-- DASHBOARD HOME -->
+    <div th:if="${adminSection == null or adminSection == 'dashboard'}">
+
+        <section class="welcome">
+            <h2>Welcome to BOX Cinema!</h2>
+            <p>
+                Manage your cinema operations from one central dashboard.
+            </p>
+        </section>
+
+        <h4 class="section-title">Management Overview</h4>
+
+        <div class="row g-4">
+
+            <div class="col-md-6 col-xl-4">
+                <div class="dashboard-card">
+                    <div class="card-icon">
+                        <i class="bi bi-film"></i>
+                    </div>
+
+                    <h5>Movie Management</h5>
+                    <p>
+                        Create, update and manage movies.
+                    </p>
+
+                    <a th:href="@{/admin/movies}" class="card-link">
+                        Manage Movies →
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-xl-4">
+                <div class="dashboard-card">
+                    <div class="card-icon">
+                        <i class="bi bi-tags"></i>
+                    </div>
+
+                    <h5>Genre Management</h5>
+                    <p>
+                        Organize and manage movie genres.
+                    </p>
+
+                    <a th:href="@{/admin/genres}" class="card-link">
+                        Manage Genres →
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-xl-4">
+                <div class="dashboard-card">
+                    <div class="card-icon">
+                        <i class="bi bi-building"></i>
+                    </div>
+
+                    <h5>Cinema Management</h5>
+                    <p>
+                        Manage cinema locations and information.
+                    </p>
+
+                    <a th:href="@{/admin/cinemas}" class="card-link">
+                        Manage Cinemas →
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-xl-4">
+                <div class="dashboard-card">
+                    <div class="card-icon">
+                        <i class="bi bi-calendar-event"></i>
+                    </div>
+
+                    <h5>Showtime Management</h5>
+                    <p>
+                        Organize movie schedules and showtimes.
+                    </p>
+
+                    <a th:href="@{/admin/showtimes}" class="card-link">
+                        Manage Showtimes →
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-xl-4">
+                <div class="dashboard-card">
+                    <div class="card-icon">
+                        <i class="bi bi-people"></i>
+                    </div>
+
+                    <h5>Staff Management</h5>
+                    <p>
+                        Manage staff accounts and information.
+                    </p>
+
+                    <a th:href="@{/admin/staff}" class="card-link">
+                        Manage Staff →
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-xl-4">
+                <div class="dashboard-card">
+                    <div class="card-icon">
+                        <i class="bi bi-bar-chart"></i>
+                    </div>
+
+                    <h5>Reports</h5>
+                    <p>
+                        View cinema business reports.
+                    </p>
+
+                    <a th:href="@{/admin/reports}" class="card-link">
+                        View Reports →
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+        <section class="quick-panel">
+
+            <h5 class="section-title">Quick Actions</h5>
+
+            <a th:href="@{/admin/genres/create}" class="quick-link">
+                <span><i class="bi bi-plus-circle me-2"></i> Add New Genre</span>
+                <i class="bi bi-chevron-right"></i>
+            </a>
+
+            <a th:href="@{/admin/genres}" class="quick-link">
+                <span><i class="bi bi-tags me-2"></i> View All Genres</span>
+                <i class="bi bi-chevron-right"></i>
+            </a>
+
+            <a th:href="@{/admin/movies}" class="quick-link">
+                <span><i class="bi bi-film me-2"></i> Movie Management</span>
+                <i class="bi bi-chevron-right"></i>
+            </a>
+
+        </section>
+
+    </div>
+
+
+    <!-- OTHER ADMIN SECTIONS -->
+    <div th:unless="${adminSection == null or adminSection == 'dashboard'}"
+         class="welcome">
+
+        <h2 th:text="${#strings.capitalize(adminSection)} + ' Management'">
+            Management
+        </h2>
+
+        <p>
+            This management section is not implemented yet.
+            Please return to the dashboard or select another section.
+        </p>
+
+        <a th:href="@{/admin}" class="btn btn-danger mt-3">
+            Back to Dashboard
+        </a>
+
+    </div>
+
+
+    <footer class="footer">
+        © 2026 BOX Cinema. All rights reserved.
+    </footer>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js">
+</script>
+
+</body>
+</html>

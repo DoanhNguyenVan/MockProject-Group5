@@ -1,0 +1,157 @@
+
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Genre Form | BOX Cinema</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+    <style>
+        body {
+            background: #111;
+            color: #eee;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 750px;
+            margin-top: 60px;
+        }
+
+        .form-card {
+            background: #1d1d1d;
+            border: 1px solid #333;
+            border-radius: 14px;
+            padding: 35px;
+        }
+
+        .page-title {
+            color: #e50914;
+            font-weight: bold;
+        }
+
+        .form-label {
+            color: #ddd;
+            font-weight: bold;
+        }
+
+        .form-control {
+            background: #292929;
+            border: 1px solid #444;
+            color: white;
+        }
+
+        .form-control:focus {
+            background: #292929;
+            color: white;
+            border-color: #e50914;
+            box-shadow: 0 0 0 0.2rem rgba(229, 9, 20, 0.2);
+        }
+
+        .form-control::placeholder {
+            color: #888;
+        }
+
+        .btn-save {
+            background: #e50914;
+            color: white;
+            border: none;
+        }
+
+        .btn-save:hover {
+            background: #b80710;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="form-card">
+
+        <h2 class="page-title mb-2"
+            th:text="${formTitle}">
+            Add New Genre
+        </h2>
+
+        <p class="text-secondary mb-4">
+            Enter the genre information below.
+        </p>
+
+        <!-- Error Message -->
+        <div th:if="${errorMessage}"
+             class="alert alert-danger"
+             th:text="${errorMessage}">
+        </div>
+
+        <!-- Genre Form -->
+        <form method="post"
+              th:action="${genre.genreId == null}
+                  ? @{/admin/genres/create}
+                  : @{/admin/genres/edit/{id}(id=${genre.genreId})}">
+
+            <!-- Genre Name -->
+            <div class="mb-4">
+
+                <label for="genreName" class="form-label">
+                    Genre Name
+                </label>
+
+                <input type="text"
+                       class="form-control"
+                       id="genreName"
+                       name="genreName"
+                       maxlength="50"
+                       placeholder="Enter genre name..."
+                       th:value="${genre.genreName}"
+                       required>
+
+                <small class="text-secondary">
+                    Maximum 50 characters.
+                </small>
+
+            </div>
+
+            <!-- Description -->
+            <div class="mb-4">
+
+                <label for="description" class="form-label">
+                    Description
+                </label>
+
+                <textarea class="form-control"
+                          id="description"
+                          name="description"
+                          rows="5"
+                          placeholder="Describe this genre..."
+                          th:text="${genre.description}"></textarea>
+
+            </div>
+
+            <!-- Buttons -->
+            <div class="d-flex gap-2">
+
+                <button type="submit" class="btn btn-save px-4">
+                    Save Genre
+                </button>
+
+                <a th:href="@{/admin/genres}"
+                   class="btn btn-outline-secondary px-4">
+                    Cancel
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Movie Management | BOX Cinema</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+    <style>
+        body {
+            background: #111;
+            color: #eee;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 1250px;
+            margin-top: 45px;
+            margin-bottom: 50px;
+        }
+
+        .page-title {
+            color: #e50914;
+            font-weight: bold;
+        }
+
+        .content-card {
+            background: #1d1d1d;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 25px;
+        }
+
+        .table {
+            --bs-table-bg: transparent;
+            --bs-table-color: #eee;
+            --bs-table-border-color: #444;
+            vertical-align: middle;
+        }
+
+        .table thead th {
+            color: #e50914;
+            white-space: nowrap;
+        }
+
+        .movie-poster {
+            width: 65px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 6px;
+            background: #333;
+        }
+
+        .movie-title {
+            font-weight: bold;
+            min-width: 180px;
+        }
+
+        .genre-text {
+            color: #aaa;
+            min-width: 130px;
+        }
+
+        .btn-add {
+            background: #e50914;
+            color: white;
+            border: none;
+        }
+
+        .btn-add:hover {
+            background: #b80710;
+            color: white;
+        }
+
+        .btn-edit {
+            background: #ffc107;
+            color: #111;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .status-badge {
+            padding: 6px 9px;
+            border-radius: 5px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .now-showing {
+            background: #155d36;
+            color: #b8f5ce;
+        }
+
+        .coming-soon {
+            background: #164b78;
+            color: #b9e0ff;
+        }
+
+        .other-status {
+            background: #444;
+            color: #ddd;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h2 class="page-title">Movie Management</h2>
+            <p class="text-secondary mb-0">
+                Manage movies in BOX Cinema
+            </p>
+        </div>
+
+        <a th:href="@{/admin/movies/create}"
+           class="btn btn-add">
+            + Add Movie
+        </a>
+    </div>
+
+    <!-- Messages -->
+    <div th:if="${successMessage}"
+         class="alert alert-success"
+         th:text="${successMessage}">
+    </div>
+
+    <div th:if="${errorMessage}"
+         class="alert alert-danger"
+         th:text="${errorMessage}">
+    </div>
+
+    <!-- Movie Table -->
+    <div class="content-card">
+
+        <div class="d-flex justify-content-between mb-3">
+            <h5>All Movies</h5>
+
+            <span class="text-secondary"
+                  th:text="'Total: ' + ${#lists.size(movies)}">
+            </span>
+        </div>
+
+        <div class="table-responsive">
+
+            <table class="table table-hover">
+
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Poster</th>
+                    <th>Title</th>
+                    <th>Genres</th>
+                    <th>Duration</th>
+                    <th>Age Rating</th>
+                    <th>Release Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+
+                <tbody>
+
+                <tr th:each="movie : ${movies}">
+
+                    <td th:text="${movie.movieId}"></td>
+
+                    <td>
+                        <img th:if="${movie.posterUrl != null and !#strings.isEmpty(movie.posterUrl)}"
+                             th:src="${movie.posterUrl}"
+                             class="movie-poster"
+                             alt="Movie poster">
+
+                        <div th:unless="${movie.posterUrl != null and !#strings.isEmpty(movie.posterUrl)}"
+                             class="movie-poster d-flex align-items-center justify-content-center text-secondary">
+                            No image
+                        </div>
+                    </td>
+
+                    <td>
+                        <div class="movie-title"
+                             th:text="${movie.title}">
+                        </div>
+                    </td>
+
+                    <td>
+<span class="genre-text" th:text="${movie.genreNamesDisplay != null and !#strings.isEmpty(movie.genreNamesDisplay) ? movie.genreNamesDisplay : 'No genre'}">
+</span>
+                    </td>
+
+                    <td th:text="${movie.durationMinutes} + ' min'"></td>
+
+                    <td th:text="${movie.ageRating}"></td>
+
+                    <td th:text="${movie.releaseDate}"></td>
+
+                    <td>
+ <span class="status-badge"
+       th:classappend="${movie.status == 'NOW_SHOWING' ? ' now-showing' : (movie.status == 'COMING_SOON' ? ' coming-soon' : ' other-status')}"
+       th:text="${movie.status}">
+</span>
+                    </td>
+
+                    <td>
+                        <div class="d-flex gap-2">
+
+                            <a th:href="@{/admin/movies/edit/{id}(id=${movie.movieId})}"
+                               class="btn btn-sm btn-edit">
+                                Edit
+                            </a>
+
+                            <form th:action="@{/admin/movies/delete/{id}(id=${movie.movieId})}"
+                                  method="post"
+                                  onsubmit="return confirm('Are you sure you want to delete this movie?')">
+
+                                <button type="submit"
+                                        class="btn btn-sm btn-delete">
+                                    Delete
+                                </button>
+
+                            </form>
+
+                        </div>
+                    </td>
+
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(movies)}">
+                    <td colspan="9"
+                        class="text-center text-secondary py-5">
+                        No movies found. Add your first movie!
+                    </td>
+                </tr>
+
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a th:href="@{/admin}"
+           class="text-secondary text-decoration-none">
+            ← Back to Dashboard
+        </a>
+    </div>
+
+</div>
+
+</body>
+</html>

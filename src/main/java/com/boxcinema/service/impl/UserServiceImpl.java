@@ -683,4 +683,58 @@ public class UserServiceImpl implements UserService {
         }
         return "local";
     }
+
+    //update profile
+    @Override
+    @Transactional
+    public UserSummaryDto updateCustomerProfile(
+            Long userId,
+            String fullName,
+            String phone) {
+
+        if (userId == null) {
+            throw new IllegalArgumentException(
+                    "Authentication is required."
+            );
+        }
+
+        User user = userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("User not found.")
+                );
+
+        if (!"ACTIVE".equalsIgnoreCase(user.getAccountStatus())) {
+            throw new IllegalArgumentException(
+                    "Account is not active."
+            );
+        }
+
+        String cleanName =
+                passwordPolicyService.validateFullName(fullName);
+
+        String cleanPhone =
+                passwordPolicyService.validateAndNormalizePhone(phone);
+
+        List<String> phoneVariants =
+                passwordPolicyService.getEquivalentPhoneVariants(cleanPhone);
+
+        boolean phoneTaken = !phoneVariants.isEmpty()
+                ? userRepository.existsByPhoneInAndUserIdNot(
+                phoneVariants, userId)
+                : userRepository.existsByPhoneAndUserIdNot(
+                cleanPhone, userId);
+
+        if (phoneTaken) {
+            throw new IllegalArgumentException(
+                    "This phone number is already registered."
+            );
+        }
+
+        user.setFullName(cleanName);
+        user.setPhone(cleanPhone);
+
+        User savedUser = userRepository.saveAndFlush(user);
+
+        return toSummaryDto(savedUser);
+    }
 }

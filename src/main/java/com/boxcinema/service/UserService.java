@@ -53,4 +53,5 @@ public interface UserService {
     }
 
     AuthMethodsDto getAuthMethods(Long userId);
+    UserSummaryDto updateCustomerProfile(Long userId, String fullName, String phone);
 }
