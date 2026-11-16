@@ -150,6 +150,7 @@ export function initBooking(doc = document) {
 
     // 1. Column Left: 5 Seat Status Colors (Chính xác theo ảnh mẫu rạp chiếu phim)
     const statusCol = node("div", undefined, "booking-legend-col");
+    statusCol.append(node("div", "Trạng thái ghế", "legend-col-title"));
     const statuses = [
       { label: "Ghế trống", cls: "status-available" },
       { label: "Ghế đang được giữ", cls: "status-holding" },
@@ -168,6 +169,7 @@ export function initBooking(doc = document) {
 
     // 2. Column Right: Seat Shapes & Prices
     const typesCol = node("div", undefined, "booking-legend-col");
+    typesCol.append(node("div", "Loại ghế & Giá vé", "legend-col-title"));
 
     // Identify which seat shapes actually exist in this screening
     const typesInSeats = new Map();
@@ -183,7 +185,7 @@ export function initBooking(doc = document) {
           typesInSeats.set(shape, {
             name: s.type,
             shape: shape,
-            price: s.price
+            price: shape === "sweetbox" ? s.price * 2 : s.price
           });
         }
       });
@@ -206,10 +208,11 @@ export function initBooking(doc = document) {
       const basePrice = Number(data.basePrice || 60000);
       data.seatTypes.forEach(st => {
         const shape = st.shapeType || "standard";
+        const unitPrice = basePrice + Number(st.surcharge || 0);
         typeList.push({
           name: st.typeName || st.name,
           shape: shape,
-          price: basePrice + Number(st.surcharge || 0)
+          price: shape === "sweetbox" ? unitPrice * 2 : unitPrice
         });
       });
     } else {
@@ -220,6 +223,13 @@ export function initBooking(doc = document) {
       );
     }
 
+    const shapeOrder = ["standard", "vip", "sweetbox", "imax", "4dx", "recliner", "wheelchair"];
+    typeList.sort((a, b) => {
+      const ia = shapeOrder.indexOf(a.shape);
+      const ib = shapeOrder.indexOf(b.shape);
+      return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+    });
+
     typeList.forEach(t => {
       const row = node("div", undefined, "legend-row");
       const iconCls = `legend-seat-icon shape-${t.shape}${t.shape === "sweetbox" ? " legend-icon-sweetbox" : ""}`;
@@ -228,9 +238,10 @@ export function initBooking(doc = document) {
 
       const priceWrap = node("div", undefined, "legend-price-wrap");
       const title = typeVietnameseNames[t.shape] || t.name;
+      const priceSuffix = t.shape === "sweetbox" ? " / cặp" : "";
       priceWrap.append(
         node("span", title, "legend-type-title"),
-        node("span", formatVnd(t.price), "legend-type-val")
+        node("span", formatVnd(t.price) + priceSuffix, "legend-type-val")
       );
 
       row.append(shapeIcon, priceWrap);
@@ -503,7 +514,10 @@ export function initBooking(doc = document) {
     el("Empty").hidden = true; el("Content").hidden = false; status();
     screenings?.hide();
     el("ChangeScreening").hidden = preview;
-    renderSeats(); renderProducts(); showStep(0, false);
+    renderSeats();
+    renderLegend();
+    renderProducts();
+    showStep(0, false);
     el("Content").scrollIntoView?.({ block: "start" });
   }
   async function loadBooking(id) {
