@@ -205,6 +205,9 @@ public class EmailServiceImpl implements EmailService {
       mimeMessage.setHeader("X-Auto-Response-Suppress", "All");
       mimeMessage.setHeader("Auto-Submitted", "auto-generated");
 
+      // Explicit Message-ID prevents Jakarta Mail from executing slow DNS reverse-lookup for getLocalHost()
+      mimeMessage.setHeader("Message-ID", "<" + java.util.UUID.randomUUID() + "@boxcinema.vn>");
+
       mailSender.send(mimeMessage);
       log.info("Successfully dispatched email '{}' to {} via {} (JavaMailSender).", subject, toEmail, smtpHost);
       return true;
