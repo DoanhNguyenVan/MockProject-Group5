@@ -261,7 +261,7 @@ public class V12SecurityIntegrationTest {
                 final Long idA = accountA.getUserId();
 
                 jdbcTemplate.update(
-                                "INSERT INTO INQUIRIES (user_id, full_name, email, inquiry_topic, message, inquiry_status) VALUES (?, ?, ?, ?, ?, ?)",
+                                "INSERT INTO INQUIRIES (user_id, full_name, email, inquiry_topic, message, inquiry_status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())",
                                 idA, "Account A", emailA, "General", "Preserve me during link", "PENDING");
 
                 // Account B: Google-only user with google_id = "v12_sub_b", passwordHash = NULL
