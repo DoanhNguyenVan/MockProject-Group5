@@ -79,9 +79,12 @@
         <div class="auth-form-col">
           <div class="auth-header-block mb-3">
             <h1 class="h3 fw-bold text-white mb-1">Enter 6-Digit Verification Code</h1>
-            <p class="small text-secondary mb-0">
+            <p class="small text-secondary mb-1">
               We sent a 6-digit OTP code to
               <strong class="text-white" th:text="${verifyEmail != null && !verifyEmail.isEmpty() ? verifyEmail : 'your Gmail'}">alex@gmail.com</strong>.
+            </p>
+            <p class="small text-secondary mb-0" style="opacity: 0.88; font-size: 0.82rem;">
+              <span class="text-info">&#9432;</span> Mã thường đến trong vòng <strong>3 &ndash; 5 giây</strong>. Nếu chưa thấy trong Hộp thư đến, vui lòng kiểm tra thêm mục <strong>Thư rác (Spam)</strong> hoặc <strong>Quảng cáo</strong>.
             </p>
           </div>
 

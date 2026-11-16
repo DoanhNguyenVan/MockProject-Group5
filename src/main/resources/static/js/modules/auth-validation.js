@@ -774,6 +774,14 @@ function initOtpVerificationForm(doc = document) {
     }
   }
 
+  const resendForm = doc.getElementById("resendOtpForm");
+  if (resendForm && resendBtn) {
+    resendForm.addEventListener("submit", () => {
+      resendBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Sending code...';
+      setTimeout(() => { resendBtn.disabled = true; }, 50);
+    });
+  }
+
   const otpGridApi = bindOtpDigitGrid(doc, {
     containerEl: otpForm.querySelector(".otp-digit-grid"),
     hiddenInputEl: hiddenOtpInput,
@@ -968,7 +976,7 @@ export function initAuthAndContactForms(doc = document) {
       }
       const submitBtn = doc.getElementById("registerSubmitBtn");
       if (submitBtn) {
-        submitBtn.textContent = "Creating account...";
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span><span>Creating account & sending OTP...</span>';
         setTimeout(() => { submitBtn.disabled = true; }, 50);
       }
     });
