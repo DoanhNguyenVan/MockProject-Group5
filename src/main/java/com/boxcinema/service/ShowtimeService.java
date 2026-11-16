@@ -3,7 +3,6 @@ package com.boxcinema.service;
 import com.boxcinema.dto.DateTabDto;
 import com.boxcinema.dto.MovieShowtimeGroupDto;
 import com.boxcinema.dto.ShowtimeOptionDto;
-import com.boxcinema.entity.Showtime;
 
 import java.time.LocalDate;
 import java.util.List;

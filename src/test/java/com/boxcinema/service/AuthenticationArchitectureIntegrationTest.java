@@ -354,7 +354,7 @@ public class AuthenticationArchitectureIntegrationTest {
 
                 // Attach a business INQUIRIES row to busyPending
                 jdbcTemplate.update(
-                                "INSERT INTO INQUIRIES (user_id, full_name, email, inquiry_topic, message, inquiry_status) VALUES (?, ?, ?, ?, ?, ?)",
+                                "INSERT INTO INQUIRIES (user_id, full_name, email, inquiry_topic, message, inquiry_status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())",
                                 busyPending.getUserId(), "Busy Pending", busyPendingEmail, "Support", "Help me",
                                 "PENDING");
 

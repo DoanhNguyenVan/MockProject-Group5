@@ -24,7 +24,6 @@ import com.boxcinema.service.GoogleOidcService;
 import com.boxcinema.service.LoginAttemptService;
 import com.boxcinema.service.MovieService;
 import com.boxcinema.service.OtpChallengeTxHelper;
-import com.boxcinema.service.PasswordPolicyService;
 import com.boxcinema.service.SessionManagementService;
 import com.boxcinema.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
