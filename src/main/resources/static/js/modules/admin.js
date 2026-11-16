@@ -1091,7 +1091,7 @@ export function initAdmin(doc = document) {
         const svgWrap = element('div', '', 'seat-svg-wrap');
         svgWrap.innerHTML = getSeatSvg(shapeType, variant);
         const isUnavail = seat.status === 'INACTIVE' || seat.status === 'UNAVAILABLE';
-        const displayText = isUnavail ? '×' : String(seat.activeNumber || '');
+        const displayText = isUnavail ? '×' : (seat.seatLabel || `${seat.row}${seat.activeNumber || ''}`);
         const numSpan = element('span', displayText, 'seat-num');
         button.append(svgWrap, numSpan);
 

@@ -113,6 +113,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(csrf -> csrf.ignoringRequestMatchers(
                         "/api/quick-booking/**",
+                        "/api/booking/showtimes/**",
                         "/admin/api/**"
                 ))
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))

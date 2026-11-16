@@ -38,11 +38,11 @@ public class AdminApiController {
         // 1. Movies with genreIds
         List<Map<String, Object>> movies = jdbcTemplate.query(
                 "SELECT m.movie_id, m.title, m.synopsis, m.duration_minutes, m.age_rating, m.language, " +
-                "m.release_date, m.end_date, m.status, m.poster_url, m.trailer_url, " +
-                "GROUP_CONCAT(mg.genre_id) as genre_ids " +
-                "FROM movies m " +
-                "LEFT JOIN movie_genres mg ON m.movie_id = mg.movie_id " +
-                "GROUP BY m.movie_id ORDER BY m.movie_id DESC",
+                        "m.release_date, m.end_date, m.status, m.poster_url, m.trailer_url, " +
+                        "GROUP_CONCAT(mg.genre_id) as genre_ids " +
+                        "FROM movies m " +
+                        "LEFT JOIN movie_genres mg ON m.movie_id = mg.movie_id " +
+                        "GROUP BY m.movie_id ORDER BY m.movie_id DESC",
                 (rs, rowNum) -> {
                     Map<String, Object> m = new LinkedHashMap<>();
                     m.put("id", String.valueOf(rs.getLong("movie_id")));
@@ -54,13 +54,13 @@ public class AdminApiController {
                     m.put("endDate", rs.getString("end_date") != null ? rs.getString("end_date") : "");
                     m.put("status", rs.getString("status"));
                     String gIds = rs.getString("genre_ids");
-                    m.put("genreIds", gIds != null && !gIds.isBlank() ? Arrays.asList(gIds.split(",")) : Collections.emptyList());
+                    m.put("genreIds",
+                            gIds != null && !gIds.isBlank() ? Arrays.asList(gIds.split(",")) : Collections.emptyList());
                     m.put("synopsis", rs.getString("synopsis") != null ? rs.getString("synopsis") : "");
                     m.put("posterUrl", rs.getString("poster_url") != null ? rs.getString("poster_url") : "");
                     m.put("trailerUrl", rs.getString("trailer_url") != null ? rs.getString("trailer_url") : "");
                     return m;
-                }
-        );
+                });
         data.put("movies", movies);
 
         // 2. Genres
@@ -72,8 +72,7 @@ public class AdminApiController {
                     g.put("genreName", rs.getString("genre_name"));
                     g.put("description", rs.getString("description") != null ? rs.getString("description") : "");
                     return g;
-                }
-        );
+                });
         data.put("genres", genres);
 
         // 3. Cinemas
@@ -89,8 +88,7 @@ public class AdminApiController {
                     c.put("email", rs.getString("email"));
                     c.put("status", rs.getString("status"));
                     return c;
-                }
-        );
+                });
         data.put("cinemas", cinemas);
 
         // 4. Rooms
@@ -104,14 +102,13 @@ public class AdminApiController {
                     r.put("roomType", rs.getString("room_type"));
                     r.put("status", rs.getString("status"));
                     return r;
-                }
-        );
+                });
         data.put("rooms", rooms);
 
         // 5. Showtimes
         List<Map<String, Object>> showtimes = jdbcTemplate.query(
                 "SELECT showtime_id, movie_id, room_id, start_at, end_at, base_price, status " +
-                "FROM showtimes ORDER BY start_at DESC LIMIT 500",
+                        "FROM showtimes ORDER BY start_at DESC LIMIT 500",
                 (rs, rowNum) -> {
                     Map<String, Object> s = new LinkedHashMap<>();
                     s.put("id", String.valueOf(rs.getLong("showtime_id")));
@@ -119,13 +116,18 @@ public class AdminApiController {
                     s.put("roomId", String.valueOf(rs.getLong("room_id")));
                     Timestamp start = rs.getTimestamp("start_at");
                     Timestamp end = rs.getTimestamp("end_at");
-                    s.put("startAt", start != null ? start.toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")) : "");
-                    s.put("endAt", end != null ? end.toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")) : "");
+                    s.put("startAt",
+                            start != null
+                                    ? start.toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"))
+                                    : "");
+                    s.put("endAt",
+                            end != null
+                                    ? end.toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"))
+                                    : "");
                     s.put("basePrice", rs.getDouble("base_price"));
                     s.put("status", rs.getString("status"));
                     return s;
-                }
-        );
+                });
         data.put("showtimes", showtimes);
 
         // 6. Pricing (Seat Types)
@@ -139,14 +141,14 @@ public class AdminApiController {
                     p.put("description", rs.getString("description") != null ? rs.getString("description") : "");
                     p.put("shapeType", rs.getString("shape_type") != null ? rs.getString("shape_type") : "standard");
                     return p;
-                }
-        );
+                });
         data.put("pricing", pricing);
 
         // 7. Promotions
         List<Map<String, Object>> promotions = jdbcTemplate.query(
-                "SELECT promotion_id, promotion_name, voucher_code, discount_type, discount_value, max_discount, min_order_amount, " +
-                "start_at, end_at, usage_limit, per_user_limit, status FROM promotions ORDER BY promotion_id DESC",
+                "SELECT promotion_id, promotion_name, voucher_code, discount_type, discount_value, max_discount, min_order_amount, "
+                        +
+                        "start_at, end_at, usage_limit, per_user_limit, status FROM promotions ORDER BY promotion_id DESC",
                 (rs, rowNum) -> {
                     Map<String, Object> pr = new LinkedHashMap<>();
                     pr.put("id", String.valueOf(rs.getLong("promotion_id")));
@@ -158,14 +160,19 @@ public class AdminApiController {
                     pr.put("minOrderAmount", rs.getDouble("min_order_amount"));
                     Timestamp start = rs.getTimestamp("start_at");
                     Timestamp end = rs.getTimestamp("end_at");
-                    pr.put("startAt", start != null ? start.toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")) : "");
-                    pr.put("endAt", end != null ? end.toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")) : "");
+                    pr.put("startAt",
+                            start != null
+                                    ? start.toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"))
+                                    : "");
+                    pr.put("endAt",
+                            end != null
+                                    ? end.toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"))
+                                    : "");
                     pr.put("usageLimit", rs.getInt("usage_limit"));
                     pr.put("perUserLimit", rs.getInt("per_user_limit"));
                     pr.put("status", rs.getString("status"));
                     return pr;
-                }
-        );
+                });
         data.put("promotions", promotions);
 
         // 8. Combos (Products)
@@ -180,8 +187,7 @@ public class AdminApiController {
                     cb.put("description", rs.getString("description") != null ? rs.getString("description") : "");
                     cb.put("status", rs.getString("status"));
                     return cb;
-                }
-        );
+                });
         data.put("combos", combos);
 
         // 9. Staff (Users with role STAFF, MANAGER, ADMIN)
@@ -198,8 +204,7 @@ public class AdminApiController {
                     st.put("role", rs.getString("role"));
                     st.put("status", rs.getString("account_status"));
                     return st;
-                }
-        );
+                });
         data.put("staff", staff);
 
         // 10. Seat layouts per room
@@ -216,21 +221,21 @@ public class AdminApiController {
                     seat.put("status", rs.getString("status"));
                     seat.put("pairId", rs.getString("pair_id"));
                     layouts.get(roomId).add(seat);
-                }
-        );
+                });
         data.put("layouts", layouts);
 
         // 11. Sales records (from bookings)
         List<Map<String, Object>> sales = jdbcTemplate.query(
                 "SELECT b.booking_id, b.booking_code, DATE_FORMAT(b.booked_at, '%Y-%m-%d') as sale_date, " +
-                "s.movie_id, r.cinema_id, " +
-                "COALESCE((SELECT COUNT(*) FROM booking_seats bs WHERE bs.booking_id = b.booking_id), 2) as seat_cnt, " +
-                "b.total_amount, " +
-                "CASE WHEN b.booking_status = 'CANCELLED' THEN 'CANCELLED' ELSE 'PAID' END as sale_status " +
-                "FROM bookings b " +
-                "JOIN showtimes s ON b.showtime_id = s.showtime_id " +
-                "JOIN rooms r ON s.room_id = r.room_id " +
-                "ORDER BY b.booked_at DESC LIMIT 500",
+                        "s.movie_id, r.cinema_id, " +
+                        "COALESCE((SELECT COUNT(*) FROM booking_seats bs WHERE bs.booking_id = b.booking_id), 2) as seat_cnt, "
+                        +
+                        "b.total_amount, " +
+                        "CASE WHEN b.booking_status = 'CANCELLED' THEN 'CANCELLED' ELSE 'PAID' END as sale_status " +
+                        "FROM bookings b " +
+                        "JOIN showtimes s ON b.showtime_id = s.showtime_id " +
+                        "JOIN rooms r ON s.room_id = r.room_id " +
+                        "ORDER BY b.booked_at DESC LIMIT 500",
                 (rs, rowNum) -> {
                     Map<String, Object> sl = new LinkedHashMap<>();
                     sl.put("id", rs.getString("booking_code"));
@@ -242,46 +247,47 @@ public class AdminApiController {
                     sl.put("revenue", rs.getDouble("total_amount"));
                     sl.put("status", rs.getString("sale_status"));
                     return sl;
-                }
-        );
+                });
         data.put("sales", sales);
 
         // 12. Rich Bookings records (with full invoice & customer breakdown)
         List<Map<String, Object>> bookings = jdbcTemplate.query(
                 "SELECT b.booking_id, b.booking_code, b.booking_status, " +
-                "DATE_FORMAT(b.booked_at, '%Y-%m-%d %H:%i') as booked_at_formatted, " +
-                "b.subtotal, b.discount_amount, b.total_amount, b.booking_channel, " +
-                "COALESCE(b.guest_name, u.full_name, 'Khách hàng') as customer_name, " +
-                "COALESCE(b.guest_email, u.email, '') as customer_email, " +
-                "COALESCE(b.guest_phone, u.phone, '') as customer_phone, " +
-                "s.showtime_id, DATE_FORMAT(s.start_at, '%Y-%m-%d %H:%i') as showtime_start, " +
-                "s.base_price, m.movie_id, m.title as movie_title, m.poster_url, m.age_rating, " +
-                "r.room_id, r.room_name, r.room_type, " +
-                "c.cinema_id, c.cinema_name, c.city, " +
-                "p.payment_provider, p.payment_method, p.payment_status, " +
-                "pr.promotion_name, pr.voucher_code, " +
-                "(SELECT GROUP_CONCAT(CONCAT(bs.seat_label_snapshot, ' (', st.type_name, ' - ', FORMAT(bs.unit_price, 0), 'đ)') SEPARATOR ', ') " +
-                " FROM booking_seats bs " +
-                " JOIN showtime_seats ss ON bs.showtime_seat_id = ss.showtime_seat_id " +
-                " JOIN seats seat ON ss.seat_id = seat.seat_id " +
-                " JOIN seat_types st ON seat.seat_type_id = st.seat_type_id " +
-                " WHERE bs.booking_id = b.booking_id) as seats_detail, " +
-                "(SELECT GROUP_CONCAT(bs.seat_label_snapshot SEPARATOR ', ') " +
-                " FROM booking_seats bs WHERE bs.booking_id = b.booking_id) as seats_summary, " +
-                "(SELECT COUNT(*) FROM booking_seats bs WHERE bs.booking_id = b.booking_id) as seat_cnt, " +
-                "(SELECT GROUP_CONCAT(CONCAT(prod.product_name, ' x', bi.quantity, ' (', FORMAT(bi.subtotal, 0), 'đ)') SEPARATOR ', ') " +
-                " FROM booking_items bi " +
-                " JOIN products prod ON bi.product_id = prod.product_id " +
-                " WHERE bi.booking_id = b.booking_id) as combos_detail " +
-                "FROM bookings b " +
-                "LEFT JOIN users u ON b.user_id = u.user_id " +
-                "JOIN showtimes s ON b.showtime_id = s.showtime_id " +
-                "JOIN movies m ON s.movie_id = m.movie_id " +
-                "JOIN rooms r ON s.room_id = r.room_id " +
-                "JOIN cinemas c ON r.cinema_id = c.cinema_id " +
-                "LEFT JOIN payments p ON b.booking_id = p.booking_id " +
-                "LEFT JOIN promotions pr ON b.promotion_id = pr.promotion_id " +
-                "ORDER BY b.booked_at DESC, b.booking_id DESC LIMIT 500",
+                        "DATE_FORMAT(b.booked_at, '%Y-%m-%d %H:%i') as booked_at_formatted, " +
+                        "b.subtotal, b.discount_amount, b.total_amount, b.booking_channel, " +
+                        "COALESCE(b.guest_name, u.full_name, 'Khách hàng') as customer_name, " +
+                        "COALESCE(b.guest_email, u.email, '') as customer_email, " +
+                        "COALESCE(b.guest_phone, u.phone, '') as customer_phone, " +
+                        "s.showtime_id, DATE_FORMAT(s.start_at, '%Y-%m-%d %H:%i') as showtime_start, " +
+                        "s.base_price, m.movie_id, m.title as movie_title, m.poster_url, m.age_rating, " +
+                        "r.room_id, r.room_name, r.room_type, " +
+                        "c.cinema_id, c.cinema_name, c.city, " +
+                        "p.payment_provider, p.payment_method, p.payment_status, " +
+                        "pr.promotion_name, pr.voucher_code, " +
+                        "(SELECT GROUP_CONCAT(CONCAT(bs.seat_label_snapshot, ' (', st.type_name, ' - ', FORMAT(bs.unit_price, 0), 'đ)') SEPARATOR ', ') "
+                        +
+                        " FROM booking_seats bs " +
+                        " JOIN showtime_seats ss ON bs.showtime_seat_id = ss.showtime_seat_id " +
+                        " JOIN seats seat ON ss.seat_id = seat.seat_id " +
+                        " JOIN seat_types st ON seat.seat_type_id = st.seat_type_id " +
+                        " WHERE bs.booking_id = b.booking_id) as seats_detail, " +
+                        "(SELECT GROUP_CONCAT(bs.seat_label_snapshot SEPARATOR ', ') " +
+                        " FROM booking_seats bs WHERE bs.booking_id = b.booking_id) as seats_summary, " +
+                        "(SELECT COUNT(*) FROM booking_seats bs WHERE bs.booking_id = b.booking_id) as seat_cnt, " +
+                        "(SELECT GROUP_CONCAT(CONCAT(prod.product_name, ' x', bi.quantity, ' (', FORMAT(bi.subtotal, 0), 'đ)') SEPARATOR ', ') "
+                        +
+                        " FROM booking_items bi " +
+                        " JOIN products prod ON bi.product_id = prod.product_id " +
+                        " WHERE bi.booking_id = b.booking_id) as combos_detail " +
+                        "FROM bookings b " +
+                        "LEFT JOIN users u ON b.user_id = u.user_id " +
+                        "JOIN showtimes s ON b.showtime_id = s.showtime_id " +
+                        "JOIN movies m ON s.movie_id = m.movie_id " +
+                        "JOIN rooms r ON s.room_id = r.room_id " +
+                        "JOIN cinemas c ON r.cinema_id = c.cinema_id " +
+                        "LEFT JOIN payments p ON b.booking_id = p.booking_id " +
+                        "LEFT JOIN promotions pr ON b.promotion_id = pr.promotion_id " +
+                        "ORDER BY b.booked_at DESC, b.booking_id DESC LIMIT 500",
                 (rs, rowNum) -> {
                     Map<String, Object> bk = new LinkedHashMap<>();
                     bk.put("id", String.valueOf(rs.getLong("booking_id")));
@@ -291,7 +297,8 @@ public class AdminApiController {
                     bk.put("subtotal", rs.getDouble("subtotal"));
                     bk.put("discountAmount", rs.getDouble("discount_amount"));
                     bk.put("totalAmount", rs.getDouble("total_amount"));
-                    bk.put("bookingChannel", rs.getString("booking_channel") != null ? rs.getString("booking_channel") : "ONLINE");
+                    bk.put("bookingChannel",
+                            rs.getString("booking_channel") != null ? rs.getString("booking_channel") : "ONLINE");
                     bk.put("customerName", rs.getString("customer_name"));
                     bk.put("customerEmail", rs.getString("customer_email"));
                     bk.put("customerPhone", rs.getString("customer_phone"));
@@ -308,10 +315,14 @@ public class AdminApiController {
                     bk.put("cinemaId", String.valueOf(rs.getLong("cinema_id")));
                     bk.put("cinemaName", rs.getString("cinema_name"));
                     bk.put("city", rs.getString("city"));
-                    bk.put("paymentProvider", rs.getString("payment_provider") != null ? rs.getString("payment_provider") : "VNPAY");
-                    bk.put("paymentMethod", rs.getString("payment_method") != null ? rs.getString("payment_method") : "QR_CODE");
-                    bk.put("paymentStatus", rs.getString("payment_status") != null ? rs.getString("payment_status") : "SUCCESS");
-                    bk.put("promotionName", rs.getString("promotion_name") != null ? rs.getString("promotion_name") : "");
+                    bk.put("paymentProvider",
+                            rs.getString("payment_provider") != null ? rs.getString("payment_provider") : "VNPAY");
+                    bk.put("paymentMethod",
+                            rs.getString("payment_method") != null ? rs.getString("payment_method") : "QR_CODE");
+                    bk.put("paymentStatus",
+                            rs.getString("payment_status") != null ? rs.getString("payment_status") : "SUCCESS");
+                    bk.put("promotionName",
+                            rs.getString("promotion_name") != null ? rs.getString("promotion_name") : "");
                     bk.put("voucherCode", rs.getString("voucher_code") != null ? rs.getString("voucher_code") : "");
 
                     int seatCnt = rs.getInt("seat_cnt");
@@ -319,12 +330,12 @@ public class AdminApiController {
                     String seatsSummary = rs.getString("seats_summary");
                     bk.put("seatsSummary", seatsSummary != null && !seatsSummary.isBlank() ? seatsSummary : "A1, A2");
                     String seatsDetail = rs.getString("seats_detail");
-                    bk.put("seatsDetail", seatsDetail != null && !seatsDetail.isBlank() ? seatsDetail : "A1 (STANDARD), A2 (STANDARD)");
+                    bk.put("seatsDetail", seatsDetail != null && !seatsDetail.isBlank() ? seatsDetail
+                            : "A1 (STANDARD), A2 (STANDARD)");
                     String combosDetail = rs.getString("combos_detail");
                     bk.put("combosDetail", combosDetail != null ? combosDetail : "");
                     return bk;
-                }
-        );
+                });
         data.put("bookings", bookings);
 
         return ResponseEntity.ok(data);
@@ -340,37 +351,37 @@ public class AdminApiController {
         String countShowtimesSql;
         if ("cinemas".equalsIgnoreCase(section)) {
             sql = "SELECT b.booking_id, b.booking_code, b.total_amount, " +
-                  "COALESCE(b.guest_name, u.full_name, 'Khách hàng') AS customer_name, " +
-                  "COALESCE(b.guest_email, u.email, '') AS customer_email, " +
-                  "COALESCE(b.guest_phone, u.phone, '') AS customer_phone, " +
-                  "s.showtime_id, s.start_at, m.title AS movie_title, r.room_name, " +
-                  "(SELECT COUNT(*) FROM booking_seats bs WHERE bs.booking_id = b.booking_id) AS ticket_count " +
-                  "FROM bookings b " +
-                  "LEFT JOIN users u ON b.user_id = u.user_id " +
-                  "JOIN showtimes s ON b.showtime_id = s.showtime_id " +
-                  "JOIN rooms r ON s.room_id = r.room_id " +
-                  "JOIN movies m ON s.movie_id = m.movie_id " +
-                  "WHERE r.cinema_id = ? " +
-                  "AND s.start_at >= NOW() " +
-                  "AND b.booking_status IN ('CONFIRMED', 'PAID', 'HOLDING') " +
-                  "ORDER BY s.start_at ASC";
+                    "COALESCE(b.guest_name, u.full_name, 'Khách hàng') AS customer_name, " +
+                    "COALESCE(b.guest_email, u.email, '') AS customer_email, " +
+                    "COALESCE(b.guest_phone, u.phone, '') AS customer_phone, " +
+                    "s.showtime_id, s.start_at, m.title AS movie_title, r.room_name, " +
+                    "(SELECT COUNT(*) FROM booking_seats bs WHERE bs.booking_id = b.booking_id) AS ticket_count " +
+                    "FROM bookings b " +
+                    "LEFT JOIN users u ON b.user_id = u.user_id " +
+                    "JOIN showtimes s ON b.showtime_id = s.showtime_id " +
+                    "JOIN rooms r ON s.room_id = r.room_id " +
+                    "JOIN movies m ON s.movie_id = m.movie_id " +
+                    "WHERE r.cinema_id = ? " +
+                    "AND s.start_at >= NOW() " +
+                    "AND b.booking_status IN ('CONFIRMED', 'PAID', 'HOLDING') " +
+                    "ORDER BY s.start_at ASC";
             countShowtimesSql = "SELECT COUNT(*) FROM showtimes s JOIN rooms r ON s.room_id = r.room_id WHERE r.cinema_id = ? AND s.start_at >= NOW() AND s.status = 'ACTIVE'";
         } else if ("rooms".equalsIgnoreCase(section)) {
             sql = "SELECT b.booking_id, b.booking_code, b.total_amount, " +
-                  "COALESCE(b.guest_name, u.full_name, 'Khách hàng') AS customer_name, " +
-                  "COALESCE(b.guest_email, u.email, '') AS customer_email, " +
-                  "COALESCE(b.guest_phone, u.phone, '') AS customer_phone, " +
-                  "s.showtime_id, s.start_at, m.title AS movie_title, r.room_name, " +
-                  "(SELECT COUNT(*) FROM booking_seats bs WHERE bs.booking_id = b.booking_id) AS ticket_count " +
-                  "FROM bookings b " +
-                  "LEFT JOIN users u ON b.user_id = u.user_id " +
-                  "JOIN showtimes s ON b.showtime_id = s.showtime_id " +
-                  "JOIN rooms r ON s.room_id = r.room_id " +
-                  "JOIN movies m ON s.movie_id = m.movie_id " +
-                  "WHERE r.room_id = ? " +
-                  "AND s.start_at >= NOW() " +
-                  "AND b.booking_status IN ('CONFIRMED', 'PAID', 'HOLDING') " +
-                  "ORDER BY s.start_at ASC";
+                    "COALESCE(b.guest_name, u.full_name, 'Khách hàng') AS customer_name, " +
+                    "COALESCE(b.guest_email, u.email, '') AS customer_email, " +
+                    "COALESCE(b.guest_phone, u.phone, '') AS customer_phone, " +
+                    "s.showtime_id, s.start_at, m.title AS movie_title, r.room_name, " +
+                    "(SELECT COUNT(*) FROM booking_seats bs WHERE bs.booking_id = b.booking_id) AS ticket_count " +
+                    "FROM bookings b " +
+                    "LEFT JOIN users u ON b.user_id = u.user_id " +
+                    "JOIN showtimes s ON b.showtime_id = s.showtime_id " +
+                    "JOIN rooms r ON s.room_id = r.room_id " +
+                    "JOIN movies m ON s.movie_id = m.movie_id " +
+                    "WHERE r.room_id = ? " +
+                    "AND s.start_at >= NOW() " +
+                    "AND b.booking_status IN ('CONFIRMED', 'PAID', 'HOLDING') " +
+                    "ORDER BY s.start_at ASC";
             countShowtimesSql = "SELECT COUNT(*) FROM showtimes WHERE room_id = ? AND start_at >= NOW() AND status = 'ACTIVE'";
         } else {
             return ResponseEntity.badRequest().body(Map.of("error", "Invalid section for impact check"));
@@ -385,7 +396,9 @@ public class AdminApiController {
             item.put("customerPhone", rs.getString("customer_phone"));
             item.put("showtimeId", rs.getLong("showtime_id"));
             Timestamp startAt = rs.getTimestamp("start_at");
-            item.put("startAt", startAt != null ? startAt.toLocalDateTime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")) : "");
+            item.put("startAt",
+                    startAt != null ? startAt.toLocalDateTime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                            : "");
             item.put("movieTitle", rs.getString("movie_title"));
             item.put("roomName", rs.getString("room_name"));
             int ticketCount = rs.getInt("ticket_count");
@@ -421,97 +434,93 @@ public class AdminApiController {
             if ("cinemas".equalsIgnoreCase(section)) {
                 List<Long> showtimeIds = jdbcTemplate.queryForList(
                         "SELECT s.showtime_id FROM showtimes s JOIN rooms r ON s.room_id = r.room_id WHERE r.cinema_id = ? AND s.start_at >= NOW()",
-                        Long.class, id
-                );
+                        Long.class, id);
 
                 if (!showtimeIds.isEmpty()) {
                     String inSql = String.join(",", Collections.nCopies(showtimeIds.size(), "?"));
                     jdbcTemplate.update(
                             "UPDATE payments p JOIN bookings b ON p.booking_id = b.booking_id " +
-                            "SET p.payment_status = 'REFUNDED' WHERE b.showtime_id IN (" + inSql + ")",
-                            showtimeIds.toArray()
-                    );
+                                    "SET p.payment_status = 'REFUNDED' WHERE b.showtime_id IN (" + inSql + ")",
+                            showtimeIds.toArray());
                     jdbcTemplate.update(
-                            "UPDATE bookings SET booking_status = 'CANCELLED', cancelled_at = NOW() WHERE showtime_id IN (" + inSql + ") AND booking_status IN ('CONFIRMED', 'PAID', 'HOLDING')",
-                            showtimeIds.toArray()
-                    );
+                            "UPDATE bookings SET booking_status = 'CANCELLED', cancelled_at = NOW() WHERE showtime_id IN ("
+                                    + inSql + ") AND booking_status IN ('CONFIRMED', 'PAID', 'HOLDING')",
+                            showtimeIds.toArray());
                     jdbcTemplate.update(
-                            "UPDATE showtime_seats SET seat_status = 'AVAILABLE', hold_token_hash = NULL, held_by_user_id = NULL, hold_session_id = NULL, hold_expires_at = NULL WHERE showtime_id IN (" + inSql + ")",
-                            showtimeIds.toArray()
-                    );
+                            "UPDATE showtime_seats SET seat_status = 'AVAILABLE', hold_token_hash = NULL, held_by_user_id = NULL, hold_session_id = NULL, hold_expires_at = NULL WHERE showtime_id IN ("
+                                    + inSql + ")",
+                            showtimeIds.toArray());
                     jdbcTemplate.update(
                             "UPDATE showtimes SET status = 'CANCELLED' WHERE showtime_id IN (" + inSql + ")",
-                            showtimeIds.toArray()
-                    );
+                            showtimeIds.toArray());
                 }
 
                 jdbcTemplate.update("UPDATE rooms SET status = 'INACTIVE' WHERE cinema_id = ?", id);
                 jdbcTemplate.update("UPDATE cinemas SET status = 'INACTIVE' WHERE cinema_id = ?", id);
 
                 result.put("success", true);
-                result.put("message", "Đã dừng hoạt động cơ sở rạp. Toàn bộ phòng chiếu đã chuyển sang Inactive, hủy các suất chiếu tương lai và tự động hoàn tiền 100% cho khách hàng đã mua vé.");
+                result.put("message",
+                        "Đã dừng hoạt động cơ sở rạp. Toàn bộ phòng chiếu đã chuyển sang Inactive, hủy các suất chiếu tương lai và tự động hoàn tiền 100% cho khách hàng đã mua vé.");
             } else if ("rooms".equalsIgnoreCase(section)) {
                 List<Long> showtimeIds = jdbcTemplate.queryForList(
                         "SELECT showtime_id FROM showtimes WHERE room_id = ? AND start_at >= NOW()",
-                        Long.class, id
-                );
+                        Long.class, id);
 
                 if (!showtimeIds.isEmpty()) {
                     String inSql = String.join(",", Collections.nCopies(showtimeIds.size(), "?"));
                     jdbcTemplate.update(
                             "UPDATE payments p JOIN bookings b ON p.booking_id = b.booking_id " +
-                            "SET p.payment_status = 'REFUNDED' WHERE b.showtime_id IN (" + inSql + ")",
-                            showtimeIds.toArray()
-                    );
+                                    "SET p.payment_status = 'REFUNDED' WHERE b.showtime_id IN (" + inSql + ")",
+                            showtimeIds.toArray());
                     jdbcTemplate.update(
-                            "UPDATE bookings SET booking_status = 'CANCELLED', cancelled_at = NOW() WHERE showtime_id IN (" + inSql + ") AND booking_status IN ('CONFIRMED', 'PAID', 'HOLDING')",
-                            showtimeIds.toArray()
-                    );
+                            "UPDATE bookings SET booking_status = 'CANCELLED', cancelled_at = NOW() WHERE showtime_id IN ("
+                                    + inSql + ") AND booking_status IN ('CONFIRMED', 'PAID', 'HOLDING')",
+                            showtimeIds.toArray());
                     jdbcTemplate.update(
-                            "UPDATE showtime_seats SET seat_status = 'AVAILABLE', hold_token_hash = NULL, held_by_user_id = NULL, hold_session_id = NULL, hold_expires_at = NULL WHERE showtime_id IN (" + inSql + ")",
-                            showtimeIds.toArray()
-                    );
+                            "UPDATE showtime_seats SET seat_status = 'AVAILABLE', hold_token_hash = NULL, held_by_user_id = NULL, hold_session_id = NULL, hold_expires_at = NULL WHERE showtime_id IN ("
+                                    + inSql + ")",
+                            showtimeIds.toArray());
                     jdbcTemplate.update(
                             "UPDATE showtimes SET status = 'CANCELLED' WHERE showtime_id IN (" + inSql + ")",
-                            showtimeIds.toArray()
-                    );
+                            showtimeIds.toArray());
                 }
 
                 jdbcTemplate.update("UPDATE rooms SET status = 'INACTIVE' WHERE room_id = ?", id);
                 result.put("success", true);
-                result.put("message", "Đã dừng hoạt động phòng chiếu. Hủy các suất chiếu tương lai và tự động hoàn tiền 100% cho tất cả khách hàng.");
+                result.put("message",
+                        "Đã dừng hoạt động phòng chiếu. Hủy các suất chiếu tương lai và tự động hoàn tiền 100% cho tất cả khách hàng.");
             }
         } else if ("GRACEFUL_DECOMMISSION".equalsIgnoreCase(strategy)) {
             if ("cinemas".equalsIgnoreCase(section)) {
                 jdbcTemplate.update(
-                        "UPDATE showtimes SET status = 'CANCELLED' WHERE room_id IN (SELECT room_id FROM rooms WHERE cinema_id = ?) " +
-                        "AND start_at >= NOW() AND status = 'ACTIVE' " +
-                        "AND showtime_id NOT IN (SELECT showtime_id FROM bookings WHERE booking_status IN ('CONFIRMED', 'PAID'))",
-                        id
-                );
+                        "UPDATE showtimes SET status = 'CANCELLED' WHERE room_id IN (SELECT room_id FROM rooms WHERE cinema_id = ?) "
+                                +
+                                "AND start_at >= NOW() AND status = 'ACTIVE' " +
+                                "AND showtime_id NOT IN (SELECT showtime_id FROM bookings WHERE booking_status IN ('CONFIRMED', 'PAID'))",
+                        id);
 
                 jdbcTemplate.update("UPDATE cinemas SET status = 'STOP_BOOKING' WHERE cinema_id = ?", id);
 
                 jdbcTemplate.update(
                         "UPDATE rooms SET status = 'STOP_BOOKING' WHERE cinema_id = ? AND room_id IN (SELECT room_id FROM showtimes WHERE start_at >= NOW() AND status = 'ACTIVE')",
-                        id
-                );
+                        id);
                 jdbcTemplate.update(
                         "UPDATE rooms SET status = 'INACTIVE' WHERE cinema_id = ? AND room_id NOT IN (SELECT room_id FROM showtimes WHERE start_at >= NOW() AND status = 'ACTIVE')",
-                        id
-                );
+                        id);
 
                 result.put("success", true);
-                result.put("message", "Đã chuyển cơ sở rạp sang chế độ Đóng theo lộ trình (STOP_BOOKING). Rạp ngừng nhận khách mới; các suất chiếu đã có người mua vé vẫn tiếp tục diễn ra bình thường.");
+                result.put("message",
+                        "Đã chuyển cơ sở rạp sang chế độ Đóng theo lộ trình (STOP_BOOKING). Rạp ngừng nhận khách mới; các suất chiếu đã có người mua vé vẫn tiếp tục diễn ra bình thường.");
             } else if ("rooms".equalsIgnoreCase(section)) {
                 jdbcTemplate.update(
-                        "UPDATE showtimes SET status = 'CANCELLED' WHERE room_id = ? AND start_at >= NOW() AND status = 'ACTIVE' " +
-                        "AND showtime_id NOT IN (SELECT showtime_id FROM bookings WHERE booking_status IN ('CONFIRMED', 'PAID'))",
-                        id
-                );
+                        "UPDATE showtimes SET status = 'CANCELLED' WHERE room_id = ? AND start_at >= NOW() AND status = 'ACTIVE' "
+                                +
+                                "AND showtime_id NOT IN (SELECT showtime_id FROM bookings WHERE booking_status IN ('CONFIRMED', 'PAID'))",
+                        id);
                 jdbcTemplate.update("UPDATE rooms SET status = 'STOP_BOOKING' WHERE room_id = ?", id);
                 result.put("success", true);
-                result.put("message", "Đã chuyển phòng chiếu sang chế độ Ngưng nhận khách mới (STOP_BOOKING). Các suất chiếu đã có vé sẽ diễn ra bình thường.");
+                result.put("message",
+                        "Đã chuyển phòng chiếu sang chế độ Ngưng nhận khách mới (STOP_BOOKING). Các suất chiếu đã có vé sẽ diễn ra bình thường.");
             }
         } else {
             return ResponseEntity.badRequest().body(Map.of("error", "Unknown deactivation strategy"));
@@ -522,7 +531,8 @@ public class AdminApiController {
 
     @PostMapping("/save/{section}")
     @Transactional
-    public ResponseEntity<Map<String, Object>> saveRecord(@PathVariable String section, @RequestBody Map<String, Object> body) {
+    public ResponseEntity<Map<String, Object>> saveRecord(@PathVariable String section,
+            @RequestBody Map<String, Object> body) {
         String rawId = body.get("id") != null ? String.valueOf(body.get("id")) : null;
         boolean isNumericId = rawId != null && rawId.matches("^\\d+$");
         Long id = isNumericId ? Long.valueOf(rawId) : null;
@@ -537,7 +547,9 @@ public class AdminApiController {
                     String ageRating = String.valueOf(body.get("ageRating"));
                     String language = String.valueOf(body.get("language"));
                     String releaseDate = String.valueOf(body.get("releaseDate"));
-                    String endDate = body.get("endDate") != null && !String.valueOf(body.get("endDate")).isBlank() ? String.valueOf(body.get("endDate")) : null;
+                    String endDate = body.get("endDate") != null && !String.valueOf(body.get("endDate")).isBlank()
+                            ? String.valueOf(body.get("endDate"))
+                            : null;
                     String status = String.valueOf(body.get("status"));
                     String synopsis = body.get("synopsis") != null ? String.valueOf(body.get("synopsis")) : null;
                     String posterUrl = body.get("posterUrl") != null ? String.valueOf(body.get("posterUrl")) : null;
@@ -546,16 +558,15 @@ public class AdminApiController {
                     if (id != null) {
                         jdbcTemplate.update(
                                 "UPDATE movies SET title=?, duration_minutes=?, age_rating=?, language=?, release_date=?, end_date=?, status=?, synopsis=?, poster_url=?, trailer_url=? WHERE movie_id=?",
-                                title, durationMinutes, ageRating, language, releaseDate, endDate, status, synopsis, posterUrl, trailerUrl, id
-                        );
+                                title, durationMinutes, ageRating, language, releaseDate, endDate, status, synopsis,
+                                posterUrl, trailerUrl, id);
                         result.put("id", String.valueOf(id));
                     } else {
                         KeyHolder keyHolder = new GeneratedKeyHolder();
                         jdbcTemplate.update(connection -> {
                             PreparedStatement ps = connection.prepareStatement(
                                     "INSERT INTO movies (title, duration_minutes, age_rating, language, release_date, end_date, status, synopsis, poster_url, trailer_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                    Statement.RETURN_GENERATED_KEYS
-                            );
+                                    Statement.RETURN_GENERATED_KEYS);
                             ps.setString(1, title);
                             ps.setInt(2, durationMinutes);
                             ps.setString(3, ageRating);
@@ -578,7 +589,9 @@ public class AdminApiController {
                         for (Object gIdObj : list) {
                             String gIdStr = String.valueOf(gIdObj);
                             if (gIdStr.matches("^\\d+$")) {
-                                jdbcTemplate.update("INSERT IGNORE INTO movie_genres (movie_id, genre_id) VALUES (?, ?)", id, Long.valueOf(gIdStr));
+                                jdbcTemplate.update(
+                                        "INSERT IGNORE INTO movie_genres (movie_id, genre_id) VALUES (?, ?)", id,
+                                        Long.valueOf(gIdStr));
                             }
                         }
                     }
@@ -587,12 +600,15 @@ public class AdminApiController {
                     String genreName = String.valueOf(body.get("genreName"));
                     String description = body.get("description") != null ? String.valueOf(body.get("description")) : "";
                     if (id != null) {
-                        jdbcTemplate.update("UPDATE genres SET genre_name=?, description=? WHERE genre_id=?", genreName, description, id);
+                        jdbcTemplate.update("UPDATE genres SET genre_name=?, description=? WHERE genre_id=?", genreName,
+                                description, id);
                         result.put("id", String.valueOf(id));
                     } else {
                         KeyHolder keyHolder = new GeneratedKeyHolder();
                         jdbcTemplate.update(conn -> {
-                            PreparedStatement ps = conn.prepareStatement("INSERT INTO genres (genre_name, description) VALUES (?, ?)", Statement.RETURN_GENERATED_KEYS);
+                            PreparedStatement ps = conn.prepareStatement(
+                                    "INSERT INTO genres (genre_name, description) VALUES (?, ?)",
+                                    Statement.RETURN_GENERATED_KEYS);
                             ps.setString(1, genreName);
                             ps.setString(2, description);
                             return ps;
@@ -608,20 +624,25 @@ public class AdminApiController {
                     String email = String.valueOf(body.get("email"));
                     String status = String.valueOf(body.get("status"));
                     if (id != null) {
-                        jdbcTemplate.update("UPDATE cinemas SET cinema_name=?, city=?, address=?, phone=?, email=?, status=? WHERE cinema_id=?",
+                        jdbcTemplate.update(
+                                "UPDATE cinemas SET cinema_name=?, city=?, address=?, phone=?, email=?, status=? WHERE cinema_id=?",
                                 cinemaName, city, address, phone, email, status, id);
                         result.put("id", String.valueOf(id));
                         if ("INACTIVE".equalsIgnoreCase(status)) {
                             jdbcTemplate.update("UPDATE rooms SET status='INACTIVE' WHERE cinema_id=?", id);
-                            jdbcTemplate.update("UPDATE showtimes SET status='CANCELLED' WHERE room_id IN (SELECT room_id FROM rooms WHERE cinema_id=?) " +
-                                    "AND start_at >= NOW() AND status='ACTIVE' " +
-                                    "AND showtime_id NOT IN (SELECT showtime_id FROM bookings WHERE booking_status IN ('CONFIRMED', 'PAID'))", id);
+                            jdbcTemplate.update(
+                                    "UPDATE showtimes SET status='CANCELLED' WHERE room_id IN (SELECT room_id FROM rooms WHERE cinema_id=?) "
+                                            +
+                                            "AND start_at >= NOW() AND status='ACTIVE' " +
+                                            "AND showtime_id NOT IN (SELECT showtime_id FROM bookings WHERE booking_status IN ('CONFIRMED', 'PAID'))",
+                                    id);
                         }
                     } else {
                         KeyHolder keyHolder = new GeneratedKeyHolder();
                         jdbcTemplate.update(conn -> {
                             PreparedStatement ps = conn.prepareStatement(
-                                    "INSERT INTO cinemas (cinema_name, city, address, phone, email, status) VALUES (?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+                                    "INSERT INTO cinemas (cinema_name, city, address, phone, email, status) VALUES (?, ?, ?, ?, ?, ?)",
+                                    Statement.RETURN_GENERATED_KEYS);
                             ps.setString(1, cinemaName);
                             ps.setString(2, city);
                             ps.setString(3, address);
@@ -639,19 +660,22 @@ public class AdminApiController {
                     String roomType = String.valueOf(body.get("roomType"));
                     String status = String.valueOf(body.get("status"));
                     if (id != null) {
-                        jdbcTemplate.update("UPDATE rooms SET room_name=?, cinema_id=?, room_type=?, status=? WHERE room_id=?",
+                        jdbcTemplate.update(
+                                "UPDATE rooms SET room_name=?, cinema_id=?, room_type=?, status=? WHERE room_id=?",
                                 roomName, cinemaId, roomType, status, id);
                         result.put("id", String.valueOf(id));
                         if ("INACTIVE".equalsIgnoreCase(status)) {
                             jdbcTemplate.update("UPDATE showtimes SET status='CANCELLED' WHERE room_id=? " +
                                     "AND start_at >= NOW() AND status='ACTIVE' " +
-                                    "AND showtime_id NOT IN (SELECT showtime_id FROM bookings WHERE booking_status IN ('CONFIRMED', 'PAID'))", id);
+                                    "AND showtime_id NOT IN (SELECT showtime_id FROM bookings WHERE booking_status IN ('CONFIRMED', 'PAID'))",
+                                    id);
                         }
                     } else {
                         KeyHolder keyHolder = new GeneratedKeyHolder();
                         jdbcTemplate.update(conn -> {
                             PreparedStatement ps = conn.prepareStatement(
-                                    "INSERT INTO rooms (room_name, cinema_id, room_type, status) VALUES (?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+                                    "INSERT INTO rooms (room_name, cinema_id, room_type, status) VALUES (?, ?, ?, ?)",
+                                    Statement.RETURN_GENERATED_KEYS);
                             ps.setString(1, roomName);
                             ps.setLong(2, cinemaId);
                             ps.setString(3, roomType);
@@ -660,14 +684,19 @@ public class AdminApiController {
                         }, keyHolder);
                         long newRoomId = Objects.requireNonNull(keyHolder.getKey()).longValue();
                         result.put("id", String.valueOf(newRoomId));
-                        // Automatically generate initial standard seats for the newly created room (Rows A-F, 1-10)
-                        for (char r = 'A'; r <= 'F'; r++) {
-                            long typeId = (r <= 'B') ? 1L : (r <= 'E') ? 2L : 3L;
+                        // Automatically generate initial standard seats for the newly created room
+                        // (Rows A-G, 1-10)
+                        for (char r = 'A'; r <= 'G'; r++) {
+                            long typeId = (r <= 'B') ? 1L : (r <= 'F') ? 2L : 3L;
                             for (int col = 1; col <= 10; col++) {
+                                String pairId = null;
+                                if (r == 'G') {
+                                    int firstCol = (col % 2 == 1) ? col : (col - 1);
+                                    pairId = "G" + firstCol + "-G" + (firstCol + 1);
+                                }
                                 jdbcTemplate.update(
-                                        "INSERT INTO seats (room_id, seat_type_id, seat_row, seat_number, status) VALUES (?, ?, ?, ?, 'ACTIVE')",
-                                        newRoomId, typeId, String.valueOf(r), col
-                                );
+                                        "INSERT INTO seats (room_id, seat_type_id, seat_row, seat_number, status, pair_id) VALUES (?, ?, ?, ?, 'ACTIVE', ?)",
+                                        newRoomId, typeId, String.valueOf(r), col, pairId);
                             }
                         }
                     }
@@ -677,12 +706,15 @@ public class AdminApiController {
                     Long roomId = Long.valueOf(String.valueOf(body.get("roomId")));
                     String startAt = String.valueOf(body.get("startAt")).replace('T', ' ');
                     String endAt = String.valueOf(body.get("endAt")).replace('T', ' ');
-                    if (startAt.length() == 16) startAt += ":00";
-                    if (endAt.length() == 16) endAt += ":00";
+                    if (startAt.length() == 16)
+                        startAt += ":00";
+                    if (endAt.length() == 16)
+                        endAt += ":00";
                     double basePrice = Double.parseDouble(String.valueOf(body.get("basePrice")));
                     String status = String.valueOf(body.get("status"));
                     if (id != null) {
-                        jdbcTemplate.update("UPDATE showtimes SET movie_id=?, room_id=?, start_at=?, end_at=?, base_price=?, status=? WHERE showtime_id=?",
+                        jdbcTemplate.update(
+                                "UPDATE showtimes SET movie_id=?, room_id=?, start_at=?, end_at=?, base_price=?, status=? WHERE showtime_id=?",
                                 movieId, roomId, startAt, endAt, basePrice, status, id);
                         result.put("id", String.valueOf(id));
                     } else {
@@ -691,7 +723,8 @@ public class AdminApiController {
                         String finalEndAt = endAt;
                         jdbcTemplate.update(conn -> {
                             PreparedStatement ps = conn.prepareStatement(
-                                    "INSERT INTO showtimes (movie_id, room_id, start_at, end_at, base_price, status) VALUES (?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+                                    "INSERT INTO showtimes (movie_id, room_id, start_at, end_at, base_price, status) VALUES (?, ?, ?, ?, ?, ?)",
+                                    Statement.RETURN_GENERATED_KEYS);
                             ps.setLong(1, movieId);
                             ps.setLong(2, roomId);
                             ps.setString(3, finalStartAt);
@@ -708,15 +741,19 @@ public class AdminApiController {
                     double priceSurcharge = Double.parseDouble(String.valueOf(body.get("priceSurcharge")));
                     String description = body.get("description") != null ? String.valueOf(body.get("description")) : "";
                     String shapeType = body.get("shapeType") != null && !String.valueOf(body.get("shapeType")).isBlank()
-                            ? String.valueOf(body.get("shapeType")).trim() : "standard";
+                            ? String.valueOf(body.get("shapeType")).trim()
+                            : "standard";
                     if (id != null) {
-                        jdbcTemplate.update("UPDATE seat_types SET type_name=?, price_surcharge=?, description=?, shape_type=? WHERE seat_type_id=?",
+                        jdbcTemplate.update(
+                                "UPDATE seat_types SET type_name=?, price_surcharge=?, description=?, shape_type=? WHERE seat_type_id=?",
                                 typeName, priceSurcharge, description, shapeType, id);
                         result.put("id", String.valueOf(id));
                     } else {
                         KeyHolder keyHolder = new GeneratedKeyHolder();
                         jdbcTemplate.update(conn -> {
-                            PreparedStatement ps = conn.prepareStatement("INSERT INTO seat_types (type_name, price_surcharge, description, shape_type) VALUES (?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+                            PreparedStatement ps = conn.prepareStatement(
+                                    "INSERT INTO seat_types (type_name, price_surcharge, description, shape_type) VALUES (?, ?, ?, ?)",
+                                    Statement.RETURN_GENERATED_KEYS);
                             ps.setString(1, typeName);
                             ps.setBigDecimal(2, BigDecimal.valueOf(priceSurcharge));
                             ps.setString(3, description);
@@ -735,14 +772,18 @@ public class AdminApiController {
                     double minOrderAmount = Double.parseDouble(String.valueOf(body.get("minOrderAmount")));
                     String startAt = String.valueOf(body.get("startAt")).replace('T', ' ');
                     String endAt = String.valueOf(body.get("endAt")).replace('T', ' ');
-                    if (startAt.length() == 16) startAt += ":00";
-                    if (endAt.length() == 16) endAt += ":00";
+                    if (startAt.length() == 16)
+                        startAt += ":00";
+                    if (endAt.length() == 16)
+                        endAt += ":00";
                     int usageLimit = Integer.parseInt(String.valueOf(body.get("usageLimit")));
                     int perUserLimit = Integer.parseInt(String.valueOf(body.get("perUserLimit")));
                     String status = String.valueOf(body.get("status"));
                     if (id != null) {
-                        jdbcTemplate.update("UPDATE promotions SET promotion_name=?, voucher_code=?, discount_type=?, discount_value=?, max_discount=?, min_order_amount=?, start_at=?, end_at=?, usage_limit=?, per_user_limit=?, status=? WHERE promotion_id=?",
-                                promotionName, voucherCode, discountType, discountValue, maxDiscount, minOrderAmount, startAt, endAt, usageLimit, perUserLimit, status, id);
+                        jdbcTemplate.update(
+                                "UPDATE promotions SET promotion_name=?, voucher_code=?, discount_type=?, discount_value=?, max_discount=?, min_order_amount=?, start_at=?, end_at=?, usage_limit=?, per_user_limit=?, status=? WHERE promotion_id=?",
+                                promotionName, voucherCode, discountType, discountValue, maxDiscount, minOrderAmount,
+                                startAt, endAt, usageLimit, perUserLimit, status, id);
                         result.put("id", String.valueOf(id));
                     } else {
                         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -750,7 +791,8 @@ public class AdminApiController {
                         String finalEndAt = endAt;
                         jdbcTemplate.update(conn -> {
                             PreparedStatement ps = conn.prepareStatement(
-                                    "INSERT INTO promotions (promotion_name, voucher_code, discount_type, discount_value, max_discount, min_order_amount, start_at, end_at, usage_limit, per_user_limit, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+                                    "INSERT INTO promotions (promotion_name, voucher_code, discount_type, discount_value, max_discount, min_order_amount, start_at, end_at, usage_limit, per_user_limit, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                    Statement.RETURN_GENERATED_KEYS);
                             ps.setString(1, promotionName);
                             ps.setString(2, voucherCode);
                             ps.setString(3, discountType);
@@ -774,14 +816,16 @@ public class AdminApiController {
                     String description = body.get("description") != null ? String.valueOf(body.get("description")) : "";
                     String status = String.valueOf(body.get("status"));
                     if (id != null) {
-                        jdbcTemplate.update("UPDATE products SET product_name=?, product_type=?, current_price=?, description=?, status=? WHERE product_id=?",
+                        jdbcTemplate.update(
+                                "UPDATE products SET product_name=?, product_type=?, current_price=?, description=?, status=? WHERE product_id=?",
                                 productName, productType, price, description, status, id);
                         result.put("id", String.valueOf(id));
                     } else {
                         KeyHolder keyHolder = new GeneratedKeyHolder();
                         jdbcTemplate.update(conn -> {
                             PreparedStatement ps = conn.prepareStatement(
-                                    "INSERT INTO products (product_name, product_type, current_price, description, status) VALUES (?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+                                    "INSERT INTO products (product_name, product_type, current_price, description, status) VALUES (?, ?, ?, ?, ?)",
+                                    Statement.RETURN_GENERATED_KEYS);
                             ps.setString(1, productName);
                             ps.setString(2, productType);
                             ps.setBigDecimal(3, BigDecimal.valueOf(price));
@@ -796,11 +840,15 @@ public class AdminApiController {
                     String fullName = String.valueOf(body.get("fullName"));
                     String email = String.valueOf(body.get("email"));
                     String phone = body.get("phone") != null ? String.valueOf(body.get("phone")) : "";
-                    Long cinemaId = body.get("cinemaId") != null && String.valueOf(body.get("cinemaId")).matches("^\\d+$") ? Long.valueOf(String.valueOf(body.get("cinemaId"))) : null;
+                    Long cinemaId = body.get("cinemaId") != null
+                            && String.valueOf(body.get("cinemaId")).matches("^\\d+$")
+                                    ? Long.valueOf(String.valueOf(body.get("cinemaId")))
+                                    : null;
                     String role = String.valueOf(body.get("role"));
                     String status = String.valueOf(body.get("status"));
                     if (id != null) {
-                        jdbcTemplate.update("UPDATE users SET full_name=?, email=?, phone=?, cinema_id=?, role=?, account_status=? WHERE user_id=?",
+                        jdbcTemplate.update(
+                                "UPDATE users SET full_name=?, email=?, phone=?, cinema_id=?, role=?, account_status=? WHERE user_id=?",
                                 fullName, email, phone, cinemaId, role, status, id);
                         result.put("id", String.valueOf(id));
                     } else {
@@ -808,11 +856,15 @@ public class AdminApiController {
                         KeyHolder keyHolder = new GeneratedKeyHolder();
                         jdbcTemplate.update(conn -> {
                             PreparedStatement ps = conn.prepareStatement(
-                                    "INSERT INTO users (full_name, email, phone, cinema_id, role, account_status, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+                                    "INSERT INTO users (full_name, email, phone, cinema_id, role, account_status, password_hash) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                    Statement.RETURN_GENERATED_KEYS);
                             ps.setString(1, fullName);
                             ps.setString(2, email);
                             ps.setString(3, phone);
-                            if (cinemaId != null) ps.setLong(4, cinemaId); else ps.setNull(4, java.sql.Types.BIGINT);
+                            if (cinemaId != null)
+                                ps.setLong(4, cinemaId);
+                            else
+                                ps.setNull(4, java.sql.Types.BIGINT);
                             ps.setString(5, role);
                             ps.setString(6, status);
                             ps.setString(7, defaultPasswordHash);
@@ -871,22 +923,41 @@ public class AdminApiController {
 
     @PostMapping("/seats/{roomId}")
     @Transactional
-    public ResponseEntity<Map<String, Object>> saveSeats(@PathVariable Long roomId, @RequestBody List<Map<String, Object>> seats) {
+    public ResponseEntity<Map<String, Object>> saveSeats(@PathVariable Long roomId,
+            @RequestBody List<Map<String, Object>> seats) {
         Map<String, Object> response = new LinkedHashMap<>();
         try {
-            jdbcTemplate.update("DELETE FROM seats WHERE room_id=?", roomId);
+            Set<String> activeKeys = new HashSet<>();
             for (Map<String, Object> seat : seats) {
-                String row = String.valueOf(seat.get("row"));
+                String row = String.valueOf(seat.get("row")).trim().toUpperCase();
                 int number = Integer.parseInt(String.valueOf(seat.get("number")));
                 Long typeId = Long.valueOf(String.valueOf(seat.get("typeId")));
                 String status = String.valueOf(seat.get("status"));
                 String pairId = seat.get("pairId") != null && !String.valueOf(seat.get("pairId")).isBlank()
-                        ? String.valueOf(seat.get("pairId")).trim() : null;
+                        ? String.valueOf(seat.get("pairId")).trim()
+                        : null;
+                activeKeys.add(row + ":" + number);
                 jdbcTemplate.update(
-                        "INSERT INTO seats (room_id, seat_type_id, seat_row, seat_number, status, pair_id) VALUES (?, ?, ?, ?, ?, ?)",
-                        roomId, typeId, row, number, status, pairId
-                );
+                        "INSERT INTO seats (room_id, seat_type_id, seat_row, seat_number, status, pair_id) VALUES (?, ?, ?, ?, ?, ?) "
+                                +
+                                "ON DUPLICATE KEY UPDATE seat_type_id = VALUES(seat_type_id), status = VALUES(status), pair_id = VALUES(pair_id)",
+                        roomId, typeId, row, number, status, pairId);
             }
+
+            List<Map<String, Object>> existingSeats = jdbcTemplate.queryForList(
+                    "SELECT seat_id, seat_row, seat_number FROM seats WHERE room_id = ?", roomId);
+            for (Map<String, Object> ex : existingSeats) {
+                String key = String.valueOf(ex.get("seat_row")).trim().toUpperCase() + ":" + ex.get("seat_number");
+                if (!activeKeys.contains(key)) {
+                    Long seatId = ((Number) ex.get("seat_id")).longValue();
+                    jdbcTemplate.update(
+                            "DELETE FROM booking_seats WHERE showtime_seat_id IN (SELECT showtime_seat_id FROM showtime_seats WHERE seat_id = ?)",
+                            seatId);
+                    jdbcTemplate.update("DELETE FROM showtime_seats WHERE seat_id = ?", seatId);
+                    jdbcTemplate.update("DELETE FROM seats WHERE seat_id = ?", seatId);
+                }
+            }
+
             response.put("success", true);
             response.put("message", "Seat layout updated successfully.");
             return ResponseEntity.ok(response);

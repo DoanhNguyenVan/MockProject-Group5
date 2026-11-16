@@ -1,99 +1,80 @@
 package com.boxcinema.controller;
 
+import com.boxcinema.dto.UserSummaryDto;
 import com.boxcinema.entity.Showtime;
 import com.boxcinema.repository.ShowtimeRepository;
+import com.boxcinema.security.BoxCinemaUserDetails;
+import com.boxcinema.service.SeatRealtimePushService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.sql.Timestamp;
 import java.text.Normalizer;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
- * Live screening metadata and seat availability API for the customer booking flow.
- * Directly synchronizes room layout and seat configurations from Admin Suite in MySQL.
+ * Live screening metadata, seat map availability, and temporary seat holding with expiry API
+ * for the customer booking flow.
  */
 @RestController
 public class BookingContextApiController {
+
+    public static final int DEFAULT_HOLD_DURATION_SECONDS = 600; // 10 minutes per SRS FR-04 / TS-BOOK-003
+    public static final int MAX_SEATS_PER_BOOKING = 8;
+
     private final ShowtimeRepository showtimes;
     private final JdbcTemplate jdbcTemplate;
+    private final SeatRealtimePushService seatRealtimePushService;
+
+    @Value("${app.booking.hold-duration-seconds:600}")
+    private int defaultHoldDurationSeconds = DEFAULT_HOLD_DURATION_SECONDS;
 
     private static final List<String> PALETTE_COLORS = List.of(
-            "#10b981", // 1. Emerald Green
-            "#06b6d4", // 2. Cyan Blue
-            "#f43f5e", // 3. Rose Pink
-            "#6366f1", // 4. Indigo
-            "#f97316", // 5. Warm Orange
-            "#14b8a6", // 6. Teal
-            "#d946ef", // 7. Fuchsia
-            "#84cc16", // 8. Lime Green
-            "#0ea5e9", // 9. Sky Blue
-            "#eab308", // 10. Golden Yellow
-            "#ec4899", // 11. Deep Pink
-            "#8b5cf6", // 12. Violet
-            "#22c55e", // 13. Bright Green
-            "#38bdf8", // 14. Light Cyan
-            "#fb7185", // 15. Coral Red
-            "#e11d48"  // 16. Crimson
+            "#10b981", "#06b6d4", "#f43f5e", "#6366f1",
+            "#f97316", "#14b8a6", "#d946ef", "#84cc16",
+            "#0ea5e9", "#eab308", "#ec4899", "#8b5cf6",
+            "#22c55e", "#38bdf8", "#fb7185", "#e11d48"
     );
 
     public BookingContextApiController(ShowtimeRepository showtimes) {
-        this(showtimes, null);
+        this(showtimes, null, null);
     }
 
-    @org.springframework.beans.factory.annotation.Autowired
-    public BookingContextApiController(ShowtimeRepository showtimes, @org.springframework.beans.factory.annotation.Autowired(required = false) JdbcTemplate jdbcTemplate) {
+    public BookingContextApiController(ShowtimeRepository showtimes, JdbcTemplate jdbcTemplate) {
+        this(showtimes, jdbcTemplate, null);
+    }
+
+    @Autowired
+    public BookingContextApiController(
+            ShowtimeRepository showtimes,
+            @Autowired(required = false) JdbcTemplate jdbcTemplate,
+            @Autowired(required = false) SeatRealtimePushService seatRealtimePushService) {
         this.showtimes = showtimes;
         this.jdbcTemplate = jdbcTemplate;
+        this.seatRealtimePushService = seatRealtimePushService != null ? seatRealtimePushService : new SeatRealtimePushService();
     }
 
-    private static String hexToRgba(String hex, double opacity) {
-        if (hex == null || !hex.startsWith("#") || (hex.length() != 7 && hex.length() != 4)) {
-            return "rgba(255, 255, 255, 0.1)";
-        }
-        try {
-            int r, g, b;
-            if (hex.length() == 7) {
-                r = Integer.parseInt(hex.substring(1, 3), 16);
-                g = Integer.parseInt(hex.substring(3, 5), 16);
-                b = Integer.parseInt(hex.substring(5, 7), 16);
-            } else {
-                r = Integer.parseInt(hex.substring(1, 2) + hex.substring(1, 2), 16);
-                g = Integer.parseInt(hex.substring(2, 3) + hex.substring(2, 3), 16);
-                b = Integer.parseInt(hex.substring(3, 4) + hex.substring(3, 4), 16);
-            }
-            return String.format(Locale.ROOT, "rgba(%d, %d, %d, %.2f)", r, g, b, opacity);
-        } catch (Exception e) {
-            return "rgba(255, 255, 255, 0.1)";
-        }
-    }
-
-    private static Map<String, String> getColorForType(String typeName, String colorCode, int customIndex) {
-        if (colorCode != null && colorCode.trim().startsWith("#")) {
-            String hex = colorCode.trim();
-            return Map.of("color", hex, "border", hex, "bg", hexToRgba(hex, 0.16));
-        }
-        String upper = (typeName != null) ? typeName.trim().toUpperCase() : "STANDARD";
-        if ("STANDARD".equals(upper) || upper.contains("THƯỜNG") || upper.contains("THUONG")) {
-            return Map.of("color", "#93c5fd", "border", "#3b82f6", "bg", "#0f172a");
-        } else if ("VIP".equals(upper)) {
-            return Map.of("color", "#fcd34d", "border", "#f59e0b", "bg", "#1c1507");
-        } else if ("SWEETBOX".equals(upper) || "COUPLE".equals(upper) || upper.contains("ĐÔI") || upper.contains("DOI")) {
-            return Map.of("color", "#e9d5ff", "border", "#a855f7", "bg", "#1e112a");
-        } else if (upper.contains("LƯỜI") || upper.contains("LUOI") || upper.contains("LOUNGE") || upper.contains("BED")) {
-            return Map.of("color", "#6ee7b7", "border", "#10b981", "bg", "#062419");
-        } else if (upper.contains("TÌNH YÊU") || upper.contains("TINH YEU") || upper.contains("TÌNH IÊU") || upper.contains("TINH IEU") || upper.contains("LOVE")) {
-            return Map.of("color", "#f472b6", "border", "#ec4899", "bg", "#260a1c");
-        }
-        String color = PALETTE_COLORS.get(Math.abs(customIndex) % PALETTE_COLORS.size());
-        return Map.of("color", color, "border", color, "bg", hexToRgba(color, 0.16));
+    @GetMapping(value = "/api/booking/showtimes/{showtimeId}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamShowtimeSeats(@PathVariable Long showtimeId) {
+        return seatRealtimePushService.subscribe(showtimeId);
     }
 
     private static String slugify(String text) {
@@ -104,6 +85,93 @@ public class BookingContextApiController {
                 .replaceAll("[^a-z0-9]+", "-")
                 .replaceAll("^-|-$", "");
         return normalized.isEmpty() ? "custom" : normalized;
+    }
+
+    private Long resolveCurrentUserId(HttpServletRequest request) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof BoxCinemaUserDetails details) {
+                if (details.getUserSummary() != null && details.getUserSummary().getUserId() != null) {
+                    return details.getUserSummary().getUserId();
+                }
+            }
+            if (request != null) {
+                HttpSession session = request.getSession(false);
+                if (session != null && session.getAttribute("currentUser") instanceof UserSummaryDto summary) {
+                    return summary.getUserId();
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
+    private String resolveHoldSessionId(HttpServletRequest request, String clientHoldToken) {
+        Long userId = resolveCurrentUserId(request);
+        if (userId != null) {
+            return "acct_hold_user_" + userId;
+        }
+        if (clientHoldToken != null && !clientHoldToken.isBlank()) {
+            String trimmed = clientHoldToken.trim();
+            if (trimmed.length() <= 96 && !trimmed.startsWith("acct_hold_user_")) {
+                return trimmed;
+            }
+        }
+        if (request != null) {
+            String headerToken = request.getHeader("X-Hold-Session");
+            if (headerToken != null && !headerToken.isBlank()) {
+                String trimmed = headerToken.trim();
+                if (trimmed.length() <= 96 && !trimmed.startsWith("acct_hold_user_")) {
+                    return trimmed;
+                }
+            }
+            HttpSession session = request.getSession(true);
+            if (session != null && session.getId() != null && !session.getId().isBlank()) {
+                return "guest_http_" + session.getId();
+            }
+        }
+        return "anonymous-session";
+    }
+
+    private static String sha256Hex(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] digest = md.digest(input.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(digest.length * 2);
+            for (byte b : digest) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            return UUID.randomUUID().toString().replace("-", "");
+        }
+    }
+
+    private void cleanupExpiredHolds() {
+        if (jdbcTemplate == null) return;
+        try {
+            jdbcTemplate.update(
+                    "UPDATE showtime_seats " +
+                    "SET seat_status = 'AVAILABLE', " +
+                    "    hold_token_hash = NULL, " +
+                    "    held_by_user_id = NULL, " +
+                    "    hold_session_id = NULL, " +
+                    "    hold_expires_at = NULL " +
+                    "WHERE seat_status = 'HELD' " +
+                    "  AND (hold_expires_at IS NULL OR hold_expires_at <= NOW())"
+            );
+        } catch (Exception ignored) {
+        }
+    }
+
+    private boolean isHeldByCaller(Long seatHeldByUserId, String seatHoldSessionId, Long callerUserId, String callerSessionId) {
+        if (seatHeldByUserId != null) {
+            return callerUserId != null && callerUserId.equals(seatHeldByUserId);
+        }
+        if (callerUserId != null) {
+            return false;
+        }
+        return callerSessionId != null && seatHoldSessionId != null && callerSessionId.equals(seatHoldSessionId);
     }
 
     @GetMapping("/api/quick-booking/showtimes/{showtimeId}")
@@ -126,7 +194,7 @@ public class BookingContextApiController {
             return error(HttpStatus.NOT_FOUND, "SHOWTIME_NOT_AVAILABLE", "This screening is no longer available because the cinema or room has suspended operations.");
         }
         return ResponseEntity.ok()
-                .cacheControl(org.springframework.http.CacheControl.noStore())
+                .cacheControl(CacheControl.noStore())
                 .body(new ScreeningContext(
                         showtime.getShowtimeId().toString(),
                         movie.getMovieId().toString(),
@@ -142,13 +210,110 @@ public class BookingContextApiController {
                 ));
     }
 
+    private void ensureDefaultRoomSeats(Long roomId) {
+        if (jdbcTemplate == null || roomId == null) return;
+        try {
+            for (char r = 'A'; r <= 'G'; r++) {
+                long typeId = (r <= 'B') ? 1L : (r <= 'F') ? 2L : 3L;
+                for (int col = 1; col <= 10; col++) {
+                    String pairId = null;
+                    if (r == 'G') {
+                        int firstCol = (col % 2 == 1) ? col : (col - 1);
+                        pairId = "G" + firstCol + "-G" + (firstCol + 1);
+                    }
+                    try {
+                        jdbcTemplate.update(
+                                "INSERT IGNORE INTO seats (room_id, seat_type_id, seat_row, seat_number, status, pair_id) VALUES (?, ?, ?, ?, 'ACTIVE', ?)",
+                                roomId, typeId, String.valueOf(r), col, pairId
+                        );
+                    } catch (Exception e) {
+                        jdbcTemplate.update(
+                                "INSERT IGNORE INTO seats (room_id, seat_type_id, seat_row, seat_number, status) VALUES (?, ?, ?, ?, 'ACTIVE')",
+                                roomId, typeId, String.valueOf(r), col
+                        );
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private List<Map<String, Object>> queryRoomSeats(Long roomId) {
+        if (jdbcTemplate == null) return Collections.emptyList();
+        try {
+            return jdbcTemplate.query(
+                    "SELECT s.seat_id, s.seat_row, s.seat_number, s.status AS seat_status, s.seat_type_id, s.pair_id, " +
+                    "       COALESCE(st.type_name, 'STANDARD') AS type_name, " +
+                    "       COALESCE(st.price_surcharge, 0) AS price_surcharge, " +
+                    "       COALESCE(st.shape_type, 'standard') AS shape_type " +
+                    "FROM seats s " +
+                    "LEFT JOIN seat_types st ON s.seat_type_id = st.seat_type_id " +
+                    "WHERE s.room_id = ? " +
+                    "ORDER BY s.seat_row ASC, s.seat_number ASC",
+                    (rs, rowNum) -> {
+                        Map<String, Object> map = new LinkedHashMap<>();
+                        map.put("seatId", rs.getLong("seat_id"));
+                        map.put("seatTypeId", String.valueOf(rs.getLong("seat_type_id")));
+                        map.put("row", rs.getString("seat_row"));
+                        map.put("number", rs.getInt("seat_number"));
+                        map.put("seatStatus", rs.getString("seat_status"));
+                        map.put("pairId", rs.getString("pair_id"));
+                        map.put("typeName", rs.getString("type_name"));
+                        map.put("surcharge", rs.getDouble("price_surcharge"));
+                        map.put("shapeType", rs.getString("shape_type"));
+                        return map;
+                    },
+                    roomId
+            );
+        } catch (Exception ex) {
+            // Fallback if pair_id or shape_type column is not yet present
+            return jdbcTemplate.query(
+                    "SELECT s.seat_id, s.seat_row, s.seat_number, s.status AS seat_status, s.seat_type_id, " +
+                    "       COALESCE(st.type_name, 'STANDARD') AS type_name, " +
+                    "       COALESCE(st.price_surcharge, 0) AS price_surcharge " +
+                    "FROM seats s " +
+                    "LEFT JOIN seat_types st ON s.seat_type_id = st.seat_type_id " +
+                    "WHERE s.room_id = ? " +
+                    "ORDER BY s.seat_row ASC, s.seat_number ASC",
+                    (rs, rowNum) -> {
+                        Map<String, Object> map = new LinkedHashMap<>();
+                        String row = rs.getString("seat_row");
+                        int num = rs.getInt("seat_number");
+                        String tName = rs.getString("type_name");
+                        String pairId = null;
+                        if (tName != null && (tName.toUpperCase().contains("SWEETBOX") || tName.toUpperCase().contains("COUPLE"))) {
+                            int firstCol = (num % 2 == 1) ? num : (num - 1);
+                            pairId = row + firstCol + "-" + row + (firstCol + 1);
+                        }
+                        map.put("seatId", rs.getLong("seat_id"));
+                        map.put("seatTypeId", String.valueOf(rs.getLong("seat_type_id")));
+                        map.put("row", row);
+                        map.put("number", num);
+                        map.put("seatStatus", rs.getString("seat_status"));
+                        map.put("pairId", pairId);
+                        map.put("typeName", tName);
+                        map.put("surcharge", rs.getDouble("price_surcharge"));
+                        map.put("shapeType", null);
+                        return map;
+                    },
+                    roomId
+            );
+        }
+    }
+
     /**
-     * Primary live booking endpoint: loads exact seat matrix configured by Admin for this room,
-     * including custom rows, columns, seat types (STANDARD, VIP, SWEETBOX, GHẾ LƯỜI...), and booked/unavailable status.
+     * Primary live booking endpoint: loads exact seat matrix configured for this room,
+     * including live AVAILABLE / HELD / BOOKED statuses and active hold countdown timer.
      */
     @GetMapping({"/api/booking/showtimes/{showtimeId}", "/api/quick-booking/showtimes/{showtimeId}/data"})
-    @Transactional(readOnly = true)
-    public ResponseEntity<?> getBookingData(@PathVariable Long showtimeId) {
+    @Transactional
+    public ResponseEntity<?> getBookingData(@PathVariable Long showtimeId, HttpServletRequest request) {
+        if (jdbcTemplate == null) {
+            return error(HttpStatus.NOT_FOUND, "DB_UNAVAILABLE", "Live seat inventory is not connected.");
+        }
+
+        cleanupExpiredHolds();
+
         Showtime showtime = showtimes.findById(showtimeId).orElse(null);
         if (showtime == null || !"ACTIVE".equalsIgnoreCase(showtime.getStatus())) {
             return error(HttpStatus.NOT_FOUND, "SHOWTIME_NOT_FOUND", "This screening could not be found. Please choose another showtime.");
@@ -161,20 +326,26 @@ public class BookingContextApiController {
             return error(HttpStatus.NOT_FOUND, "SHOWTIME_NOT_AVAILABLE", "This screening is no longer available because the cinema or room has suspended operations.");
         }
         Long roomId = room.getRoomId();
+        Long callerUserId = resolveCurrentUserId(request);
+        String callerSessionId = resolveHoldSessionId(request, null);
 
         // 1. Fetch all configured seat types from MySQL to build metadata
-        List<Map<String, Object>> dbSeatTypes = jdbcTemplate.query(
-                "SELECT seat_type_id, type_name, price_surcharge, description, COALESCE(shape_type, 'standard') AS shape_type FROM seat_types ORDER BY seat_type_id ASC",
-                (rs, rowNum) -> {
-                    Map<String, Object> map = new LinkedHashMap<>();
-                    map.put("id", String.valueOf(rs.getLong("seat_type_id")));
-                    map.put("typeName", rs.getString("type_name"));
-                    map.put("surcharge", rs.getDouble("price_surcharge"));
-                    map.put("description", rs.getString("description"));
-                    map.put("shapeType", rs.getString("shape_type"));
-                    return map;
-                }
-        );
+        List<Map<String, Object>> dbSeatTypes = new ArrayList<>();
+        try {
+            dbSeatTypes = jdbcTemplate.query(
+                    "SELECT seat_type_id, type_name, price_surcharge, description, COALESCE(shape_type, 'standard') AS shape_type FROM seat_types ORDER BY seat_type_id ASC",
+                    (rs, rowNum) -> {
+                        Map<String, Object> map = new LinkedHashMap<>();
+                        map.put("id", String.valueOf(rs.getLong("seat_type_id")));
+                        map.put("typeName", rs.getString("type_name"));
+                        map.put("surcharge", rs.getDouble("price_surcharge"));
+                        map.put("description", rs.getString("description"));
+                        map.put("shapeType", rs.getString("shape_type"));
+                        return map;
+                    }
+            );
+        } catch (Exception ignored) {
+        }
 
         Map<String, Map<String, Object>> seatTypeMetaMap = new LinkedHashMap<>();
         List<Map<String, Object>> seatTypesList = new ArrayList<>();
@@ -198,69 +369,82 @@ public class BookingContextApiController {
         }
 
         // 2. Fetch exact seats configured for this room in MySQL
-        List<Map<String, Object>> seatRows = jdbcTemplate.query(
-                "SELECT s.seat_id, s.seat_row, s.seat_number, s.status AS seat_status, s.seat_type_id, s.pair_id, " +
-                "       COALESCE(st.type_name, 'STANDARD') AS type_name, " +
-                "       COALESCE(st.price_surcharge, 0) AS price_surcharge, " +
-                "       COALESCE(st.shape_type, 'standard') AS shape_type " +
-                "FROM seats s " +
-                "LEFT JOIN seat_types st ON s.seat_type_id = st.seat_type_id " +
-                "WHERE s.room_id = ? " +
-                "ORDER BY s.seat_row ASC, s.seat_number ASC",
-                (rs, rowNum) -> {
-                    Map<String, Object> map = new LinkedHashMap<>();
-                    map.put("seatId", rs.getLong("seat_id"));
-                    map.put("seatTypeId", String.valueOf(rs.getLong("seat_type_id")));
-                    map.put("row", rs.getString("seat_row"));
-                    map.put("number", rs.getInt("seat_number"));
-                    map.put("seatStatus", rs.getString("seat_status"));
-                    map.put("pairId", rs.getString("pair_id"));
-                    map.put("typeName", rs.getString("type_name"));
-                    map.put("surcharge", rs.getDouble("price_surcharge"));
-                    map.put("shapeType", rs.getString("shape_type"));
-                    return map;
-                },
-                roomId
-        );
+        List<Map<String, Object>> seatRows = queryRoomSeats(roomId);
 
-        // 3. Query booked seats for this specific screening
+        // 3. Query booked seats (from bookings) and live showtime_seats (HELD / BOOKED / SOLD)
         Set<String> bookedSeatLabels = new HashSet<>();
+        Set<Long> bookedPhysicalSeatIds = new HashSet<>();
         try {
-            List<String> booked = jdbcTemplate.query(
-                    "SELECT bs.seat_label_snapshot " +
+            jdbcTemplate.query(
+                    "SELECT bs.seat_label_snapshot, ss.seat_id " +
                     "FROM booking_seats bs " +
                     "JOIN bookings b ON bs.booking_id = b.booking_id " +
+                    "LEFT JOIN showtime_seats ss ON bs.showtime_seat_id = ss.showtime_seat_id " +
                     "WHERE b.showtime_id = ? AND b.booking_status IN ('CONFIRMED', 'PENDING', 'PAID')",
-                    (rs, rowNum) -> rs.getString("seat_label_snapshot"),
+                    rs -> {
+                        String label = rs.getString("seat_label_snapshot");
+                        if (label != null && !label.isBlank()) {
+                            bookedSeatLabels.add(label.trim().toUpperCase());
+                        }
+                        long sId = rs.getLong("seat_id");
+                        if (!rs.wasNull() && sId > 0) {
+                            bookedPhysicalSeatIds.add(sId);
+                        }
+                    },
                     showtimeId
             );
-            bookedSeatLabels.addAll(booked);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
+        Map<Long, Map<String, Object>> showtimeSeatStatesBySeatId = new HashMap<>();
+        Map<String, Map<String, Object>> showtimeSeatStatesByLabel = new HashMap<>();
         try {
-            List<String> showtimeBooked = jdbcTemplate.query(
-                    "SELECT CONCAT(s.seat_row, s.seat_number) as label " +
+            jdbcTemplate.query(
+                    "SELECT ss.seat_id, CONCAT(s.seat_row, s.seat_number) AS raw_label, " +
+                    "       ss.seat_status, ss.held_by_user_id, ss.hold_session_id, ss.hold_expires_at, " +
+                    "       TIMESTAMPDIFF(SECOND, NOW(), ss.hold_expires_at) AS remaining_sec " +
                     "FROM showtime_seats ss " +
                     "JOIN seats s ON ss.seat_id = s.seat_id " +
-                    "WHERE ss.showtime_id = ? AND ss.seat_status IN ('HELD', 'BOOKED', 'SOLD')",
-                    (rs, rowNum) -> rs.getString("label"),
+                    "WHERE ss.showtime_id = ?",
+                    rs -> {
+                        long seatId = rs.getLong("seat_id");
+                        String rawLabel = rs.getString("raw_label");
+                        String status = rs.getString("seat_status");
+                        Long heldByUserId = rs.getObject("held_by_user_id") != null ? rs.getLong("held_by_user_id") : null;
+                        String holdSessionId = rs.getString("hold_session_id");
+                        Timestamp holdExpiresTs = rs.getTimestamp("hold_expires_at");
+                        long remainingSec = rs.getLong("remaining_sec");
+
+                        Map<String, Object> state = new HashMap<>();
+                        state.put("seatId", seatId);
+                        state.put("status", status);
+                        state.put("heldByUserId", heldByUserId);
+                        state.put("holdSessionId", holdSessionId);
+                        state.put("holdExpiresAt", holdExpiresTs != null ? holdExpiresTs.toLocalDateTime().toString() : null);
+                        state.put("remainingSeconds", Math.max(0L, remainingSec));
+
+                        showtimeSeatStatesBySeatId.put(seatId, state);
+                        if (rawLabel != null) {
+                            showtimeSeatStatesByLabel.put(rawLabel.toUpperCase(), state);
+                        }
+                    },
                     showtimeId
             );
-            bookedSeatLabels.addAll(showtimeBooked);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         // 4. Build seats list according to frontend contract
         int basePriceInt = showtime.getBasePrice() != null ? showtime.getBasePrice().intValue() : 90000;
         List<Map<String, Object>> seats = new ArrayList<>();
 
         if (seatRows.isEmpty()) {
-            for (int r = 0; r < 6; r++) {
+            for (int r = 0; r < 7; r++) {
                 String rowLetter = String.valueOf((char) ('A' + r));
                 for (int c = 1; c <= 10; c++) {
                     Map<String, Object> seat = new LinkedHashMap<>();
                     String seatId = rowLetter + c;
-                    String typeUpper = (r >= 2 && r <= 4) ? "VIP" : (r == 5 ? "SWEETBOX" : "STANDARD");
-                    String shape = (r >= 2 && r <= 4) ? "vip" : (r == 5 ? "sweetbox" : "standard");
+                    String typeUpper = (r >= 2 && r <= 5) ? "VIP" : (r == 6 ? "SWEETBOX" : "STANDARD");
+                    String shape = (r >= 2 && r <= 5) ? "vip" : (r == 6 ? "sweetbox" : "standard");
                     Map<String, Object> meta = seatTypeMetaMap.getOrDefault(typeUpper, Map.of(
                             "name", typeUpper, "slug", typeUpper.toLowerCase(), "shapeType", shape
                     ));
@@ -270,14 +454,19 @@ public class BookingContextApiController {
                     seat.put("type", meta.get("name"));
                     seat.put("typeSlug", meta.get("slug"));
                     seat.put("shapeType", meta.getOrDefault("shapeType", shape));
-                    seat.put("price", basePriceInt + ((r >= 2 && r <= 4) ? 30000 : (r == 5 ? 50000 : 0)));
+                    seat.put("price", basePriceInt + ((r >= 2 && r <= 5) ? 30000 : (r == 6 ? 50000 : 0)));
                     seat.put("status", bookedSeatLabels.contains(seatId) ? "BOOKED" : "AVAILABLE");
                     seat.put("aisleAfter", c == 5);
+                    if (r == 6) {
+                        int firstCol = (c % 2 == 1) ? c : (c - 1);
+                        seat.put("pairId", "G" + firstCol + "-G" + (firstCol + 1));
+                    }
                     seats.add(seat);
                 }
             }
         } else {
             for (Map<String, Object> rowMap : seatRows) {
+                Long physicalSeatId = (Long) rowMap.get("seatId");
                 String rowLetter = (String) rowMap.get("row");
                 int number = (int) rowMap.get("number");
                 String dbStatus = (String) rowMap.get("seatStatus");
@@ -306,22 +495,17 @@ public class BookingContextApiController {
 
                 String typeName = (String) meta.get("name");
                 String typeSlug = (String) meta.get("slug");
-                String seatId = rowLetter + number;
+                String rawLabel = (rowLetter + number).toUpperCase();
+
                 Map<String, Object> seat = new LinkedHashMap<>();
-                seat.put("id", seatId);
+                seat.put("id", rawLabel);
+                seat.put("dbSeatId", physicalSeatId);
                 seat.put("row", rowLetter);
                 seat.put("number", number);
                 seat.put("type", typeName);
                 seat.put("typeSlug", typeSlug);
                 seat.put("price", basePriceInt + (int) Math.round(surcharge));
-
-                if ("INACTIVE".equalsIgnoreCase(dbStatus) || "UNAVAILABLE".equalsIgnoreCase(dbStatus)) {
-                    seat.put("status", "UNAVAILABLE");
-                } else if (bookedSeatLabels.contains(seatId)) {
-                    seat.put("status", "BOOKED");
-                } else {
-                    seat.put("status", "AVAILABLE");
-                }
+                seat.put("rawStatus", dbStatus);
                 seat.put("shapeType", rowMap.get("shapeType") != null ? rowMap.get("shapeType") : meta.getOrDefault("shapeType", "standard"));
                 seat.put("pairId", rowMap.get("pairId"));
                 seat.put("aisleAfter", false);
@@ -329,23 +513,116 @@ public class BookingContextApiController {
             }
         }
 
+        // Re-index active seat numbers per row and resolve final status (AVAILABLE / HELD / BOOKED / UNAVAILABLE)
+        List<String> myHeldSeats = new ArrayList<>();
+        String myHoldExpiresAt = null;
+        long myHoldRemainingSeconds = 0L;
+
+        Map<String, Integer> rowCounter = new LinkedHashMap<>();
+        for (Map<String, Object> seat : seats) {
+            String r = (String) seat.get("row");
+            String rawStatus = (String) seat.remove("rawStatus");
+            String fallbackStatus = (String) seat.get("status");
+            String effectiveDbStatus = rawStatus != null ? rawStatus : fallbackStatus;
+            int colNum = (int) seat.getOrDefault("number", 0);
+            Long physicalSeatId = (Long) seat.get("dbSeatId");
+
+            if ("UNAVAILABLE".equalsIgnoreCase(effectiveDbStatus) || "INACTIVE".equalsIgnoreCase(effectiveDbStatus)) {
+                seat.put("activeNumber", null);
+                seat.put("seatLabel", r + "×");
+                seat.put("id", "UNAVAIL_" + r + "_" + colNum);
+                seat.put("status", "UNAVAILABLE");
+                seat.put("heldByMe", false);
+            } else {
+                int actNum = rowCounter.getOrDefault(r, 0) + 1;
+                rowCounter.put(r, actNum);
+                String activeLabel = r + actNum;
+                String rawLabel = r + colNum;
+                seat.put("activeNumber", actNum);
+                seat.put("seatLabel", activeLabel);
+                seat.put("id", activeLabel);
+
+                Map<String, Object> ssState = physicalSeatId != null ? showtimeSeatStatesBySeatId.get(physicalSeatId) : null;
+                if (ssState == null) {
+                    ssState = showtimeSeatStatesByLabel.get(activeLabel.toUpperCase());
+                }
+                if (ssState == null) {
+                    ssState = showtimeSeatStatesByLabel.get(rawLabel.toUpperCase());
+                }
+
+                boolean isBooked = (physicalSeatId != null && bookedPhysicalSeatIds.contains(physicalSeatId))
+                        || bookedSeatLabels.contains(activeLabel.toUpperCase())
+                        || bookedSeatLabels.contains(rawLabel.toUpperCase());
+
+                if (ssState != null) {
+                    String ssStatus = (String) ssState.get("status");
+                    if ("BOOKED".equalsIgnoreCase(ssStatus) || "SOLD".equalsIgnoreCase(ssStatus)) {
+                        isBooked = true;
+                    }
+                }
+
+                if (isBooked) {
+                    seat.put("status", "BOOKED");
+                    seat.put("heldByMe", false);
+                } else if (ssState != null && "HELD".equalsIgnoreCase((String) ssState.get("status"))
+                        && ((Long) ssState.getOrDefault("remainingSeconds", 0L)) > 0) {
+                    Long heldByUser = (Long) ssState.get("heldByUserId");
+                    String heldBySession = (String) ssState.get("holdSessionId");
+                    long remSec = (Long) ssState.get("remainingSeconds");
+                    String expAt = (String) ssState.get("holdExpiresAt");
+
+                    if (isHeldByCaller(heldByUser, heldBySession, callerUserId, callerSessionId)) {
+                        // Keep status AVAILABLE for the holder so they can toggle/proceed seamlessly
+                        seat.put("status", "AVAILABLE");
+                        seat.put("heldByMe", true);
+                        seat.put("holdExpiresAt", expAt);
+                        seat.put("holdRemainingSeconds", remSec);
+                        myHeldSeats.add(activeLabel);
+                        if (remSec > myHoldRemainingSeconds) {
+                            myHoldRemainingSeconds = remSec;
+                            myHoldExpiresAt = expAt;
+                        }
+                    } else {
+                        seat.put("status", "HELD");
+                        seat.put("heldByMe", false);
+                        seat.put("holdExpiresAt", expAt);
+                        seat.put("holdRemainingSeconds", remSec);
+                    }
+                } else {
+                    seat.put("status", "AVAILABLE");
+                    seat.put("heldByMe", false);
+                }
+            }
+        }
+
         // 5. Products / Combos
         List<Map<String, Object>> products = new ArrayList<>();
         try {
             products = jdbcTemplate.query(
-                    "SELECT product_id, product_name, description, price, image_url " +
+                    "SELECT product_id, product_name, product_type, description, current_price " +
                     "FROM products WHERE status = 'ACTIVE' ORDER BY product_id ASC",
                     (rs, rowNum) -> {
                         Map<String, Object> p = new LinkedHashMap<>();
+                        String pType = rs.getString("product_type");
+                        String img = "/assets/img/fnb/box-combos.jpg";
+                        if (pType != null) {
+                            String upperType = pType.toUpperCase();
+                            if (upperType.contains("POPCORN") || upperType.contains("SNACK")) {
+                                img = "/assets/img/fnb/box-popcorn.jpg";
+                            } else if (upperType.contains("DRINK") || upperType.contains("BEVERAGE") || upperType.contains("WATER")) {
+                                img = "/assets/img/fnb/box-beverages.jpg";
+                            }
+                        }
                         p.put("id", String.valueOf(rs.getLong("product_id")));
                         p.put("name", rs.getString("product_name"));
                         p.put("description", rs.getString("description") != null ? rs.getString("description") : "");
-                        p.put("price", rs.getInt("price"));
-                        p.put("imageUrl", rs.getString("image_url") != null ? rs.getString("image_url") : "/assets/img/fnb/box-combos.jpg");
+                        p.put("price", (int) Math.round(rs.getDouble("current_price")));
+                        p.put("imageUrl", img);
                         return p;
                     }
             );
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         if (products.isEmpty()) {
             products = List.of(
@@ -368,34 +645,360 @@ public class BookingContextApiController {
         response.put("roomName", room.getRoomName());
         response.put("screeningLabel", showtime.getStartAt().format(DateTimeFormatter.ofPattern("dd MMM yyyy / HH:mm", Locale.ENGLISH)));
         response.put("basePrice", basePriceInt);
-        // Re-index active seat numbers per row (excluding UNAVAILABLE / INACTIVE)
-        // Ensure every seat in response has a 100% unique id so validateBooking never fails!
-        Map<String, Integer> rowCounter = new LinkedHashMap<>();
-        for (Map<String, Object> seat : seats) {
-            String r = (String) seat.get("row");
-            String st = (String) seat.get("status");
-            int colNum = (int) seat.getOrDefault("number", 0);
-            if (!"UNAVAILABLE".equalsIgnoreCase(st) && !"INACTIVE".equalsIgnoreCase(st)) {
-                int actNum = rowCounter.getOrDefault(r, 0) + 1;
-                rowCounter.put(r, actNum);
-                seat.put("activeNumber", actNum);
-                seat.put("seatLabel", r + actNum);
-                seat.put("id", r + actNum);
-            } else {
-                seat.put("activeNumber", null);
-                seat.put("seatLabel", r + "×");
-                seat.put("id", "UNAVAIL_" + r + "_" + colNum);
-            }
-        }
-
         response.put("seats", seats);
         response.put("seatTypes", seatTypesList);
         response.put("products", products);
+        response.put("heldSeats", myHeldSeats);
+        response.put("holdExpiresAt", myHoldExpiresAt);
+        response.put("holdRemainingSeconds", myHoldRemainingSeconds);
+        response.put("holdDurationSeconds", defaultHoldDurationSeconds > 0 ? defaultHoldDurationSeconds : DEFAULT_HOLD_DURATION_SECONDS);
         response.put("preview", false);
 
         return ResponseEntity.ok()
-                .cacheControl(org.springframework.http.CacheControl.noStore())
+                .cacheControl(CacheControl.noStore())
                 .body(response);
+    }
+
+    /**
+     * Hold selected seats with automatic expiration (default 10 minutes = 600s).
+     * Prevents other users from selecting the held seats until the hold expires or is released.
+     */
+    @PostMapping("/api/booking/showtimes/{showtimeId}/hold")
+    @Transactional
+    public ResponseEntity<?> holdSeats(
+            @PathVariable Long showtimeId,
+            @RequestBody(required = false) Map<String, Object> body,
+            HttpServletRequest request) {
+
+        if (jdbcTemplate == null) {
+            return error(HttpStatus.SERVICE_UNAVAILABLE, "DB_UNAVAILABLE", "Database connection is required to hold seats.");
+        }
+
+        cleanupExpiredHolds();
+
+        Showtime showtime = showtimes.findById(showtimeId).orElse(null);
+        if (showtime == null || !"ACTIVE".equalsIgnoreCase(showtime.getStatus())) {
+            return error(HttpStatus.NOT_FOUND, "SHOWTIME_NOT_FOUND", "Suất chiếu không tồn tại hoặc đã ngừng phục vụ.");
+        }
+        var room = showtime.getRoom();
+        if (room == null || !"ACTIVE".equalsIgnoreCase(room.getStatus())) {
+            return error(HttpStatus.CONFLICT, "ROOM_UNAVAILABLE", "Phòng chiếu hiện không khả dụng.");
+        }
+
+        String clientHoldToken = body != null && body.get("holdSessionId") != null ? String.valueOf(body.get("holdSessionId")) : null;
+        Long callerUserId = resolveCurrentUserId(request);
+        if (callerUserId == null) {
+            return error(HttpStatus.UNAUTHORIZED, "ACCOUNT_NOT_AUTHENTICATED", "Vui lòng đăng nhập để chọn và đặt ghế.");
+        }
+        String callerSessionId = resolveHoldSessionId(request, clientHoldToken);
+
+        List<String> requestedSeatIds = new ArrayList<>();
+        if (body != null && body.get("seatIds") instanceof List<?> rawList) {
+            for (Object item : rawList) {
+                if (item != null && !String.valueOf(item).isBlank()) {
+                    String clean = String.valueOf(item).trim().toUpperCase();
+                    if (!requestedSeatIds.contains(clean)) {
+                        requestedSeatIds.add(clean);
+                    }
+                }
+            }
+        }
+
+        if (requestedSeatIds.size() > MAX_SEATS_PER_BOOKING) {
+            return error(HttpStatus.BAD_REQUEST, "MAX_SEATS_EXCEEDED",
+                    "Bạn chỉ có thể chọn và giữ tối đa " + MAX_SEATS_PER_BOOKING + " ghế mỗi lượt đặt.");
+        }
+
+        // If seatIds is empty, release all seats held by this caller for this showtime
+        if (requestedSeatIds.isEmpty()) {
+            releaseCallerHolds(showtimeId, callerUserId, callerSessionId);
+            if (seatRealtimePushService != null) {
+                seatRealtimePushService.broadcastSeatUpdate(showtimeId, "SEAT_RELEASED");
+            }
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "showtimeId", String.valueOf(showtimeId),
+                    "heldSeatIds", Collections.emptyList(),
+                    "holdRemainingSeconds", 0,
+                    "message", "Đã hủy giữ ghế."
+            ));
+        }
+
+        // Map room seats to active labels (A1, A2...) and physical seat_id
+        List<Map<String, Object>> roomSeats = queryRoomSeats(room.getRoomId());
+        if (roomSeats.isEmpty()) {
+            ensureDefaultRoomSeats(room.getRoomId());
+            roomSeats = queryRoomSeats(room.getRoomId());
+        }
+        Map<String, Map<String, Object>> labelToSeatMap = new LinkedHashMap<>();
+        Map<String, List<String>> pairGroupMap = new LinkedHashMap<>();
+        Map<String, Integer> rowCounter = new LinkedHashMap<>();
+
+        for (Map<String, Object> rowMap : roomSeats) {
+            String r = (String) rowMap.get("row");
+            int colNum = (int) rowMap.get("number");
+            String seatStatus = (String) rowMap.get("seatStatus");
+            if ("UNAVAILABLE".equalsIgnoreCase(seatStatus) || "INACTIVE".equalsIgnoreCase(seatStatus)) {
+                continue;
+            }
+            int actNum = rowCounter.getOrDefault(r, 0) + 1;
+            rowCounter.put(r, actNum);
+            String activeLabel = (r + actNum).toUpperCase();
+            String rawLabel = (r + colNum).toUpperCase();
+            rowMap.put("activeLabel", activeLabel);
+            labelToSeatMap.put(activeLabel, rowMap);
+            labelToSeatMap.putIfAbsent(rawLabel, rowMap);
+
+            String pairId = (String) rowMap.get("pairId");
+            if (pairId != null && !pairId.isBlank()) {
+                pairGroupMap.computeIfAbsent(pairId, k -> new ArrayList<>()).add(activeLabel);
+            }
+        }
+
+        // Validate all requested seatIds exist and check Sweetbox pairs
+        List<Long> targetPhysicalSeatIds = new ArrayList<>();
+        List<String> normalizedSeatLabels = new ArrayList<>();
+        for (String reqLabel : requestedSeatIds) {
+            Map<String, Object> seatRow = labelToSeatMap.get(reqLabel);
+            if (seatRow == null) {
+                return error(HttpStatus.BAD_REQUEST, "INVALID_SEAT", "Ghế " + reqLabel + " không hợp lệ hoặc không khả dụng.");
+            }
+            String pairId = (String) seatRow.get("pairId");
+            if (pairId != null && pairGroupMap.containsKey(pairId)) {
+                for (String partnerLabel : pairGroupMap.get(pairId)) {
+                    if (!requestedSeatIds.contains(partnerLabel)) {
+                        return error(HttpStatus.BAD_REQUEST, "SWEETBOX_PAIR_REQUIRED",
+                                "Ghế đôi (" + String.join(" - ", pairGroupMap.get(pairId)) + ") phải được chọn cùng nhau.");
+                    }
+                }
+            }
+            Long dbSeatId = (Long) seatRow.get("seatId");
+            String activeLabel = (String) seatRow.get("activeLabel");
+            if (!targetPhysicalSeatIds.contains(dbSeatId)) {
+                targetPhysicalSeatIds.add(dbSeatId);
+                normalizedSeatLabels.add(activeLabel);
+            }
+        }
+
+        // Check for conflicts in bookings and showtime_seats
+        Set<String> bookedLabels = new HashSet<>();
+        try {
+            jdbcTemplate.query(
+                    "SELECT bs.seat_label_snapshot " +
+                    "FROM booking_seats bs " +
+                    "JOIN bookings b ON bs.booking_id = b.booking_id " +
+                    "WHERE b.showtime_id = ? AND b.booking_status IN ('CONFIRMED', 'PENDING', 'PAID')",
+                    rs -> {
+                        String lbl = rs.getString("seat_label_snapshot");
+                        if (lbl != null) bookedLabels.add(lbl.trim().toUpperCase());
+                    },
+                    showtimeId
+            );
+        } catch (Exception ignored) {
+        }
+
+        List<String> conflictingSeats = new ArrayList<>();
+        for (int i = 0; i < targetPhysicalSeatIds.size(); i++) {
+            Long dbSeatId = targetPhysicalSeatIds.get(i);
+            String label = normalizedSeatLabels.get(i);
+            if (bookedLabels.contains(label)) {
+                conflictingSeats.add(label);
+                continue;
+            }
+            List<Map<String, Object>> existingRows = jdbcTemplate.query(
+                    "SELECT seat_status, held_by_user_id, hold_session_id, " +
+                    "       TIMESTAMPDIFF(SECOND, NOW(), hold_expires_at) AS rem_sec " +
+                    "FROM showtime_seats WHERE showtime_id = ? AND seat_id = ?",
+                    (rs, rowNum) -> {
+                        Map<String, Object> m = new HashMap<>();
+                        m.put("status", rs.getString("seat_status"));
+                        m.put("userId", rs.getObject("held_by_user_id") != null ? rs.getLong("held_by_user_id") : null);
+                        m.put("sessionId", rs.getString("hold_session_id"));
+                        m.put("remSec", rs.getLong("rem_sec"));
+                        return m;
+                    },
+                    showtimeId, dbSeatId
+            );
+            if (!existingRows.isEmpty()) {
+                Map<String, Object> existing = existingRows.get(0);
+                String st = (String) existing.get("status");
+                long remSec = (Long) existing.get("remSec");
+                Long heldUser = (Long) existing.get("userId");
+                String heldSession = (String) existing.get("sessionId");
+                if ("BOOKED".equalsIgnoreCase(st) || "SOLD".equalsIgnoreCase(st)) {
+                    conflictingSeats.add(label);
+                } else if ("HELD".equalsIgnoreCase(st) && remSec > 0
+                        && !isHeldByCaller(heldUser, heldSession, callerUserId, callerSessionId)) {
+                    conflictingSeats.add(label);
+                }
+            }
+        }
+
+        if (!conflictingSeats.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                    "success", false,
+                    "errorCode", "SEAT_ALREADY_HELD_OR_BOOKED",
+                    "conflictingSeats", conflictingSeats,
+                    "message", "Ghế " + String.join(", ", conflictingSeats) + " vừa được khách hàng khác giữ hoặc đặt. Vui lòng chọn ghế khác."
+            ));
+        }
+
+        // Determine hold expiration time
+        boolean resetTimer = body != null && Boolean.TRUE.equals(body.get("resetTimer"));
+        Integer requestedDuration = null;
+        if (body != null && body.get("durationSeconds") instanceof Number num) {
+            requestedDuration = Math.max(5, Math.min(1800, num.intValue()));
+        }
+
+        int holdSeconds = requestedDuration != null
+                ? requestedDuration
+                : (defaultHoldDurationSeconds > 0 ? defaultHoldDurationSeconds : DEFAULT_HOLD_DURATION_SECONDS);
+
+        LocalDateTime expiresAt = null;
+        if (!resetTimer && requestedDuration == null) {
+            // Check if caller already has an active hold timer on this showtime
+            try {
+                List<Timestamp> existingTimers = jdbcTemplate.query(
+                        "SELECT hold_expires_at FROM showtime_seats " +
+                        "WHERE showtime_id = ? AND seat_status = 'HELD' AND hold_expires_at > NOW() " +
+                        "  AND ((? IS NOT NULL AND held_by_user_id = ?) OR (? IS NULL AND held_by_user_id IS NULL AND hold_session_id = ?)) " +
+                        "ORDER BY hold_expires_at DESC LIMIT 1",
+                        (rs, rowNum) -> rs.getTimestamp("hold_expires_at"),
+                        showtimeId, callerUserId, callerUserId, callerUserId, callerSessionId
+                );
+                if (!existingTimers.isEmpty() && existingTimers.get(0) != null) {
+                    LocalDateTime existingExp = existingTimers.get(0).toLocalDateTime();
+                    if (Duration.between(LocalDateTime.now(), existingExp).getSeconds() > 15) {
+                        expiresAt = existingExp;
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        if (expiresAt == null) {
+            expiresAt = LocalDateTime.now().plusSeconds(holdSeconds);
+        }
+
+        // Release any seats held by caller on this showtime that are NOT in targetPhysicalSeatIds
+        releaseCallerHoldsExcept(showtimeId, callerUserId, callerSessionId, targetPhysicalSeatIds);
+
+        // Upsert holds for all targetPhysicalSeatIds
+        Timestamp expiresTimestamp = Timestamp.valueOf(expiresAt);
+        for (Long dbSeatId : targetPhysicalSeatIds) {
+            String tokenHash = sha256Hex(showtimeId + ":" + dbSeatId + ":" + callerSessionId + ":" + (callerUserId != null ? callerUserId : "guest"));
+            jdbcTemplate.update(
+                    "INSERT INTO showtime_seats (showtime_id, seat_id, seat_status, hold_token_hash, held_by_user_id, hold_session_id, hold_expires_at) " +
+                    "VALUES (?, ?, 'HELD', ?, ?, ?, ?) " +
+                    "ON DUPLICATE KEY UPDATE " +
+                    "    seat_status = 'HELD', " +
+                    "    hold_token_hash = VALUES(hold_token_hash), " +
+                    "    held_by_user_id = VALUES(held_by_user_id), " +
+                    "    hold_session_id = VALUES(hold_session_id), " +
+                    "    hold_expires_at = VALUES(hold_expires_at)",
+                    showtimeId, dbSeatId, tokenHash, callerUserId, callerSessionId, expiresTimestamp
+            );
+        }
+
+        long remainingSeconds = Math.max(1L, Duration.between(LocalDateTime.now(), expiresAt).getSeconds());
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("success", true);
+        result.put("showtimeId", String.valueOf(showtimeId));
+        result.put("heldSeatIds", normalizedSeatLabels);
+        result.put("holdExpiresAt", expiresAt.toString());
+        result.put("holdRemainingSeconds", remainingSeconds);
+        result.put("holdDurationSeconds", holdSeconds);
+        result.put("message", "Đã giữ ghế " + String.join(", ", normalizedSeatLabels) + " thành công.");
+
+        if (seatRealtimePushService != null) {
+            seatRealtimePushService.broadcastSeatUpdate(showtimeId, "SEAT_HELD");
+        }
+
+        return ResponseEntity.ok()
+                .cacheControl(CacheControl.noStore())
+                .body(result);
+    }
+
+    /**
+     * Release all seats held by the current user/session for a showtime.
+     */
+    @DeleteMapping("/api/booking/showtimes/{showtimeId}/hold")
+    @Transactional
+    public ResponseEntity<?> deleteHeldSeats(
+            @PathVariable Long showtimeId,
+            @RequestBody(required = false) Map<String, Object> body,
+            HttpServletRequest request) {
+        return releaseSeats(showtimeId, body, request);
+    }
+
+    @PostMapping("/api/booking/showtimes/{showtimeId}/release")
+    @Transactional
+    public ResponseEntity<?> releaseSeats(
+            @PathVariable Long showtimeId,
+            @RequestBody(required = false) Map<String, Object> body,
+            HttpServletRequest request) {
+        if (jdbcTemplate == null) {
+            return ResponseEntity.ok(Map.of("success", true, "releasedCount", 0));
+        }
+        String clientHoldToken = body != null && body.get("holdSessionId") != null ? String.valueOf(body.get("holdSessionId")) : null;
+        Long callerUserId = resolveCurrentUserId(request);
+        if (callerUserId == null) {
+            return error(HttpStatus.UNAUTHORIZED, "ACCOUNT_NOT_AUTHENTICATED", "Vui lòng đăng nhập để chọn và đặt ghế.");
+        }
+        String callerSessionId = resolveHoldSessionId(request, clientHoldToken);
+        int released = releaseCallerHolds(showtimeId, callerUserId, callerSessionId);
+        if (seatRealtimePushService != null) {
+            seatRealtimePushService.broadcastSeatUpdate(showtimeId, "SEAT_RELEASED");
+        }
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "showtimeId", String.valueOf(showtimeId),
+                "releasedCount", released,
+                "message", "Đã giải phóng ghế đang giữ."
+        ));
+    }
+
+    private int releaseCallerHolds(Long showtimeId, Long callerUserId, String callerSessionId) {
+        if (jdbcTemplate == null) return 0;
+        return jdbcTemplate.update(
+                "UPDATE showtime_seats " +
+                "SET seat_status = 'AVAILABLE', " +
+                "    hold_token_hash = NULL, " +
+                "    held_by_user_id = NULL, " +
+                "    hold_session_id = NULL, " +
+                "    hold_expires_at = NULL " +
+                "WHERE showtime_id = ? AND seat_status = 'HELD' " +
+                "  AND ((? IS NOT NULL AND held_by_user_id = ?) OR (? IS NULL AND held_by_user_id IS NULL AND hold_session_id = ?))",
+                showtimeId, callerUserId, callerUserId, callerUserId, callerSessionId
+        );
+    }
+
+    private void releaseCallerHoldsExcept(Long showtimeId, Long callerUserId, String callerSessionId, List<Long> keepSeatIds) {
+        if (jdbcTemplate == null) return;
+        if (keepSeatIds == null || keepSeatIds.isEmpty()) {
+            releaseCallerHolds(showtimeId, callerUserId, callerSessionId);
+            return;
+        }
+        String inPlaceholders = String.join(",", Collections.nCopies(keepSeatIds.size(), "?"));
+        List<Object> params = new ArrayList<>();
+        params.add(showtimeId);
+        params.add(callerUserId);
+        params.add(callerUserId);
+        params.add(callerUserId);
+        params.add(callerSessionId);
+        params.addAll(keepSeatIds);
+        jdbcTemplate.update(
+                "UPDATE showtime_seats " +
+                "SET seat_status = 'AVAILABLE', " +
+                "    hold_token_hash = NULL, " +
+                "    held_by_user_id = NULL, " +
+                "    hold_session_id = NULL, " +
+                "    hold_expires_at = NULL " +
+                "WHERE showtime_id = ? AND seat_status = 'HELD' " +
+                "  AND ((? IS NOT NULL AND held_by_user_id = ?) OR (? IS NULL AND held_by_user_id IS NULL AND hold_session_id = ?)) " +
+                "  AND seat_id NOT IN (" + inPlaceholders + ")",
+                params.toArray()
+        );
     }
 
     private ResponseEntity<?> error(HttpStatus status, String code, String message) {

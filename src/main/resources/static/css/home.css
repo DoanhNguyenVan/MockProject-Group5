@@ -1098,7 +1098,7 @@ body.cinema-home .cinema-nav.search-active::before {
   background: #14151b;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.16);
-  display: none;
+  display: flex;
   flex-direction: column;
   justify-content: flex-end;
   opacity: 0;
@@ -1109,17 +1109,12 @@ body.cinema-home .cinema-nav.search-active::before {
   overflow: hidden;
 }
 
-/* Show on desktop hover only */
-@media (min-width: 992px) {
-  .card-hover-popover {
-    display: flex;
-  }
-
-  .catalog-card:hover .card-hover-popover {
-    opacity: 1;
-    pointer-events: auto;
-    transform: translateY(0);
-  }
+.catalog-card:hover .card-hover-popover,
+.catalog-card:focus-within .card-hover-popover,
+.catalog-card.is-popover-open .card-hover-popover {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 .popover-backdrop {
@@ -1216,6 +1211,71 @@ body.cinema-home .cinema-nav.search-active::before {
 
 .btn-pop-buy:hover { opacity: 0.92; }
 .btn-pop-detail:hover, .btn-pop-trailer:hover { background: rgba(255, 255, 255, 0.2); }
+
+@media (max-width: 991px) {
+  .popover-backdrop {
+    min-height: 45px;
+  }
+  .popover-body {
+    padding: 0.55rem 0.65rem 0.7rem;
+  }
+  .popover-title {
+    font-size: 0.84rem;
+    margin-bottom: 0.15rem;
+    -webkit-line-clamp: 1;
+  }
+  .popover-subtitle {
+    font-size: 0.65rem;
+    margin-bottom: 0.35rem;
+  }
+  .popover-synopsis {
+    font-size: 0.72rem;
+    line-height: 1.35;
+    margin-bottom: 0.55rem;
+    -webkit-line-clamp: 2;
+  }
+  .popover-actions {
+    gap: 0.3rem;
+  }
+  .btn-pop-buy,
+  .btn-pop-detail,
+  .btn-pop-trailer {
+    font-size: 0.68rem;
+    padding: 0.34rem 0.42rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .popover-backdrop {
+    min-height: 36px;
+  }
+  .popover-body {
+    padding: 0.45rem 0.5rem 0.55rem;
+  }
+  .popover-title {
+    font-size: 0.76rem;
+  }
+  .popover-subtitle {
+    font-size: 0.6rem;
+    margin-bottom: 0.25rem;
+  }
+  .popover-synopsis {
+    font-size: 0.66rem;
+    line-height: 1.3;
+    margin-bottom: 0.45rem;
+    -webkit-line-clamp: 2;
+  }
+  .btn-pop-buy {
+    flex: 1 1 100%;
+  }
+  .btn-pop-detail,
+  .btn-pop-trailer {
+    flex: 1 1 auto;
+    text-align: center;
+    font-size: 0.65rem;
+    padding: 0.3rem 0.35rem;
+  }
+}
 
 /* =============================================================================
    5. CATALOG PAGINATION (12 MOVIES / PAGE) & EMPTY STATE

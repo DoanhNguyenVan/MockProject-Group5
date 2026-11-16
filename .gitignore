@@ -9,6 +9,9 @@ target/
 *.iml
 *.ipr
 
+### VS Code ###
+.vscode/
+
 ### OS & Temporary ###
 *.log
 .DS_Store

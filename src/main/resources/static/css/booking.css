@@ -72,8 +72,10 @@
 .booking-seat .seat-num {
   position: relative;
   z-index: 2;
-  font-size: 0.62rem;
+  font-size: 0.56rem;
   font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
   color: #cbd5e1;
   pointer-events: none;
   line-height: 1;
@@ -96,19 +98,23 @@
   color: #ffffff;
 }
 
-/* Status 2: Holding (Sky Blue) */
-.booking-seat.held, .legend-seat-icon.status-holding {
-  color: #38bdf8 !important;
-  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.55)) !important;
+/* Status 2: Holding by another user (Aqua / Sky Blue - distinct from Sold Red & Selected Royal Blue) */
+.booking-seat.held,
+.booking-seat.held:disabled,
+.legend-seat-icon.status-holding {
+  color: #22d3ee !important;
+  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.6)) !important;
   cursor: not-allowed;
   opacity: 1 !important;
 }
-.booking-seat.held .seat-num {
+.booking-seat.held .seat-num,
+.booking-seat.held:disabled .seat-num {
   color: #ffffff !important;
 }
 
-/* Status 3: Selected (Electric Royal Blue Glow) */
-.booking-seat[aria-pressed="true"], .legend-seat-icon.status-selected {
+/* Status 3: Selected by current user (Electric Royal Blue Glow) */
+.booking-seat[aria-pressed="true"],
+.legend-seat-icon.status-selected {
   color: #3b82f6 !important;
   transform: translateY(-2px);
   filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.85)) !important;
@@ -118,24 +124,33 @@
   color: #ffffff !important;
 }
 
-/* Status 4: Booked / Sold (Solid Bright Red) */
-.booking-seat.booked, .booking-seat:disabled, .legend-seat-icon.status-sold {
+/* Status 4: Booked / Sold (Solid Bright Red - never applies to .held or .reserved) */
+.booking-seat.booked,
+.booking-seat.booked:disabled,
+.booking-seat:disabled:not(.held):not(.reserved),
+.legend-seat-icon.status-sold {
   color: #ef4444 !important;
   filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.5)) !important;
   cursor: not-allowed;
   opacity: 1 !important;
 }
-.booking-seat.booked .seat-num, .booking-seat:disabled .seat-num {
+.booking-seat.booked .seat-num,
+.booking-seat.booked:disabled .seat-num,
+.booking-seat:disabled:not(.held):not(.reserved) .seat-num {
   color: #ffffff !important;
 }
 
 /* Status 5: Reserved (Golden Amber) */
-.booking-seat.reserved, .legend-seat-icon.status-reserved {
+.booking-seat.reserved,
+.booking-seat.reserved:disabled,
+.legend-seat-icon.status-reserved {
   color: #f59e0b !important;
   filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.55)) !important;
+  cursor: not-allowed;
   opacity: 1 !important;
 }
-.booking-seat.reserved .seat-num {
+.booking-seat.reserved .seat-num,
+.booking-seat.reserved:disabled .seat-num {
   color: #ffffff !important;
 }
 
@@ -172,12 +187,14 @@
 }
 
 .booking-seat.seat-sweetbox-seamless .sweetbox-num {
-  font-size: 0.62rem;
+  font-size: 0.56rem;
   font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
   color: #cbd5e1;
   pointer-events: none;
   line-height: 1;
-  width: 32px;
+  width: 34px;
   text-align: center;
   transition: color 0.15s ease;
 }
@@ -293,8 +310,8 @@ html[data-theme="light"] .legend-seat-icon.status-available {
   color: #64748b;
 }
 .legend-seat-icon.status-holding {
-  color: #38bdf8 !important;
-  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.6)) !important;
+  color: #22d3ee !important;
+  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.6)) !important;
 }
 .legend-seat-icon.status-selected {
   color: #3b82f6 !important;
@@ -444,50 +461,49 @@ html[data-theme="light"] .booking-screen div {
   background: linear-gradient(rgba(var(--box-accent-rgb) / 10%), transparent);
 }
 
-html[data-theme="light"] .booking-seat,
-html[data-theme="light"] .seat-key {
-  background: #cbd5e1;
-  border-color: #94a3b8;
+html[data-theme="light"] .booking-seat {
+  color: #64748b;
+}
+
+html[data-theme="light"] .booking-seat .seat-num,
+html[data-theme="light"] .booking-seat.seat-sweetbox-seamless .sweetbox-num {
   color: #1e293b;
-  box-shadow: inset 0 -2px rgba(15, 23, 42, 0.08);
 }
 
 html[data-theme="light"] .booking-seat:not([aria-pressed="true"]):not(:disabled):hover {
-  background: #b0b8c4;
-  border-color: #64748b;
-  color: #0f172a;
-  outline: 2px solid #1d4ed8;
-  outline-offset: 2px;
+  color: #334155;
 }
 
 html[data-theme="light"] .booking-seat.seat-inactive {
-  border-color: #cbd5e1 !important;
   color: #94a3b8 !important;
   background: transparent !important;
 }
 
-html[data-theme="light"] .booking-seat[aria-pressed="true"],
-html[data-theme="light"] .seat-key.selected {
-  background: #1d4ed8 !important;
-  border-color: #1e40af !important;
-  color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.4) !important;
+html[data-theme="light"] .booking-seat[aria-pressed="true"] {
+  color: #2563eb !important;
+  filter: drop-shadow(0 4px 10px rgba(37, 99, 235, 0.45)) !important;
 }
 
 html[data-theme="light"] .booking-seat.booked,
-html[data-theme="light"] .booking-seat:disabled,
-html[data-theme="light"] .seat-key.unavailable {
-  background: #ef4444 !important;
-  border-color: #dc2626 !important;
-  color: #ffffff !important;
+html[data-theme="light"] .booking-seat.booked:disabled,
+html[data-theme="light"] .booking-seat:disabled:not(.held):not(.reserved) {
+  color: #ef4444 !important;
+  filter: drop-shadow(0 2px 6px rgba(239, 68, 68, 0.35)) !important;
   opacity: 1 !important;
 }
 
 html[data-theme="light"] .booking-seat.held,
-html[data-theme="light"] .seat-key.held {
-  background: #38bdf8 !important;
-  border-color: #0284c7 !important;
-  color: #ffffff !important;
+html[data-theme="light"] .booking-seat.held:disabled {
+  color: #0891b2 !important;
+  filter: drop-shadow(0 2px 8px rgba(8, 145, 178, 0.45)) !important;
+  opacity: 1 !important;
+}
+
+html[data-theme="light"] .booking-seat.reserved,
+html[data-theme="light"] .booking-seat.reserved:disabled {
+  color: #d97706 !important;
+  filter: drop-shadow(0 2px 6px rgba(217, 119, 6, 0.4)) !important;
+  opacity: 1 !important;
 }
 
 html[data-theme="light"] .booking-summary {
@@ -578,4 +594,887 @@ html[data-theme="light"] .booking-review dd {
   border: none !important;
   background: transparent !important;
   box-shadow: none !important;
+}
+
+
+/* =====================================================
+   HOLD SEATS WITH EXPIRY & USER-FRIENDLY SEAT MAP CONTROLS
+   ===================================================== */
+.booking-top-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.booking-btn-sm {
+  padding: 8px 14px;
+  font-size: 0.78rem;
+}
+
+.booking-heading-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Hold Banner with Live Countdown & Progress Bar */
+.booking-hold-banner {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 58, 138, 0.38));
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  border-radius: var(--box-radius-md, 12px);
+  margin-bottom: 22px;
+  overflow: hidden;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.35);
+  transition: border-color 0.25s ease, background 0.25s ease;
+}
+
+.booking-hold-banner.is-warning {
+  background: linear-gradient(135deg, rgba(28, 21, 7, 0.94), rgba(180, 83, 9, 0.35));
+  border-color: rgba(245, 158, 11, 0.65);
+}
+
+.booking-hold-banner.is-danger {
+  background: linear-gradient(135deg, rgba(38, 10, 14, 0.95), rgba(185, 28, 28, 0.42));
+  border-color: rgba(239, 68, 68, 0.75);
+}
+
+.booking-hold-banner-main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  flex-wrap: wrap;
+}
+
+.booking-hold-pulse-wrap {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.18);
+  color: #60a5fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.booking-hold-banner.is-warning .booking-hold-pulse-wrap {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+.booking-hold-banner.is-danger .booking-hold-pulse-wrap {
+  background: rgba(239, 68, 68, 0.22);
+  color: #f87171;
+}
+
+.booking-hold-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+  animation: boxHoldPulse 1.6s infinite ease-in-out;
+}
+
+.booking-hold-banner.is-warning .booking-hold-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+}
+
+.booking-hold-banner.is-danger .booking-hold-dot {
+  background: #ef4444;
+  box-shadow: 0 0 10px #ef4444;
+  animation-duration: 0.8s;
+}
+
+@keyframes boxHoldPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.35); opacity: 0.55; }
+}
+
+.booking-hold-info {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.booking-hold-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 3px;
+}
+
+.booking-hold-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+  border: 1px solid rgba(96, 165, 250, 0.4);
+}
+
+.booking-hold-banner.is-warning .booking-hold-badge {
+  background: rgba(245, 158, 11, 0.25);
+  color: #fde68a;
+  border-color: rgba(251, 191, 36, 0.45);
+}
+
+.booking-hold-banner.is-danger .booking-hold-badge {
+  background: rgba(239, 68, 68, 0.28);
+  color: #fecaca;
+  border-color: rgba(248, 113, 113, 0.55);
+}
+
+.booking-hold-seats-text {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.booking-hold-desc {
+  margin: 0;
+  font-size: 0.76rem;
+  color: #94a3b8;
+}
+
+.booking-hold-timer-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 16px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.booking-hold-timer-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+}
+
+.booking-hold-countdown {
+  font-size: 1.45rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+  color: #38bdf8;
+  line-height: 1.15;
+}
+
+.booking-hold-banner.is-warning .booking-hold-countdown {
+  color: #fbbf24;
+}
+
+.booking-hold-banner.is-danger .booking-hold-countdown {
+  color: #f87171;
+}
+
+.booking-hold-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.booking-hold-btn {
+  padding: 7px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(15, 23, 42, 0.6);
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.booking-hold-btn:hover {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: #60a5fa;
+  color: #ffffff;
+}
+
+.booking-hold-btn-test {
+  border-color: rgba(245, 158, 11, 0.45);
+  color: #fde68a;
+}
+
+.booking-hold-btn-test:hover {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: #fbbf24;
+}
+
+.booking-hold-btn-danger {
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.booking-hold-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #f87171;
+}
+
+.booking-hold-progress-track {
+  height: 4px;
+  width: 100%;
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.booking-hold-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #38bdf8);
+  transition: width 0.9s linear;
+}
+
+.booking-hold-banner.is-warning .booking-hold-progress-fill {
+  background: linear-gradient(90deg, #d97706, #fbbf24);
+}
+
+.booking-hold-banner.is-danger .booking-hold-progress-fill {
+  background: linear-gradient(90deg, #dc2626, #f87171);
+}
+
+/* Expiry Alert Notification */
+.booking-expiry-alert {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  margin-bottom: 22px;
+  border-radius: var(--box-radius-md, 12px);
+  background: rgba(127, 29, 29, 0.28);
+  border: 1px solid rgba(239, 68, 68, 0.55);
+  border-left: 4px solid #ef4444;
+  color: #f8fafc;
+}
+
+.booking-expiry-alert-icon {
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.booking-expiry-alert-body {
+  flex: 1;
+}
+
+.booking-expiry-alert-body strong {
+  display: block;
+  font-size: 0.95rem;
+  color: #fca5a5;
+  margin-bottom: 4px;
+}
+
+.booking-expiry-alert-body p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #e2e8f0;
+}
+
+/* Seat Map Quick Filter & Zoom Toolbar */
+.booking-map-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 14px 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.booking-type-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.booking-filter-pill {
+  padding: 5px 12px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.55);
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.booking-filter-pill:hover {
+  border-color: #60a5fa;
+  color: #ffffff;
+}
+
+.booking-filter-pill.is-active {
+  background: #2563eb;
+  border-color: #3b82f6;
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.45);
+}
+
+.booking-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.booking-zoom-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.65);
+  color: #e2e8f0;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.booking-zoom-btn:hover {
+  border-color: #60a5fa;
+  color: #ffffff;
+}
+
+.booking-zoom-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  min-width: 42px;
+  text-align: center;
+  color: #94a3b8;
+}
+
+/* Filter Highlighting on Seat Map */
+.booking-seat.is-filter-dimmed {
+  opacity: 0.22 !important;
+}
+
+.booking-seat.is-filter-highlighted:not(:disabled) {
+  filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.55));
+}
+
+/* Live Seat Hover / Focus Info Bar */
+.booking-seat-hover-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 9px 16px;
+  margin: 0 auto 14px;
+  max-width: 680px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  text-align: center;
+}
+
+.seat-hover-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #64748b;
+  flex-shrink: 0;
+}
+
+.booking-seat-hover-bar.state-available .seat-hover-dot { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+.booking-seat-hover-bar.state-selected .seat-hover-dot { background: #3b82f6; box-shadow: 0 0 8px #3b82f6; }
+.booking-seat-hover-bar.state-held .seat-hover-dot { background: #38bdf8; box-shadow: 0 0 8px #38bdf8; }
+.booking-seat-hover-bar.state-booked .seat-hover-dot { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+.booking-seat-hover-bar.state-reserved .seat-hover-dot { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; }
+
+/* Selected Seat Chips Tray */
+.booking-selected-tray {
+  margin-top: 18px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.booking-selected-tray-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+}
+
+.booking-clear-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #f87171;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.booking-clear-link:hover {
+  color: #fca5a5;
+}
+
+.booking-selected-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.booking-seat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px 5px 12px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.22);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.booking-seat-chip-pair {
+  background: rgba(147, 51, 234, 0.22);
+  border-color: rgba(168, 85, 247, 0.55);
+}
+
+.booking-seat-chip .chip-remove {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 0.85rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.booking-seat-chip .chip-remove:hover {
+  background: #ef4444;
+}
+
+/* Summary Hold Box */
+.booking-summary-hold {
+  margin: 12px 0 6px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(37, 99, 235, 0.14);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.booking-summary-hold.is-warning {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.booking-summary-hold.is-danger {
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+.booking-summary-hold-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+}
+
+.booking-summary-hold-row strong {
+  font-size: 1rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #38bdf8;
+}
+
+.booking-summary-hold.is-warning .booking-summary-hold-row strong { color: #fbbf24; }
+.booking-summary-hold.is-danger .booking-summary-hold-row strong { color: #f87171; }
+
+/* Light Mode Support for New Seat Hold & Toolbar Components */
+html[data-theme="light"] .booking-hold-banner {
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border-color: #93c5fd;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.08);
+}
+
+html[data-theme="light"] .booking-hold-banner.is-warning {
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  border-color: #fcd34d;
+}
+
+html[data-theme="light"] .booking-hold-banner.is-danger {
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  border-color: #fca5a5;
+}
+
+html[data-theme="light"] .booking-hold-seats-text { color: #0f172a; }
+html[data-theme="light"] .booking-hold-desc { color: #475569; }
+html[data-theme="light"] .booking-hold-badge { background: #2563eb; color: #ffffff; border-color: #1d4ed8; }
+html[data-theme="light"] .booking-hold-timer-box { background: #ffffff; border-color: rgba(15, 23, 42, 0.1); }
+html[data-theme="light"] .booking-hold-countdown { color: #1d4ed8; }
+html[data-theme="light"] .booking-hold-btn { background: #ffffff; color: #1e293b; border-color: rgba(15, 23, 42, 0.18); }
+html[data-theme="light"] .booking-hold-btn:hover { background: #2563eb; color: #ffffff; border-color: #1d4ed8; }
+html[data-theme="light"] .booking-map-toolbar,
+html[data-theme="light"] .booking-seat-hover-bar,
+html[data-theme="light"] .booking-selected-tray {
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.1);
+  color: #334155;
+}
+html[data-theme="light"] .booking-filter-pill,
+html[data-theme="light"] .booking-zoom-btn {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.15);
+  color: #334155;
+}
+html[data-theme="light"] .booking-filter-pill.is-active {
+  background: #2563eb;
+  border-color: #1d4ed8;
+  color: #ffffff;
+}
+html[data-theme="light"] .booking-seat-chip {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1e3a8a;
+}
+html[data-theme="light"] .booking-seat-chip .chip-remove {
+  background: rgba(30, 58, 138, 0.15);
+  color: #1e3a8a;
+}
+html[data-theme="light"] .booking-summary-hold {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+html[data-theme="light"] .booking-summary-hold-row { color: #334155; }
+html[data-theme="light"] .booking-summary-hold-row strong { color: #1d4ed8; }
+html[data-theme="light"] .booking-expiry-alert {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #7f1d1d;
+}
+html[data-theme="light"] .booking-expiry-alert-body strong { color: #b91c1c; }
+html[data-theme="light"] .booking-expiry-alert-body p { color: #7f1d1d; }
+
+
+/* =====================================================
+   MULTI-DEVICE RESPONSIVE & TOUCH OPTIMIZATION
+   (Desktop, Laptop, Tablet/iPad, Mobile & Small Phones)
+   ===================================================== */
+
+/* Prevent accidental double-tap zoom on touch screens */
+.booking-seat,
+.booking-filter-pill,
+.booking-zoom-btn,
+.booking-quantity button,
+.booking-seat-chip .chip-remove,
+.booking-primary,
+.booking-secondary {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.booking-seat-scroll {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+}
+
+.booking-zoom-label {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Sticky Mobile / Tablet Bottom Checkout Bar (Hidden on Desktop > 900px) */
+.booking-mobile-bar {
+  display: none;
+}
+
+@media (max-width: 1024px) {
+  .booking-shell {
+    padding: 28px 20px 80px;
+  }
+  .booking-layout {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 18px;
+  }
+  .booking-panel {
+    padding: 22px 18px;
+  }
+}
+
+@media (max-width: 900px) {
+  .booking-shell {
+    padding: 20px 14px 110px;
+  }
+  .booking-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .booking-summary {
+    position: static;
+  }
+  .booking-mobile-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 950;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 18px calc(12px + env(safe-area-inset-bottom, 0px));
+    background: rgba(11, 15, 25, 0.94);
+    border-top: 1px solid rgba(59, 130, 246, 0.35);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.55);
+  }
+  html[data-theme="light"] .booking-mobile-bar {
+    background: rgba(255, 255, 255, 0.96);
+    border-top-color: rgba(15, 23, 42, 0.12);
+    box-shadow: 0 -6px 24px rgba(15, 23, 42, 0.08);
+  }
+  .booking-mobile-bar-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .booking-mobile-bar-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+  .booking-mobile-seats {
+    font-size: 0.76rem;
+    color: #cbd5e1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  html[data-theme="light"] .booking-mobile-seats {
+    color: #475569;
+  }
+  .booking-mobile-timer {
+    font-size: 0.72rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: rgba(56, 189, 248, 0.18);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    flex-shrink: 0;
+  }
+  .booking-mobile-timer.is-warning {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+    border-color: rgba(245, 158, 11, 0.45);
+  }
+  .booking-mobile-timer.is-danger {
+    background: rgba(239, 68, 68, 0.22);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.55);
+  }
+  .booking-mobile-total {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.2;
+  }
+  html[data-theme="light"] .booking-mobile-total {
+    color: var(--box-accent);
+  }
+  .booking-mobile-next {
+    flex-shrink: 0;
+    padding: 11px 18px;
+    font-size: 0.84rem;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Swipeable single-row category filter pills on mobile */
+  .booking-map-toolbar {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  .booking-type-filters {
+    flex: 1 1 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .booking-type-filters::-webkit-scrollbar {
+    display: none;
+  }
+  .booking-filter-pill {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 5px 11px;
+    font-size: 0.72rem;
+  }
+  .booking-zoom-controls {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  /* Compact 2-column legend on mobile so it doesn't push seat map off-screen */
+  .booking-legend-container {
+    padding: 12px 14px;
+    margin: 12px auto 16px;
+  }
+  .booking-legend-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 14px;
+  }
+  .booking-legend-col {
+    gap: 8px;
+  }
+  .legend-row {
+    gap: 8px;
+    font-size: 0.73rem;
+  }
+  .legend-seat-icon {
+    width: 24px;
+    height: 22px;
+  }
+  .legend-seat-icon.legend-icon-sweetbox {
+    width: 44px;
+  }
+  .legend-type-val {
+    font-size: 0.72rem;
+  }
+
+  /* Hold Banner responsive layout on mobile */
+  .booking-hold-banner-main {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+  .booking-hold-pulse-wrap {
+    width: 34px;
+    height: 34px;
+  }
+  .booking-hold-seats-text {
+    font-size: 0.82rem;
+  }
+  .booking-hold-desc {
+    font-size: 0.72rem;
+    line-height: 1.35;
+  }
+  .booking-hold-timer-box {
+    padding: 5px 12px;
+    margin-left: auto;
+  }
+  .booking-hold-countdown {
+    font-size: 1.25rem;
+  }
+
+  /* Hover info bar & screen on mobile */
+  .booking-seat-hover-bar {
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 0.73rem;
+  }
+  .booking-screen {
+    width: 92%;
+    margin: 22px auto 24px;
+  }
+  .booking-seat .seat-num,
+  .booking-seat.seat-sweetbox-seamless .sweetbox-num {
+    font-size: 0.52rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .booking-shell {
+    padding: 16px 10px 106px;
+  }
+  .booking-panel {
+    padding: 16px 12px;
+    border-radius: 12px;
+  }
+  .booking-top-actions {
+    gap: 8px;
+  }
+  .booking-top-actions .booking-secondary {
+    padding: 8px 12px;
+    font-size: 0.75rem;
+  }
+  .booking-steps {
+    --booking-step-size: 32px;
+  }
+  .booking-steps li {
+    font-size: 0.66rem;
+    gap: 6px;
+  }
+  .booking-legend-grid {
+    gap: 8px 10px;
+  }
+  .legend-row {
+    font-size: 0.68rem;
+    gap: 6px;
+  }
+  .booking-seat {
+    width: 30px;
+    height: 31px;
+  }
+  .booking-seat.seat-sweetbox-seamless {
+    width: 65px !important;
+    height: 31px !important;
+  }
+  .booking-seat-row {
+    gap: 5px;
+  }
+  .booking-seats {
+    gap: 7px;
+  }
+  .booking-row-label {
+    width: 16px;
+    font-size: 0.64rem;
+  }
+  .booking-seat .seat-num,
+  .booking-seat.seat-sweetbox-seamless .sweetbox-num {
+    font-size: 0.48rem;
+  }
+  .booking-selected-tray {
+    padding: 10px 12px;
+  }
+  .booking-seat-chip {
+    font-size: 0.7rem;
+    padding: 4px 8px 4px 10px;
+  }
 }
