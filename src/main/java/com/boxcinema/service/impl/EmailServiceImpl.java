@@ -183,7 +183,7 @@ public class EmailServiceImpl implements EmailService {
 
     try {
       MimeMessage mimeMessage = mailSender.createMimeMessage();
-      MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, false, StandardCharsets.UTF_8.name());
+      MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, StandardCharsets.UTF_8.name());
 
       String senderDisplayName = (fromName != null && !fromName.isBlank()) ? fromName.trim() : "BOX Cinema";
       helper.setFrom(new InternetAddress(smtpUsername.trim(), senderDisplayName, StandardCharsets.UTF_8.name()));
@@ -196,12 +196,14 @@ public class EmailServiceImpl implements EmailService {
 
       helper.setSubject(subject);
       helper.setSentDate(new java.util.Date());
-      helper.setText(htmlBody, true);
 
-      mimeMessage.setHeader("X-Priority", "1");
-      mimeMessage.setHeader("Priority", "Urgent");
-      mimeMessage.setHeader("Importance", "high");
+      // Multipart plain-text + HTML: Clean deliverability score for Gmail outbound queue
+      String plainText = htmlBody.replaceAll("<[^>]*>", " ").replaceAll("\\s+", " ").trim();
+      helper.setText(plainText, htmlBody);
+
+      // Standard RFC headers (avoid spam-flagged X-Priority / Urgent headers)
       mimeMessage.setHeader("X-Auto-Response-Suppress", "All");
+      mimeMessage.setHeader("Auto-Submitted", "auto-generated");
 
       mailSender.send(mimeMessage);
       log.info("Successfully dispatched email '{}' to {} via {} (JavaMailSender).", subject, toEmail, smtpHost);
