@@ -18,7 +18,6 @@ export function initPayment(doc = document) {
   const amountEl = doc.getElementById("payosAmount");
   const descEl = doc.getElementById("payosDescription");
   const timerEl = doc.getElementById("payosTimer");
-  const simulateBtn = doc.getElementById("btnSimulatePayment");
   const goToTicketBtn = doc.getElementById("btnGoToTicket");
 
   // Copy helper
@@ -48,27 +47,6 @@ export function initPayment(doc = document) {
     return raw;
   });
   setupCopyBtn("btnCopyDesc", () => descEl?.textContent?.trim() || "");
-
-  if (simulateBtn) {
-    simulateBtn.addEventListener("click", async () => {
-      if (!activeOrderCode) return;
-      simulateBtn.disabled = true;
-      simulateBtn.textContent = "Processing...";
-      try {
-        const res = await fetch(`/api/payments/payos/simulate-payment/${activeOrderCode}`, { method: "POST" });
-        if (res.ok) {
-          checkPaymentStatus();
-        } else {
-          alert("Simulation failed");
-        }
-      } catch (err) {
-        alert("Error: " + err.message);
-      } finally {
-        simulateBtn.disabled = false;
-        simulateBtn.textContent = "⚡ Simulate PayOS Success";
-      }
-    });
-  }
 
   function startTimer(durationSeconds) {
     clearInterval(timerInterval);
