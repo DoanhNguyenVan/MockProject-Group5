@@ -93,7 +93,9 @@ public class TicketServiceImpl implements TicketService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
 
-        validateBookingAccess(booking, currentUserId);
+        if (currentUserId != null) {
+            validateBookingAccess(booking, currentUserId);
+        }
 
         BookingTicketViewDto dto = new BookingTicketViewDto();
         dto.setBookingId(booking.getBookingId());
@@ -188,7 +190,9 @@ public class TicketServiceImpl implements TicketService {
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
 
         if (currentUserId != null) {
+            if (currentUserId != null) {
             validateBookingAccess(booking, currentUserId);
+        }
         }
 
         return bookingQrService.getBookingQrPngBytes(bookingId);
@@ -200,7 +204,9 @@ public class TicketServiceImpl implements TicketService {
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found: " + bookingId));
 
         if (currentUserId != null) {
+            if (currentUserId != null) {
             validateBookingAccess(booking, currentUserId);
+        }
         }
 
         if (!"CONFIRMED".equalsIgnoreCase(booking.getBookingStatus())) {
@@ -295,7 +301,9 @@ public class TicketServiceImpl implements TicketService {
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
 
         if (currentUserId != null) {
+            if (currentUserId != null) {
             validateBookingAccess(booking, currentUserId);
+        }
         }
 
         BookingHistoryDetailDto dto = new BookingHistoryDetailDto();

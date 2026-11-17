@@ -207,10 +207,15 @@ public class PayOsServiceImpl implements PayOsService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public PaymentStatusDto getPaymentStatus(Long paymentId) {
         Payment p = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new IllegalArgumentException("Payment not found with id: " + paymentId));
+
+        if ("PENDING".equalsIgnoreCase(p.getPaymentStatus()) && p.getOrderCode() != null) {
+            trySyncPayOsStatus(p);
+            p = paymentRepository.findById(paymentId).orElse(p);
+        }
 
         PaymentStatusDto dto = new PaymentStatusDto();
         dto.setPaymentId(p.getPaymentId());
@@ -228,6 +233,55 @@ public class PayOsServiceImpl implements PayOsService {
         dto.setPaymentLinkId(p.getPaymentLinkId());
         dto.setPaidAt(p.getPaidAt());
         return dto;
+    }
+
+    private void trySyncPayOsStatus(Payment payment) {
+        try {
+            if (clientId == null || clientId.isBlank() || apiKey == null || apiKey.isBlank()) {
+                return;
+            }
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("x-client-id", clientId);
+            headers.set("x-api-key", apiKey);
+            HttpEntity<?> entity = new HttpEntity<>(headers);
+
+            String url = baseUrl + "/v2/payment-requests/" + payment.getOrderCode();
+            ResponseEntity<JsonNode> resp = restTemplate.exchange(url, HttpMethod.GET, entity, JsonNode.class);
+            if (resp.getStatusCode().is2xxSuccessful() && resp.getBody() != null) {
+                JsonNode body = resp.getBody();
+                JsonNode data = body.path("data");
+                String payosStatus = data.path("status").asText("");
+                if ("PAID".equalsIgnoreCase(payosStatus)) {
+                    log.info("Proactive polling detected PayOS status PAID for orderCode {}", payment.getOrderCode());
+                    PayOsWebhookPayloadDto payload = new PayOsWebhookPayloadDto();
+                    payload.setCode("00");
+                    payload.setDesc("success");
+                    payload.setSignature("simulated_proactive_poll");
+
+                    PayOsWebhookPayloadDto.PayOsWebhookDataDto d = new PayOsWebhookPayloadDto.PayOsWebhookDataDto();
+                    d.setOrderCode(payment.getOrderCode());
+                    d.setAmount(data.path("amountPaid").asLong(data.path("amount").asLong(payment.getAmount().longValue())));
+                    d.setPaymentLinkId(data.path("id").asText(payment.getPaymentLinkId()));
+                    d.setCode("00");
+                    d.setDesc("success");
+
+                    JsonNode txns = data.path("transactions");
+                    if (txns.isArray() && !txns.isEmpty()) {
+                        JsonNode firstTxn = txns.get(0);
+                        d.setReference(firstTxn.path("reference").asText("TXN-" + System.currentTimeMillis()));
+                        d.setTransactionDateTime(firstTxn.path("transactionDateTime").asText(null));
+                        d.setAccountNumber(firstTxn.path("accountNumber").asText(null));
+                    } else {
+                        d.setReference("TXN-" + System.currentTimeMillis());
+                    }
+                    payload.setData(d);
+
+                    processWebhook(payload);
+                }
+            }
+        } catch (Exception ex) {
+            log.debug("Proactive PayOS polling check skipped or failed: {}", ex.getMessage());
+        }
     }
 
     @Override

@@ -22,6 +22,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 public class EmailOutboxWorkerService {
 
@@ -51,6 +53,7 @@ public class EmailOutboxWorkerService {
     }
 
     @Scheduled(fixedDelay = 5000)
+    @Transactional
     public void processOutbox() {
         List<EmailOutbox> pendingList = emailOutboxRepository.findByStatusOrderByCreatedAtAsc("PENDING");
         for (EmailOutbox outbox : pendingList) {
@@ -67,7 +70,10 @@ public class EmailOutboxWorkerService {
     private void processItem(EmailOutbox outbox) {
         try {
             Long bookingId = outbox.getBooking().getBookingId();
-            BookingTicketViewDto ticketView = ticketService.getTicketView(bookingId, null);
+            Long ownerId = outbox.getBooking() != null && outbox.getBooking().getUser() != null
+                    ? outbox.getBooking().getUser().getUserId()
+                    : null;
+            BookingTicketViewDto ticketView = ticketService.getTicketView(bookingId, ownerId);
             byte[] qrPng = bookingQrService.getBookingQrPngBytes(bookingId);
             String ticketUrl = bookingQrService.getBookingTicketUrl(bookingId);
 
