@@ -213,7 +213,10 @@ public class TicketServiceImpl implements TicketService {
             throw new IllegalStateException("Emails can only be resent for successfully confirmed bookings.");
         }
 
-        EmailOutbox outbox = new EmailOutbox(booking, booking.getGuestEmail(), "RESEND_CONFIRMATION");
+        String recipientEmail = (booking.getUser() != null && booking.getUser().getEmail() != null && !booking.getUser().getEmail().isBlank())
+                ? booking.getUser().getEmail()
+                : booking.getGuestEmail();
+        EmailOutbox outbox = new EmailOutbox(booking, recipientEmail, "RESEND_CONFIRMATION");
         emailOutboxRepository.save(outbox);
     }
 

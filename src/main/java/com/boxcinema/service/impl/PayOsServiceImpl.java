@@ -438,9 +438,14 @@ public class PayOsServiceImpl implements PayOsService {
         }
 
         // 8. Record Outbox Email (Section 12.3)
-        if (emailOutboxRepository.findByStatusOrderByCreatedAtAsc("PENDING").stream().noneMatch(o -> o.getBooking().getBookingId().equals(booking.getBookingId()))) {
-            EmailOutbox outbox = new EmailOutbox(booking, booking.getGuestEmail(), "BOOKING_CONFIRMATION");
-            emailOutboxRepository.save(outbox);
+        String recipientEmail = (booking.getUser() != null && booking.getUser().getEmail() != null && !booking.getUser().getEmail().isBlank())
+                ? booking.getUser().getEmail()
+                : booking.getGuestEmail();
+        if (recipientEmail != null && !recipientEmail.isBlank()) {
+            if (emailOutboxRepository.findByStatusOrderByCreatedAtAsc("PENDING").stream().noneMatch(o -> o.getBooking().getBookingId().equals(booking.getBookingId()))) {
+                EmailOutbox outbox = new EmailOutbox(booking, recipientEmail, "BOOKING_CONFIRMATION");
+                emailOutboxRepository.save(outbox);
+            }
         }
 
         // 9. Record Webhook Event

@@ -74,9 +74,19 @@ public class BookingServiceImpl implements BookingService {
         booking.setShowtime(showtime);
         booking.setUser(user);
         booking.setBookingChannel("ONLINE");
-        booking.setGuestName(user != null ? user.getFullName() : (request.getGuestName() != null ? request.getGuestName() : "Guest"));
-        booking.setGuestEmail(user != null ? user.getEmail() : (request.getGuestEmail() != null ? request.getGuestEmail() : "guest@boxcinema.vn"));
-        booking.setGuestPhone(user != null ? user.getPhone() : (request.getGuestPhone() != null ? request.getGuestPhone() : "0900000000"));
+        String effectiveName = (user != null && user.getFullName() != null && !user.getFullName().isBlank())
+                ? user.getFullName()
+                : (request.getGuestName() != null && !request.getGuestName().isBlank() ? request.getGuestName() : "Customer");
+        String effectiveEmail = (user != null && user.getEmail() != null && !user.getEmail().isBlank())
+                ? user.getEmail()
+                : (request.getGuestEmail() != null && !request.getGuestEmail().isBlank() ? request.getGuestEmail() : "customer@boxcinema.vn");
+        String effectivePhone = (user != null && user.getPhone() != null && !user.getPhone().isBlank())
+                ? user.getPhone()
+                : (request.getGuestPhone() != null && !request.getGuestPhone().isBlank() ? request.getGuestPhone() : "0900000000");
+
+        booking.setGuestName(effectiveName);
+        booking.setGuestEmail(effectiveEmail);
+        booking.setGuestPhone(effectivePhone);
         booking.setBookingStatus("DRAFT");
         booking.setBookedAt(LocalDateTime.now());
         booking.setPaymentDeadline(LocalDateTime.now().plusMinutes(10));

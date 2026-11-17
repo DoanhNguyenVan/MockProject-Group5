@@ -58,7 +58,9 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
 
         // Support extracting BOX1.<token> if embedded inside rich ticket text or URL
         if (bQrOpt.isEmpty()) {
-            java.util.regex.Matcher mToken = java.util.regex.Pattern.compile("BOX1\\.[a-zA-Z0-9_-]+").matcher(tokenClean);
+            java.util.regex.Matcher mToken = java.util.regex.Pattern.compile("BOX1\\.[a-zA-Z0-9_-]+")
+
+                    .matcher(tokenClean);
             if (mToken.find()) {
                 String extractedToken = mToken.group();
                 String extractedHash = CryptoHelper.sha256(extractedToken);
