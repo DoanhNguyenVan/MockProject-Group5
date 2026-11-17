@@ -150,11 +150,18 @@ export function initBooking(doc = document) {
 
   function isUserAuthenticated() {
     const userIdAttr = app.getAttribute("data-user-id");
-    if (!userIdAttr || userIdAttr === "GUEST") return false;
+    if (userIdAttr && userIdAttr !== "GUEST" && userIdAttr !== "null" && userIdAttr !== "" && userIdAttr !== "undefined") {
+      return true;
+    }
     if (doc.querySelector('a[data-nav-route="login"]')) return false;
     const nav = doc.querySelector(".cinema-nav");
-    if (nav && !nav.querySelector(".nav-user-pill")) return false;
-    return true;
+    if (nav) {
+      if (nav.querySelector(".nav-user-pill, .nav-user-btn, #navUserAccountDropdown, .nav-user-dropdown, .nav-user-avatar")) {
+        return true;
+      }
+      if (nav.querySelector('a[data-nav-route="login"]')) return false;
+    }
+    return false;
   }
 
   function openAuthModal() {
@@ -1150,7 +1157,7 @@ export function initBooking(doc = document) {
       for (const [label, value] of [["Movie", data.movieTitle], ["Cinema", data.cinemaName], ["Screening", data.screeningLabel], ["Room", data.roomName], ["Seats", selected.join(", ")], ["Extras", el("Extras").textContent || "No snacks added"], ["Estimate", formatVnd(calculateTotals(data.seats, selected, data.products, quantities).total)]]) {
         const row = node("div"); row.append(node("dt", label), node("dd", value)); el("Review").append(row);
       }
-      const navName = doc.querySelector(".cinema-nav .nav-user-pill .nav-user-name")?.textContent?.trim();
+      const navName = doc.querySelector(".cinema-nav .nav-user-name, #navUserAccountDropdown .nav-user-name, .nav-user-btn .nav-user-name, .nav-user-pill .nav-user-name")?.textContent?.trim();
       const nameInput = doc.getElementById("bookingCustomerName");
       if (nameInput && !nameInput.value && navName) {
         nameInput.value = navName;
