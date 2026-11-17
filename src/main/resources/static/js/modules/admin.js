@@ -138,6 +138,10 @@ export function initAdmin(doc = document) {
     if (section === key) link.setAttribute('aria-current', 'page');
     get('adminNavigation').append(link);
   }
+  // Account Management is backed by MySQL, unlike the other preview catalogs.
+  const accountLink = element('a'); accountLink.href = '/admin/accounts';
+  accountLink.append(element('span', '♙'), element('span', 'Accounts (live)'));
+  get('adminNavigation').append(accountLink);
   get('adminMenuToggle').addEventListener('click', () => {
     const open = get('adminNavigation').classList.toggle('is-open'); get('adminMenuToggle').setAttribute('aria-expanded', String(open));
   });
