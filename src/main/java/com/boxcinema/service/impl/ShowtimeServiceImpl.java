@@ -223,15 +223,7 @@ public class ShowtimeServiceImpl implements ShowtimeService {
             String dateStr = d.toString();
             String dayNumber = d.format(DateTimeFormatter.ofPattern("dd"));
             String month = d.format(DateTimeFormatter.ofPattern("MM"));
-            String dayOfWeek = switch (d.getDayOfWeek()) {
-                case MONDAY -> "Mon";
-                case TUESDAY -> "Tue";
-                case WEDNESDAY -> "Wed";
-                case THURSDAY -> "Thu";
-                case FRIDAY -> "Fri";
-                case SATURDAY -> "Sat";
-                case SUNDAY -> "Sun";
-            };
+            String dayOfWeek = d.getDayOfWeek().getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.ENGLISH);
             String monthAndDayOfWeek = "/" + month + " - " + dayOfWeek;
             boolean active = d.equals(selectedDate);
             list.add(new DateTabDto(dateStr, dayNumber, monthAndDayOfWeek, active));
