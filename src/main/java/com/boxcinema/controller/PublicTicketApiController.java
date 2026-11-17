@@ -23,7 +23,7 @@ public class PublicTicketApiController {
         if (ticketOpt.isEmpty()) {
             PublicTicketDto notFound = new PublicTicketDto();
             notFound.setValid(false);
-            notFound.setMessage("Không tìm thấy thông tin vé hoặc mã vé không hợp lệ.");
+            notFound.setMessage("Ticket information not found or token is invalid.");
             return ResponseEntity.status(404).body(notFound);
         }
         return ResponseEntity.ok(ticketOpt.get());

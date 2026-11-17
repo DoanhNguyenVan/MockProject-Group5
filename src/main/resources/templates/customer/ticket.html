@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title th:text="'Vé Điện Tử #' + ${ticket.bookingCode} + ' | BOX Cinema'">Vé Điện Tử | BOX Cinema</title>
+  <title th:text="'E-Ticket #' + ${ticket.bookingCode} + ' | BOX Cinema'">E-Ticket | BOX Cinema</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/css/main.css?v=20261113c" th:href="@{/css/main.css(v='20261113c')}">
   <style>
@@ -233,7 +233,7 @@
   <main class="ticket-wrapper">
     <div class="booking-back-wrapper mb-3">
       <a th:href="@{/}" class="booking-back d-inline-flex align-items-center gap-2 text-decoration-none">
-        ← Quay lại trang chủ
+        ← Back to Home
       </a>
     </div>
 
@@ -243,10 +243,10 @@
       <div class="ticket-header">
         <div>
           <h1>BOX CINEMA</h1>
-          <p class="mb-0 text-white-50 small">Vé Điện Tử &amp; Biên Nhận Xác Thực</p>
+          <p class="mb-0 text-white-50 small">Official E-Ticket &amp; Verified Receipt</p>
         </div>
         <div class="code-badge">
-          MÃ VÉ: <span th:text="${ticket.bookingCode}">BOX-123456</span>
+          BOOKING CODE: <span th:text="${ticket.bookingCode}">BOX-123456</span>
         </div>
       </div>
 
@@ -255,50 +255,50 @@
           <!-- QR Block (Section 11.2, 11.3 - Single Booking QR generated locally via ZXing) -->
           <div class="qr-container">
             <img th:src="@{'/api/customer/bookings/' + ${ticket.bookingId} + '/ticket/qr'}"
-                 alt="Mã QR Check-in"
+                 alt="Check-in QR Code"
                  width="240"
                  height="240">
-            <div class="qr-caption">MÃ QR CHECK-IN VÉ</div>
-            <div class="qr-subcaption">1 mã đại diện cho toàn bộ số vé trong đơn</div>
+            <div class="qr-caption">CHECK-IN QR CODE</div>
+            <div class="qr-subcaption">1 single QR code for all tickets in this order</div>
             <div class="mt-2">
               <span th:if="${ticket.checkinStatus == 'CHECKED_IN'}" class="status-badge status-checked-in">
-                ✓ ĐÃ CHECK-IN VÀO RẠP
+                ✓ CHECKED IN
               </span>
               <span th:unless="${ticket.checkinStatus == 'CHECKED_IN'}" class="status-badge status-pending">
-                CHƯA SOÁT VÉ
+                VALID - NOT CHECKED IN
               </span>
             </div>
             <div class="qr-warning mt-2 p-2 rounded" style="background: #fffbeb; color: #92400e; font-size: 0.72rem; line-height: 1.35; border: 1px solid #fde68a; text-align: center;">
-              ⚠️ Mã QR này đại diện cho toàn bộ số vé trong đơn đặt hàng. Không chia sẻ với người không thuộc nhóm đặt vé.
+              ⚠️ This QR code covers all seats in this booking. Do not share publicly.
             </div>
           </div>
 
           <!-- Movie & Screening Info -->
           <div class="movie-info">
-            <h2 th:text="${ticket.movieTitle != null ? ticket.movieTitle : 'Phim đã chọn'}">Tên Phim</h2>
+            <h2 th:text="${ticket.movieTitle != null ? ticket.movieTitle : 'Selected Movie'}">Movie Title</h2>
             
             <div class="info-list">
               <div class="info-item">
-                <div class="info-label">Rạp chiếu</div>
+                <div class="info-label">Cinema</div>
                 <div class="info-val" th:text="${ticket.cinemaName != null ? ticket.cinemaName : 'BOX Cinema'}">BOX Cinema Royal City</div>
               </div>
               <div class="info-item">
-                <div class="info-label">Phòng chiếu</div>
-                <div class="info-val" th:text="${ticket.roomName != null ? ticket.roomName : 'Phòng 01'}">Screen 01</div>
+                <div class="info-label">Auditorium / Screen</div>
+                <div class="info-val" th:text="${ticket.roomName != null ? ticket.roomName : 'Screen 01'}">Screen 01</div>
               </div>
               <div class="info-item">
-                <div class="info-label">Suất chiếu</div>
+                <div class="info-label">Showtime</div>
                 <div class="info-val" th:text="${ticket.showtimeStart}">19:30 - 16/11/2026</div>
               </div>
               <div class="info-item">
-                <div class="info-label">Khách hàng</div>
-                <div class="info-val" th:text="${ticket.guestName != null && !ticket.guestName.isEmpty() ? ticket.guestName : 'Khách vãng lai'}">Nguyễn Văn A</div>
+                <div class="info-label">Customer</div>
+                <div class="info-val" th:text="${ticket.guestName != null && !ticket.guestName.isEmpty() ? ticket.guestName : 'Guest'}">John Doe</div>
               </div>
             </div>
 
             <!-- Seat List -->
             <div>
-              <div class="info-label mb-2">Vị trí ghế ngồi (<span th:text="${ticket.tickets != null ? ticket.tickets.size() : 0}">0</span> vé):</div>
+              <div class="info-label mb-2">Reserved Seats (<span th:text="${ticket.tickets != null ? ticket.tickets.size() : 0}">0</span> tickets):</div>
               <div class="seat-badges">
                 <th:block th:each="t : ${ticket.tickets}">
                   <span class="seat-badge" th:text="${t.seatLabel}">A1</span>
@@ -312,23 +312,23 @@
         <th:block th:if="${ticket.foodItems != null && !ticket.foodItems.isEmpty()}">
           <div class="section-divider"></div>
           <div class="section-title">
-            <span>🍿 Đồ ăn &amp; Thức uống đã đặt</span>
+            <span>🍿 Food &amp; Beverages</span>
             <span class="ms-auto">
-              <span th:if="${ticket.foodFulfillmentStatus == 'QUEUED'}" class="status-badge status-queued">Đã tiếp nhận (Chờ bếp)</span>
-              <span th:if="${ticket.foodFulfillmentStatus == 'PREPARING'}" class="status-badge status-preparing">Đang chuẩn bị</span>
-              <span th:if="${ticket.foodFulfillmentStatus == 'READY'}" class="status-badge status-ready">Sẵn sàng nhận tại quầy</span>
-              <span th:if="${ticket.foodFulfillmentStatus == 'PICKED_UP'}" class="status-badge status-picked-up">Đã nhận hàng</span>
+              <span th:if="${ticket.foodFulfillmentStatus == 'QUEUED'}" class="status-badge status-queued">Queued for Prep</span>
+              <span th:if="${ticket.foodFulfillmentStatus == 'PREPARING'}" class="status-badge status-preparing">In Preparation</span>
+              <span th:if="${ticket.foodFulfillmentStatus == 'READY'}" class="status-badge status-ready">Ready for Pickup</span>
+              <span th:if="${ticket.foodFulfillmentStatus == 'PICKED_UP'}" class="status-badge status-picked-up">Picked Up</span>
             </span>
           </div>
           <div>
             <div class="food-card" th:each="f : ${ticket.foodItems}">
               <div class="food-details">
-                <span class="food-name" th:text="${f.productName}">Bắp Rang Bơ</span>
-                <span class="food-variant" th:if="${f.variantName != null && !f.variantName.isEmpty()}" th:text="'Phân loại: ' + ${f.variantName}">Size L</span>
+                <span class="food-name" th:text="${f.productName}">Popcorn</span>
+                <span class="food-variant" th:if="${f.variantName != null && !f.variantName.isEmpty()}" th:text="'Variant: ' + ${f.variantName}">Size L</span>
               </div>
               <div class="text-end">
-                <strong class="text-white" th:text="'Số lượng: ' + ${f.quantity}">2</strong>
-                <div class="text-white-50 small" th:text="${#numbers.formatDecimal(f.subtotal, 0, 'COMMA', 0, 'POINT')} + ' đ'">120,000 đ</div>
+                <strong class="text-white" th:text="'Qty: ' + ${f.quantity}">2</strong>
+                <div class="text-white-50 small" th:text="${#numbers.formatDecimal(f.subtotal, 0, 'COMMA', 0, 'POINT')} + ' ₫'">120,000 ₫</div>
               </div>
             </div>
           </div>
@@ -338,15 +338,15 @@
 
       <div class="ticket-footer">
         <div class="total-display">
-          Tổng thanh toán:
-          <strong th:text="${#numbers.formatDecimal(ticket.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">250,000 đ</strong>
+          Total Paid:
+          <strong th:text="${#numbers.formatDecimal(ticket.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">250,000 ₫</strong>
         </div>
         <div class="actions">
           <button type="button" class="btn btn-box-outline" onclick="resendEmail()">
-            ✉ Gửi lại Email
+            ✉ Resend Email
           </button>
           <button type="button" class="btn btn-box-primary" onclick="window.print()">
-            🖨 In vé / Lưu PDF
+            🖨 Print / Save PDF
           </button>
         </div>
       </div>
@@ -363,11 +363,11 @@
         const res = await fetch(`/api/customer/bookings/${bookingId}/email/resend`, { method: 'POST' });
         const data = await res.json();
         const alertEl = document.getElementById('resendAlert');
-        alertEl.textContent = data.message || "Yêu cầu gửi lại vé đã được gửi.";
+        alertEl.textContent = data.message || "Ticket resend request has been queued.";
         alertEl.classList.remove('d-none');
         setTimeout(() => alertEl.classList.add('d-none'), 5000);
       } catch (err) {
-        alert("Có lỗi khi gửi lại email: " + err.message);
+        alert("Error resending email: " + err.message);
       }
     }
   </script>

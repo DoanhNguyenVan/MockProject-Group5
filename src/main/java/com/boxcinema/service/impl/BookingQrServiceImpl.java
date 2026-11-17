@@ -68,7 +68,7 @@ public class BookingQrServiceImpl implements BookingQrService {
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
 
         if (!"CONFIRMED".equalsIgnoreCase(booking.getBookingStatus())) {
-            throw new IllegalStateException("Chỉ phát hành mã QR cho đơn hàng đã xác nhận thanh toán (CONFIRMED).");
+            throw new IllegalStateException("QR code can only be issued for confirmed bookings (CONFIRMED).");
         }
 
         // 3. Double-check inside locked transaction
@@ -118,7 +118,7 @@ public class BookingQrServiceImpl implements BookingQrService {
         BookingQr bQr = getOrCreateBookingQr(bookingId);
 
         if ("REVOKED".equalsIgnoreCase(bQr.getStatus())) {
-            throw new IllegalStateException("Mã QR đã bị thu hồi.");
+            throw new IllegalStateException("QR code has been revoked.");
         }
 
         // Read file directly from disk

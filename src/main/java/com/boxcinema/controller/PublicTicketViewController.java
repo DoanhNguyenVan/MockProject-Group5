@@ -27,7 +27,7 @@ public class PublicTicketViewController {
         } else {
             PublicTicketDto notFound = new PublicTicketDto();
             notFound.setValid(false);
-            notFound.setMessage("Không tìm thấy thông tin vé hoặc mã truy cập không hợp lệ.");
+            notFound.setMessage("Ticket information not found or access token is invalid.");
             model.addAttribute("ticket", notFound);
             model.addAttribute("found", false);
         }

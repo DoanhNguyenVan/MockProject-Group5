@@ -1,5 +1,5 @@
 /**
- * BOX Cinema - Module 01 Navbar & Cinemê-style Home Page Interactions
+ * BOX Cinema - Module 01 Navbar & Modern-style Home Page Interactions
  */
 import { initThemeToggle } from "../core/theme.js";
 
@@ -274,7 +274,7 @@ export function initCinemaSelector(doc = document) {
 }
 
 /**
- * Hero Spotlight Slider: Prev/Next Slide Navigation & Auto-play (Cinemê style)
+ * Hero Spotlight Slider: Prev/Next Slide Navigation & Auto-play (Cinema style)
  */
 function initHeroRail(doc) {
   const heroSpotlight = doc.getElementById("heroSpotlight");
@@ -636,7 +636,7 @@ function initHeroRail(doc) {
 
 /**
  * Catalog Manager: Handles Tab filtering, Navbar Search, Empty state, and 12 movies/page Pagination.
- * Ensures Phim đang chiếu appear first, Phim sắp chiếu appear next.
+ * Ensures Now Showing movies appear first, Coming Soon appear next.
  */
 function initCatalogManager(doc) {
   const catalogGrid = doc.getElementById("catalogGrid");
@@ -768,7 +768,7 @@ function initCatalogManager(doc) {
         if (cardAge !== currentAge) return false;
       }
 
-      // 3.5 Room Format Filter (Định dạng phòng chiếu: 2D Standard, IMAX Laser, 4DX Motion, Gold Class, etc.)
+      // 3.5 Room Format Filter (Room format: 2D Standard, IMAX Laser, 4DX Motion, Gold Class, etc.)
       if (currentFormat !== "all") {
         const cardFormats = (card.dataset.formats || "").toLowerCase();
         const targetFormat = currentFormat.toLowerCase();
@@ -1115,7 +1115,7 @@ function initQuickBooking(doc) {
       const res = await fetch(url);
       if (res.ok) {
         const cinemas = await res.json();
-        cinemaSelect.innerHTML = '<option value="">-- Chọn cụm rạp --</option>' +
+        cinemaSelect.innerHTML = '<option value="">-- Select cinema --</option>' +
           cinemas.map(c => `<option value="${c.cinemaId}">${c.displayName}</option>`).join("");
       }
     } catch {
@@ -1128,8 +1128,8 @@ function initQuickBooking(doc) {
     const movieId = movieSelect ? movieSelect.value : "";
     const cinemaId = cinemaSelect ? cinemaSelect.value : "";
     if (!movieId || !cinemaId) {
-      dateSelect.innerHTML = '<option value="">-- Chọn ngày --</option>';
-      if (timeSelect) timeSelect.innerHTML = '<option value="">-- Chọn giờ chiếu --</option>';
+      dateSelect.innerHTML = '<option value="">-- Select date --</option>';
+      if (timeSelect) timeSelect.innerHTML = '<option value="">-- Select showtime --</option>';
       return;
     }
 
@@ -1137,7 +1137,7 @@ function initQuickBooking(doc) {
       const res = await fetch(`/api/quick-booking/dates?movieId=${movieId}&cinemaId=${cinemaId}`);
       if (res.ok) {
         const dates = await res.json();
-        dateSelect.innerHTML = '<option value="">-- Chọn ngày --</option>' +
+        dateSelect.innerHTML = '<option value="">-- Select date --</option>' +
           dates.map(d => `<option value="${d.value}">${d.label}</option>`).join("");
         if (dates.length > 0) {
           dateSelect.value = dates[0].value;
@@ -1155,7 +1155,7 @@ function initQuickBooking(doc) {
     const cinemaId = cinemaSelect ? cinemaSelect.value : "";
     const date = dateSelect ? dateSelect.value : "";
     if (!movieId || !cinemaId || !date) {
-      timeSelect.innerHTML = '<option value="">-- Chọn giờ chiếu --</option>';
+      timeSelect.innerHTML = '<option value="">-- Select showtime --</option>';
       return;
     }
 
@@ -1164,10 +1164,10 @@ function initQuickBooking(doc) {
       if (res.ok) {
         const times = await res.json();
         if (times.length > 0) {
-          timeSelect.innerHTML = '<option value="">-- Chọn giờ chiếu --</option>' +
+          timeSelect.innerHTML = '<option value="">-- Select showtime --</option>' +
             times.map(t => `<option value="${t.showtimeId}">${t.label}</option>`).join("");
         } else {
-          timeSelect.innerHTML = '<option value="">Không có suất chiếu</option>';
+          timeSelect.innerHTML = '<option value="">No showtimes available</option>';
         }
       }
     } catch {
@@ -1226,7 +1226,7 @@ function initQuickBooking(doc) {
 
       if (!movieVal || !cinemaVal || !dateVal || !timeVal) {
         quickBookFeedback.className = "mt-3 small text-warning fw-semibold";
-        quickBookFeedback.textContent = "Vui lòng chọn đầy đủ Phim, Rạp, Ngày và Giờ chiếu để tiếp tục sang bước Chọn ghế.";
+        quickBookFeedback.textContent = "Please select Movie, Cinema, Date, and Showtime to proceed to seat selection.";
         return;
       }
 
@@ -1235,7 +1235,7 @@ function initQuickBooking(doc) {
       const cinemaText = cinemaOpt ? cinemaOpt.text : cinemaVal;
       const dateText = dateOpt ? dateOpt.text : dateVal;
       const timeText = timeOpt ? timeOpt.text : timeVal;
-      quickBookFeedback.textContent = `✔ Đã chọn: ${movieText} · ${cinemaText} · ${dateText} · ${timeText}. Sẵn sàng chuyển sang sơ đồ chọn ghế!`;
+      quickBookFeedback.textContent = `✔ Selected: ${movieText} · ${cinemaText} · ${dateText} · ${timeText}. Ready to choose seats!`;
     });
   }
 
@@ -1297,7 +1297,7 @@ export function initWelcomeCinemaModal(doc = document) {
   // Filter cinema branches when city changes
   citySelect.addEventListener("change", () => {
     const selectedCity = citySelect.value;
-    cinemaSelect.innerHTML = '<option value="">-- Chọn rạp --</option>';
+    cinemaSelect.innerHTML = '<option value="">-- Select cinema --</option>';
 
     if (!selectedCity) {
       cinemaSelect.disabled = true;

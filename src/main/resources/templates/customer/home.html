@@ -164,30 +164,28 @@
     <!-- =======================================================================
          1. HERO SPOTLIGHT WITH NUMBERED MINI CAROUSEL (MATCHING IMAGE 1)
          ======================================================================= -->
-    <section class="hero-spotlight" id="heroSpotlight" aria-label="Phim nổi bật">
+    <section class="hero-spotlight" id="heroSpotlight" aria-label="Spotlight Movies">
       <!-- Dynamic Backdrop Layer (Updated when user picks a film in the rail) -->
       <div class="hero-backdrop-layer" id="heroBackdrop"
         th:style="${spotlightMovies != null and !spotlightMovies.isEmpty() and spotlightMovies[0].bannerUrl != null ? 'background-image: url(' + spotlightMovies[0].bannerUrl + ');' : ''}">
       </div>
 
       <!-- Floating Hero Slide Navigation Arrows (Prev / Next) -->
-      <button type="button" class="hero-slide-arrow hero-arrow-prev" id="heroSlidePrev" aria-label="Phim trước đó">
+      <button type="button" class="hero-slide-arrow hero-arrow-prev" id="heroSlidePrev" aria-label="Previous movie">
         <span aria-hidden="true">❮</span>
       </button>
-      <button type="button" class="hero-slide-arrow hero-arrow-next" id="heroSlideNext" aria-label="Phim tiếp theo">
+      <button type="button" class="hero-slide-arrow hero-arrow-next" id="heroSlideNext" aria-label="Next movie">
         <span aria-hidden="true">❯</span>
       </button>
 
       <!-- Hero Split Grid: Left half info, Right half hot ranked movies (Edge-to-edge balance) -->
       <div class="hero-container-wide">
         <div class="hero-split-grid">
-          <!-- Left Column: Spotlight Movie Details (1 nửa) -->
+          <!-- Left Column: Spotlight Movie Details (1/2) -->
           <div class="hero-content-wrap">
             <th:block th:if="${spotlightMovies != null and !spotlightMovies.isEmpty()}">
-              <h1 class="hero-movie-title" id="heroTitle" th:text="${spotlightMovies[0].title}">Dune: Hành Tinh Cát -
-                Phần 2</h1>
-              <p class="hero-movie-synopsis" id="heroSynopsis" th:text="${spotlightMovies[0].synopsis}">Tóm tắt nội dung
-                phim...</p>
+              <h1 class="hero-movie-title" id="heroTitle" th:text="${spotlightMovies[0].title}">Dune: Part Two</h1>
+              <p class="hero-movie-synopsis" id="heroSynopsis" th:text="${spotlightMovies[0].synopsis}">Movie synopsis...</p>
 
               <div class="hero-movie-meta" id="heroMeta">
                 <span class="meta-badge" id="heroAge"
@@ -544,52 +542,52 @@
         <div class="booking-glass-panel">
           <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
             <div>
-              <h2 class="h4 fw-bold text-white mb-1" id="bookingHeading">🎟 Đặt Vé Nhanh</h2>
-              <p class="small text-secondary mb-0">Chọn phim, rạp, ngày và suất chiếu để trải nghiệm phòng chiếu chất lượng cao.</p>
+              <h2 class="h4 fw-bold text-white mb-1" id="bookingHeading">🎟 Quick Booking</h2>
+              <p class="small text-secondary mb-0">Select movie, cinema, date, and showtime for a premium cinema experience.</p>
             </div>
             <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-50 px-3 py-2 fw-bold">
-              ⚡ GIỮ VÉ TỨC THÌ
+              ⚡ INSTANT HOLD
             </span>
           </div>
 
           <form id="quickBookingForm" class="booking-fields-grid">
             <div>
-              <label for="qbMovie" class="booking-label">1. Chọn Phim</label>
+              <label for="qbMovie" class="booking-label">1. Select Movie</label>
               <select id="qbMovie" name="movieId" class="booking-select" required>
-                <option value="">-- Chọn bộ phim --</option>
+                <option value="">-- Select movie --</option>
                 <option th:each="movie : ${nowShowingMovies}"
                         th:value="${movie.movieId}"
-                        th:text="${movie.title}">Tên Phim</option>
+                        th:text="${movie.title}">Movie Title</option>
               </select>
             </div>
 
             <div>
-              <label for="qbCinema" class="booking-label">2. Chọn Rạp</label>
+              <label for="qbCinema" class="booking-label">2. Select Cinema</label>
               <select id="qbCinema" name="cinemaId" class="booking-select" required>
-                <option value="">-- Chọn cụm rạp --</option>
+                <option value="">-- Select cinema --</option>
                 <option th:each="cinema : ${cinemas}"
                         th:value="${cinema.cinemaId}"
-                        th:text="${cinema.displayName}">Tên Cụm Rạp</option>
+                        th:text="${cinema.displayName}">Cinema Name</option>
               </select>
             </div>
 
             <div>
-              <label for="qbDate" class="booking-label">3. Chọn Ngày</label>
+              <label for="qbDate" class="booking-label">3. Select Date</label>
               <select id="qbDate" name="date" class="booking-select" required>
-                <option value="">-- Chọn ngày --</option>
+                <option value="">-- Select date --</option>
               </select>
             </div>
 
             <div>
-              <label for="qbTime" class="booking-label">4. Suất Chiếu</label>
+              <label for="qbTime" class="booking-label">4. Showtime</label>
               <select id="qbTime" name="showtimeId" class="booking-select" required>
-                <option value="">-- Chọn giờ chiếu --</option>
+                <option value="">-- Select time --</option>
               </select>
             </div>
 
             <div>
               <button type="submit" class="btn-cta-buy w-100 py-2 justify-content-center">
-                Tiếp Tục ➔
+                Continue ➔
               </button>
             </div>
           </form>
@@ -620,35 +618,34 @@
        ======================================================================= -->
   <div class="welcome-cinema-backdrop" id="welcomeCinemaModal" aria-hidden="true" role="dialog" aria-modal="true">
     <div class="welcome-cinema-modal">
-      <button type="button" class="welcome-modal-close" id="welcomeModalClose" aria-label="Đóng cửa sổ">×</button>
+      <button type="button" class="welcome-modal-close" id="welcomeModalClose" aria-label="Close window">×</button>
 
       <div class="welcome-modal-header">
-        <h3 class="welcome-modal-title">CHỌN CƠ SỞ RẠP CHIẾU</h3>
-        <p class="welcome-modal-subtitle">Vui lòng chọn khu vực và cụm rạp để cập nhật lịch chiếu và giá vé chính xác
-          nhất</p>
+        <h3 class="welcome-modal-title">SELECT CINEMA LOCATION</h3>
+        <p class="welcome-modal-subtitle">Please select your region and cinema location to view accurate showtimes and ticket pricing</p>
       </div>
 
       <div class="welcome-modal-body">
         <div class="welcome-fields-row">
           <div class="welcome-field-col">
-            <label for="welcomeCitySelect" class="welcome-label">Tỉnh / Thành phố</label>
+            <label for="welcomeCitySelect" class="welcome-label">City / Province</label>
             <div class="welcome-select-wrapper">
               <select id="welcomeCitySelect" class="welcome-select">
-                <option value="">-- Chọn Tỉnh / Thành phố --</option>
-                <option th:each="entry : ${cinemasByCity}" th:value="${entry.key}" th:text="${entry.key}">Hà Nội
+                <option value="">-- Select City / Province --</option>
+                <option th:each="entry : ${cinemasByCity}" th:value="${entry.key}" th:text="${entry.key}">Hanoi
                 </option>
               </select>
             </div>
           </div>
 
           <div class="welcome-field-col">
-            <label for="welcomeCinemaSelect" class="welcome-label">Tên rạp</label>
+            <label for="welcomeCinemaSelect" class="welcome-label">Cinema</label>
             <div class="welcome-select-wrapper">
               <select id="welcomeCinemaSelect" class="welcome-select" disabled>
-                <option value="">-- Chọn rạp --</option>
+                <option value="">-- Select cinema --</option>
                 <th:block th:each="entry : ${cinemasByCity}">
                   <option th:each="c : ${entry.value}" th:value="${c.cinemaId}" th:data-city="${entry.key}"
-                    th:text="${c.cinemaName}">Tên rạp</option>
+                    th:text="${c.cinemaName}">Cinema Name</option>
                 </th:block>
               </select>
             </div>
@@ -657,10 +654,10 @@
 
         <div class="welcome-actions">
           <button type="button" class="btn-welcome-confirm" id="btnWelcomeConfirm" disabled>
-            Xác Nhận &amp; Khám Phá Phim
+            Confirm &amp; Explore Movies
           </button>
           <button type="button" class="btn-welcome-skip" id="btnWelcomeSkip">
-            Bỏ qua, xem tất cả rạp
+            Skip, view all cinemas
           </button>
         </div>
       </div>

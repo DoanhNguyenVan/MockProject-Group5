@@ -447,20 +447,20 @@ public class UserServiceImpl implements UserService {
         }
 
         if (user.getPasswordHash() == null || user.getPasswordHash().isBlank()) {
-            throw AuthException.badRequest("VALIDATION_ERROR", "Tài khoản của bạn chưa có mật khẩu. Vui lòng sử dụng tính năng Tạo mật khẩu.");
+            throw AuthException.badRequest("VALIDATION_ERROR", "Your account does not have a password yet. Please use the Set Password feature.");
         }
 
         if (currentPassword == null || currentPassword.isBlank()) {
-            throw AuthException.badRequest("VALIDATION_ERROR", "Vui lòng nhập mật khẩu hiện tại.");
+            throw AuthException.badRequest("VALIDATION_ERROR", "Please enter your current password.");
         }
 
         if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
             authAuditService.logEvent("PASSWORD_CHANGE_FAILURE", userId, user.getEmail(), "REJECTED", "Wrong current password");
-            throw AuthException.badRequest("VALIDATION_ERROR", "Mật khẩu hiện tại không chính xác.");
+            throw AuthException.badRequest("VALIDATION_ERROR", "Current password is incorrect.");
         }
 
         if (currentPassword.equals(newPassword)) {
-            throw AuthException.badRequest("VALIDATION_ERROR", "Mật khẩu mới không được trùng với mật khẩu hiện tại.");
+            throw AuthException.badRequest("VALIDATION_ERROR", "New password cannot be the same as the current password.");
         }
 
         passwordPolicyService.validatePasswordPair(newPassword, confirmPassword);

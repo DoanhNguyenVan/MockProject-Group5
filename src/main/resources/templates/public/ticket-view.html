@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="vi" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title th:text="${found ? (ticket.movieTitle + ' | Vé Điện Tử BOX Cinema') : 'Không tìm thấy vé | BOX Cinema'}">Vé Điện Tử | BOX Cinema</title>
+  <title th:text="${found ? (ticket.movieTitle + ' | E-Ticket | BOX Cinema') : 'Ticket Not Found | BOX Cinema'}">E-Ticket | BOX Cinema</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -185,7 +185,7 @@
             <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
             <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
           </svg>
-          <span class="small">Quét QR</span>
+          <span class="small">Scan QR</span>
         </a>
       </div>
     </div>
@@ -205,9 +205,9 @@
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
-            <span th:text="${ticket.bookingStatus == 'CONFIRMED' ? 'VÉ HỢP LỆ' : ticket.bookingStatus}">VÉ HỢP LỆ</span>
+            <span th:text="${ticket.bookingStatus == 'CONFIRMED' ? 'VALID TICKET' : ticket.bookingStatus}">VALID TICKET</span>
           </span>
-          <span class="badge-status-paid ms-1">ĐÃ THANH TOÁN</span>
+          <span class="badge-status-paid ms-1">PAID</span>
         </div>
         <div class="font-monospace text-secondary small fw-bold" th:text="${ticket.bookingCode}">
           BOX-20261116-3484
@@ -216,53 +216,53 @@
 
       <!-- Movie Section -->
       <div class="mb-4">
-        <div class="text-secondary small text-uppercase fw-semibold" style="letter-spacing: 0.08em; font-size: 0.72rem;">Phim Chiếu</div>
+        <div class="text-secondary small text-uppercase fw-semibold" style="letter-spacing: 0.08em; font-size: 0.72rem;">Now Showing</div>
         <h1 class="h4 fw-bold text-white mt-1 mb-0" th:text="${ticket.movieTitle}">Alien: Romulus</h1>
       </div>
 
       <!-- Showtime & Cinema Details -->
       <div class="mb-3">
         <div class="ticket-row">
-          <span class="ticket-label">Rạp chiếu:</span>
+          <span class="ticket-label">Cinema:</span>
           <span class="ticket-value" th:text="${ticket.cinemaName}">BOX Cinema Royal City</span>
         </div>
 
         <div class="ticket-row">
-          <span class="ticket-label">Phòng chiếu:</span>
+          <span class="ticket-label">Auditorium / Screen:</span>
           <span class="ticket-value" th:text="${ticket.roomName}">Screen 01 - Standard Luxe</span>
         </div>
 
         <div class="ticket-row">
-          <span class="ticket-label">Ngày chiếu:</span>
+          <span class="ticket-label">Show Date:</span>
           <span class="ticket-value" th:text="${ticket.showDate}">17/11/2026</span>
         </div>
 
         <div class="ticket-row">
-          <span class="ticket-label">Giờ chiếu:</span>
+          <span class="ticket-label">Showtime:</span>
           <span class="ticket-value text-danger" th:text="${ticket.showTime}">09:00</span>
         </div>
 
         <div class="ticket-row">
-          <span class="ticket-label">Vị trí ghế:</span>
+          <span class="ticket-label">Seats:</span>
           <span class="ticket-value">
             <span th:each="s : ${ticket.seats}" class="seat-badge" th:text="${s}">C8</span>
           </span>
         </div>
 
         <div class="ticket-row">
-          <span class="ticket-label">Tổng số vé:</span>
-          <span class="ticket-value fw-bold text-white" th:text="${ticket.ticketCount} + ' vé'">2 vé</span>
+          <span class="ticket-label">Total Tickets:</span>
+          <span class="ticket-value fw-bold text-white" th:text="${ticket.ticketCount} + ' ticket(s)'">2 tickets</span>
         </div>
       </div>
 
       <!-- Food & Concessions Section -->
       <div class="mt-4 pt-3 border-top border-secondary border-opacity-25">
         <div class="d-flex justify-content-between align-items-center mb-2">
-          <span class="fw-bold text-white fs-6">Đồ Ăn &amp; Thức Uống</span>
+          <span class="fw-bold text-white fs-6">Food &amp; Beverages</span>
           <span class="badge bg-secondary bg-opacity-25 text-secondary px-2 py-0.5 small"
                 th:if="${ticket.foodItems != null and !ticket.foodItems.isEmpty()}"
                 th:text="${ticket.foodFulfillmentStatus}">
-            Chờ lấy tại quầy
+            Awaiting pickup at concession
           </span>
         </div>
 
@@ -270,7 +270,7 @@
         <div th:if="${ticket.foodItems != null and !ticket.foodItems.isEmpty()}">
           <div th:each="f : ${ticket.foodItems}" class="food-card-box d-flex justify-content-between align-items-center">
             <div>
-              <div class="fw-semibold text-white small" th:text="${f.productName}">Bắp Rang Bơ Phô Mai</div>
+              <div class="fw-semibold text-white small" th:text="${f.productName}">Popcorn Cheese</div>
               <div class="text-secondary small" th:if="${f.variantName != null and !f.variantName.isBlank()}" th:text="${f.variantName}">Size L</div>
             </div>
             <div class="d-flex align-items-center gap-2">
@@ -281,7 +281,7 @@
 
         <!-- No Food Notice -->
         <div th:if="${ticket.foodItems == null or ticket.foodItems.isEmpty()}" class="text-secondary small py-1">
-          Đơn đặt vé này không kèm đồ ăn / nước uống.
+          No snacks or drinks added to this booking.
         </div>
       </div>
 
@@ -292,15 +292,15 @@
           <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
         </svg>
         <div>
-          <div class="fw-semibold" style="color: #38bdf8;">Vé điện tử chính thức từ BOX Cinema</div>
-          <div>Mã QR này được sử dụng để tra cứu thông tin vé công khai. Dữ liệu cá nhân (email, số điện thoại, ngân hàng) được bảo vệ tuyệt đối.</div>
+          <div class="fw-semibold" style="color: #38bdf8;">Official E-Ticket from BOX Cinema</div>
+          <div>This QR code is used to look up public ticket details. Sensitive customer data (email, phone, banking details) are strictly protected.</div>
         </div>
       </div>
 
       <!-- Actions -->
       <div class="mt-4 pt-2 text-center">
         <a href="/scan" class="btn btn-outline-light btn-sm px-4 py-2 text-decoration-none">
-          Quét mã vé khác
+          Scan Another Ticket
         </a>
       </div>
     </div>
@@ -317,18 +317,18 @@
             <line x1="9" y1="9" x2="15" y2="15"></line>
           </svg>
         </div>
-        <h2 class="h4 fw-bold text-white">Không Tìm Thấy Vé</h2>
-        <p class="text-secondary small mt-2" th:text="${ticket.message != null ? ticket.message : 'Mã truy cập vé không hợp lệ hoặc đã hết hạn.'}">
-          Mã truy cập vé không hợp lệ hoặc đã hết hạn.
+        <h2 class="h4 fw-bold text-white">Ticket Not Found</h2>
+        <p class="text-secondary small mt-2" th:text="${ticket.message != null ? ticket.message : 'The ticket access token is invalid or has expired.'}">
+          The ticket access token is invalid or has expired.
         </p>
       </div>
 
       <div class="mt-4">
         <a href="/scan" class="btn btn-danger px-4 py-2 text-decoration-none">
-          Mở máy quét QR
+          Open QR Scanner
         </a>
         <a href="/" class="btn btn-outline-secondary px-4 py-2 text-decoration-none ms-2">
-          Trang chủ
+          Home
         </a>
       </div>
     </div>

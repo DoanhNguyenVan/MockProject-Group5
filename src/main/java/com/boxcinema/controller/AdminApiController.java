@@ -255,7 +255,7 @@ public class AdminApiController {
                 "SELECT b.booking_id, b.booking_code, b.booking_status, " +
                         "DATE_FORMAT(b.booked_at, '%Y-%m-%d %H:%i') as booked_at_formatted, " +
                         "b.subtotal, b.discount_amount, b.total_amount, b.booking_channel, " +
-                        "COALESCE(b.guest_name, u.full_name, 'Khách hàng') as customer_name, " +
+                        "COALESCE(b.guest_name, u.full_name, 'Customer') as customer_name, " +
                         "COALESCE(b.guest_email, u.email, '') as customer_email, " +
                         "COALESCE(b.guest_phone, u.phone, '') as customer_phone, " +
                         "s.showtime_id, DATE_FORMAT(s.start_at, '%Y-%m-%d %H:%i') as showtime_start, " +
@@ -264,7 +264,7 @@ public class AdminApiController {
                         "c.cinema_id, c.cinema_name, c.city, " +
                         "p.payment_provider, p.payment_method, p.payment_status, " +
                         "pr.promotion_name, pr.voucher_code, " +
-                        "(SELECT GROUP_CONCAT(CONCAT(bs.seat_label_snapshot, ' (', st.type_name, ' - ', FORMAT(bs.unit_price, 0), 'đ)') SEPARATOR ', ') "
+                        "(SELECT GROUP_CONCAT(CONCAT(bs.seat_label_snapshot, ' (', st.type_name, ' - ', FORMAT(bs.unit_price, 0), ' VND)') SEPARATOR ', ') "
                         +
                         " FROM booking_seats bs " +
                         " JOIN showtime_seats ss ON bs.showtime_seat_id = ss.showtime_seat_id " +
@@ -274,7 +274,7 @@ public class AdminApiController {
                         "(SELECT GROUP_CONCAT(bs.seat_label_snapshot SEPARATOR ', ') " +
                         " FROM booking_seats bs WHERE bs.booking_id = b.booking_id) as seats_summary, " +
                         "(SELECT COUNT(*) FROM booking_seats bs WHERE bs.booking_id = b.booking_id) as seat_cnt, " +
-                        "(SELECT GROUP_CONCAT(CONCAT(prod.product_name, ' x', bi.quantity, ' (', FORMAT(bi.subtotal, 0), 'đ)') SEPARATOR ', ') "
+                        "(SELECT GROUP_CONCAT(CONCAT(prod.product_name, ' x', bi.quantity, ' (', FORMAT(bi.subtotal, 0), ' VND)') SEPARATOR ', ') "
                         +
                         " FROM booking_items bi " +
                         " JOIN products prod ON bi.product_id = prod.product_id " +
@@ -351,7 +351,7 @@ public class AdminApiController {
         String countShowtimesSql;
         if ("cinemas".equalsIgnoreCase(section)) {
             sql = "SELECT b.booking_id, b.booking_code, b.total_amount, " +
-                    "COALESCE(b.guest_name, u.full_name, 'Khách hàng') AS customer_name, " +
+                    "COALESCE(b.guest_name, u.full_name, 'Customer') AS customer_name, " +
                     "COALESCE(b.guest_email, u.email, '') AS customer_email, " +
                     "COALESCE(b.guest_phone, u.phone, '') AS customer_phone, " +
                     "s.showtime_id, s.start_at, m.title AS movie_title, r.room_name, " +
@@ -368,7 +368,7 @@ public class AdminApiController {
             countShowtimesSql = "SELECT COUNT(*) FROM showtimes s JOIN rooms r ON s.room_id = r.room_id WHERE r.cinema_id = ? AND s.start_at >= NOW() AND s.status = 'ACTIVE'";
         } else if ("rooms".equalsIgnoreCase(section)) {
             sql = "SELECT b.booking_id, b.booking_code, b.total_amount, " +
-                    "COALESCE(b.guest_name, u.full_name, 'Khách hàng') AS customer_name, " +
+                    "COALESCE(b.guest_name, u.full_name, 'Customer') AS customer_name, " +
                     "COALESCE(b.guest_email, u.email, '') AS customer_email, " +
                     "COALESCE(b.guest_phone, u.phone, '') AS customer_phone, " +
                     "s.showtime_id, s.start_at, m.title AS movie_title, r.room_name, " +
@@ -460,7 +460,7 @@ public class AdminApiController {
 
                 result.put("success", true);
                 result.put("message",
-                        "Đã dừng hoạt động cơ sở rạp. Toàn bộ phòng chiếu đã chuyển sang Inactive, hủy các suất chiếu tương lai và tự động hoàn tiền 100% cho khách hàng đã mua vé.");
+                        "Cinema facility deactivated. All auditoriums set to Inactive, future showtimes cancelled, and 100% refund processed automatically for booked customers.");
             } else if ("rooms".equalsIgnoreCase(section)) {
                 List<Long> showtimeIds = jdbcTemplate.queryForList(
                         "SELECT showtime_id FROM showtimes WHERE room_id = ? AND start_at >= NOW()",
@@ -488,7 +488,7 @@ public class AdminApiController {
                 jdbcTemplate.update("UPDATE rooms SET status = 'INACTIVE' WHERE room_id = ?", id);
                 result.put("success", true);
                 result.put("message",
-                        "Đã dừng hoạt động phòng chiếu. Hủy các suất chiếu tương lai và tự động hoàn tiền 100% cho tất cả khách hàng.");
+                        "Auditorium deactivated. Future showtimes cancelled and 100% refund processed automatically for all customers.");
             }
         } else if ("GRACEFUL_DECOMMISSION".equalsIgnoreCase(strategy)) {
             if ("cinemas".equalsIgnoreCase(section)) {
@@ -510,7 +510,7 @@ public class AdminApiController {
 
                 result.put("success", true);
                 result.put("message",
-                        "Đã chuyển cơ sở rạp sang chế độ Đóng theo lộ trình (STOP_BOOKING). Rạp ngừng nhận khách mới; các suất chiếu đã có người mua vé vẫn tiếp tục diễn ra bình thường.");
+                        "Cinema facility switched to Graceful Decommission mode (STOP_BOOKING). New bookings stopped; showtimes with existing bookings proceed normally.");
             } else if ("rooms".equalsIgnoreCase(section)) {
                 jdbcTemplate.update(
                         "UPDATE showtimes SET status = 'CANCELLED' WHERE room_id = ? AND start_at >= NOW() AND status = 'ACTIVE' "
@@ -520,7 +520,7 @@ public class AdminApiController {
                 jdbcTemplate.update("UPDATE rooms SET status = 'STOP_BOOKING' WHERE room_id = ?", id);
                 result.put("success", true);
                 result.put("message",
-                        "Đã chuyển phòng chiếu sang chế độ Ngưng nhận khách mới (STOP_BOOKING). Các suất chiếu đã có vé sẽ diễn ra bình thường.");
+                        "Auditorium switched to Stop Booking mode (STOP_BOOKING). Showtimes with existing bookings will proceed normally.");
             }
         } else {
             return ResponseEntity.badRequest().body(Map.of("error", "Unknown deactivation strategy"));

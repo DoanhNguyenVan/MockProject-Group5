@@ -95,7 +95,7 @@ export async function holdBookingSeats(
 
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const error = new Error(body.message || "Không thể giữ ghế đã chọn. Vui lòng thử lại.");
+    const error = new Error(body.message || "Unable to hold selected seats. Please try again.");
     error.status = response.status;
     error.errorCode = body.errorCode;
     error.conflictingSeats = body.conflictingSeats || [];

@@ -1,7 +1,7 @@
 import { httpRequest } from "../core/http-client.js";
 
 export function normalizeSearch(value) {
-  return String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[đĐ]/g, "d").toLowerCase().trim();
+  return String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[\u0111\u0110]/g, "d").toLowerCase().trim();
 }
 
 export function findCinemas(cinemas, search = "", city = "", preferredId = "") {
@@ -157,7 +157,7 @@ export function initScreenings(doc = document, { onSelect = () => {}, onReset = 
             for (const slot of group) {
               const link = button(slot.timeDisplay, "screening-time", () => {
                 if (isSlotExpired(slot.timeDisplay, date)) {
-                  alert("Suất chiếu này đã bắt đầu hoặc đã qua thời gian bán vé. Vui lòng chọn suất chiếu khác.");
+                  alert("This screening has started or ticket sales have closed. Please select another screening.");
                   renderResults();
                   return;
                 }

@@ -7,7 +7,7 @@ export function recordLabel(section, record, state) {
 }
 
 export function filterRecords(records, query = '', status = '', cinemaId = '', section = '') {
-  const normalize = value => String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+  const normalize = value => String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[\u0111\u0110]/g, 'd').toLowerCase();
   const search = normalize(query.trim());
   return records.filter(record => {
     if (status && record.status !== status) return false;

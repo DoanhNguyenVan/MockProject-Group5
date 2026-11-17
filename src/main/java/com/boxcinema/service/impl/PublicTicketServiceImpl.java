@@ -141,7 +141,7 @@ public class PublicTicketServiceImpl implements PublicTicketService {
                 fDto.setProductName(bfi.getProductNameSnapshot());
                 fDto.setVariantName(bfi.getVariantNameSnapshot());
                 fDto.setQuantity(bfi.getQuantity());
-                fDto.setStatus("Đã đặt");
+                fDto.setStatus("Ordered");
                 foodList.add(fDto);
             }
         }
@@ -156,20 +156,20 @@ public class PublicTicketServiceImpl implements PublicTicketService {
                 f.setStatus(dto.getFoodFulfillmentStatus());
             }
         } else if (!foodList.isEmpty()) {
-            dto.setFoodFulfillmentStatus("Đang chờ nhận tại quầy");
+            dto.setFoodFulfillmentStatus("Awaiting Pickup at Concession");
         }
 
         return Optional.of(dto);
     }
 
     private String mapFulfillmentStatus(String status) {
-        if (status == null) return "Chờ nhận tại quầy";
+        if (status == null) return "Awaiting Pickup";
         return switch (status.toUpperCase()) {
-            case "QUEUED" -> "Đang chờ chuẩn bị";
-            case "PREPARING" -> "Đang chuẩn bị";
-            case "READY" -> "Đã sẵn sàng tại quầy";
-            case "PICKED_UP", "COMPLETED" -> "Đã nhận đồ ăn";
-            case "CANCELLED" -> "Đã hủy";
+            case "QUEUED" -> "Queued for Preparation";
+            case "PREPARING" -> "In Preparation";
+            case "READY" -> "Ready for Pickup";
+            case "PICKED_UP", "COMPLETED" -> "Picked Up";
+            case "CANCELLED" -> "Cancelled";
             default -> status;
         };
     }

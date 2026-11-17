@@ -97,7 +97,7 @@ public class FoodServiceImpl implements FoodService {
                 });
 
         if (inventory.getAvailableQuantity() < quantity) {
-            throw new IllegalStateException("Sản phẩm '" + inventory.getFoodItem().getName() + "' không đủ số lượng còn lại.");
+            throw new IllegalStateException("Product '" + inventory.getFoodItem().getName() + "' is out of stock or insufficient quantity.");
         }
         inventory.setReservedQuantity(inventory.getReservedQuantity() + quantity);
         inventoryRepository.save(inventory);
