@@ -349,9 +349,9 @@ function initHeroRail(doc) {
         translateZ = isMobile ? 15 : 30;
         rotateY = -dir * (isMobile ? 10 : 12);
         scale = baseScale * 0.98;
-        opacity = 0.82;
+        opacity = 0.90;
         zIndex = 20;
-        filter = "brightness(0.82) contrast(0.96)";
+        filter = "brightness(0.92) contrast(0.98)";
       } else if (absDiff === 2) {
         // Secondary Flanking Cards (Still clickable within ~2 cards range)
         const dir = Math.sign(diff);
@@ -359,9 +359,9 @@ function initHeroRail(doc) {
         translateZ = isMobile ? 5 : 10;
         rotateY = -dir * (isMobile ? 16 : 20);
         scale = baseScale * 0.88;
-        opacity = isMobile ? 0.25 : 0.50;
+        opacity = isMobile ? 0.40 : 0.75;
         zIndex = 10;
-        filter = "brightness(0.65)";
+        filter = "brightness(0.85)";
       } else if (absDiff === 3) {
         // Tertiary Cards (visible on wider screens, background only)
         const dir = Math.sign(diff);
@@ -369,9 +369,9 @@ function initHeroRail(doc) {
         translateZ = 0;
         rotateY = -dir * (isMobile ? 20 : 26);
         scale = baseScale * 0.76;
-        opacity = isMobile ? 0 : 0.22;
+        opacity = isMobile ? 0 : 0.50;
         zIndex = 5;
-        filter = "brightness(0.45)";
+        filter = "brightness(0.75)";
         pointerEvents = "none";
       } else {
         // Far off / wrap-around cards
@@ -656,6 +656,7 @@ function initCatalogManager(doc) {
   // Secondary Filter Selects
   const genreSelect = doc.getElementById("filterGenre");
   const ageSelect = doc.getElementById("filterAge");
+  const formatSelect = doc.getElementById("filterFormat");
   const dateSelect = doc.getElementById("filterDate");
   const sortSelect = doc.getElementById("filterSort");
 
@@ -677,6 +678,26 @@ function initCatalogManager(doc) {
     });
   }
 
+  // Dynamically populate format options from cards if not already populated
+  if (formatSelect && formatSelect.options.length <= 1) {
+    const formatSet = new Set();
+    cards.forEach((card) => {
+      const fStr = card.dataset.formats || "";
+      if (fStr && fStr !== "all") {
+        fStr.split(",").forEach((f) => {
+          const trimmed = f.trim();
+          if (trimmed) formatSet.add(trimmed);
+        });
+      }
+    });
+    Array.from(formatSet).sort().forEach((fmtName) => {
+      const opt = doc.createElement("option");
+      opt.value = fmtName;
+      opt.textContent = fmtName;
+      formatSelect.appendChild(opt);
+    });
+  }
+
   // Store original index on each card for default sort restoration
   cards.forEach((card, idx) => {
     card.dataset.origOrder = idx;
@@ -687,6 +708,7 @@ function initCatalogManager(doc) {
   let currentTab = "all";
   let currentGenre = "all";
   let currentAge = "all";
+  let currentFormat = "all";
   let currentDate = "all";
   let currentSort = "default";
   let currentCinema = "all";
@@ -744,6 +766,15 @@ function initCatalogManager(doc) {
       if (currentAge !== "all") {
         const cardAge = card.dataset.age || "";
         if (cardAge !== currentAge) return false;
+      }
+
+      // 3.5 Room Format Filter (Định dạng phòng chiếu: 2D Standard, IMAX Laser, 4DX Motion, Gold Class, etc.)
+      if (currentFormat !== "all") {
+        const cardFormats = (card.dataset.formats || "").toLowerCase();
+        const targetFormat = currentFormat.toLowerCase();
+        if (cardFormats === "all" || !cardFormats.includes(targetFormat)) {
+          return false;
+        }
       }
 
       // 4. Screening / Release Date Filter
@@ -936,6 +967,14 @@ function initCatalogManager(doc) {
     });
   }
 
+  if (formatSelect) {
+    formatSelect.addEventListener("change", () => {
+      currentFormat = formatSelect.value;
+      currentPage = 1;
+      render();
+    });
+  }
+
   if (dateSelect) {
     dateSelect.addEventListener("change", () => {
       currentDate = dateSelect.value;
@@ -957,6 +996,7 @@ function initCatalogManager(doc) {
     currentTab = "all";
     currentGenre = "all";
     currentAge = "all";
+    currentFormat = "all";
     currentDate = "all";
     currentSort = "default";
     searchQuery = "";
@@ -968,6 +1008,7 @@ function initCatalogManager(doc) {
 
     if (genreSelect) genreSelect.value = "all";
     if (ageSelect) ageSelect.value = "all";
+    if (formatSelect) formatSelect.value = "all";
     if (dateSelect) dateSelect.value = "all";
     if (sortSelect) sortSelect.value = "default";
     if (searchInput) searchInput.value = "";

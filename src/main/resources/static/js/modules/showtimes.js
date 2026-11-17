@@ -11,33 +11,165 @@ export function initShowtimesPage(doc = document) {
   const trailerIframe = doc.getElementById("trailerIframe");
   const trailerCloseBtn = doc.getElementById("trailerModalClose");
 
+  // Showtimes Filter Controls
+  const genreSelect = doc.getElementById("showtimeFilterGenre") || doc.getElementById("filterGenre");
+  const ageSelect = doc.getElementById("showtimeFilterAge") || doc.getElementById("filterAge");
+  const formatSelect = doc.getElementById("showtimeFilterFormat") || doc.getElementById("filterFormat");
+  const sortSelect = doc.getElementById("showtimeFilterSort") || doc.getElementById("filterSort");
+  const resetBtn = doc.getElementById("btnResetShowtimeFilters") || doc.getElementById("btnResetAllFilters");
+  const searchInput = doc.getElementById("navSearchInput");
+
   if (!dateTabsContainer || !moviesGrid) return;
 
-  let currentSearchQuery = (doc.getElementById("navSearchInput")?.value || "").trim();
+  let currentSearchQuery = (searchInput?.value || "").trim();
 
-  function applyShowtimeSearchFilter() {
-    const q = currentSearchQuery.trim().toLowerCase();
-    const cards = Array.from(moviesGrid.querySelectorAll(".showtime-movie-card"));
-    let visibleCount = 0;
+  // Dynamically populate genre options from cards if not already populated
+  function syncGenreOptions(cards) {
+    if (genreSelect && genreSelect.options.length <= 1) {
+      const genreSet = new Set();
+      cards.forEach((card) => {
+        const gStr = card.dataset.genres || "";
+        gStr.split("/").forEach((g) => {
+          const trimmed = g.trim();
+          if (trimmed) genreSet.add(trimmed);
+        });
+      });
+      Array.from(genreSet).sort().forEach((genreName) => {
+        const opt = doc.createElement("option");
+        opt.value = genreName;
+        opt.textContent = genreName;
+        genreSelect.appendChild(opt);
+      });
+    }
+  }
 
-    cards.forEach((card) => {
-      const title = (card.querySelector(".showtime-movie-title")?.textContent || "").toLowerCase();
-      const meta = (card.querySelector(".showtime-movie-meta")?.textContent || "").toLowerCase();
-      const matches = !q || title.includes(q) || meta.includes(q);
-      card.style.display = matches ? "" : "none";
-      if (matches) visibleCount++;
+  // Dynamically populate format options from cards if not already populated
+  function syncFormatOptions(cards) {
+    if (formatSelect && formatSelect.options.length <= 1) {
+      const formatSet = new Set();
+      cards.forEach((card) => {
+        const fStr = card.dataset.formats || "";
+        if (fStr) {
+          fStr.split(",").forEach((f) => {
+            const trimmed = f.trim();
+            if (trimmed) formatSet.add(trimmed);
+          });
+        }
+      });
+      Array.from(formatSet).sort().forEach((fmtName) => {
+        const opt = doc.createElement("option");
+        opt.value = fmtName;
+        opt.textContent = fmtName;
+        formatSelect.appendChild(opt);
+      });
+    }
+  }
+
+  function applyShowtimesFilter() {
+    const q = (currentSearchQuery || searchInput?.value || "").trim().toLowerCase();
+    const currentGenre = genreSelect ? genreSelect.value : "all";
+    const currentAge = ageSelect ? ageSelect.value : "all";
+    const currentFormat = formatSelect ? formatSelect.value : "all";
+    const currentSort = sortSelect ? sortSelect.value : "default";
+
+    const allCards = Array.from(moviesGrid.querySelectorAll(".showtime-movie-card"));
+
+    // Ensure each card has origOrder
+    allCards.forEach((card, idx) => {
+      if (card.dataset.origOrder === undefined) {
+        card.dataset.origOrder = idx;
+      }
     });
 
+    syncGenreOptions(allCards);
+    syncFormatOptions(allCards);
+
+    const matchedCards = [];
+
+    allCards.forEach((card) => {
+      // 1. Search Query Filter
+      const title = (card.dataset.title || card.querySelector(".showtime-movie-title")?.textContent || "").toLowerCase();
+      const meta = (card.querySelector(".showtime-movie-meta")?.textContent || "").toLowerCase();
+      const cardGenres = (card.dataset.genres || "").toLowerCase();
+      const matchesQuery = !q || title.includes(q) || meta.includes(q) || cardGenres.includes(q);
+
+      // 2. Genre Filter
+      const matchesGenre = (currentGenre === "all") || cardGenres.includes(currentGenre.toLowerCase());
+
+      // 3. Age Rating Filter
+      const cardAge = card.dataset.age || "";
+      const matchesAge = (currentAge === "all") || (cardAge === currentAge);
+
+      // 4. Room Format Filter
+      let hasMatchingFormat = (currentFormat === "all");
+      const formatBlocks = card.querySelectorAll(".showtime-format-block");
+      formatBlocks.forEach((block) => {
+        const blockTitle = (block.querySelector(".showtime-format-title")?.textContent || "").toLowerCase();
+        let blockMatches = false;
+        if (currentFormat === "all") {
+          blockMatches = true;
+        } else {
+          const targetFmt = currentFormat.toLowerCase().trim();
+          if (blockTitle.includes(targetFmt) || targetFmt.includes(blockTitle)) {
+            blockMatches = true;
+          } else {
+            const keywords = ["imax", "4dx", "screenx", "gold", "3d", "2d", "dolby"];
+            for (const kw of keywords) {
+              if (targetFmt.includes(kw) && blockTitle.includes(kw)) {
+                blockMatches = true;
+                break;
+              }
+            }
+          }
+        }
+        block.style.display = blockMatches ? "" : "none";
+        if (blockMatches) hasMatchingFormat = true;
+      });
+
+      const matches = matchesQuery && matchesGenre && matchesAge && hasMatchingFormat;
+      if (matches) {
+        card.style.display = "";
+        matchedCards.push(card);
+      } else {
+        card.style.display = "none";
+      }
+    });
+
+    // 5. Sort matched cards
+    matchedCards.sort((a, b) => {
+      if (currentSort === "title-asc") {
+        const tA = (a.dataset.title || a.querySelector(".showtime-movie-title")?.textContent || "").toLowerCase();
+        const tB = (b.dataset.title || b.querySelector(".showtime-movie-title")?.textContent || "").toLowerCase();
+        return tA.localeCompare(tB);
+      } else if (currentSort === "duration-desc") {
+        const dA = parseInt(a.dataset.duration, 10) || 0;
+        const dB = parseInt(b.dataset.duration, 10) || 0;
+        return dB - dA;
+      } else if (currentSort === "duration-asc") {
+        const dA = parseInt(a.dataset.duration, 10) || 0;
+        const dB = parseInt(b.dataset.duration, 10) || 0;
+        return dA - dB;
+      } else {
+        const oA = parseInt(a.dataset.origOrder, 10) || 0;
+        const oB = parseInt(b.dataset.origOrder, 10) || 0;
+        return oA - oB;
+      }
+    });
+
+    // Re-order matched cards in DOM
+    matchedCards.forEach((c) => moviesGrid.appendChild(c));
+
+    // 6. Empty State Handling
     if (emptyState) {
       const emptyTitle = emptyState.querySelector(".showtimes-empty-title");
       const emptyDesc = emptyState.querySelector(".showtimes-empty-desc");
-      if (cards.length === 0) {
+      if (allCards.length === 0) {
         if (emptyTitle) emptyTitle.textContent = "No Showtimes Available";
         if (emptyDesc) emptyDesc.textContent = "No showtimes found for this cinema on the selected date. Please choose another date or cinema.";
         emptyState.classList.remove("d-none");
-      } else if (visibleCount === 0) {
+      } else if (matchedCards.length === 0) {
         if (emptyTitle) emptyTitle.textContent = "No Matching Movies Found";
-        if (emptyDesc) emptyDesc.textContent = `No showtimes match "${currentSearchQuery.trim()}" at this cinema on the selected date.`;
+        if (emptyDesc) emptyDesc.textContent = "No movies or showtimes match your selected filter criteria. Try resetting the filters.";
         emptyState.classList.remove("d-none");
       } else {
         emptyState.classList.add("d-none");
@@ -45,11 +177,38 @@ export function initShowtimesPage(doc = document) {
     }
   }
 
+  // Filter Control Event Listeners
+  [genreSelect, ageSelect, formatSelect, sortSelect].forEach((el) => {
+    if (el) {
+      el.addEventListener("change", applyShowtimesFilter);
+    }
+  });
+
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      if (genreSelect) genreSelect.value = "all";
+      if (ageSelect) ageSelect.value = "all";
+      if (formatSelect) formatSelect.value = "all";
+      if (sortSelect) sortSelect.value = "default";
+      if (searchInput) searchInput.value = "";
+      currentSearchQuery = "";
+      applyShowtimesFilter();
+    });
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+      currentSearchQuery = e.target.value || "";
+      applyShowtimesFilter();
+    });
+  }
+
   if (typeof window !== "undefined") {
     window.__boxCinemaShowtimes = {
       setSearchQuery: (query, scrollTo = true) => {
         currentSearchQuery = query || "";
-        applyShowtimeSearchFilter();
+        if (searchInput) searchInput.value = query || "";
+        applyShowtimesFilter();
         if (scrollTo) {
           moviesGrid.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }
@@ -57,10 +216,8 @@ export function initShowtimesPage(doc = document) {
     };
   }
 
-  // Apply filter on initial load if search input already has text
-  if (currentSearchQuery) {
-    applyShowtimeSearchFilter();
-  }
+  // Apply filter on initial load
+  applyShowtimesFilter();
 
   // 1. Initial Cinema Sync with localStorage
   try {
@@ -76,7 +233,7 @@ export function initShowtimesPage(doc = document) {
         }
       }
     }
-  } catch (_) {}
+  } catch (_) { }
 
   // 2. Cinema Switch Change
   if (cinemaSwitch) {
@@ -86,7 +243,7 @@ export function initShowtimesPage(doc = document) {
       try {
         localStorage.setItem("box_cinema_selected_branch_id", cinemaId);
         if (cinemaName) localStorage.setItem("box_cinema_selected_branch_name", cinemaName);
-      } catch (_) {}
+      } catch (_) { }
 
       // Update URL query without full reload
       const url = new URL(window.location);
@@ -135,6 +292,55 @@ export function initShowtimesPage(doc = document) {
     return activeTab ? activeTab.dataset.date : "";
   }
 
+  function isSlotExpired(slotTimeStr, selectedDateStr) {
+    if (!slotTimeStr) return false;
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    if (!selectedDateStr || selectedDateStr === todayStr) {
+      const parts = slotTimeStr.trim().split(":");
+      if (parts.length >= 2) {
+        const slotHour = parseInt(parts[0], 10);
+        const slotMin = parseInt(parts[1], 10);
+        const curHour = now.getHours();
+        const curMin = now.getMinutes();
+        if (slotHour < curHour || (slotHour === curHour && slotMin <= curMin)) {
+          return true;
+        }
+      }
+    } else if (selectedDateStr < todayStr) {
+      return true;
+    }
+    return false;
+  }
+
+  function pruneExpiredSlots() {
+    const activeDate = getActiveDate();
+    let changed = false;
+    moviesGrid.querySelectorAll(".showtime-slot-btn").forEach(btn => {
+      const slotTime = btn.dataset.slotTime;
+      if (isSlotExpired(slotTime, activeDate)) {
+        btn.remove();
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      moviesGrid.querySelectorAll(".showtime-format-block").forEach(block => {
+        const remaining = block.querySelectorAll(".showtime-slot-btn");
+        if (remaining.length === 0) {
+          block.remove();
+        }
+      });
+      moviesGrid.querySelectorAll(".showtime-movie-card").forEach(card => {
+        const remainingBlocks = card.querySelectorAll(".showtime-format-block");
+        if (remainingBlocks.length === 0) {
+          card.remove();
+        }
+      });
+      applyShowtimesFilter();
+    }
+  }
+
   // 4. Fetch & Render Schedule
   async function loadSchedule(cinemaId, date) {
     moviesGrid.style.opacity = "0.5";
@@ -157,21 +363,28 @@ export function initShowtimesPage(doc = document) {
   function renderMovies(movieGroups) {
     if (!movieGroups || movieGroups.length === 0) {
       moviesGrid.innerHTML = "";
-      applyShowtimeSearchFilter();
+      applyShowtimesFilter();
       return;
     }
 
-    if (emptyState) emptyState.classList.add("d-none");
+    const activeDate = getActiveDate();
+    const visibleCards = [];
 
-    const html = movieGroups.map(movie => {
+    movieGroups.forEach((movie, idx) => {
       const ageClass = movie.ageRating === 'P' ? 'badge-age-p' :
-                       movie.ageRating === 'T13' ? 'badge-age-t13' :
-                       movie.ageRating === 'T16' ? 'badge-age-t16' : 'badge-age-t18';
+        movie.ageRating === 'T13' ? 'badge-age-t13' :
+          movie.ageRating === 'T16' ? 'badge-age-t16' : 'badge-age-t18';
 
       // Render formats
       let formatsHtml = "";
+      const formatNames = [];
       for (const [formatName, slots] of Object.entries(movie.formats || {})) {
-        const slotsHtml = slots.map(slot => {
+        const validSlots = (slots || []).filter(slot => !isSlotExpired(slot.time, activeDate));
+        if (validSlots.length === 0) continue;
+
+        formatNames.push(formatName);
+
+        const slotsHtml = validSlots.map(slot => {
           const lateClass = slot.late ? "slot-late" : "";
           const dateSubHtml = slot.late ? `<span class="slot-date-sub">${slot.dateSub}</span>` : "";
 
@@ -196,11 +409,20 @@ export function initShowtimesPage(doc = document) {
         `;
       }
 
-      return `
-        <div class="showtime-movie-card">
+      if (!formatsHtml) return;
+
+      visibleCards.push(`
+        <div class="showtime-movie-card"
+             data-movie-id="${movie.movieId || ''}"
+             data-title="${escapeHtml(movie.title)}"
+             data-genres="${escapeHtml(movie.genreNamesDisplay || '')}"
+             data-age="${movie.ageRating || ''}"
+             data-duration="${movie.durationMinutes || 0}"
+             data-formats="${escapeHtml(formatNames.join(', '))}"
+             data-orig-order="${idx}">
           <div class="showtime-poster-col">
             <span class="showtime-age-badge ${ageClass}">${movie.ageRating}</span>
-            <img src="${movie.posterUrl}" alt="${escapeHtml(movie.title)}" loading="lazy" onerror="this.style.display='none'">
+            <img src="${movie.posterUrl}" alt="${escapeHtml(movie.title)}" loading="lazy" onerror="this.onerror=null;this.src='/assets/img/crimson-horizon.webp'">
             ${movie.trailerUrl ? `
               <button type="button" class="poster-trailer-overlay" data-trailer-url="${movie.trailerUrl}" aria-label="Watch trailer">
                 <span class="trailer-play-icon">
@@ -224,11 +446,12 @@ export function initShowtimesPage(doc = document) {
             ${formatsHtml}
           </div>
         </div>
-      `;
-    }).join("");
+      `);
+    });
 
-    moviesGrid.innerHTML = html;
-    applyShowtimeSearchFilter();
+    if (emptyState) emptyState.classList.add("d-none");
+    moviesGrid.innerHTML = visibleCards.join("");
+    applyShowtimesFilter();
   }
 
   function escapeHtml(str) {
@@ -240,8 +463,18 @@ export function initShowtimesPage(doc = document) {
   moviesGrid.addEventListener("click", event => {
     const slot = event.target.closest(".showtime-slot-btn");
     if (!slot?.dataset.showtimeId) return;
+    if (isSlotExpired(slot.dataset.slotTime, getActiveDate())) {
+      event.preventDefault();
+      alert("Suất chiếu này đã bắt đầu hoặc đã qua thời gian bán vé. Vui lòng chọn suất chiếu khác.");
+      pruneExpiredSlots();
+      return;
+    }
     window.location.assign(`/booking/buy-tickets?showtimeId=${encodeURIComponent(slot.dataset.showtimeId)}`);
   });
+
+  // Prune any expired slots on load and check periodically every 15s
+  pruneExpiredSlots();
+  setInterval(pruneExpiredSlots, 15000);
 
   // 6. Trailer Modal Interaction
   function toEmbedUrl(url) {

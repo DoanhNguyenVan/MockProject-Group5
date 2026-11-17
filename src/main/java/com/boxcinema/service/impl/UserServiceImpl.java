@@ -434,6 +434,45 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED, noRollbackFor = IllegalArgumentException.class)
+    public void changePassword(Long userId, String currentPassword, String newPassword, String confirmPassword) {
+        if (userId == null) {
+            throw AuthException.badRequest("VALIDATION_ERROR", "Authentication is required.");
+        }
+        User user = userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> AuthException.badRequest("VALIDATION_ERROR", "User account not found."));
+
+        if (!"ACTIVE".equalsIgnoreCase(user.getAccountStatus())) {
+            throw AuthException.forbidden("ACCOUNT_NOT_ACTIVE", "Only active accounts can change password.");
+        }
+
+        if (user.getPasswordHash() == null || user.getPasswordHash().isBlank()) {
+            throw AuthException.badRequest("VALIDATION_ERROR", "Tài khoản của bạn chưa có mật khẩu. Vui lòng sử dụng tính năng Tạo mật khẩu.");
+        }
+
+        if (currentPassword == null || currentPassword.isBlank()) {
+            throw AuthException.badRequest("VALIDATION_ERROR", "Vui lòng nhập mật khẩu hiện tại.");
+        }
+
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            authAuditService.logEvent("PASSWORD_CHANGE_FAILURE", userId, user.getEmail(), "REJECTED", "Wrong current password");
+            throw AuthException.badRequest("VALIDATION_ERROR", "Mật khẩu hiện tại không chính xác.");
+        }
+
+        if (currentPassword.equals(newPassword)) {
+            throw AuthException.badRequest("VALIDATION_ERROR", "Mật khẩu mới không được trùng với mật khẩu hiện tại.");
+        }
+
+        passwordPolicyService.validatePasswordPair(newPassword, confirmPassword);
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setUpdatedAt(java.time.LocalDateTime.now());
+        userRepository.saveAndFlush(user);
+
+        authAuditService.logEvent("PASSWORD_CHANGED", userId, user.getEmail(), "SUCCESS", "Password changed successfully");
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public void verifyGoogleSubOwnership(Long userId, String googleSub) {
         if (userId == null) {

@@ -185,5 +185,12 @@ public class MovieShowtimeGroupDto {
     public void setFormats(Map<String, List<SlotDto>> formats) {
         this.formats = formats;
     }
+
+    public String getFormatNamesDisplay() {
+        if (formats == null || formats.isEmpty()) {
+            return "";
+        }
+        return String.join(", ", formats.keySet());
+    }
 }
 

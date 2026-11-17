@@ -587,7 +587,7 @@ body.cinema-home .cinema-nav.search-active::before {
     rgba(255, 255, 255, 0.22) 0%, 
     rgba(255, 255, 255, 0.05) 30%, 
     transparent 60%, 
-    rgba(0, 0, 0, 0.45) 100%
+    rgba(0, 0, 0, 0.15) 100%
   );
   pointer-events: none;
   mix-blend-mode: overlay;
@@ -1085,6 +1085,33 @@ body.cinema-home .cinema-nav.search-active::before {
   font-size: 0.82rem;
   color: var(--cinema-text-muted);
   margin: 0;
+}
+
+.catalog-movie-formats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+
+.format-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #94a3b8;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+
+.catalog-card:hover .format-badge {
+  background: rgba(236, 28, 36, 0.15);
+  border-color: rgba(236, 28, 36, 0.4);
+  color: #ff6b70;
 }
 
 /* =============================================================================
@@ -2254,6 +2281,18 @@ html[data-theme="light"] .catalog-poster-frame {
 
 html[data-theme="light"] .catalog-movie-title {
   color: #0f172a;
+}
+
+html[data-theme="light"] .format-badge {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+html[data-theme="light"] .catalog-card:hover .format-badge {
+  background: rgba(201, 25, 52, 0.1);
+  border-color: rgba(201, 25, 52, 0.35);
+  color: #c91934;
 }
 
 html[data-theme="light"] .catalog-movie-meta {

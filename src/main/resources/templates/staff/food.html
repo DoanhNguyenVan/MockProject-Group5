@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Điều Phối Đồ Ăn (Kitchen KDS) | BOX Cinema Staff</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/main.css?v=20261113c" th:href="@{/css/main.css(v='20261113c')}">
+  <style>
+    body { background-color: var(--box-bg-primary); color: var(--box-text-primary); }
+    .kds-container { max-width: 1200px; margin: 30px auto; padding: 0 16px; }
+    .kds-nav {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--box-border-color);
+      padding-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .kds-tab {
+      background: var(--box-bg-card);
+      border: 1px solid var(--box-border-color);
+      color: var(--box-text-muted);
+      padding: 8px 18px;
+      border-radius: var(--box-radius-sm);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .kds-tab.active {
+      background: var(--box-accent);
+      color: #fff;
+      border-color: var(--box-accent);
+    }
+    .order-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 20px;
+    }
+    .order-card {
+      background: var(--box-bg-card);
+      border: 1px solid var(--box-border-color);
+      border-radius: var(--box-radius-md);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .order-header {
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--box-bg-secondary);
+      border-bottom: 1px solid var(--box-border-color);
+    }
+    .order-code {
+      font-weight: 800;
+      font-size: 1.1rem;
+      color: var(--box-accent);
+    }
+    .order-time {
+      font-size: 0.8rem;
+      color: var(--box-text-muted);
+    }
+    .order-body {
+      padding: 18px;
+      flex: 1;
+    }
+    .item-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--box-border-color);
+    }
+    .item-row:last-child {
+      border-bottom: none;
+    }
+    .item-qty {
+      background: var(--box-bg-secondary);
+      color: var(--box-text-primary);
+      border: 1px solid var(--box-border-color);
+      font-weight: bold;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-right: 8px;
+    }
+    .order-footer {
+      padding: 14px 18px;
+      background: var(--box-bg-secondary);
+      border-top: 1px solid var(--box-border-color);
+    }
+    .badge-status {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .badge-queued { background: #475569; color: #fff; }
+    .badge-preparing { background: #2563eb; color: #fff; }
+    .badge-ready { background: #059669; color: #fff; }
+    .badge-picked_up { background: #7c3aed; color: #fff; }
+  </style>
+</head>
+<body>
+  <header th:replace="~{fragments/navbar :: navbar}"></header>
+
+  <main class="kds-container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h2 class="h3 font-weight-bold text-white mb-1">Màn Hình Điều Phối Bếp / Quầy Bắp Nước (Kitchen KDS)</h2>
+        <p class="text-white-50 mb-0">Quản lý chuẩn bị và bàn giao đồ ăn theo thời gian thực (BR-11, BR-14)</p>
+      </div>
+      <div>
+        <a href="/staff/checkin" class="btn btn-box-outline me-2">← Cổng soát vé (Check-in)</a>
+        <button class="btn btn-box-primary" onclick="loadOrders()">⟳ Làm mới ngay</button>
+      </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="kds-nav">
+      <button class="kds-tab active" data-filter="" onclick="setFilter('', this)">Tất cả đơn</button>
+      <button class="kds-tab" data-filter="QUEUED" onclick="setFilter('QUEUED', this)">Chờ làm (QUEUED)</button>
+      <button class="kds-tab" data-filter="PREPARING" onclick="setFilter('PREPARING', this)">Đang làm (PREPARING)</button>
+      <button class="kds-tab" data-filter="READY" onclick="setFilter('READY', this)">Sẵn sàng giao (READY)</button>
+      <button class="kds-tab" data-filter="PICKED_UP" onclick="setFilter('PICKED_UP', this)">Đã giao xong (PICKED_UP)</button>
+    </div>
+
+    <!-- Orders Grid -->
+    <div id="orderGrid" class="order-grid">
+      <div class="text-white-50 py-5 text-center col-12">Đang tải danh sách đơn món ăn...</div>
+    </div>
+  </main>
+
+  <footer th:replace="~{fragments/footer :: footer}"></footer>
+
+  <script>
+    let currentFilter = '';
+
+    function setFilter(filter, btn) {
+      currentFilter = filter;
+      document.querySelectorAll('.kds-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      loadOrders();
+    }
+
+    async function loadOrders() {
+      try {
+        const url = currentFilter ? `/api/staff/food-fulfillments?status=${currentFilter}` : '/api/staff/food-fulfillments';
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const orders = await res.json();
+        renderOrders(orders);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderOrders(orders) {
+      const grid = document.getElementById('orderGrid');
+      if (!orders || orders.length === 0) {
+        grid.innerHTML = '<div class="text-white-50 py-5 text-center col-12">Không có đơn đặt món nào trong danh mục này.</div>';
+        return;
+      }
+
+      grid.innerHTML = orders.map(order => {
+        let statusBadge = '';
+        let actionBtn = '';
+
+        if (order.status === 'QUEUED') {
+          statusBadge = '<span class="badge-status badge-queued">CHỜ LÀM</span>';
+          actionBtn = `<button class="btn btn-primary w-100 fw-bold" onclick="updateOrderStatus(${order.id}, 'PREPARING')">▶ BẮT ĐẦU LÀM</button>`;
+        } else if (order.status === 'PREPARING') {
+          statusBadge = '<span class="badge-status badge-preparing">ĐANG CHUẨN BỊ</span>';
+          actionBtn = `<button class="btn btn-success w-100 fw-bold" onclick="updateOrderStatus(${order.id}, 'READY')">✓ XONG - BÁO SẴN SÀNG</button>`;
+        } else if (order.status === 'READY') {
+          statusBadge = '<span class="badge-status badge-ready">SẴN SÀNG NHẬN</span>';
+          actionBtn = `<button class="btn btn-warning w-100 fw-bold text-dark" onclick="updateOrderStatus(${order.id}, 'PICKED_UP')">🎉 KHÁCH ĐÃ NHẬN MÓN</button>`;
+        } else {
+          statusBadge = '<span class="badge-status badge-picked_up">ĐÃ BÀN GIAO</span>';
+          actionBtn = `<button class="btn btn-secondary w-100" disabled>ĐÃ HOÀN TẤT</button>`;
+        }
+
+        const itemsHtml = (order.items || []).map(item => `
+          <li class="item-row">
+            <div>
+              <span class="item-qty">${item.quantity}x</span>
+              <strong>${item.productName || 'Món ăn'}</strong>
+              ${item.variantName ? `<span class="text-white-50 small">(${item.variantName})</span>` : ''}
+            </div>
+          </li>
+        `).join('');
+
+        return `
+          <div class="order-card">
+            <div class="order-header">
+              <span class="order-code">#${order.bookingCode || order.bookingId}</span>
+              <div class="d-flex align-items-center gap-2">
+                ${statusBadge}
+                <span class="order-time">${order.createdAt ? new Date(order.createdAt).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}) : ''}</span>
+              </div>
+            </div>
+            <div class="order-body">
+              <div class="text-white-50 small mb-2">Rạp: <strong>${order.cinemaName || 'BOX Cinema'}</strong></div>
+              <ul class="item-list">
+                ${itemsHtml}
+              </ul>
+              ${order.note ? `<div class="mt-2 text-warning small">Ghi chú: ${order.note}</div>` : ''}
+            </div>
+            <div class="order-footer">
+              ${actionBtn}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function updateOrderStatus(orderId, newStatus) {
+      try {
+        const res = await fetch(`/api/staff/food-fulfillments/${orderId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        });
+        if (res.ok) {
+          loadOrders();
+        } else {
+          alert('Không thể cập nhật trạng thái đơn món!');
+        }
+      } catch (err) {
+        alert('Lỗi: ' + err.message);
+      }
+    }
+
+    // Auto refresh every 5 seconds
+    setInterval(loadOrders, 5000);
+    document.addEventListener('DOMContentLoaded', loadOrders);
+  </script>
+</body>
+</html>

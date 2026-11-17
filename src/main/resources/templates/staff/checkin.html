@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soát Vé (Check-in) | BOX Cinema Staff</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/main.css?v=20261113c" th:href="@{/css/main.css(v='20261113c')}">
+  <style>
+    body { background-color: var(--box-bg-primary); color: var(--box-text-primary); }
+    .staff-container { max-width: 900px; margin: 40px auto; padding: 0 16px; }
+    .staff-card {
+      background: var(--box-bg-card);
+      border: 1px solid var(--box-border-color);
+      border-radius: var(--box-radius-md);
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+    .scanner-box {
+      border: 2px dashed var(--box-border-color);
+      border-radius: var(--box-radius-sm);
+      padding: 30px;
+      text-align: center;
+      background: var(--box-bg-secondary);
+      margin-bottom: 24px;
+    }
+    .scanner-input {
+      font-size: 1.25rem;
+      font-family: monospace;
+      letter-spacing: 1px;
+      background: var(--box-bg-primary);
+      border: 1px solid var(--box-border-color);
+      color: var(--box-text-primary);
+      text-align: center;
+    }
+    .scanner-input:focus {
+      background: var(--box-bg-primary);
+      color: var(--box-text-primary);
+      border-color: var(--box-accent);
+      box-shadow: 0 0 0 0.25rem var(--box-red-glow);
+    }
+    .result-card {
+      border-radius: var(--box-radius-sm);
+      padding: 20px;
+      margin-top: 20px;
+    }
+    .result-success {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid #10b981;
+    }
+    .result-danger {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid #ef4444;
+    }
+    .seat-badge {
+      display: inline-block;
+      background: #059669;
+      color: #fff;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 6px;
+      margin: 4px;
+      font-size: 1.1rem;
+    }
+    .history-table {
+      width: 100%;
+      color: var(--box-text-secondary);
+      margin-top: 16px;
+    }
+    .history-table th {
+      background: var(--box-bg-secondary);
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      color: var(--box-text-muted);
+    }
+    .history-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--box-border-color);
+    }
+  </style>
+</head>
+<body>
+  <header th:replace="~{fragments/navbar :: navbar}"></header>
+
+  <main class="staff-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="h3 font-weight-bold text-white mb-1">Cổng Soát Vé Khách Hàng (Staff Check-in)</h2>
+        <p class="text-white-50 mb-0">Quét mã QR trên vé điện tử của khách hàng để check-in toàn bộ ghế</p>
+      </div>
+      <div>
+        <a href="/staff/food" class="btn btn-box-outline">Sang màn hình Bếp / Đồ ăn →</a>
+      </div>
+    </div>
+
+    <div class="staff-card">
+      <form id="checkinForm" onsubmit="handleCheckin(event)">
+        <div class="scanner-box">
+          <label for="qrTokenInput" class="form-label fs-5 fw-bold mb-3">Nhập hoặc quét mã QR / Token vé điện tử</label>
+          <div class="input-group input-group-lg mb-3">
+            <input type="text" id="qrTokenInput" class="form-control scanner-input" placeholder="Dán hoặc quét mã QR tại đây..." autofocus required autocomplete="off">
+            <button class="btn btn-box-primary px-4 fw-bold" type="submit" id="btnSubmitCheckin">
+              XÁC NHẬN CHECK-IN
+            </button>
+          </div>
+          <small class="text-white-50">Hỗ trợ máy quét mã vạch 2D cầm tay hoặc camera. Quét 1 lần xác nhận toàn bộ ghế trong đơn hàng (BR-08).</small>
+        </div>
+      </form>
+
+      <!-- Live Result Display -->
+      <div id="resultBox" class="d-none"></div>
+    </div>
+
+    <!-- Recent Check-in Logs -->
+    <div class="staff-card">
+      <div class="d-flex justify-content-between align-items-center">
+        <h4 class="h5 mb-0 text-white">Lịch sử check-in gần đây</h4>
+        <button class="btn btn-sm btn-outline-secondary" onclick="loadCheckinHistory()">Làm mới</button>
+      </div>
+      <div class="table-responsive">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Thời gian</th>
+              <th>Mã đơn</th>
+              <th>Số ghế</th>
+              <th>Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody">
+            <tr>
+              <td colspan="4" class="text-center text-white-50 py-3">Chưa có lượt check-in nào trong phiên này</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <footer th:replace="~{fragments/footer :: footer}"></footer>
+
+  <script>
+    async function handleCheckin(e) {
+      e.preventDefault();
+      const input = document.getElementById('qrTokenInput');
+      const token = input.value.trim();
+      if (!token) return;
+
+      const submitBtn = document.getElementById('btnSubmitCheckin');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Đang kiểm tra...';
+
+      const resultBox = document.getElementById('resultBox');
+      resultBox.className = 'd-none';
+
+      try {
+        const res = await fetch('/api/staff/bookings/check-in', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ qrToken: token })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          resultBox.className = 'result-card result-success';
+          const seatsHtml = (data.seatsCheckedIn || []).map(s => `<span class="seat-badge">${s}</span>`).join('');
+          resultBox.innerHTML = `
+            <div class="d-flex align-items-center mb-2">
+              <span class="fs-3 me-2 text-success">✓</span>
+              <h4 class="mb-0 text-success fw-bold">CHECK-IN THÀNH CÔNG!</h4>
+            </div>
+            <p class="mb-2"><strong>Mã đặt vé:</strong> ${data.bookingCode || '#' + data.bookingId} | <strong>Thời gian:</strong> ${new Date(data.checkedInAt).toLocaleString('vi-VN')}</p>
+            <div><strong>Ghế đã xác nhận (${(data.seatsCheckedIn || []).length} ghế):</strong></div>
+            <div class="mt-2 mb-2">${seatsHtml}</div>
+            <div class="text-white-50 small">${data.message || 'Khách hàng đủ điều kiện vào phòng chiếu.'}</div>
+          `;
+          input.value = '';
+          loadCheckinHistory();
+        } else {
+          resultBox.className = 'result-card result-danger';
+          resultBox.innerHTML = `
+            <div class="d-flex align-items-center mb-2">
+              <span class="fs-3 me-2 text-danger">⚠</span>
+              <h4 class="mb-0 text-danger fw-bold">CHECK-IN KHÔNG THÀNH CÔNG!</h4>
+            </div>
+            <p class="fs-6 mb-1 text-white">${data.message || 'Mã vé không hợp lệ hoặc đã bị từ chối.'}</p>
+            <div class="text-white-50 small">Vui lòng kiểm tra lại mã QR hoặc liên hệ quản trị viên.</div>
+          `;
+        }
+      } catch (err) {
+        resultBox.className = 'result-card result-danger';
+        resultBox.innerHTML = `
+          <h4 class="text-danger fw-bold">LỖI KẾT NỐI</h4>
+          <p class="mb-0">${err.message}</p>
+        `;
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'XÁC NHẬN CHECK-IN';
+        input.focus();
+      }
+    }
+
+    async function loadCheckinHistory() {
+      try {
+        const res = await fetch('/api/staff/check-ins');
+        if (!res.ok) return;
+        const list = await res.json();
+        const tbody = document.getElementById('historyTableBody');
+        if (!list || list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" class="text-center text-white-50 py-3">Chưa có lượt check-in nào</td></tr>';
+          return;
+        }
+        tbody.innerHTML = list.map(item => `
+          <tr>
+            <td>${item.checkedInAt ? new Date(item.checkedInAt).toLocaleTimeString('vi-VN') : '-'}</td>
+            <td><strong>#${item.booking ? item.booking.bookingCode : item.id}</strong></td>
+            <td><span class="badge bg-success">${item.seatsCount || 1} ghế</span></td>
+            <td><span class="badge bg-primary">${item.status || 'CHECKED_IN'}</span></td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadCheckinHistory);
+  </script>
+</body>
+</html>
