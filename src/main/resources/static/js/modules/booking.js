@@ -1,5 +1,5 @@
 import { getSeatSvg } from "./seat-icons.js?v=3.2";
-import { initPayment } from "./booking-payment.js?v=1.0";
+import { initPayment } from "./booking-payment.js?v=2.1";
 import { loadBookingData, holdBookingSeats, releaseBookingSeats } from "./booking-data.js?v=1.4";
 import { initScreenings } from "./booking-screenings.js?v=1.0";
 
@@ -150,17 +150,45 @@ export function initBooking(doc = document) {
 
   function isUserAuthenticated() {
     const userIdAttr = app.getAttribute("data-user-id");
-    if (userIdAttr === "GUEST") return false;
+    if (!userIdAttr || userIdAttr === "GUEST") return false;
     if (doc.querySelector('a[data-nav-route="login"]')) return false;
     const nav = doc.querySelector(".cinema-nav");
     if (nav && !nav.querySelector(".nav-user-pill")) return false;
-    if (userIdAttr && userIdAttr !== "GUEST") return true;
     return true;
+  }
+
+  function openAuthModal() {
+    const modal = doc.getElementById("bookingAuthModal");
+    if (!modal) return;
+
+    const loginBtn = doc.getElementById("btnAuthModalLogin");
+    const registerBtn = doc.getElementById("btnAuthModalRegister");
+    const currentUrl = (typeof window !== "undefined")
+      ? (window.location.pathname + window.location.search)
+      : "/showtimes";
+    const encoded = encodeURIComponent(currentUrl);
+
+    if (loginBtn) {
+      loginBtn.href = `/login?redirect=${encoded}`;
+    }
+    if (registerBtn) {
+      registerBtn.href = `/register?redirect=${encoded}`;
+    }
+
+    modal.hidden = false;
+    doc.body.style.overflow = "hidden";
+  }
+
+  function closeAuthModal() {
+    const modal = doc.getElementById("bookingAuthModal");
+    if (!modal) return;
+    modal.hidden = true;
+    doc.body.style.overflow = "";
   }
 
   function requireAuthenticationForBooking() {
     if (!isUserAuthenticated()) {
-      win.location.assign("/login");
+      openAuthModal();
       return false;
     }
     return true;
@@ -184,6 +212,8 @@ export function initBooking(doc = document) {
   }
 
   function empty(title, message, canRetry = false) {
+    const loadingEl = el("Loading");
+    if (loadingEl) loadingEl.hidden = true;
     el("Content").hidden = true; el("Empty").hidden = false;
     el("EmptyTitle").textContent = title; el("EmptyText").textContent = message; el("Retry").hidden = !canRetry;
   }
@@ -261,7 +291,12 @@ export function initBooking(doc = document) {
           scrollEl.scrollLeft = prevScrollLeft;
         }
       }
-    } catch (_) {
+    } catch (err) {
+      if (err && (err.status === 409 || err.status === 404)) {
+        stopHoldTimer();
+        stopOtherHoldsWatcher();
+        empty("Suất chiếu đã bắt đầu hoặc không còn khả dụng", err.message || "Suất chiếu này đã bắt đầu hoặc đã qua thời gian bán vé. Vui lòng chọn suất chiếu khác.", false);
+      }
     } finally {
       isSyncingLiveMap = false;
     }
@@ -302,7 +337,7 @@ export function initBooking(doc = document) {
       } catch (_) { }
     }
 
-    // 3. 1-second local countdown + 2-second delta sync
+    // 3. 1-second local countdown + 10-second background fallback sync (SSE and BroadcastChannel handle instant pushes)
     tickCounter = 0;
     otherHoldsTimerId = setInterval(() => {
       if (!data || !Array.isArray(data.seats)) return;
@@ -316,7 +351,7 @@ export function initBooking(doc = document) {
           }
         }
       });
-      if (anyJustExpired || tickCounter % 2 === 0) {
+      if (anyJustExpired || tickCounter % 10 === 0) {
         refreshLiveSeatMapSilently();
       }
     }, 1000);
@@ -726,8 +761,7 @@ export function initBooking(doc = document) {
       { label: "Ghế trống (Có thể chọn)", cls: "status-available" },
       { label: "Ghế đang được khách khác giữ", cls: "status-holding" },
       { label: "Ghế bạn đang chọn & giữ", cls: "status-selected" },
-      { label: "Ghế đã bán", cls: "status-sold" },
-      { label: "Ghế đã đặt trước", cls: "status-reserved" }
+      { label: "Ghế đã bán", cls: "status-sold" }
     ];
     statuses.forEach(s => {
       const row = node("div", undefined, "legend-row");
@@ -791,15 +825,12 @@ export function initBooking(doc = document) {
       const shapeIcon = node("div", undefined, iconCls);
       shapeIcon.innerHTML = getSeatSvg(t.shape);
 
-      const priceWrap = node("div", undefined, "legend-price-wrap");
       const title = VIETNAMESE_SEAT_TYPE_NAMES[t.shape] || t.name;
       const priceSuffix = t.shape === "sweetbox" ? " / cặp" : "";
-      priceWrap.append(
-        node("span", title, "legend-type-title"),
-        node("span", formatVnd(t.price) + priceSuffix, "legend-type-val")
-      );
+      const titleEl = node("span", title, "legend-text legend-type-name");
+      const priceBadge = node("span", formatVnd(t.price) + priceSuffix, "legend-price-badge");
 
-      row.append(shapeIcon, priceWrap);
+      row.append(shapeIcon, titleEl, priceBadge);
       typesCol.append(row);
     });
 
@@ -1119,6 +1150,55 @@ export function initBooking(doc = document) {
       for (const [label, value] of [["Movie", data.movieTitle], ["Cinema", data.cinemaName], ["Screening", data.screeningLabel], ["Room", data.roomName], ["Seats", selected.join(", ")], ["Extras", el("Extras").textContent || "No snacks added"], ["Estimate", formatVnd(calculateTotals(data.seats, selected, data.products, quantities).total)]]) {
         const row = node("div"); row.append(node("dt", label), node("dd", value)); el("Review").append(row);
       }
+      const navName = doc.querySelector(".cinema-nav .nav-user-pill .nav-user-name")?.textContent?.trim();
+      const nameInput = doc.getElementById("bookingCustomerName");
+      if (nameInput && !nameInput.value && navName) {
+        nameInput.value = navName;
+      }
+    }
+    if (step === 3) {
+      const guestName = doc.getElementById("bookingCustomerName")?.value?.trim() || "Khách Hàng";
+      const guestEmail = doc.getElementById("bookingCustomerEmail")?.value?.trim() || "customer@boxcinema.vn";
+      const guestPhone = doc.getElementById("bookingCustomerPhone")?.value?.trim() || "0912345678";
+
+      const foodItems = [];
+      const combos = [];
+
+      for (const [prodId, qty] of Object.entries(quantities)) {
+        if (qty > 0) {
+          const product = data.products.find(p => p.id === prodId);
+          if (product) {
+            if (product.type === "COMBO" || product.comboId) {
+              combos.push({
+                comboId: product.comboId || Number(String(prodId).replace("combo_", "")),
+                quantity: qty
+              });
+            } else {
+              foodItems.push({
+                foodItemId: product.foodItemId || Number(String(prodId).replace("item_", "")),
+                quantity: qty
+              });
+            }
+          }
+        }
+      }
+
+      const mappedSeatIds = selected.map(sId => {
+        const sObj = data.seats.find(s => s.id === sId || s.seatLabel === sId);
+        return (sObj && sObj.dbSeatId) ? sObj.dbSeatId : Number(sId);
+      }).filter(id => !isNaN(id) && id > 0);
+
+      const bookingPayload = {
+        showtimeId: Number(data.showtimeId),
+        seatIds: mappedSeatIds,
+        guestName,
+        guestEmail,
+        guestPhone,
+        foodItems,
+        combos
+      };
+
+      payment.startCheckout(bookingPayload);
     }
     updateSummary();
     if (focus) doc.getElementById(["seatTitle", "comboTitle", "reviewTitle", "paymentTitle"][step]).focus();
@@ -1137,6 +1217,8 @@ export function initBooking(doc = document) {
     if (posterUrl) el("Poster").src = posterUrl;
     const rating = ["P", "T13", "T16", "T18"].includes(data.ageRating) ? data.ageRating : "";
     el("Rating").textContent = rating; el("Rating").className = `badge-age-${rating.toLowerCase()}`;
+    const loadingEl = el("Loading");
+    if (loadingEl) loadingEl.hidden = true;
     el("Empty").hidden = true; el("Content").hidden = false; status();
     screenings?.hide();
     el("ChangeScreening").hidden = preview;
@@ -1162,19 +1244,32 @@ export function initBooking(doc = document) {
         scrollEl.scrollLeft = Math.floor((scrollEl.scrollWidth - scrollEl.clientWidth) / 2);
       }
     }, 30);
-    el("Content").scrollIntoView?.({ block: "start" });
+    if (win.scrollY > 200) {
+      el("Content").scrollIntoView?.({ block: "start", behavior: "smooth" });
+    }
   }
 
   async function loadBooking(id) {
-    clearSelection(); const { signal, version } = beginRequest();
-    empty("Loading your screening…", "Checking seat information."); retry = () => loadBooking(id);
-    el("Empty").scrollIntoView?.({ block: "start", behavior: "smooth" });
+    clearSelection();
+    const { signal, version } = beginRequest();
+    retry = () => loadBooking(id);
+    el("Empty").hidden = true;
+    el("Content").hidden = true;
+    const loadingEl = el("Loading");
+    if (loadingEl) loadingEl.hidden = false;
+
     try {
       const value = await loadBookingData(id, {
         signal, onUnauthenticated: () => win.location.assign("/login")
       });
-      if (version === requestVersion) showBooking(value);
-    } catch (error) { handleError(error, version); }
+      if (version === requestVersion) {
+        if (loadingEl) loadingEl.hidden = true;
+        showBooking(value);
+      }
+    } catch (error) {
+      if (loadingEl) loadingEl.hidden = true;
+      handleError(error, version);
+    }
   }
 
   function startPicker() {
@@ -1184,6 +1279,7 @@ export function initBooking(doc = document) {
     }
     el("PreviewNotice").hidden = true;
     beginRequest(); clearSelection(false); el("Content").hidden = true; el("Empty").hidden = true;
+    const loadingEl = el("Loading"); if (loadingEl) loadingEl.hidden = true;
     const url = new URL(win.location.href); url.searchParams.delete("showtimeId"); win.history.replaceState({}, "", url);
     screenings?.show();
   }
@@ -1212,10 +1308,6 @@ export function initBooking(doc = document) {
   });
   el("Previous").addEventListener("click", () => { if (step > 0) showStep(step - 1); });
 
-  el("ZoomOut")?.addEventListener("click", () => applyZoom(zoomPercent - 10));
-  el("ZoomIn")?.addEventListener("click", () => applyZoom(zoomPercent + 10));
-  el("ZoomLabel")?.addEventListener("click", () => applyZoom(100));
-
   el("ClearSeats")?.addEventListener("click", () => {
     selected = [];
     status("");
@@ -1228,20 +1320,22 @@ export function initBooking(doc = document) {
     hideExpiryNotice();
   });
 
-  el("RefreshMap")?.addEventListener("click", async () => {
-    if (!data || data.preview === true || !data.showtimeId) return;
-    try {
-      const fresh = await loadBookingData(data.showtimeId);
-      if (fresh && Array.isArray(fresh.seats)) {
-        const prevSelected = [...selected];
-        data = validateBooking(fresh);
-        const stillAvailable = new Set(data.seats.filter(s => s.status === "AVAILABLE").map(s => s.id));
-        selected = prevSelected.filter(id => stillAvailable.has(id));
-        renderSeats();
-        syncSeatStates();
-        updateSummary();
-      }
-    } catch (_) { }
+  // Login Required Modal Event Handlers
+  const authModal = doc.getElementById("bookingAuthModal");
+  const authClose = doc.getElementById("btnAuthModalClose");
+  const authBack = doc.getElementById("btnAuthModalBack");
+
+  if (authClose) authClose.addEventListener("click", closeAuthModal);
+  if (authBack) authBack.addEventListener("click", closeAuthModal);
+  if (authModal) {
+    authModal.addEventListener("click", (e) => {
+      if (e.target === authModal) closeAuthModal();
+    });
+  }
+  doc.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && authModal && !authModal.hidden) {
+      closeAuthModal();
+    }
   });
 
   if (preview) {
