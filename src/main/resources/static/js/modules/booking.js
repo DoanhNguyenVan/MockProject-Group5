@@ -1157,16 +1157,11 @@ export function initBooking(doc = document) {
       for (const [label, value] of [["Movie", data.movieTitle], ["Cinema", data.cinemaName], ["Screening", data.screeningLabel], ["Room", data.roomName], ["Seats", selected.join(", ")], ["Extras", el("Extras").textContent || "No snacks added"], ["Estimate", formatVnd(calculateTotals(data.seats, selected, data.products, quantities).total)]]) {
         const row = node("div"); row.append(node("dt", label), node("dd", value)); el("Review").append(row);
       }
-      const navName = doc.querySelector(".cinema-nav .nav-user-name, #navUserAccountDropdown .nav-user-name, .nav-user-btn .nav-user-name, .nav-user-pill .nav-user-name")?.textContent?.trim();
-      const nameInput = doc.getElementById("bookingCustomerName");
-      if (nameInput && !nameInput.value && navName) {
-        nameInput.value = navName;
-      }
     }
     if (step === 3) {
-      const guestName = doc.getElementById("bookingCustomerName")?.value?.trim() || "Customer";
-      const guestEmail = doc.getElementById("bookingCustomerEmail")?.value?.trim() || "customer@boxcinema.vn";
-      const guestPhone = doc.getElementById("bookingCustomerPhone")?.value?.trim() || "0912345678";
+      const guestName = "";
+      const guestEmail = "";
+      const guestPhone = "";
 
       const foodItems = [];
       const combos = [];
