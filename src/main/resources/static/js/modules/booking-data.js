@@ -16,7 +16,7 @@ function getClientHoldToken() {
         return `acct_hold_user_${rawUserId}`;
       }
 
-      const navUserName = document.querySelector(".cinema-nav .nav-user-pill .nav-user-name")?.textContent?.trim();
+      const navUserName = document.querySelector(".cinema-nav .nav-user-name, #navUserAccountDropdown .nav-user-name, .nav-user-btn .nav-user-name, .nav-user-pill .nav-user-name")?.textContent?.trim();
       if (!isLoggedOutInDom && navUserName) {
         const slug = navUserName.toLowerCase().replace(/[^a-z0-9]+/g, "_");
         return `acct_hold_name_${slug}`;
