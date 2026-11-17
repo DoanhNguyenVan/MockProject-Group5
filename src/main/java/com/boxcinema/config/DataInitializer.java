@@ -7,11 +7,11 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 /**
- * Khởi tạo dữ liệu mẫu (phim, rạp, thể loại...) khi bật cờ seed-enabled.
+ * Initialize sample data (movies, cinemas, genres...) when seed-enabled flag is on.
  *
- * Lưu ý:
- *   - Tài khoản hệ thống (ADMIN, MANAGER, STAFF, CUSTOMER): chạy file database/seed_accounts.sql trong MySQL.
- *   - KHÔNG insert tài khoản cứng vào đây.
+ * Notes:
+ *   - System accounts (ADMIN, MANAGER, STAFF, CUSTOMER): run database/seed_accounts.sql in MySQL.
+ *   - DO NOT hardcode accounts here.
  */
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -29,6 +29,6 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         log.info("Database auto-seeding flag is enabled.");
-        // TODO: Thêm logic seed dữ liệu mẫu phim, rạp, thể loại... nếu cần
+        // TODO: Add sample seed data logic for movies, cinemas, genres if needed
     }
 }

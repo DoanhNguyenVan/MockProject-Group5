@@ -67,12 +67,12 @@ public class TicketServiceImpl implements TicketService {
 
     private void validateBookingAccess(Booking booking, Long currentUserId) {
         if (booking == null) {
-            throw new IllegalArgumentException("Booking không tồn tại.");
+            throw new IllegalArgumentException("Booking does not exist.");
         }
         // If booking belongs to a registered member
         if (booking.getUser() != null) {
             if (currentUserId == null) {
-                throw new AccessDeniedException("Vui lòng đăng nhập để truy cập thông tin vé của đơn hàng này.");
+                throw new AccessDeniedException("Please sign in to access ticket details for this order.");
             }
             Long ownerId = booking.getUser().getUserId();
             if (!ownerId.equals(currentUserId)) {
@@ -81,7 +81,7 @@ public class TicketServiceImpl implements TicketService {
                         && !"STAFF".equalsIgnoreCase(user.getRole())
                         && !"MANAGER".equalsIgnoreCase(user.getRole()))) {
                     throw new AccessDeniedException(
-                            "Bạn không có quyền truy cập mã QR hoặc thông tin vé của đơn hàng này.");
+                            "You do not have permission to access QR code or ticket details for this order.");
                 }
             }
         }
@@ -210,7 +210,7 @@ public class TicketServiceImpl implements TicketService {
         }
 
         if (!"CONFIRMED".equalsIgnoreCase(booking.getBookingStatus())) {
-            throw new IllegalStateException("Chỉ có thể gửi lại email cho đơn hàng đã xác nhận thành công.");
+            throw new IllegalStateException("Emails can only be resent for successfully confirmed bookings.");
         }
 
         EmailOutbox outbox = new EmailOutbox(booking, booking.getGuestEmail(), "RESEND_CONFIRMATION");
@@ -219,11 +219,11 @@ public class TicketServiceImpl implements TicketService {
 
     private String formatVnd(BigDecimal amount) {
         if (amount == null)
-            return "0 đ";
-        java.text.DecimalFormatSymbols symbols = new java.text.DecimalFormatSymbols(new Locale("vi", "VN"));
-        symbols.setGroupingSeparator('.');
+            return "0 VND";
+        java.text.DecimalFormatSymbols symbols = new java.text.DecimalFormatSymbols(Locale.US);
+        symbols.setGroupingSeparator(',');
         java.text.DecimalFormat df = new java.text.DecimalFormat("#,###", symbols);
-        return df.format(amount) + " đ";
+        return df.format(amount) + " VND";
     }
 
     @Override
@@ -253,7 +253,7 @@ public class TicketServiceImpl implements TicketService {
                 item.setMovieTitle(b.getShowtime().getMovie().getTitle());
                 item.setMoviePosterUrl(b.getShowtime().getMovie().getPosterUrl());
             } else {
-                item.setMovieTitle("Vé xem phim BOX Cinema");
+                item.setMovieTitle("BOX Cinema Movie Ticket");
             }
 
             if (b.getShowtime() != null && b.getShowtime().getRoom() != null
@@ -332,11 +332,11 @@ public class TicketServiceImpl implements TicketService {
         }
 
         if (dto.getMovieTitle() == null)
-            dto.setMovieTitle("Vé xem phim BOX Cinema");
+            dto.setMovieTitle("BOX Cinema Movie Ticket");
         if (dto.getCinemaName() == null)
             dto.setCinemaName("BOX Cinema Royal City");
         if (dto.getRoomName() == null)
-            dto.setRoomName("Phòng chiếu tiêu chuẩn");
+            dto.setRoomName("Standard Hall");
         if (dto.getShowDate() == null) {
             LocalDateTime dt = booking.getBookedAt() != null ? booking.getBookedAt() : LocalDateTime.now();
             dto.setShowDate(dt.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
@@ -362,7 +362,7 @@ public class TicketServiceImpl implements TicketService {
             }
         }
         dto.setSeatCount(seatLabels.size());
-        dto.setSeatsText(seatLabels.isEmpty() ? "Chưa có ghế" : String.join(", ", seatLabels));
+        dto.setSeatsText(seatLabels.isEmpty() ? "No seats" : String.join(", ", seatLabels));
 
         // Combos / Food
         List<String> combos = new ArrayList<>();
@@ -375,7 +375,7 @@ public class TicketServiceImpl implements TicketService {
             }
         }
         dto.setComboCount(totalComboQty);
-        dto.setComboText(combos.isEmpty() ? "Không có" : String.join(", ", combos));
+        dto.setComboText(combos.isEmpty() ? "None" : String.join(", ", combos));
 
         // Total & Points
         BigDecimal total = booking.getTotalAmount() != null ? booking.getTotalAmount() : BigDecimal.ZERO;

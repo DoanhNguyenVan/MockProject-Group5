@@ -319,7 +319,7 @@ public class BookingContextApiController {
             return error(HttpStatus.NOT_FOUND, "SHOWTIME_NOT_FOUND", "This screening could not be found. Please choose another showtime.");
         }
         if (showtime.getStartAt() != null && !showtime.getStartAt().isAfter(LocalDateTime.now())) {
-            return error(HttpStatus.CONFLICT, "SHOWTIME_STARTED", "Suất chiếu này đã bắt đầu hoặc đã qua thời gian bán vé. Vui lòng chọn suất chiếu khác.");
+            return error(HttpStatus.CONFLICT, "SHOWTIME_STARTED", "This screening has already started or ticket sales have closed. Please choose another showtime.");
         }
 
         var movie = showtime.getMovie();
@@ -482,12 +482,12 @@ public class BookingContextApiController {
                 if (meta == null) meta = seatTypeMetaMap.get(upper);
                 if (meta == null) {
                     String shape = "standard";
-                    if (upper.contains("SWEETBOX") || upper.contains("COUPLE") || upper.contains("ĐÔI") || upper.contains("DOI")) shape = "sweetbox";
+                    if (upper.contains("SWEETBOX") || upper.contains("COUPLE") || upper.contains("\u0110\u00D4I") || upper.contains("DOI")) shape = "sweetbox";
                     else if (upper.contains("VIP")) shape = "vip";
                     else if (upper.contains("4DX") || upper.contains("4D")) shape = "4dx";
                     else if (upper.contains("IMAX")) shape = "imax";
-                    else if (upper.contains("RECLINER") || upper.contains("LƯỜI") || upper.contains("LUOI")) shape = "recliner";
-                    else if (upper.contains("WHEELCHAIR") || upper.contains("KHUYẾT") || upper.contains("KHUYT")) shape = "wheelchair";
+                    else if (upper.contains("RECLINER") || upper.contains("\u004C\u01AF\u1EDCI") || upper.contains("LUOI")) shape = "recliner";
+                    else if (upper.contains("WHEELCHAIR") || upper.contains("\u004B\u0048\u0055\u0059\u1EBE\u0054") || upper.contains("KHUYT")) shape = "wheelchair";
 
                     meta = Map.of(
                             "name", rawTypeName != null ? rawTypeName : "Standard",
@@ -631,7 +631,7 @@ public class BookingContextApiController {
                         String img = rs.getString("image_url");
                         if (img == null || img.isBlank()) {
                             String cat = rs.getString("cat_name");
-                            img = (cat != null && cat.toLowerCase().contains("nước")) ? "/assets/img/fnb/box-beverages.jpg" : "/assets/img/fnb/box-popcorn.jpg";
+                            img = (cat != null && (cat.toLowerCase().contains("beverage") || cat.toLowerCase().contains("drink") || cat.toLowerCase().contains("n\u01B0\u1EDBc") || cat.toLowerCase().contains("nuoc"))) ? "/assets/img/fnb/box-beverages.jpg" : "/assets/img/fnb/box-popcorn.jpg";
                         }
                         p.put("imageUrl", img);
                         p.put("type", "FOOD_ITEM");
@@ -697,20 +697,20 @@ public class BookingContextApiController {
 
         Showtime showtime = showtimes.findById(showtimeId).orElse(null);
         if (showtime == null || !"ACTIVE".equalsIgnoreCase(showtime.getStatus())) {
-            return error(HttpStatus.NOT_FOUND, "SHOWTIME_NOT_FOUND", "Suất chiếu không tồn tại hoặc đã ngừng phục vụ.");
+            return error(HttpStatus.NOT_FOUND, "SHOWTIME_NOT_FOUND", "Showtime does not exist or has been discontinued.");
         }
         if (showtime.getStartAt() != null && !showtime.getStartAt().isAfter(LocalDateTime.now())) {
-            return error(HttpStatus.CONFLICT, "SHOWTIME_STARTED", "Suất chiếu này đã bắt đầu hoặc đã qua thời gian đặt vé.");
+            return error(HttpStatus.CONFLICT, "SHOWTIME_STARTED", "This screening has already started or booking time has elapsed.");
         }
         var room = showtime.getRoom();
         if (room == null || !"ACTIVE".equalsIgnoreCase(room.getStatus())) {
-            return error(HttpStatus.CONFLICT, "ROOM_UNAVAILABLE", "Phòng chiếu hiện không khả dụng.");
+            return error(HttpStatus.CONFLICT, "ROOM_UNAVAILABLE", "The auditorium is currently unavailable.");
         }
 
         String clientHoldToken = body != null && body.get("holdSessionId") != null ? String.valueOf(body.get("holdSessionId")) : null;
         Long callerUserId = resolveCurrentUserId(request);
         if (callerUserId == null) {
-            return error(HttpStatus.UNAUTHORIZED, "ACCOUNT_NOT_AUTHENTICATED", "Vui lòng đăng nhập để chọn và đặt ghế.");
+            return error(HttpStatus.UNAUTHORIZED, "ACCOUNT_NOT_AUTHENTICATED", "Please sign in to select and reserve seats.");
         }
         String callerSessionId = resolveHoldSessionId(request, clientHoldToken);
 
@@ -728,7 +728,7 @@ public class BookingContextApiController {
 
         if (requestedSeatIds.size() > MAX_SEATS_PER_BOOKING) {
             return error(HttpStatus.BAD_REQUEST, "MAX_SEATS_EXCEEDED",
-                    "Bạn chỉ có thể chọn và giữ tối đa " + MAX_SEATS_PER_BOOKING + " ghế mỗi lượt đặt.");
+                    "You can only select up to " + MAX_SEATS_PER_BOOKING + " seats per booking.");
         }
 
         // If seatIds is empty, release all seats held by this caller for this showtime
@@ -742,7 +742,7 @@ public class BookingContextApiController {
                     "showtimeId", String.valueOf(showtimeId),
                     "heldSeatIds", Collections.emptyList(),
                     "holdRemainingSeconds", 0,
-                    "message", "Đã hủy giữ ghế."
+                    "message", "Seat reservation released."
             ));
         }
 
@@ -783,14 +783,14 @@ public class BookingContextApiController {
         for (String reqLabel : requestedSeatIds) {
             Map<String, Object> seatRow = labelToSeatMap.get(reqLabel);
             if (seatRow == null) {
-                return error(HttpStatus.BAD_REQUEST, "INVALID_SEAT", "Ghế " + reqLabel + " không hợp lệ hoặc không khả dụng.");
+                return error(HttpStatus.BAD_REQUEST, "INVALID_SEAT", "Seat " + reqLabel + " is invalid or unavailable.");
             }
             String pairId = (String) seatRow.get("pairId");
             if (pairId != null && pairGroupMap.containsKey(pairId)) {
                 for (String partnerLabel : pairGroupMap.get(pairId)) {
                     if (!requestedSeatIds.contains(partnerLabel)) {
                         return error(HttpStatus.BAD_REQUEST, "SWEETBOX_PAIR_REQUIRED",
-                                "Ghế đôi (" + String.join(" - ", pairGroupMap.get(pairId)) + ") phải được chọn cùng nhau.");
+                                "Couple seats (" + String.join(" - ", pairGroupMap.get(pairId)) + ") must be booked together.");
                     }
                 }
             }
@@ -861,7 +861,7 @@ public class BookingContextApiController {
                     "success", false,
                     "errorCode", "SEAT_ALREADY_HELD_OR_BOOKED",
                     "conflictingSeats", conflictingSeats,
-                    "message", "Ghế " + String.join(", ", conflictingSeats) + " vừa được khách hàng khác giữ hoặc đặt. Vui lòng chọn ghế khác."
+                    "message", "Seat(s) " + String.join(", ", conflictingSeats) + " were just held or booked by another customer. Please choose other seats."
             ));
         }
 
@@ -930,7 +930,7 @@ public class BookingContextApiController {
         result.put("holdExpiresAt", expiresAt.toString());
         result.put("holdRemainingSeconds", remainingSeconds);
         result.put("holdDurationSeconds", holdSeconds);
-        result.put("message", "Đã giữ ghế " + String.join(", ", normalizedSeatLabels) + " thành công.");
+        result.put("message", "Successfully held seat(s) " + String.join(", ", normalizedSeatLabels) + ".");
 
         if (seatRealtimePushService != null) {
             seatRealtimePushService.broadcastSeatUpdate(showtimeId, "SEAT_HELD");
@@ -965,7 +965,7 @@ public class BookingContextApiController {
         String clientHoldToken = body != null && body.get("holdSessionId") != null ? String.valueOf(body.get("holdSessionId")) : null;
         Long callerUserId = resolveCurrentUserId(request);
         if (callerUserId == null) {
-            return error(HttpStatus.UNAUTHORIZED, "ACCOUNT_NOT_AUTHENTICATED", "Vui lòng đăng nhập để chọn và đặt ghế.");
+            return error(HttpStatus.UNAUTHORIZED, "ACCOUNT_NOT_AUTHENTICATED", "Please sign in to select and reserve seats.");
         }
         String callerSessionId = resolveHoldSessionId(request, clientHoldToken);
         int released = releaseCallerHolds(showtimeId, callerUserId, callerSessionId);
@@ -976,7 +976,7 @@ public class BookingContextApiController {
                 "success", true,
                 "showtimeId", String.valueOf(showtimeId),
                 "releasedCount", released,
-                "message", "Đã giải phóng ghế đang giữ."
+                "message", "Held seats have been released."
         ));
     }
 

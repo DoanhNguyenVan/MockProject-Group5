@@ -54,13 +54,13 @@ public class MovieServiceImpl implements MovieService {
                     if (s1 != s2) return Integer.compare(s1, s2);
 
                     if (s1 == 0) {
-                        // NOW_SHOWING: Mới chiếu / mới ra mắt lên đầu
+                        // NOW_SHOWING: Sort by newest release date first
                         if (m1.getReleaseDate() != null && m2.getReleaseDate() != null) {
                             int cmp = m2.getReleaseDate().compareTo(m1.getReleaseDate());
                             if (cmp != 0) return cmp;
                         }
                     } else if (s1 == 1) {
-                        // COMING_SOON: Sắp khởi chiếu sớm nhất lên đầu
+                        // COMING_SOON: Sort by earliest release date first
                         if (m1.getReleaseDate() != null && m2.getReleaseDate() != null) {
                             int cmp = m1.getReleaseDate().compareTo(m2.getReleaseDate());
                             if (cmp != 0) return cmp;

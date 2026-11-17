@@ -45,14 +45,14 @@ public class FoodFulfillmentServiceImpl implements FoodFulfillmentService {
     @Transactional(readOnly = true)
     public FoodFulfillmentDto getOrderById(Long id) {
         FoodFulfillment ff = fulfillmentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Đơn chuẩn bị đồ ăn không tồn tại: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Food fulfillment order not found: " + id));
         return mapToDto(ff);
     }
 
     @Override
     public FoodFulfillmentDto updateStatus(Long id, String newStatus, String note, Long staffUserId) {
         FoodFulfillment ff = fulfillmentRepository.findByIdForUpdate(id)
-                .orElseThrow(() -> new IllegalArgumentException("Đơn chuẩn bị đồ ăn không tồn tại: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Food fulfillment order not found: " + id));
 
         String s = newStatus != null ? newStatus.trim().toUpperCase() : "QUEUED";
         User staff = staffUserId != null ? userRepository.findById(staffUserId).orElse(null) : null;
@@ -72,7 +72,7 @@ public class FoodFulfillmentServiceImpl implements FoodFulfillmentService {
                 break;
             case "PICKED_UP":
                 if ("PICKED_UP".equalsIgnoreCase(ff.getStatus())) {
-                    throw new IllegalStateException("Đơn đồ ăn này đã được xác nhận giao cho khách trước đó.");
+                    throw new IllegalStateException("This food order has already been picked up previously.");
                 }
                 ff.setStatus("PICKED_UP");
                 if (ff.getPickedUpAt() == null) ff.setPickedUpAt(now);

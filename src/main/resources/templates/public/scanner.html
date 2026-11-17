@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="vi" data-theme="dark">
+<html lang="en" data-theme="dark">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quét Mã QR Vé | BOX Cinema</title>
+  <title>E-Ticket QR Scanner | BOX Cinema</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -73,15 +73,15 @@
         </svg>
         <span class="fw-extrabold fs-5 tracking-tight text-white font-space">BOX <span class="text-danger">CINEMA</span></span>
       </a>
-      <a href="/" class="btn btn-outline-secondary btn-sm">Trang chủ</a>
+      <a href="/" class="btn btn-outline-secondary btn-sm">Home</a>
     </div>
   </nav>
 
   <main class="container py-4 flex-grow-1" style="max-width: 600px;">
     <div class="scanner-card">
       <div class="text-center mb-3">
-        <h1 class="h4 fw-bold text-white mb-1">Máy Quét QR Vé Điện Tử</h1>
-        <p class="text-secondary small mb-0">Hướng camera hoặc webcam về phía mã QR trên vé để tra cứu thông tin.</p>
+        <h1 class="h4 fw-bold text-white mb-1">E-Ticket QR Scanner</h1>
+        <p class="text-secondary small mb-0">Point your camera or webcam at the ticket QR code to look up details.</p>
       </div>
 
       <!-- Camera Scanner Container -->
@@ -97,23 +97,23 @@
           <line x1="12" y1="8" x2="12.01" y2="8"></line>
         </svg>
         <div>
-          Hỗ trợ quét qua <strong>Camera sau điện thoại</strong> và <strong>Webcam máy tính</strong>. Không cần đăng nhập tài khoản.
+          Supports <strong>smartphone rear cameras</strong> and <strong>computer webcams</strong>. No account login required.
         </div>
       </div>
 
       <!-- Manual Input Option -->
       <div class="border-top border-secondary border-opacity-25 pt-3">
-        <label for="manualTokenInput" class="form-label text-secondary small fw-semibold">Hoặc nhập mã Token / Link vé thủ công:</label>
+        <label for="manualTokenInput" class="form-label text-secondary small fw-semibold">Or enter Ticket Token / URL manually:</label>
         <div class="input-group">
-          <input type="text" id="manualTokenInput" class="form-control bg-dark text-white border-secondary" placeholder="Nhập mã token (ví dụ: BOX1.xyz... hoặc mã đơn)">
-          <button class="btn btn-danger" type="button" id="btnManualSubmit">Tra cứu</button>
+          <input type="text" id="manualTokenInput" class="form-control bg-dark text-white border-secondary" placeholder="Enter token code (e.g. BOX1.xyz... or booking code)">
+          <button class="btn btn-danger" type="button" id="btnManualSubmit">Look Up</button>
         </div>
       </div>
     </div>
   </main>
 
   <footer class="py-3 text-center text-secondary small border-top border-secondary border-opacity-10">
-    <div>&copy; 2026 BOX Cinema. Công khai - An toàn - Bảo mật thông tin khách hàng.</div>
+    <div>&copy; 2026 BOX Cinema. Public - Secure - Customer Privacy Protected.</div>
   </footer>
 
   <script>
@@ -127,7 +127,7 @@
         const text = decodedText.trim();
         statusBox.classList.remove('d-none', 'alert-danger');
         statusBox.classList.add('alert-success');
-        statusBox.textContent = 'Đã nhận diện QR! Đang mở thông tin vé...';
+        statusBox.textContent = 'QR recognized! Opening ticket details...';
 
         // Case 1: Full URL (e.g. https://domain.ngrok-free.dev/t/BOX1.xyz or http://localhost:8080/t/BOX1.xyz)
         if (text.startsWith('http://') || text.startsWith('https://')) {
@@ -191,17 +191,17 @@
           ).catch(err => {
             statusBox.classList.remove('d-none');
             statusBox.classList.add('alert-warning');
-            statusBox.textContent = 'Không thể bật camera tự động. Bạn có thể cấp quyền camera hoặc nhập mã thủ công ở dưới.';
+            statusBox.textContent = 'Cannot start camera automatically. Please grant camera permissions or enter the code manually below.';
           });
         } else {
           statusBox.classList.remove('d-none');
           statusBox.classList.add('alert-warning');
-          statusBox.textContent = 'Không tìm thấy thiết bị camera trên máy này. Vui lòng nhập mã thủ công ở dưới.';
+          statusBox.textContent = 'No camera found on this device. Please enter the code manually below.';
         }
       }).catch(err => {
         statusBox.classList.remove('d-none');
         statusBox.classList.add('alert-warning');
-        statusBox.textContent = 'Vui lòng cho phép quyền truy cập Camera để quét mã QR trực tiếp.';
+        statusBox.textContent = 'Please grant camera access permission to scan QR codes directly.';
       });
     })();
   </script>

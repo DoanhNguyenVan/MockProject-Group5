@@ -44,7 +44,7 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
     @Override
     public StaffCheckinResponseDto checkinByQrToken(String qrToken, Long staffUserId) {
         if (qrToken == null || qrToken.trim().isBlank()) {
-            throw new IllegalArgumentException("Mã QR không hợp lệ hoặc bị trống.");
+            throw new IllegalArgumentException("QR code is invalid or empty.");
         }
 
         String tokenClean = qrToken.trim();
@@ -85,13 +85,13 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
             StaffCheckinResponseDto fail = new StaffCheckinResponseDto();
             fail.setSuccess(false);
             fail.setCode("INVALID_QR_TOKEN");
-            fail.setMessage("Mã QR không tồn tại trong hệ thống hoặc không hợp lệ.");
+            fail.setMessage("QR code does not exist in the system or is invalid.");
             return fail;
         }
 
         BookingQr bookingQr = bQrOpt.get();
         Booking booking = bookingRepository.findByIdForUpdate(bookingQr.getBooking().getBookingId())
-                .orElseThrow(() -> new IllegalStateException("Không tìm thấy Booking liên kết với QR này."));
+                .orElseThrow(() -> new IllegalStateException("No booking found associated with this QR code."));
 
         // Check if already checked in (Section 32 / QR-11: Second scan rejection)
         if ("USED".equalsIgnoreCase(bookingQr.getStatus())
@@ -109,7 +109,7 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
             StaffCheckinResponseDto fail = new StaffCheckinResponseDto();
             fail.setSuccess(false);
             fail.setCode("QR_NOT_ACTIVE");
-            fail.setMessage("Mã QR đã bị thu hồi hoặc không còn hiệu lực.");
+            fail.setMessage("QR code has been revoked or is no longer valid.");
             return fail;
         }
 
@@ -118,7 +118,7 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
             fail.setSuccess(false);
             fail.setCode("BOOKING_NOT_CONFIRMED");
             fail.setMessage(
-                    "Đơn hàng chưa được thanh toán thành công (Trạng thái: " + booking.getBookingStatus() + ").");
+                    "Booking has not been paid successfully (Status: " + booking.getBookingStatus() + ").");
             return fail;
         }
 
@@ -180,7 +180,7 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
         res.setCheckedInTickets(tickets.size());
         res.setSeats(seatLabels);
         res.setCheckInStatus("CHECKED_IN");
-        res.setStaffName(staff != null ? staff.getFullName() : "Soát vé viên");
+        res.setStaffName(staff != null ? staff.getFullName() : "Ticket Staff");
         res.setCheckedInAt(now);
         res.setResult("CHECKED_IN");
         return res;

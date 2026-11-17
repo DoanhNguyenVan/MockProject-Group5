@@ -70,7 +70,7 @@ public class TicketApiController {
             ticketService.resendEmail(id, userId);
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "message", "Yêu cầu gửi lại vé qua email đã được tiếp nhận."
+                    "message", "Request to resend ticket via email has been accepted."
             ));
         } catch (AccessDeniedException ex) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(

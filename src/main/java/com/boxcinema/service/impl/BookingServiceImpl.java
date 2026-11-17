@@ -65,7 +65,7 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new IllegalArgumentException("Showtime not found: " + request.getShowtimeId()));
 
         if (showtime.getStartAt() != null && !showtime.getStartAt().isAfter(LocalDateTime.now())) {
-            throw new IllegalStateException("Suất chiếu này đã bắt đầu hoặc đã qua thời gian bán vé.");
+            throw new IllegalStateException("This screening has already started or ticket sales have closed.");
         }
 
         User user = currentUserId != null ? userRepository.findById(currentUserId).orElse(null) : null;
@@ -74,7 +74,7 @@ public class BookingServiceImpl implements BookingService {
         booking.setShowtime(showtime);
         booking.setUser(user);
         booking.setBookingChannel("ONLINE");
-        booking.setGuestName(user != null ? user.getFullName() : (request.getGuestName() != null ? request.getGuestName() : "Khách vãng lai"));
+        booking.setGuestName(user != null ? user.getFullName() : (request.getGuestName() != null ? request.getGuestName() : "Guest"));
         booking.setGuestEmail(user != null ? user.getEmail() : (request.getGuestEmail() != null ? request.getGuestEmail() : "guest@boxcinema.vn"));
         booking.setGuestPhone(user != null ? user.getPhone() : (request.getGuestPhone() != null ? request.getGuestPhone() : "0900000000"));
         booking.setBookingStatus("DRAFT");
@@ -138,7 +138,7 @@ public class BookingServiceImpl implements BookingService {
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found: " + bookingId));
 
         if ("CONFIRMED".equalsIgnoreCase(booking.getBookingStatus()) || "PAID".equalsIgnoreCase(booking.getBookingStatus())) {
-            throw new IllegalStateException("Không thể chỉnh sửa đồ ăn của đơn hàng đã thanh toán.");
+            throw new IllegalStateException("Cannot modify food items for an already paid booking.");
         }
 
         // Release prior reserved food

@@ -30,7 +30,7 @@ export function initPayment(doc = document) {
         const text = getText();
         await navigator.clipboard.writeText(text);
         const originalText = btn.textContent;
-        btn.textContent = "Đã chép!";
+        btn.textContent = "Copied!";
         btn.classList.add("btn-success");
         setTimeout(() => {
           btn.textContent = originalText;
@@ -53,19 +53,19 @@ export function initPayment(doc = document) {
     simulateBtn.addEventListener("click", async () => {
       if (!activeOrderCode) return;
       simulateBtn.disabled = true;
-      simulateBtn.textContent = "Đang xử lý...";
+      simulateBtn.textContent = "Processing...";
       try {
         const res = await fetch(`/api/payments/payos/simulate-payment/${activeOrderCode}`, { method: "POST" });
         if (res.ok) {
           checkPaymentStatus();
         } else {
-          alert("Mô phỏng không thành công");
+          alert("Simulation failed");
         }
       } catch (err) {
-        alert("Lỗi: " + err.message);
+        alert("Error: " + err.message);
       } finally {
         simulateBtn.disabled = false;
-        simulateBtn.textContent = "⚡ Mô phỏng PayOS Thành Công";
+        simulateBtn.textContent = "⚡ Simulate PayOS Success";
       }
     });
   }
@@ -77,7 +77,7 @@ export function initPayment(doc = document) {
       if (remaining <= 0) {
         clearInterval(timerInterval);
         clearInterval(pollInterval);
-        if (timerEl) timerEl.textContent = "00:00 (Hết hạn)";
+        if (timerEl) timerEl.textContent = "00:00 (Expired)";
         return;
       }
       const m = Math.floor(remaining / 60);
@@ -136,7 +136,7 @@ export function initPayment(doc = document) {
 
         if (!bookingRes.ok) {
           const errBody = await bookingRes.json().catch(() => ({}));
-          throw new Error(errBody.message || "Không thể tạo đơn đặt vé");
+          throw new Error(errBody.message || "Failed to create booking");
         }
 
         const bookingData = await bookingRes.json();
@@ -151,7 +151,7 @@ export function initPayment(doc = document) {
 
         if (!payRes.ok) {
           const errBody = await payRes.json().catch(() => ({}));
-          throw new Error(errBody.message || "Không thể khởi tạo thanh toán PayOS");
+          throw new Error(errBody.message || "Failed to initialize PayOS payment");
         }
 
         const payData = await payRes.json();
@@ -162,11 +162,11 @@ export function initPayment(doc = document) {
         const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=" + encodeURIComponent(payData.qrCode);
         if (qrImage) qrImage.src = qrUrl;
 
-        if (bankNameEl) bankNameEl.textContent = payData.bankName || "MBBank (Ngân hàng Quân Đội)";
+        if (bankNameEl) bankNameEl.textContent = payData.bankName || "MBBank";
         if (accountNoEl) accountNoEl.textContent = payData.accountNumber || "---";
         if (accountNameEl) accountNameEl.textContent = payData.accountName || "BOX CINEMA";
         if (amountEl) {
-          amountEl.textContent = Number(payData.amount || 0).toLocaleString("vi-VN") + " đ";
+          amountEl.textContent = Number(payData.amount || 0).toLocaleString("en-US") + " ₫";
         }
         if (descEl) descEl.textContent = payData.description || "---";
 
@@ -181,7 +181,7 @@ export function initPayment(doc = document) {
         if (loadingEl) {
           loadingEl.innerHTML = `
             <div class="alert alert-danger">
-              <h5 class="fw-bold">Khởi tạo thanh toán thất bại</h5>
+              <h5 class="fw-bold">Payment Initialization Failed</h5>
               <p class="mb-0">${err.message}</p>
             </div>
           `;

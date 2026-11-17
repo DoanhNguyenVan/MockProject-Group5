@@ -1055,10 +1055,10 @@ public class AuthController {
         model.addAttribute("setPasswordReady", hasValidSetPasswordReauth(session, currentUser.getUserId()));
 
         if ("success".equalsIgnoreCase(changePasswordParam) && !model.containsAttribute("successMessage")) {
-            model.addAttribute("successMessage", "Đổi mật khẩu thành công!");
+            model.addAttribute("successMessage", "Password changed successfully!");
         }
         if ("success".equalsIgnoreCase(linkStatus) && !model.containsAttribute("successMessage")) {
-            model.addAttribute("successMessage", "Tài khoản Google đã được kết nối thành công!");
+            model.addAttribute("successMessage", "Google account linked successfully!");
         }
         if ("error".equalsIgnoreCase(linkStatus) && linkError != null && !model.containsAttribute("errorMessage")) {
             model.addAttribute("errorMessage", mapFriendlyErrorCode(linkError));
@@ -1627,7 +1627,7 @@ public class AuthController {
                 User user = userOpt.get();
                 if (user.getPasswordHash() == null || user.getPasswordHash().isBlank()) {
                     redirectAttributes.addFlashAttribute("infoMessage",
-                            "Tài khoản của bạn chưa có mật khẩu. Vui lòng sử dụng tính năng Tạo mật khẩu.");
+                            "Your account does not have a password yet. Please use the Set Password feature.");
                     return "redirect:/account-settings";
                 }
                 model.addAttribute("user", user);
@@ -1650,7 +1650,7 @@ public class AuthController {
         }
         try {
             userService.changePassword(currentUser.getUserId(), currentPassword, newPassword, confirmPassword);
-            redirectAttributes.addFlashAttribute("successMessage", "Đổi mật khẩu thành công!");
+            redirectAttributes.addFlashAttribute("successMessage", "Password changed successfully!");
             return "redirect:/account-settings?changePassword=success";
         } catch (IllegalArgumentException | IllegalStateException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
@@ -1675,7 +1675,7 @@ public class AuthController {
             userService.changePassword(currentUser.getUserId(), currentPassword, newPassword, confirmPassword);
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "message", "Đổi mật khẩu thành công!"
+                    "message", "Password changed successfully!"
             ));
         } catch (AuthException ex) {
             return ResponseEntity.status(ex.getHttpStatus()).body(errorBody(ex.getErrorCode(), ex.getMessage()));

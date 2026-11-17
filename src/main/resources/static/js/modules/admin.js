@@ -74,7 +74,7 @@ export function initAdmin(doc = document) {
     seatDirty = true;
     updateUndoRedoButtons();
     renderSeatGrid();
-    notify('Đã quay lại bước vừa rồi (Undo).');
+    notify('Action undone (Undo).');
   }
 
   function redoSeatAction() {
@@ -84,7 +84,7 @@ export function initAdmin(doc = document) {
     seatDirty = true;
     updateUndoRedoButtons();
     renderSeatGrid();
-    notify('Đã làm lại bước tiếp theo (Redo).');
+    notify('Action redone (Redo).');
   }
 
   const persist = message => {
@@ -188,12 +188,12 @@ export function initAdmin(doc = document) {
       typeObjOrName = typeObjOrName.typeName || '';
     }
     const u = String(typeObjOrName).toUpperCase();
-    if (u.includes('SWEETBOX') || u.includes('COUPLE') || u.includes('ĐÔI') || u.includes('DOI')) return 'sweetbox';
+    if (u.includes('SWEETBOX') || u.includes('COUPLE') || u.includes('PAIR')) return 'sweetbox';
     if (u.includes('VIP')) return 'vip';
     if (u.includes('4DX') || u.includes('4D')) return '4dx';
     if (u.includes('IMAX')) return 'imax';
-    if (u.includes('RECLINER') || u.includes('LƯỜI') || u.includes('LUOI')) return 'recliner';
-    if (u.includes('WHEELCHAIR') || u.includes('KHUYẾT') || u.includes('KHUYT')) return 'wheelchair';
+    if (u.includes('RECLINER') || u.includes('LOUNGE') || u.includes('BED')) return 'recliner';
+    if (u.includes('WHEELCHAIR') || u.includes('ACCESSIBLE')) return 'wheelchair';
     return 'standard';
   }
 
@@ -207,13 +207,13 @@ export function initAdmin(doc = document) {
 
     const infoWrap = element('div', '', 'admin-seattype-info');
     const friendlyNames = {
-      standard: 'Ghế Standard (Tiêu chuẩn)',
-      vip: 'Ghế VIP Luxury',
-      sweetbox: 'Ghế đôi Sweetbox',
-      imax: 'Ghế IMAX Laser',
-      '4dx': 'Ghế 4DX Motion',
-      recliner: 'Ghế Recliner 180°',
-      wheelchair: 'Ghế Xe Lăn (Wheelchair)'
+      standard: 'Standard Seat',
+      vip: 'VIP Luxury Seat',
+      sweetbox: 'Sweetbox Couple Seat',
+      imax: 'IMAX Laser Seat',
+      '4dx': '4DX Motion Seat',
+      recliner: 'Recliner 180° Seat',
+      wheelchair: 'Wheelchair Accessible'
     };
     const titleText = friendlyNames[shape] || rawName;
     const title = element('div', titleText, 'admin-seattype-title');
@@ -249,13 +249,13 @@ export function initAdmin(doc = document) {
     if (surchargeVal > 0) {
       pill.innerHTML = `<span class="surcharge-symbol">+</span><span class="surcharge-num">${formatMoney(surchargeVal)}</span>`;
     } else {
-      pill.innerHTML = `<span class="surcharge-num">0 ₫</span><span class="surcharge-sub">(Giá gốc)</span>`;
+      pill.innerHTML = `<span class="surcharge-num">0 ₫</span><span class="surcharge-sub">(Base price)</span>`;
     }
     return pill;
   }
 
   function seatDescriptionText(text) {
-    const box = element('div', text || 'Chưa có mô tả chi tiết.', 'admin-desc-box');
+    const box = element('div', text || 'No detailed description.', 'admin-desc-box');
     return box;
   }
 
@@ -302,7 +302,7 @@ export function initAdmin(doc = document) {
           const colorInput = element('input', '', 'admin-table-color-picker');
           colorInput.type = 'color';
           colorInput.value = record.colorCode || '#3b82f6';
-          colorInput.title = `Click để đổi màu trực tiếp cho ${record.typeName}`;
+          colorInput.title = `Click to change color for ${record.typeName}`;
 
           const hexText = element('span', record.colorCode || '#3b82f6', 'admin-table-color-hex');
           hexText.style.color = record.colorCode || '#3b82f6';
@@ -319,11 +319,11 @@ export function initAdmin(doc = document) {
                 body: JSON.stringify(record)
               });
               if (res.ok) {
-                notify(`Đã cập nhật màu ghế ${record.typeName} thành ${newColor}.`);
+                notify(`Updated seat color for ${record.typeName} to ${newColor}.`);
                 await syncLiveData(false);
               }
             } catch (err) {
-              console.warn('Lỗi cập nhật màu ghế:', err);
+              console.warn('Error updating seat color:', err);
             }
           });
 
@@ -337,7 +337,7 @@ export function initAdmin(doc = document) {
       const actions = element('div', '', 'admin-actions admin-table-actions');
       const edit = element('button', '', 'admin-btn-action admin-btn-action-edit');
       edit.type = 'button';
-      edit.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg><span>Sửa</span>`;
+      edit.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg><span>Edit</span>`;
       edit.setAttribute('aria-label', `Edit ${recordLabel(section, record, state)}`);
       edit.addEventListener('click', () => openEditor(record.id));
       actions.append(edit);
@@ -345,13 +345,13 @@ export function initAdmin(doc = document) {
       if (section === 'rooms') {
         const seats = element('a', '', 'admin-btn-action admin-btn-action-matrix');
         seats.href = `/admin/seats?roomId=${encodeURIComponent(record.id)}`;
-        seats.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg><span>Sơ đồ ghế</span>`;
+        seats.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg><span>Seat Map</span>`;
         actions.append(seats);
       }
 
       const remove = element('button', '', 'admin-btn-action admin-btn-action-delete');
       remove.type = 'button';
-      remove.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg><span>Xóa</span>`;
+      remove.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg><span>Delete</span>`;
       remove.setAttribute('aria-label', `Delete ${recordLabel(section, record, state)}`);
       remove.addEventListener('click', () => {
         const reason = deleteBlockReason(section, record.id, state);
@@ -427,8 +427,8 @@ export function initAdmin(doc = document) {
           { name: 'Standard (Blue)', hex: '#3b82f6' },
           { name: 'VIP (Gold)', hex: '#f59e0b' },
           { name: 'Sweetbox (Purple)', hex: '#a855f7' },
-          { name: 'Ghế tình iêu (Rose)', hex: '#ec4899' },
-          { name: 'Ghế lười (Emerald)', hex: '#10b981' },
+          { name: 'Couple / Rose', hex: '#ec4899' },
+          { name: 'Lounge / Emerald', hex: '#10b981' },
           { name: 'Cyan', hex: '#06b6d4' },
           { name: 'Crimson', hex: '#f43f5e' },
           { name: 'Violet', hex: '#8b5cf6' },
@@ -599,8 +599,8 @@ export function initAdmin(doc = document) {
     if (!modal) return;
 
     get('adminImpactModalTitle').textContent = sec === 'cinemas' 
-      ? `Dừng hoạt động cơ sở "${record.cinemaName || ''}"` 
-      : `Dừng hoạt động phòng "${record.roomName || ''}"`;
+      ? `Deactivate facility "${record.cinemaName || ''}"` 
+      : `Deactivate room "${record.roomName || ''}"`;
 
     get('adminImpactBookingsCount').textContent = impactData.totalBookings;
     get('adminImpactTicketsCount').textContent = impactData.totalTickets;
@@ -626,7 +626,7 @@ export function initAdmin(doc = document) {
       const tdTime = element('td', b.startAt);
 
       const tdTickets = element('td');
-      tdTickets.innerHTML = `<span style="display: inline-block; padding: 2px 7px; border-radius: 4px; background: rgba(255,255,255,0.08); font-weight: 600;">${b.ticketCount} vé</span>`;
+      tdTickets.innerHTML = `<span style="display: inline-block; padding: 2px 7px; border-radius: 4px; background: rgba(255,255,255,0.08); font-weight: 600;">${b.ticketCount} tickets</span>`;
 
       const tdAmount = element('td', formatMoney(b.totalAmount));
       tdAmount.style.fontWeight = '700';
@@ -660,7 +660,7 @@ export function initAdmin(doc = document) {
       const strategy = selectedRadio ? selectedRadio.value : 'REFUND_AND_CANCEL';
 
       newSubmitBtn.disabled = true;
-      newSubmitBtn.textContent = 'Đang xử lý...';
+      newSubmitBtn.textContent = 'Processing...';
 
       try {
         const res = await win.fetch('/admin/api/resolve-deactivation', {
@@ -677,17 +677,17 @@ export function initAdmin(doc = document) {
         if (res.ok && result.success) {
           modal.close();
           closeEditor();
-          notify(result.message || 'Thao tác hoàn tất.');
+          notify(result.message || 'Operation completed successfully.');
           await syncLiveData(false);
         } else {
-          notify(result.error || 'Có lỗi xảy ra khi xử lý.');
+          notify(result.error || 'An error occurred during processing.');
         }
       } catch (e) {
         console.error(e);
-        notify('Lỗi kết nối tới máy chủ.');
+        notify('Server connection error.');
       } finally {
         newSubmitBtn.disabled = false;
-        newSubmitBtn.textContent = 'Xác nhận thực hiện';
+        newSubmitBtn.textContent = 'Confirm Execution';
       }
     };
 
@@ -863,7 +863,7 @@ export function initAdmin(doc = document) {
     const getSeatShape = (seat) => {
       const typeObj = (state.pricing || []).find(p => p.id === seat.typeId);
       const name = (typeObj?.typeName || '').toUpperCase();
-      const shape = typeObj?.shapeType || (name.includes('SWEETBOX') || name.includes('COUPLE') || name.includes('ĐÔI') ? 'sweetbox' : (name.includes('VIP') ? 'vip' : (name.includes('4DX') ? '4dx' : (name.includes('IMAX') ? 'imax' : (name.includes('RECLINER') ? 'recliner' : (name.includes('WHEELCHAIR') ? 'wheelchair' : 'standard'))))));
+      const shape = typeObj?.shapeType || (name.includes('SWEETBOX') || name.includes('COUPLE') || name.includes('PAIR') ? 'sweetbox' : (name.includes('VIP') ? 'vip' : (name.includes('4DX') ? '4dx' : (name.includes('IMAX') ? 'imax' : (name.includes('RECLINER') ? 'recliner' : (name.includes('WHEELCHAIR') ? 'wheelchair' : 'standard'))))));
       return { shape, name };
     };
 
@@ -907,44 +907,40 @@ export function initAdmin(doc = document) {
           s.pairId = null;
           invalidSeatKeys.add(`${s.row}${s.number}`);
           invalidSeatKeys.add(`${s.row}_${s.number}`);
-          errors.push(`Ghế đôi Sweetbox [${s.row}${s.number}] bị lẻ, bắt buộc phải đi thành cặp 2 ghế liền kề nhau.`);
+          errors.push(`Sweetbox couple seat [${s.row}${s.number}] is unpaired; Sweetbox seats must be paired in contiguous 2-seat blocks.`);
         }
       }
     }
 
-    // 2. Wheelchair (Ghế xe lăn) Validation theo chuẩn QCVN 10:2014/BXD & ADA Standards
+    // 2. Wheelchair Validation according to ADA Standards
     if (!normRoomType.includes('4DX') && !normRoomType.includes('4D')) {
       const firstRow = sortedRows[0];
       const maxCol = Math.max(...seats.map(s => s.number));
       const wheelchairSeats = seats.filter(s => s.status === 'ACTIVE' && getSeatShape(s).shape === 'wheelchair');
 
       for (const s of wheelchairSeats) {
-        // Quy tắc 1: Bắt buộc ở hàng đầu tiên (sàn phẳng, không có bậc tam cấp)
         if (s.row !== firstRow) {
           invalidSeatKeys.add(`${s.row}${s.number}`);
-          errors.push(`Ghế xe lăn [${s.row}${s.number}] không hợp lệ: Bắt buộc phải đặt tại hàng đầu tiên (Hàng ${firstRow}) nơi có mặt sàn phẳng sát lối vào, không có bậc thang cản trở.`);
+          errors.push(`Wheelchair seat [${s.row}${s.number}] invalid: Must be placed in the front row (Row ${firstRow}) on level ground near entrances.`);
         } else {
-          // Quy tắc 2: Sát mép lối đi hai bên (cột 1, 2 hoặc mép ngoài cùng) để thuận tiện thoát hiểm khẩn cấp
           const isOuterEdge = (s.number <= 2) || (s.number >= maxCol - 1);
           if (!isOuterEdge) {
             invalidSeatKeys.add(`${s.row}${s.number}`);
-            errors.push(`Ghế xe lăn [${s.row}${s.number}] không hợp lệ: Vị trí xe lăn phải đặt ở góc ngoài cùng (cột 1, 2 hoặc ${maxCol - 1}, ${maxCol}) sát lối đi chính để đảm bảo thoát hiểm khẩn cấp theo chuẩn QCVN 10:2014/BXD.`);
+            errors.push(`Wheelchair seat [${s.row}${s.number}] invalid: Wheelchair positions must be located on the outer edge (columns 1, 2 or ${maxCol - 1}, ${maxCol}) near main exit aisles for emergency evacuation compliance.`);
           }
         }
       }
-
-// Đã bỏ quy định về số lượng ghế xe lăn theo yêu cầu: chỉ validate khi ghế để sai vị trí.
     }
 
     // 3. Room Type Specific Validation
     if (normRoomType.includes('4DX') || normRoomType.includes('4D')) {
-      // 4DX Motion Room: 100% SEAT_4DX DUY NHẤT. Cấm Wheelchair, VIP, Sweetbox, Standard, Recliner
+      // 4DX Motion Room: 100% SEAT_4DX
       for (const seat of seats) {
         if (seat.status !== 'ACTIVE') continue;
         const meta = getSeatShape(seat);
         if (meta.shape !== '4dx') {
           invalidSeatKeys.add(`${seat.row}${seat.number}`);
-          errors.push(`Phòng 4DX Motion bắt buộc 100% ghế là SEAT_4DX (không dùng ${meta.name} hay Wheelchair vì toàn bộ bệ nâng cơ học là đồng nhất). Ghế [${seat.row}${seat.number}] không hợp lệ.`);
+          errors.push(`4DX Motion auditoriums require 100% SEAT_4DX seats (excluding ${meta.name} and Wheelchair due to integrated motion bases). Seat [${seat.row}${seat.number}] is invalid.`);
         }
       }
 
@@ -963,7 +959,7 @@ export function initAdmin(doc = document) {
                 const first = currentCluster[0];
                 const last = currentCluster[currentCluster.length - 1];
                 currentCluster.forEach(s => invalidSeatKeys.add(`${s.row}${s.number}`));
-                errors.push(`Phòng 4DX Motion yêu cầu ghế 4DX xếp theo cụm 4 ghế hoặc cụm 2 ghế (số ghế chia hết cho 2). Hàng ${rowKey} có cụm lẻ ${currentCluster.length} ghế (${first.row}${first.number} - ${last.row}${last.number}).`);
+                errors.push(`4DX Motion rooms require 4DX seats to be grouped in clusters of 4 or 2 seats (even multiples). Row ${rowKey} has an odd cluster of ${currentCluster.length} seats (${first.row}${first.number} - ${last.row}${last.number}).`);
               }
               currentCluster = [];
             }
@@ -974,29 +970,29 @@ export function initAdmin(doc = document) {
             const first = currentCluster[0];
             const last = currentCluster[currentCluster.length - 1];
             currentCluster.forEach(s => invalidSeatKeys.add(`${s.row}${s.number}`));
-            errors.push(`Phòng 4DX Motion yêu cầu ghế 4DX xếp theo cụm 4 ghế hoặc cụm 2 ghế (số ghế chia hết cho 2). Hàng ${rowKey} có cụm lẻ ${currentCluster.length} ghế (${first.row}${first.number} - ${last.row}${last.number}).`);
+            errors.push(`4DX Motion rooms require 4DX seats to be grouped in clusters of 4 or 2 seats (even multiples). Row ${rowKey} has an odd cluster of ${currentCluster.length} seats (${first.row}${first.number} - ${last.row}${last.number}).`);
           }
         }
       }
     } else if (normRoomType.includes('GOLD')) {
-      // Gold Class: 100% ghế chính là RECLINER, tùy chọn WHEELCHAIR ở hàng đầu
+      // Gold Class: 100% RECLINER, optional WHEELCHAIR
       const firstRow = sortedRows[0];
       for (const seat of seats) {
         if (seat.status !== 'ACTIVE') continue;
         const meta = getSeatShape(seat);
         if (meta.shape !== 'recliner' && meta.shape !== 'wheelchair') {
           invalidSeatKeys.add(`${seat.row}${seat.number}`);
-          errors.push(`Phòng Gold Class chỉ cho phép ghế RECLINER (ghế ngả điện hạng sang) và Wheelchair. Ghế [${seat.row}${seat.number}] (${meta.name}) không hợp lệ.`);
+          errors.push(`Gold Class auditoriums only permit RECLINER seats and Wheelchair positions. Seat [${seat.row}${seat.number}] (${meta.name}) is invalid.`);
         }
       }
     } else if (normRoomType.includes('IMAX')) {
-      // IMAX Laser Room: 100% ghế chính bắt buộc là IMAX_SEAT, chỉ cho phép WHEELCHAIR. Cấm hoàn toàn STANDARD, VIP, SWEETBOX, RECLINER, 4DX.
+      // IMAX Laser Room: 100% IMAX_SEAT and WHEELCHAIR
       for (const seat of seats) {
         if (seat.status !== 'ACTIVE') continue;
         const meta = getSeatShape(seat);
         if (meta.shape !== 'imax' && meta.shape !== 'wheelchair') {
           invalidSeatKeys.add(`${seat.row}${seat.number}`);
-          errors.push(`Phòng IMAX Laser chỉ cho phép ghế IMAX_SEAT và Wheelchair (cấm ${meta.name}). Ghế [${seat.row}${seat.number}] không hợp lệ.`);
+          errors.push(`IMAX Laser auditoriums only permit IMAX_SEAT and Wheelchair positions (disallowed: ${meta.name}). Seat [${seat.row}${seat.number}] is invalid.`);
         }
       }
     } else {
@@ -1006,11 +1002,11 @@ export function initAdmin(doc = document) {
         const meta = getSeatShape(seat);
         if (meta.shape === '4dx' || meta.shape === 'imax' || meta.shape === 'recliner') {
           invalidSeatKeys.add(`${seat.row}${seat.number}`);
-          errors.push(`Phòng ${roomType} chỉ cho phép ghế STANDARD, VIP, SWEETBOX và WHEELCHAIR. Ghế [${seat.row}${seat.number}] (${meta.name}) không hợp lệ.`);
+          errors.push(`${roomType} auditoriums only permit STANDARD, VIP, SWEETBOX, and WHEELCHAIR seats. Seat [${seat.row}${seat.number}] (${meta.name}) is invalid.`);
         }
         if (meta.shape === 'sweetbox' && seat.row !== lastRow) {
           invalidSeatKeys.add(`${seat.row}${seat.number}`);
-          errors.push(`Ghế đôi Sweetbox chỉ được phép bố trí ở hàng cuối cùng (${lastRow}) trong phòng chiếu ${roomType}. Vị trí [${seat.row}${seat.number}] không hợp lệ.`);
+          errors.push(`Sweetbox couple seats may only be positioned in the back row (${lastRow}) in ${roomType} auditoriums. Seat [${seat.row}${seat.number}] is invalid.`);
         }
       }
     }
@@ -1213,7 +1209,7 @@ export function initAdmin(doc = document) {
         alertBox.className = 'admin-seat-validation-box mb-3';
         alertBox.innerHTML = `
           <div class="admin-validation-header">
-            <span>⚠️</span> Cảnh báo quy chuẩn phòng ${roomType} (${validation.errors.length} vị trí không hợp lệ)
+            <span>⚠️</span> Layout Warning for ${roomType} (${validation.errors.length} invalid positions)
           </div>
           <ul class="admin-validation-list">
             ${validation.errors.map(err => `<li>${err}</li>`).join('')}
@@ -1227,7 +1223,7 @@ export function initAdmin(doc = document) {
 
     get('adminSaveSeats').disabled = !seatDraft.length || (!seatDirty && !!state.layouts[seatRoom]) || !validation.valid;
     if (!validation.valid) {
-      get('adminSaveSeats').title = 'Không thể lưu: Vui lòng sửa các vị trí ghế không hợp lệ trước khi lưu.';
+      get('adminSaveSeats').title = 'Cannot save: Please resolve layout validation errors before saving.';
     } else {
       get('adminSaveSeats').removeAttribute('title');
     }
@@ -1244,9 +1240,7 @@ export function initAdmin(doc = document) {
     return (state.pricing || []).filter(p => {
       const u = (p.typeName || '').toUpperCase();
       return !['STANDARD', 'VIP', 'SWEETBOX', 'COUPLE'].includes(u)
-        && !u.includes('THƯỜNG') && !u.includes('THUONG')
-        && !u.includes('TÌNH YÊU') && !u.includes('TINH YEU') && !u.includes('TÌNH IÊU') && !u.includes('TINH IEU') && !u.includes('ĐÔI') && !u.includes('DOI') && !u.includes('LOVE')
-        && !u.includes('LƯỜI') && !u.includes('LUOI') && !u.includes('LOUNGE') && !u.includes('BED');
+        && !u.includes('PAIR') && !u.includes('LOVE') && !u.includes('LOUNGE') && !u.includes('BED');
     });
   }
 
@@ -1258,19 +1252,19 @@ export function initAdmin(doc = document) {
     }
 
     const norm = String(typeUpperOrId || '').toUpperCase();
-    if (norm === 'STANDARD' || norm.includes('THƯỜNG') || norm.includes('THUONG')) {
+    if (norm === 'STANDARD') {
       return { color: '#93c5fd', border: '#3b82f6', bg: '#0f172a' };
     }
     if (norm === 'VIP') {
       return { color: '#fcd34d', border: '#f59e0b', bg: '#1c1507' };
     }
-    if (norm === 'SWEETBOX' || norm === 'COUPLE' || norm.includes('ĐÔI') || norm.includes('DOI')) {
+    if (norm === 'SWEETBOX' || norm === 'COUPLE' || norm.includes('PAIR')) {
       return { color: '#e9d5ff', border: '#a855f7', bg: '#1e112a' };
     }
-    if (norm.includes('LƯỜI') || norm.includes('LUOI') || norm.includes('LOUNGE') || norm.includes('BED')) {
+    if (norm.includes('LOUNGE') || norm.includes('BED')) {
       return { color: '#6ee7b7', border: '#10b981', bg: '#062419' };
     }
-    if (norm.includes('TÌNH YÊU') || norm.includes('TINH YEU') || norm.includes('TÌNH IÊU') || norm.includes('TINH IEU') || norm.includes('LOVE')) {
+    if (norm.includes('LOVE')) {
       return { color: '#f472b6', border: '#ec4899', bg: '#260a1c' };
     }
     const hex = CUSTOM_PALETTE[Math.abs(customIndex) % CUSTOM_PALETTE.length];
@@ -1307,7 +1301,7 @@ export function initAdmin(doc = document) {
     let allowedTypes = state.pricing || [];
 
     if (norm.includes('4DX') || norm.includes('4D')) {
-      // 4DX: SEAT_4DX DUY NHẤT (không dùng wheelchair, vip, sweetbox)
+      // 4DX: SEAT_4DX ONLY (no wheelchair, vip, sweetbox)
       allowedTypes = allowedTypes.filter(p => {
         const u = (p.typeName || '').toUpperCase();
         return u.includes('4DX') || p.shapeType === '4dx';
@@ -1319,7 +1313,7 @@ export function initAdmin(doc = document) {
         return u.includes('RECLINER') || u.includes('WHEELCHAIR') || p.shapeType === 'recliner' || p.shapeType === 'wheelchair';
       });
     } else if (norm.includes('IMAX')) {
-      // IMAX Laser: CHỈ DUY NHẤT IMAX_SEAT và WHEELCHAIR!
+      // IMAX Laser: ONLY IMAX_SEAT and WHEELCHAIR!
       allowedTypes = allowedTypes.filter(p => {
         const u = (p.typeName || '').toUpperCase();
         return u.includes('IMAX') || u.includes('WHEELCHAIR') || p.shapeType === 'imax' || p.shapeType === 'wheelchair';
@@ -1447,7 +1441,7 @@ export function initAdmin(doc = document) {
     const cols = Number(get('adminSeatColumns').value);
     const layout = createSeatLayout(rows, cols, state.pricing[0]?.id, 'UNAVAILABLE');
     if (!layout.length) { notify('Use 1–16 rows and 1–20 seats per row.'); return; }
-    confirm('Tạo lưới mới?', `Tạo lưới mới ${rows}×${cols} với tất cả các vị trí ở trạng thái Unavailable (×) để tránh lỗi chuẩn phòng?`, 'Tạo lưới', () => {
+    confirm('Generate new grid?', `Generate new ${rows}×${cols} grid with all seats set to Unavailable (×) to avoid standard violations?`, 'Generate Grid', () => {
       recordHistory();
       for (const seat of layout) {
         seat.status = 'UNAVAILABLE';
@@ -1456,7 +1450,7 @@ export function initAdmin(doc = document) {
       seatDraft = layout;
       seatDirty = true;
       renderSeatGrid();
-      notify(`Đã tạo lưới ${rows}×${cols} với tất cả vị trí ở trạng thái Unavailable.`);
+      notify(`Generated ${rows}×${cols} grid with all positions set to Unavailable.`);
     });
   });
 
@@ -1539,7 +1533,7 @@ export function initAdmin(doc = document) {
 
     seatDirty = true;
     renderSeatGrid();
-    notify(`Đã áp dụng sơ đồ chuẩn 100% cho phòng ${roomType}.`);
+    notify(`Applied 100% compliant layout for ${roomType}.`);
   });
 
   // Preset: Reset All to Unavailable
@@ -1552,7 +1546,7 @@ export function initAdmin(doc = document) {
     }
     seatDirty = true;
     renderSeatGrid();
-    notify('Đã chuyển tất cả ghế về trạng thái Unavailable.');
+    notify('Reset all seats to Unavailable.');
   });
 
   get('adminSaveSeats').addEventListener('click', async () => {
@@ -1561,7 +1555,7 @@ export function initAdmin(doc = document) {
     const roomType = currentRoom?.roomType || '2D Standard';
     const validation = validateRoomSeatLayout(roomType, seatDraft);
     if (!validation.valid) {
-      notify('Bố cục không hợp lệ. Vui lòng khắc phục các lỗi cảnh báo trước khi lưu!');
+      notify('Invalid seat layout. Please resolve warning errors before saving!');
       return;
     }
     state.layouts[seatRoom] = structuredClone(seatDraft); seatDirty = false;
@@ -1621,7 +1615,7 @@ export function initAdmin(doc = document) {
     if (cinemaFilter) {
       const cur = cinemaFilter.value;
       cinemaFilter.replaceChildren();
-      const allOpt = element('option', 'Tất cả cụm rạp');
+      const allOpt = element('option', 'All Cinemas');
       allOpt.value = '';
       cinemaFilter.append(allOpt);
 
@@ -1646,10 +1640,10 @@ export function initAdmin(doc = document) {
     if (metricsContainer) {
       metricsContainer.replaceChildren();
       const kpis = [
-        { label: 'Tổng đơn đặt vé', value: String(allBookings.length), note: 'Tất cả lượt giao dịch' },
-        { label: 'Số vé đã bán', value: totalTicketsSold.toLocaleString('vi-VN'), note: 'Vé đã xác nhận' },
-        { label: 'Doanh thu ghi nhận', value: formatMoney(totalGrossRevenue), note: 'Đã trừ hoàn/hủy' },
-        { label: 'Đơn thành công / Hoàn', value: `${confirmedList.length} / ${cancelledList.length}`, note: 'Confirmed vs Cancelled' }
+        { label: 'Total Bookings', value: String(allBookings.length), note: 'All transactions' },
+        { label: 'Tickets Sold', value: totalTicketsSold.toLocaleString('en-US'), note: 'Confirmed tickets' },
+        { label: 'Gross Revenue', value: formatMoney(totalGrossRevenue), note: 'Net of refunds' },
+        { label: 'Confirmed / Cancelled', value: `${confirmedList.length} / ${cancelledList.length}`, note: 'Confirmed vs Cancelled' }
       ];
       for (const k of kpis) {
         const card = element('div', '', 'admin-metric');
@@ -1680,7 +1674,7 @@ export function initAdmin(doc = document) {
     const pageItems = filtered.slice(startIdx, startIdx + bookingPageSize);
 
     if (get('adminBookingPageInfo')) {
-      get('adminBookingPageInfo').textContent = `Hiển thị ${filtered.length ? startIdx + 1 : 0} – ${Math.min(filtered.length, startIdx + bookingPageSize)} trong tổng số ${filtered.length} đơn`;
+      get('adminBookingPageInfo').textContent = `Showing ${filtered.length ? startIdx + 1 : 0} – ${Math.min(filtered.length, startIdx + bookingPageSize)} of ${filtered.length} bookings`;
     }
     if (get('adminBookingPrevious')) get('adminBookingPrevious').disabled = bookingPage <= 1;
     if (get('adminBookingNext')) get('adminBookingNext').disabled = bookingPage >= totalPages;
@@ -1718,7 +1712,7 @@ export function initAdmin(doc = document) {
 
       // 5. Seats & Combos
       const tdItems = element('td');
-      let itemsHtml = `<div><span style="display: inline-block; padding: 2px 7px; border-radius: 4px; background: rgba(255,255,255,0.08); font-weight: 700; color: #fbbf24;">${b.ticketCount} vé: ${b.seatsSummary || '—'}</span></div>`;
+      let itemsHtml = `<div><span style="display: inline-block; padding: 2px 7px; border-radius: 4px; background: rgba(255,255,255,0.08); font-weight: 700; color: #fbbf24;">${b.ticketCount} tickets: ${b.seatsSummary || '—'}</span></div>`;
       if (b.combosDetail) {
         itemsHtml += `<small style="color: #a855f7; display: block; margin-top: 3px;">🍿 ${b.combosDetail}</small>`;
       }
@@ -1739,7 +1733,7 @@ export function initAdmin(doc = document) {
 
       // 8. Action: View Invoice
       const tdAction = element('td');
-      const btnInvoice = element('button', '📄 Hóa đơn', 'admin-button');
+      const btnInvoice = element('button', '📄 Invoice', 'admin-button');
       btnInvoice.style.padding = '5px 10px';
       btnInvoice.style.fontSize = '12px';
       btnInvoice.onclick = () => openInvoiceModal(b);
@@ -1755,7 +1749,7 @@ export function initAdmin(doc = document) {
     if (!modal) return;
 
     if (get('adminInvoiceSub')) {
-      get('adminInvoiceSub').textContent = `Mã đơn: #${b.bookingCode} · Ngày đặt: ${b.bookedAt || '—'}`;
+      get('adminInvoiceSub').textContent = `Order Code: #${b.bookingCode} · Booked Date: ${b.bookedAt || '—'}`;
     }
 
     const content = get('adminInvoiceContent');
@@ -1769,8 +1763,8 @@ export function initAdmin(doc = document) {
       <!-- Banner -->
       <div class="admin-invoice-banner">
         <div>
-          <div style="font-size: 16px; font-weight: 700; color: #ef4444; font-family: monospace;">ĐƠN HÀNG: ${b.bookingCode}</div>
-          <div style="font-size: 12px; color: var(--box-text-muted); margin-top: 2px;">Kênh đặt: <strong>${b.bookingChannel}</strong> · Ngày giao dịch: ${b.bookedAt || '—'}</div>
+          <div style="font-size: 16px; font-weight: 700; color: #ef4444; font-family: monospace;">ORDER: ${b.bookingCode}</div>
+          <div style="font-size: 12px; color: var(--box-text-muted); margin-top: 2px;">Channel: <strong>${b.bookingChannel}</strong> · Transaction Date: ${b.bookedAt || '—'}</div>
         </div>
         <div>
           <span class="admin-badge ${badgeClass}" style="font-size: 12px; padding: 5px 12px;">${st}</span>
@@ -1780,44 +1774,44 @@ export function initAdmin(doc = document) {
       <!-- Customer & Screening Grid -->
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
         <div class="admin-invoice-section">
-          <div class="admin-invoice-section-title">👤 Thông tin khách hàng</div>
+          <div class="admin-invoice-section-title">👤 Customer Information</div>
           <div><strong>${b.customerName}</strong></div>
-          <div style="color: var(--box-text-muted);">Số điện thoại: <strong>${b.customerPhone || '—'}</strong></div>
+          <div style="color: var(--box-text-muted);">Phone: <strong>${b.customerPhone || '—'}</strong></div>
           <div style="color: var(--box-text-muted);">Email: ${b.customerEmail || '—'}</div>
         </div>
         <div class="admin-invoice-section">
-          <div class="admin-invoice-section-title">🎬 Thông tin suất chiếu</div>
+          <div class="admin-invoice-section-title">🎬 Screening Information</div>
           <div><strong>${b.movieTitle}</strong> (${b.roomType})</div>
           <div style="color: #38bdf8; font-weight: 600;">⏰ ${b.showtimeStart || '—'}</div>
-          <div style="color: var(--box-text-muted);">Rạp: ${b.cinemaName} · ${b.roomName}</div>
+          <div style="color: var(--box-text-muted);">Cinema: ${b.cinemaName} · ${b.roomName}</div>
         </div>
       </div>
 
       <!-- Line Items Section -->
       <div class="admin-invoice-section">
-        <div class="admin-invoice-section-title">📋 Chi tiết hóa đơn (Line Items)</div>
+        <div class="admin-invoice-section-title">📋 Invoice Line Items</div>
         <table class="admin-invoice-table">
           <thead>
             <tr>
-              <th>Hạng mục</th>
-              <th>Chi tiết</th>
-              <th>Số lượng</th>
-              <th style="text-align: right;">Thành tiền</th>
+              <th>Item</th>
+              <th>Details</th>
+              <th>Quantity</th>
+              <th style="text-align: right;">Amount</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td><strong>Vé xem phim</strong></td>
-              <td>${b.seatsDetail || b.seatsSummary || 'Ghế tiêu chuẩn'}</td>
-              <td>${b.ticketCount} vé</td>
+              <td><strong>Movie Tickets</strong></td>
+              <td>${b.seatsDetail || b.seatsSummary || 'Standard Seat'}</td>
+              <td>${b.ticketCount} tickets</td>
               <td style="text-align: right; font-weight: 600;">${formatMoney(b.subtotal || b.totalAmount)}</td>
             </tr>
             ${b.combosDetail ? `
             <tr>
-              <td><strong>Bắp nước &amp; Combo</strong></td>
+              <td><strong>Concessions &amp; Combo</strong></td>
               <td>${b.combosDetail}</td>
-              <td>1 gói</td>
-              <td style="text-align: right; font-weight: 600;">Kèm đơn</td>
+              <td>1 pack</td>
+              <td style="text-align: right; font-weight: 600;">Included</td>
             </tr>` : ''}
           </tbody>
         </table>
@@ -1825,16 +1819,16 @@ export function initAdmin(doc = document) {
         <!-- Totals summary -->
         <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--box-border-color);">
           <div class="admin-invoice-total-row">
-            <span>Tạm tính (Subtotal):</span>
+            <span>Subtotal:</span>
             <span>${formatMoney(b.subtotal || b.totalAmount)}</span>
           </div>
           ${b.discountAmount > 0 ? `
           <div class="admin-invoice-total-row" style="color: #10b981;">
-            <span>Giảm giá khuyến mãi (${b.voucherCode || b.promotionName || 'Voucher'}):</span>
+            <span>Discount (${b.voucherCode || b.promotionName || 'Voucher'}):</span>
             <span>-${formatMoney(b.discountAmount)}</span>
           </div>` : ''}
           <div class="admin-invoice-total-row admin-invoice-grand-total">
-            <span>TỔNG THANH TOÁN:</span>
+            <span>TOTAL AMOUNT:</span>
             <span>${formatMoney(b.totalAmount)}</span>
           </div>
         </div>
@@ -1843,11 +1837,11 @@ export function initAdmin(doc = document) {
       <!-- Payment Provider Section -->
       <div class="admin-invoice-section" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0;">
         <div>
-          <div style="font-size: 11px; color: var(--box-text-muted); text-transform: uppercase;">Cổng thanh toán</div>
+          <div style="font-size: 11px; color: var(--box-text-muted); text-transform: uppercase;">Payment Gateway</div>
           <div style="font-weight: 600; color: #38bdf8;">${b.paymentProvider || 'VNPAY'} · ${b.paymentMethod || 'QR_CODE'}</div>
         </div>
         <div style="text-align: right;">
-          <div style="font-size: 11px; color: var(--box-text-muted); text-transform: uppercase;">Trạng thái thanh toán</div>
+          <div style="font-size: 11px; color: var(--box-text-muted); text-transform: uppercase;">Payment Status</div>
           <div style="font-weight: 700; color: ${b.paymentStatus === 'SUCCESS' ? '#10b981' : b.paymentStatus === 'REFUNDED' ? '#f59e0b' : '#ef4444'};">${b.paymentStatus || 'SUCCESS'}</div>
         </div>
       </div>

@@ -145,7 +145,7 @@ public class PublicTicketDto {
 
     public String getSeatsFormatted() {
         if (seats == null || seats.isEmpty()) {
-            return "Chưa chọn ghế";
+            return "No seats selected";
         }
         return String.join(", ", seats);
     }

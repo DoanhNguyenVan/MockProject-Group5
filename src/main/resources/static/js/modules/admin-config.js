@@ -25,13 +25,13 @@ export const ADMIN_SECTIONS = {
     singular: 'seat type',
     group: 'CINEMA OPERATIONS',
     icon: '₫',
-    description: 'Quản lý danh mục loại ghế, hình dáng nhận diện trực quan và phụ phí vé tương ứng.',
+    description: 'Manage seat types, visual shapes, and ticket price surcharges.',
     columns: ['typeName', 'priceSurcharge', 'description'],
     fields: [
-      text('typeName', 'Loại ghế (Seat type)', 50),
-      select('shapeType', 'Hình dáng (Shape)', ['standard', 'vip', 'sweetbox', 'imax', '4dx', 'recliner', 'wheelchair']),
-      number('priceSurcharge', 'Phụ phí (Surcharge VND)'),
-      text('description', 'Mô tả tính năng', 500, false)
+      text('typeName', 'Seat type', 50),
+      select('shapeType', 'Shape', ['standard', 'vip', 'sweetbox', 'imax', '4dx', 'recliner', 'wheelchair']),
+      number('priceSurcharge', 'Surcharge (VND)'),
+      text('description', 'Description', 500, false)
     ]
   },
   promotions: { title: 'Promotions', singular: 'promotion', group: 'BUSINESS', icon: '✧', description: 'Create a little more reason to come back.', columns: ['promotionName', 'voucherCode', 'discountValue', 'endAt', 'status'], fields: [text('promotionName', 'Promotion name'), text('voucherCode', 'Voucher code', 50), select('discountType', 'Discount type', ['PERCENT', 'FIXED']), number('discountValue', 'Discount value', 1), number('maxDiscount', 'Maximum discount (VND)', 1), number('minOrderAmount', 'Minimum order (VND)'), date('startAt', 'Starts at', 'datetime-local'), date('endAt', 'Ends at', 'datetime-local'), number('usageLimit', 'Total redemptions', 1, 1000000), number('perUserLimit', 'Redemptions per customer', 1, 1000), status] },

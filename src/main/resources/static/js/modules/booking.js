@@ -18,10 +18,10 @@ export function formatCountdown(seconds) {
 
 export function toggleSeat(selected, seat, limit = 8, allSeats = []) {
   if (seat.status === "HELD") {
-    return { selected, error: `Ghế ${seat.seatLabel || seat.id} đang được khách hàng khác giữ tạm thời.` };
+    return { selected, error: `Seat ${seat.seatLabel || seat.id} is temporarily held by another customer.` };
   }
   if (seat.status !== "AVAILABLE") {
-    return { selected, error: "Ghế này hiện không khả dụng." };
+    return { selected, error: "This seat is currently unavailable." };
   }
 
   if (seat.pairId && Array.isArray(allSeats) && allSeats.length) {
@@ -32,17 +32,17 @@ export function toggleSeat(selected, seat, limit = 8, allSeats = []) {
     }
     if (partner) {
       if (partner.status !== "AVAILABLE") {
-        return { selected, error: "Ghế đôi đi cùng hiện không khả dụng." };
+        return { selected, error: "The paired Sweetbox seat is currently unavailable." };
       }
       if (selected.length + 2 > limit) {
-        return { selected, error: `Bạn chỉ có thể chọn tối đa ${limit} ghế mỗi lượt đặt (Ghế đôi chiếm 2 chỗ).` };
+        return { selected, error: `You can select a maximum of ${limit} seats per booking (Sweetbox counts as 2 seats).` };
       }
       return { selected: [...selected, seat.id, partner.id], error: "" };
     }
   }
 
   if (selected.includes(seat.id)) return { selected: selected.filter(id => id !== seat.id), error: "" };
-  if (selected.length >= limit) return { selected, error: `Bạn chỉ có thể chọn tối đa ${limit} ghế mỗi lượt đặt.` };
+  if (selected.length >= limit) return { selected, error: `You can select a maximum of ${limit} seats per booking.` };
   return { selected: [...selected, seat.id], error: "" };
 }
 
@@ -79,13 +79,13 @@ export function safeImageUrl(value, fallback = "/assets/img/crimson-horizon.webp
 }
 
 const VIETNAMESE_SEAT_TYPE_NAMES = {
-  standard: "Ghế thường",
-  vip: "Ghế VIP",
-  sweetbox: "Ghế đôi Sweetbox",
-  imax: "Ghế IMAX",
-  "4dx": "Ghế 4DX",
-  recliner: "Ghế Recliner",
-  wheelchair: "Ghế xe lăn"
+  standard: "Standard Seat",
+  vip: "VIP Seat",
+  sweetbox: "Sweetbox Couple Seat",
+  imax: "IMAX Seat",
+  "4dx": "4DX Seat",
+  recliner: "Recliner Seat",
+  wheelchair: "Wheelchair Seat"
 };
 
 function resolveSeatShape(seat) {
@@ -94,7 +94,7 @@ function resolveSeatShape(seat) {
     return rawShape;
   }
   const upper = String(seat?.type || "").toUpperCase();
-  if (upper.includes("SWEETBOX") || upper.includes("COUPLE") || upper.includes("ĐÔI")) return "sweetbox";
+  if (upper.includes("SWEETBOX") || upper.includes("COUPLE") || upper.includes("PAIR")) return "sweetbox";
   if (upper.includes("VIP")) return "vip";
   if (upper.includes("IMAX")) return "imax";
   if (upper.includes("4DX") || upper.includes("4D")) return "4dx";
@@ -212,7 +212,7 @@ export function initBooking(doc = document) {
     const msg = el("ExpiryMessage");
     if (msg) {
       const seatStr = expiredSeatLabels.length ? ` (${expiredSeatLabels.join(", ")})` : "";
-      msg.textContent = `Thời gian giữ ghế tạm thời cho các ghế${seatStr} đã hết hạn. Hệ thống đã tự động mở lại ghế để phục vụ khách hàng khác. Vui lòng chọn lại vị trí ghế trên sơ đồ.`;
+      msg.textContent = `The temporary hold for seats${seatStr} has expired. The seats have been released for other customers. Please reselect your seats on the seat map.`;
     }
     exp.hidden = false;
     exp.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
@@ -302,7 +302,7 @@ export function initBooking(doc = document) {
       if (err && (err.status === 409 || err.status === 404)) {
         stopHoldTimer();
         stopOtherHoldsWatcher();
-        empty("Suất chiếu đã bắt đầu hoặc không còn khả dụng", err.message || "Suất chiếu này đã bắt đầu hoặc đã qua thời gian bán vé. Vui lòng chọn suất chiếu khác.", false);
+        empty("Screening started or no longer available", err.message || "This screening has started or ticket sales have closed. Please select another screening.", false);
       }
     } finally {
       isSyncingLiveMap = false;
@@ -388,13 +388,13 @@ export function initBooking(doc = document) {
       if (countdownEl) countdownEl.textContent = formatted;
 
       const seatsTextEl = el("HoldBannerSeats");
-      if (seatsTextEl) seatsTextEl.textContent = `Ghế: ${selected.join(", ")}`;
+      if (seatsTextEl) seatsTextEl.textContent = `Seats: ${selected.join(", ")}`;
 
       const badgeEl = el("HoldStateBadge");
       if (badgeEl) {
         badgeEl.textContent = isDanger
-          ? "SẮP HẾT HẠN GIỮ GHẾ!"
-          : (isWarn ? "CÒN ÍT THỜI GIAN" : "ĐANG GIỮ GHẾ TẠM THỜI");
+          ? "SEAT HOLD EXPIRING SOON!"
+          : (isWarn ? "LIMITED TIME LEFT" : "SEATS TEMPORARILY HELD");
       }
 
       const progressEl = el("HoldProgressBar");
@@ -521,7 +521,7 @@ export function initBooking(doc = document) {
           selected = [];
         }
         if (!selected.length) stopHoldTimer();
-        status(err.message || "Ghế bạn chọn vừa được khách hàng khác giữ hoặc đặt.");
+        status(err.message || "The selected seat was just reserved or booked by another customer.");
         // Reload live seat statuses so the conflicting seat turns HELD/BOOKED on the map
         try {
           const fresh = await loadBookingData(data.showtimeId);
@@ -571,8 +571,8 @@ export function initBooking(doc = document) {
     const statEl = el("AvailableStat");
     if (statEl) {
       statEl.textContent = heldOtherCount > 0
-        ? `${availCount}/${activeSeats.length} ghế trống · ${heldOtherCount} đang giữ`
-        : `${availCount}/${activeSeats.length} ghế trống`;
+        ? `${availCount}/${activeSeats.length} available · ${heldOtherCount} held`
+        : `${availCount}/${activeSeats.length} available`;
     }
 
     const tray = el("SelectedTray");
@@ -614,7 +614,7 @@ export function initBooking(doc = document) {
           );
           const removeBtn = node("button", "×", "chip-remove");
           removeBtn.type = "button";
-          removeBtn.setAttribute("aria-label", `Bỏ chọn ghế ${code1}, ${code2}`);
+          removeBtn.setAttribute("aria-label", `Deselect seat ${code1}, ${code2}`);
           removeBtn.addEventListener("click", () => {
             selected = selected.filter(id => id !== first.id && id !== second.id);
             status("");
@@ -632,7 +632,7 @@ export function initBooking(doc = document) {
       const labelSpan = node("span", `${fullSeatCode} · ${formatVnd(seat.price)}`, "chip-text");
       const removeBtn = node("button", "×", "chip-remove");
       removeBtn.type = "button";
-      removeBtn.setAttribute("aria-label", `Bỏ chọn ghế ${fullSeatCode}`);
+      removeBtn.setAttribute("aria-label", `Deselect seat ${fullSeatCode}`);
       removeBtn.addEventListener("click", () => {
         selected = selected.filter(id => id !== seat.id);
         status("");
@@ -649,13 +649,13 @@ export function initBooking(doc = document) {
     if (!data) return;
     const seats = data.seats.filter(s => selected.includes(s.id));
     const totals = calculateTotals(data.seats, selected, data.products, quantities);
-    el("SeatCount").textContent = `${seats.length} ${seats.length === 1 ? "vé" : "vé"}`;
+    el("SeatCount").textContent = `${seats.length} ${seats.length === 1 ? "ticket" : "tickets"}`;
 
     const displayedLabels = seats.map(
       seat => seat.seatLabel || `${seat.row}${seat.activeNumber || seat.number}`
     );
 
-    el("SelectedSeats").textContent = displayedLabels.join(", ") || "Chưa chọn ghế";
+    el("SelectedSeats").textContent = displayedLabels.join(", ") || "No seats selected";
     el("TicketTotal").textContent = formatVnd(totals.tickets);
     el("ProductTotal").textContent = formatVnd(totals.extras);
     el("Total").textContent = formatVnd(totals.total);
@@ -663,10 +663,10 @@ export function initBooking(doc = document) {
     el("Next").disabled = !selected.length || step === 3;
     el("Next").hidden = step === 3;
     app.querySelectorAll("[data-payment-total]").forEach(amount => { amount.textContent = formatVnd(totals.total); });
-    const nextLabel = ["Tiếp tục chọn bắp nước →", "Kiểm tra vé đã chọn →", "Thanh toán ngay →", "Thanh toán"][step];
+    const nextLabel = ["Continue to Concessions →", "Review Selected Tickets →", "Proceed to Payment →", "Pay Now"][step];
     el("Next").textContent = nextLabel;
-    el("CheckoutNote").textContent = selected.length ? "Ghế đang được giữ tạm thời. Tiến hành đặt vé ngay." : "Vui lòng chọn ghế để bắt đầu.";
-    el("StepHint").textContent = [selected.length ? "Hài lòng với vị trí ghế? Chọn thêm bắp nước nhé." : "Chọn ít nhất 1 vị trí ghế để tiếp tục.", "Combo bắp nước là tùy chọn.", "Kiểm tra lại thông tin vé trước khi thanh toán.", "Quét mã thanh toán qua ngân hàng / VNPay."][step];
+    el("CheckoutNote").textContent = selected.length ? "Seats are temporarily held. Proceed to complete your booking." : "Please select seats to begin.";
+    el("StepHint").textContent = [selected.length ? "Happy with your seats? Add your favorite popcorn & drinks." : "Select at least 1 seat to continue.", "Concessions are optional.", "Please review your booking details before payment.", "Scan QR code to pay via Banking or VNPay."][step];
 
     const mobileSeats = el("MobileSeats");
     const mobileTotal = el("MobileTotal");
@@ -674,13 +674,13 @@ export function initBooking(doc = document) {
     const mobileBar = el("MobileBar");
     if (mobileSeats) {
       mobileSeats.textContent = displayedLabels.length
-        ? `Ghế (${seats.length}): ${displayedLabels.join(", ")}`
-        : "Chưa chọn ghế";
+        ? `Seats (${seats.length}): ${displayedLabels.join(", ")}`
+        : "No seats selected";
     }
     if (mobileTotal) mobileTotal.textContent = formatVnd(totals.total);
     if (mobileNext) {
       mobileNext.disabled = !selected.length || step === 3;
-      mobileNext.textContent = ["Tiếp tục →", "Xem lại vé →", "Thanh toán →", "Thanh toán"][step];
+      mobileNext.textContent = ["Continue →", "Review Tickets →", "Pay Now →", "Pay Now"][step];
     }
     if (mobileBar) {
       mobileBar.hidden = step === 3;
@@ -702,7 +702,7 @@ export function initBooking(doc = document) {
       if (!shapesPresent.has(shape)) {
         shapesPresent.set(shape, {
           shape,
-          label: VIETNAMESE_SEAT_TYPE_NAMES[shape] || s.type || "Ghế thường",
+          label: VIETNAMESE_SEAT_TYPE_NAMES[shape] || s.type || "Standard Seat",
           price: s.price
         });
       }
@@ -714,7 +714,7 @@ export function initBooking(doc = document) {
     }
     filterWrap.hidden = false;
 
-    const allBtn = node("button", "Tất cả hạng ghế", `booking-filter-pill${activeShapeFilter === "ALL" ? " is-active" : ""}`);
+    const allBtn = node("button", "All Seat Types", `booking-filter-pill${activeShapeFilter === "ALL" ? " is-active" : ""}`);
     allBtn.type = "button";
     allBtn.addEventListener("click", () => {
       activeShapeFilter = "ALL";
@@ -763,12 +763,12 @@ export function initBooking(doc = document) {
 
     // 1. Column Left: 5 Seat Status Colors
     const statusCol = node("div", undefined, "booking-legend-col");
-    statusCol.append(node("div", "Trạng thái ghế", "legend-col-title"));
+    statusCol.append(node("div", "Seat Status", "legend-col-title"));
     const statuses = [
-      { label: "Ghế trống (Có thể chọn)", cls: "status-available" },
-      { label: "Ghế đang được khách khác giữ", cls: "status-holding" },
-      { label: "Ghế bạn đang chọn & giữ", cls: "status-selected" },
-      { label: "Ghế đã bán", cls: "status-sold" }
+      { label: "Available (Click to select)", cls: "status-available" },
+      { label: "Held by another customer", cls: "status-holding" },
+      { label: "Selected & held by you", cls: "status-selected" },
+      { label: "Sold", cls: "status-sold" }
     ];
     statuses.forEach(s => {
       const row = node("div", undefined, "legend-row");
@@ -781,7 +781,7 @@ export function initBooking(doc = document) {
 
     // 2. Column Right: Seat Shapes & Prices
     const typesCol = node("div", undefined, "booking-legend-col");
-    typesCol.append(node("div", "Loại ghế & Giá vé", "legend-col-title"));
+    typesCol.append(node("div", "Seat Types & Pricing", "legend-col-title"));
     const typesInSeats = new Map();
     if (Array.isArray(data.seats)) {
       data.seats.forEach(s => {
@@ -833,7 +833,7 @@ export function initBooking(doc = document) {
       shapeIcon.innerHTML = getSeatSvg(t.shape);
 
       const title = VIETNAMESE_SEAT_TYPE_NAMES[t.shape] || t.name;
-      const priceSuffix = t.shape === "sweetbox" ? " / cặp" : "";
+      const priceSuffix = t.shape === "sweetbox" ? " / pair" : "";
       const titleEl = node("span", title, "legend-text legend-type-name");
       const priceBadge = node("span", formatVnd(t.price) + priceSuffix, "legend-price-badge");
 
@@ -850,20 +850,20 @@ export function initBooking(doc = document) {
     const hoverText = el("SeatHoverText");
     if (!hoverBar || !hoverText) return;
 
-    let stateText = "Còn trống — Nhấn để chọn và giữ ghế";
+    let stateText = "Available — Click to select and hold seat";
     let stateClass = "state-available";
     if (isSelectedNow) {
-      stateText = "Đang giữ cho bạn — Nhấn lại để bỏ chọn";
+      stateText = "Held for you — Click again to deselect";
       stateClass = "state-selected";
     } else if (seatStatus === "HELD") {
-      const remLabel = holdRemSec > 0 ? ` (còn ${formatCountdown(holdRemSec)})` : "";
-      stateText = `Đang được khách khác giữ tạm thời${remLabel} — Không thể chọn`;
+      const remLabel = holdRemSec > 0 ? ` (${formatCountdown(holdRemSec)} left)` : "";
+      stateText = `Temporarily held by another customer${remLabel} — Unavailable`;
       stateClass = "state-held";
     } else if (seatStatus === "BOOKED") {
-      stateText = "Đã bán — Không thể chọn";
+      stateText = "Sold — Unavailable";
       stateClass = "state-booked";
     } else if (seatStatus === "RESERVED") {
-      stateText = "Đã đặt trước — Không thể chọn";
+      stateText = "Reserved — Unavailable";
       stateClass = "state-reserved";
     }
 
@@ -994,7 +994,7 @@ export function initBooking(doc = document) {
 
             const isBothSelected = selected.includes(first.id) && selected.includes(second.id);
             button.setAttribute("aria-pressed", String(isBothSelected));
-            button.setAttribute("aria-label", `Ghế đôi ${first.seatLabel} - ${second.seatLabel}, ${first.type}, ${formatVnd(first.price + second.price)}, ${pairStatus.toLowerCase()}`);
+            button.setAttribute("aria-label", `Sweetbox couple seat ${first.seatLabel} - ${second.seatLabel}, ${first.type}, ${formatVnd(first.price + second.price)}, ${pairStatus.toLowerCase()}`);
 
             const svgWrap = node("div", undefined, "seat-svg-wrap");
             svgWrap.innerHTML = getSeatSvg("sweetbox", "full");
@@ -1010,7 +1010,7 @@ export function initBooking(doc = document) {
               const selNow = selected.includes(first.id) && selected.includes(second.id);
               const remSec = Math.max(Number(first.holdRemainingSeconds || 0), Number(second.holdRemainingSeconds || 0));
               updateSeatHoverBar(
-                `Ghế đôi ${first.seatLabel}–${second.seatLabel}`,
+                `Sweetbox ${first.seatLabel}–${second.seatLabel}`,
                 vietnameseType,
                 first.price + second.price,
                 pairStatus,
@@ -1031,7 +1031,7 @@ export function initBooking(doc = document) {
                   status("");
                 } else {
                   if (selected.length + 2 > 8) {
-                    status("Bạn chỉ có thể chọn tối đa 8 ghế mỗi lượt đặt (Ghế đôi chiếm 2 chỗ).");
+                    status("You can select a maximum of 8 seats per booking (Sweetbox counts as 2 seats).");
                   } else {
                     selected = [...selected, first.id, second.id];
                     status("");
@@ -1084,7 +1084,7 @@ export function initBooking(doc = document) {
 
         const showSingleHover = () => {
           updateSeatHoverBar(
-            `Ghế ${seat.seatLabel || seatId}`,
+            `Seat ${seat.seatLabel || seatId}`,
             vietnameseType,
             seat.price,
             seat.status,
@@ -1164,7 +1164,7 @@ export function initBooking(doc = document) {
       }
     }
     if (step === 3) {
-      const guestName = doc.getElementById("bookingCustomerName")?.value?.trim() || "Khách Hàng";
+      const guestName = doc.getElementById("bookingCustomerName")?.value?.trim() || "Customer";
       const guestEmail = doc.getElementById("bookingCustomerEmail")?.value?.trim() || "customer@boxcinema.vn";
       const guestPhone = doc.getElementById("bookingCustomerPhone")?.value?.trim() || "0912345678";
 

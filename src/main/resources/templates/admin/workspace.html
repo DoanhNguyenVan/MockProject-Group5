@@ -193,23 +193,23 @@
                 </div>
               </div>
               <div class="d-flex gap-2 align-items-center">
-                <button type="button" id="adminUndoSeats" class="admin-button" title="Quay lại bước vừa rồi (Ctrl+Z)" disabled>
-                  <span aria-hidden="true" style="font-size: 1.1em;">↶</span> Hoàn tác
+                <button type="button" id="adminUndoSeats" class="admin-button" title="Undo last action (Ctrl+Z)" disabled>
+                  <span aria-hidden="true" style="font-size: 1.1em;">↶</span> Undo
                 </button>
-                <button type="button" id="adminRedoSeats" class="admin-button" title="Làm lại bước vừa hủy (Ctrl+Y)" disabled>
-                  <span aria-hidden="true" style="font-size: 1.1em;">↷</span> Làm lại
+                <button type="button" id="adminRedoSeats" class="admin-button" title="Redo action (Ctrl+Y)" disabled>
+                  <span aria-hidden="true" style="font-size: 1.1em;">↷</span> Redo
                 </button>
                 <button type="button" id="adminSaveSeats" class="admin-button admin-button-primary">Save Seat Matrix</button>
               </div>
             </div>
 
-            <!-- Unified Row 1: Rạp, Phòng & Kích thước Lưới -->
+            <!-- Unified Row 1: Cinema, Room & Grid Dimension -->
             <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-3 pb-3" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
               <div class="d-flex flex-wrap gap-3 align-items-center">
-                <label class="d-flex align-items-center gap-2 m-0 text-secondary small fw-semibold">Rạp:
+                <label class="d-flex align-items-center gap-2 m-0 text-secondary small fw-semibold">Cinema:
                   <select id="adminSeatCinema" class="admin-input" style="min-width: 210px;"></select>
                 </label>
-                <label class="d-flex align-items-center gap-2 m-0 text-secondary small fw-semibold">Phòng:
+                <label class="d-flex align-items-center gap-2 m-0 text-secondary small fw-semibold">Room:
                   <select id="adminSeatRoom" class="admin-input" style="min-width: 210px;"></select>
                 </label>
                 <!-- Hidden sync select for script compatibility -->
@@ -217,24 +217,24 @@
               </div>
 
               <div class="d-flex align-items-center gap-2">
-                <span class="text-secondary small fw-semibold">Lưới:</span>
-                <input type="number" id="adminSeatRows" class="admin-input text-center" min="1" max="16" value="8" style="width: 52px; padding: 6px;" title="Số hàng">
+                <span class="text-secondary small fw-semibold">Grid:</span>
+                <input type="number" id="adminSeatRows" class="admin-input text-center" min="1" max="16" value="8" style="width: 52px; padding: 6px;" title="Rows">
                 <span class="text-muted">×</span>
-                <input type="number" id="adminSeatColumns" class="admin-input text-center" min="1" max="20" value="10" style="width: 52px; padding: 6px;" title="Số cột">
-                <button type="button" id="adminGenerateSeats" class="admin-button admin-button-sm">Tạo lưới mới</button>
+                <input type="number" id="adminSeatColumns" class="admin-input text-center" min="1" max="20" value="10" style="width: 52px; padding: 6px;" title="Columns">
+                <button type="button" id="adminGenerateSeats" class="admin-button admin-button-sm">Generate Grid</button>
               </div>
             </div>
 
-            <!-- Unified Row 2: Cọ vẽ nhanh (Visual Palette) & Mẫu thiết lập chuẩn (Contextual Presets) -->
+            <!-- Unified Row 2: Visual Palette & Contextual Presets -->
             <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-3">
               <div class="d-flex flex-wrap gap-2 align-items-center">
-                <span class="text-secondary small fw-semibold me-1">Loại ghế:</span>
+                <span class="text-secondary small fw-semibold me-1">Seat Type:</span>
                 <div id="adminSeatPaintPalette" class="d-flex flex-wrap gap-2 align-items-center"></div>
               </div>
 
               <div class="admin-seat-presets d-flex flex-wrap gap-2 align-items-center">
-                <button type="button" id="btnPresetStandardLayout" class="admin-button admin-button-sm" style="background:#2563eb;color:#ffffff;font-weight:600;border-color:#3b82f6;">⚡ Tạo nhanh</button>
-                <button type="button" id="btnPresetReset" class="admin-button admin-button-sm text-danger-emphasis">Xóa trắng</button>
+                <button type="button" id="btnPresetStandardLayout" class="admin-button admin-button-sm" style="background:#2563eb;color:#ffffff;font-weight:600;border-color:#3b82f6;">⚡ Quick Generate</button>
+                <button type="button" id="btnPresetReset" class="admin-button admin-button-sm text-danger-emphasis">Clear Matrix</button>
               </div>
             </div>
 
@@ -350,36 +350,36 @@
           <!-- Toolbar (Search, Cinema Filter, Status Filter) -->
           <div class="admin-toolbar mb-4 flex-wrap">
             <div class="admin-search-wrap" style="flex: 1; min-width: 250px;">
-              <input type="search" id="adminBookingSearch" class="admin-input w-100" placeholder="Tìm theo Mã đơn (BOX-...), Tên khách, SĐT, Tên phim…">
+              <input type="search" id="adminBookingSearch" class="admin-input w-100" placeholder="Search by Booking Code (BOX-...), Customer, Phone, Movie...">
             </div>
             <select id="adminBookingCinemaFilter" class="admin-input" style="min-width: 200px;">
-              <option value="">Tất cả cụm rạp</option>
+              <option value="">All Cinemas</option>
             </select>
             <select id="adminBookingStatusFilter" class="admin-input" style="min-width: 160px;">
-              <option value="">Tất cả trạng thái</option>
-              <option value="CONFIRMED">CONFIRMED (Thành công)</option>
-              <option value="CANCELLED">CANCELLED (Đã hủy)</option>
-              <option value="REFUNDED">REFUNDED (Đã hoàn tiền)</option>
-              <option value="HOLDING">HOLDING (Đang giữ chỗ)</option>
+              <option value="">All Statuses</option>
+              <option value="CONFIRMED">CONFIRMED (Success)</option>
+              <option value="CANCELLED">CANCELLED</option>
+              <option value="REFUNDED">REFUNDED</option>
+              <option value="HOLDING">HOLDING</option>
             </select>
-            <button type="button" id="adminBookingClearFilters" class="admin-button">Xóa bộ lọc</button>
+            <button type="button" id="adminBookingClearFilters" class="admin-button">Clear Filters</button>
           </div>
 
           <!-- Bookings Table Panel -->
           <div class="admin-panel admin-table-panel">
             <div class="admin-table-scroll">
               <table class="admin-table">
-                <caption class="visually-hidden">Danh sách đơn đặt vé &amp; Hóa đơn</caption>
+                <caption class="visually-hidden">Booking Orders &amp; Invoices</caption>
                 <thead>
                   <tr>
-                    <th scope="col">Mã đơn &amp; Ngày đặt</th>
-                    <th scope="col">Phim &amp; Suất chiếu</th>
-                    <th scope="col">Cụm rạp &amp; Phòng</th>
-                    <th scope="col">Khách hàng</th>
-                    <th scope="col">Ghế &amp; Combo</th>
-                    <th scope="col">Tổng tiền</th>
-                    <th scope="col">Trạng thái</th>
-                    <th scope="col">Hóa đơn</th>
+                    <th scope="col">Booking Code &amp; Date</th>
+                    <th scope="col">Movie &amp; Showtime</th>
+                    <th scope="col">Cinema &amp; Room</th>
+                    <th scope="col">Customer</th>
+                    <th scope="col">Seats &amp; Combos</th>
+                    <th scope="col">Total Amount</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Invoice</th>
                   </tr>
                 </thead>
                 <tbody id="adminBookingTableBody"></tbody>
@@ -388,15 +388,15 @@
 
             <div id="adminBookingEmpty" class="admin-empty" hidden>
               <span>🧾</span>
-              <h2>Không tìm thấy giao dịch nào</h2>
-              <p>Thử tìm từ khóa khác hoặc xóa bộ lọc để xem toàn bộ danh sách.</p>
+              <h2>No transactions found</h2>
+              <p>Try different search keywords or clear filters to view all bookings.</p>
             </div>
 
             <div class="admin-pagination">
-              <p id="adminBookingPageInfo">Hiển thị đơn hàng</p>
+              <p id="adminBookingPageInfo">Showing bookings</p>
               <div class="d-flex gap-2">
-                <button type="button" id="adminBookingPrevious" class="admin-button">Trang trước</button>
-                <button type="button" id="adminBookingNext" class="admin-button">Trang sau</button>
+                <button type="button" id="adminBookingPrevious" class="admin-button">Previous</button>
+                <button type="button" id="adminBookingNext" class="admin-button">Next</button>
               </div>
             </div>
           </div>
@@ -410,51 +410,51 @@
       <div class="admin-dialog-heading">
         <div>
           <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #ef4444; background: rgba(239, 68, 68, 0.12); padding: 4px 10px; border-radius: 6px; margin-bottom: 6px; border: 1px solid rgba(239, 68, 68, 0.25);">
-            ⚠️ CẢNH BÁO AN TOÀN VÉ KHÁCH HÀNG
+            ⚠️ CUSTOMER BOOKING SAFETY ALERT
           </span>
-          <h2 id="adminImpactModalTitle" style="margin: 0; font-size: 20px;">Dừng hoạt động cơ sở / phòng chiếu</h2>
+          <h2 id="adminImpactModalTitle" style="margin: 0; font-size: 20px;">Deactivate Cinema Facility / Room</h2>
         </div>
         <button type="button" id="adminImpactClose" class="admin-icon-button" aria-label="Close dialog" onclick="this.closest('dialog').close('cancel')">×</button>
       </div>
 
       <p style="color: var(--box-text-secondary); font-size: 13px; margin: 8px 0 16px;">
-        Hệ thống phát hiện có các đơn đặt vé đã thanh toán cho các suất chiếu sắp tới. Vui lòng chọn phương án giải quyết nghiệp vụ dưới đây:
+        System detected confirmed customer bookings for upcoming showtimes. Please choose a resolution strategy below:
       </p>
 
       <!-- Impact Metrics -->
       <div class="admin-impact-grid">
         <div class="admin-impact-card">
           <div id="adminImpactBookingsCount" class="admin-impact-value">0</div>
-          <div class="admin-impact-label">Đơn vé ảnh hưởng</div>
+          <div class="admin-impact-label">Affected Bookings</div>
         </div>
         <div class="admin-impact-card">
           <div id="adminImpactTicketsCount" class="admin-impact-value">0</div>
-          <div class="admin-impact-label">Tổng số vé</div>
+          <div class="admin-impact-label">Total Tickets</div>
         </div>
         <div class="admin-impact-card">
-          <div id="adminImpactTotalAmount" class="admin-impact-value">0 đ</div>
-          <div class="admin-impact-label">Tiền cần hoàn</div>
+          <div id="adminImpactTotalAmount" class="admin-impact-value">0 VND</div>
+          <div class="admin-impact-label">Refund Required</div>
         </div>
         <div class="admin-impact-card">
           <div id="adminImpactShowtimesCount" class="admin-impact-value">0</div>
-          <div class="admin-impact-label">Suất chiếu tương lai</div>
+          <div class="admin-impact-label">Future Showtimes</div>
         </div>
       </div>
 
       <!-- Bookings preview table -->
       <div style="font-size: 12px; font-weight: 600; color: var(--box-text-secondary); margin-bottom: 8px;">
-        Chi tiết các đơn vé bị ảnh hưởng:
+        Details of affected bookings:
       </div>
       <div class="admin-impact-bookings-box">
         <table class="admin-impact-table">
           <thead>
             <tr>
-              <th>Mã đơn</th>
-              <th>Khách hàng</th>
-              <th>Phim &amp; Phòng</th>
-              <th>Suất chiếu</th>
-              <th>Số vé</th>
-              <th>Thành tiền</th>
+              <th>Booking Code</th>
+              <th>Customer</th>
+              <th>Movie &amp; Room</th>
+              <th>Showtime</th>
+              <th>Tickets</th>
+              <th>Amount</th>
             </tr>
           </thead>
           <tbody id="adminImpactTableBody">
@@ -464,16 +464,16 @@
       </div>
 
       <!-- Strategy Options -->
-      <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px;">Chọn phương án xử lý:</div>
+      <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px;">Select resolution strategy:</div>
       <div class="admin-resolution-options">
         <label class="admin-resolution-card selected" id="adminOptionRefundCard">
           <input type="radio" name="adminDeactivateStrategy" value="REFUND_AND_CANCEL" checked>
           <div>
             <div style="font-weight: 600; color: #ef4444; font-size: 13px; display: flex; align-items: center; gap: 6px;">
-              🔄 Phương án 1: Hủy khẩn cấp &amp; Tự động hoàn tiền 100% (Khuyên dùng khi đóng đột xuất)
+              🔄 Option 1: Emergency Cancel &amp; Auto Full Refund (Recommended for unplanned closure)
             </div>
             <div style="font-size: 12px; color: var(--box-text-muted); margin-top: 4px;">
-              Hủy toàn bộ suất chiếu tương lai, tự động hoàn tiền 100% về tài khoản/thẻ khách hàng qua cổng thanh toán, gửi email xin lỗi và chuyển rạp/phòng sang Inactive ngay lập tức.
+              Cancel all future showtimes, automatically refund 100% via payment gateway, notify customers via email, and deactivate facility immediately.
             </div>
           </div>
         </label>
@@ -482,19 +482,19 @@
           <input type="radio" name="adminDeactivateStrategy" value="GRACEFUL_DECOMMISSION">
           <div>
             <div style="font-weight: 600; color: #f59e0b; font-size: 13px; display: flex; align-items: center; gap: 6px;">
-              ⏳ Phương án 2: Đóng theo lộ trình / Dừng nhận khách mới (Khuyên dùng khi đóng có kế hoạch)
+              ⏳ Option 2: Graceful Sunset / Stop New Bookings (Recommended for planned maintenance)
             </div>
             <div style="font-size: 12px; color: var(--box-text-muted); margin-top: 4px;">
-              Chuyển rạp sang trạng thái STOP_BOOKING để chặn khách mới đặt vé. Giữ nguyên và phục vụ trọn vẹn các suất chiếu đã có người mua vé cho đến khi kết thúc.
+              Set cinema to STOP_BOOKING to block new reservations while honoring and completing existing booked showtimes.
             </div>
           </div>
         </label>
       </div>
 
       <div class="d-flex justify-content-end gap-2 mt-4">
-        <button type="button" id="adminImpactCancel" class="admin-button" onclick="this.closest('dialog').close('cancel')">Hủy bỏ thao tác</button>
+        <button type="button" id="adminImpactCancel" class="admin-button" onclick="this.closest('dialog').close('cancel')">Cancel</button>
         <button type="button" id="adminImpactSubmit" class="admin-button admin-button-primary" style="background: #ef4444; border-color: #ef4444;">
-          Xác nhận thực hiện
+          Confirm Execution
         </button>
       </div>
     </dialog>
@@ -533,7 +533,7 @@
         <div class="d-flex align-items-center gap-2">
           <span style="font-size: 24px;">🧾</span>
           <div>
-            <h2 style="margin: 0; font-size: 18px; font-weight: 700;">HÓA ĐƠN ĐIỆN TỬ</h2>
+            <h2 style="margin: 0; font-size: 18px; font-weight: 700;">ELECTRONIC RECEIPT</h2>
             <p id="adminInvoiceSub" style="margin: 0; font-size: 12px; color: var(--box-text-muted);">BOX Cinema E-Receipt</p>
           </div>
         </div>
@@ -545,8 +545,8 @@
       </div>
 
       <div class="d-flex justify-content-between align-items-center mt-4 pt-3" style="border-top: 1px solid var(--box-border-color);">
-        <button type="button" class="admin-button" onclick="window.print()">🖨️ In hóa đơn</button>
-        <button type="button" class="admin-button admin-button-primary" onclick="this.closest('dialog').close()">Đóng</button>
+        <button type="button" class="admin-button" onclick="window.print()">🖨️ Print Receipt</button>
+        <button type="button" class="admin-button admin-button-primary" onclick="this.closest('dialog').close()">Close</button>
       </div>
     </dialog>
   </main>

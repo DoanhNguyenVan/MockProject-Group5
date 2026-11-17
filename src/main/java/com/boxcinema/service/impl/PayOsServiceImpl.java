@@ -92,7 +92,7 @@ public class PayOsServiceImpl implements PayOsService {
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found: " + bookingId));
 
         if ("CONFIRMED".equalsIgnoreCase(booking.getBookingStatus())) {
-            throw new IllegalStateException("Đơn hàng này đã được thanh toán thành công trước đó.");
+            throw new IllegalStateException("This booking order has already been paid successfully.");
         }
 
         // Check if an existing PENDING payment attempt is still active
@@ -432,7 +432,7 @@ public class PayOsServiceImpl implements PayOsService {
                 FoodFulfillment ff = new FoodFulfillment(booking);
                 ff.setStatus("QUEUED");
                 ff.setPickupLocation(booking.getShowtime() != null && booking.getShowtime().getRoom() != null && booking.getShowtime().getRoom().getCinema() != null ?
-                        booking.getShowtime().getRoom().getCinema().getCinemaName() + " - Concession Counter" : "Quầy Bắp Nước");
+                        booking.getShowtime().getRoom().getCinema().getCinemaName() + " - Concession Counter" : "Concession Counter");
                 foodFulfillmentRepository.save(ff);
             }
         }
@@ -509,14 +509,14 @@ public class PayOsServiceImpl implements PayOsService {
     }
 
     private String mapBinToBankName(String bin) {
-        if ("970422".equals(bin)) return "MBBank (Ngân hàng TMCP Quân Đội)";
-        if ("970415".equals(bin)) return "VietinBank (Ngân hàng TMCP Công thương Việt Nam)";
-        if ("970436".equals(bin)) return "Vietcombank (Ngân hàng Ngoại thương Việt Nam)";
-        if ("970407".equals(bin)) return "Techcombank (Ngân hàng Kỹ thương Việt Nam)";
-        if ("970418".equals(bin)) return "BIDV (Ngân hàng Đầu tư và Phát triển Việt Nam)";
-        if ("970423".equals(bin)) return "TPBank (Ngân hàng Tiên Phong)";
-        if ("970432".equals(bin)) return "VPBank (Ngân hàng Việt Nam Thịnh Vượng)";
-        if ("970405".equals(bin)) return "Agribank (Ngân hàng Nông nghiệp & PT Nông thôn)";
-        return "Ngân hàng liên kết (" + bin + ")";
+        if ("970422".equals(bin)) return "MBBank";
+        if ("970415".equals(bin)) return "VietinBank";
+        if ("970436".equals(bin)) return "Vietcombank";
+        if ("970407".equals(bin)) return "Techcombank";
+        if ("970418".equals(bin)) return "BIDV";
+        if ("970423".equals(bin)) return "TPBank";
+        if ("970432".equals(bin)) return "VPBank";
+        if ("970405".equals(bin)) return "Agribank";
+        return "Affiliated Bank (" + bin + ")";
     }
 }

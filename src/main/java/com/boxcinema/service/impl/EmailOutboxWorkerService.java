@@ -90,7 +90,7 @@ public class EmailOutboxWorkerService {
 
             helper.setFrom(fromEmail.isBlank() ? "no-reply@boxcinema.vn" : fromEmail, fromName);
             helper.setTo(outbox.getRecipientEmail());
-            helper.setSubject("BOX Cinema - Xác nhận đặt vé thành công #" + ticketView.getBookingCode());
+            helper.setSubject("BOX Cinema - Booking Confirmation #" + ticketView.getBookingCode());
 
             String html = buildEmailHtml(ticketView, ticketUrl);
             helper.setText(html, true);
@@ -123,7 +123,7 @@ public class EmailOutboxWorkerService {
     }
 
     private String buildEmailHtml(BookingTicketViewDto ticket, String ticketUrl) {
-        NumberFormat nf = NumberFormat.getInstance(new Locale("vi", "VN"));
+        NumberFormat nf = NumberFormat.getInstance(Locale.US);
 
         StringBuilder seatsHtml = new StringBuilder();
         if (ticket.getTickets() != null) {
@@ -137,14 +137,14 @@ public class EmailOutboxWorkerService {
         StringBuilder foodHtml = new StringBuilder();
         if (ticket.getFoodItems() != null && !ticket.getFoodItems().isEmpty()) {
             foodHtml.append("<div style='margin-top:16px;border-top:1px dashed #cbd5e1;padding-top:12px;'>");
-            foodHtml.append("<h4 style='margin:0 0 8px;color:#1e293b;'>Bắp & Nước đã đặt:</h4>");
+            foodHtml.append("<h4 style='margin:0 0 8px;color:#1e293b;'>Concessions & Combos:</h4>");
             foodHtml.append("<ul style='padding-left:20px;margin:0;color:#475569;'>");
             for (var f : ticket.getFoodItems()) {
                 foodHtml.append("<li>").append(f.getQuantity()).append("x ").append(f.getProductName());
                 if (f.getVariantName() != null && !f.getVariantName().isBlank()) {
                     foodHtml.append(" (").append(f.getVariantName()).append(")");
                 }
-                foodHtml.append(" - ").append(nf.format(f.getUnitPrice().multiply(java.math.BigDecimal.valueOf(f.getQuantity())))).append(" đ</li>");
+                foodHtml.append(" - ").append(nf.format(f.getUnitPrice().multiply(java.math.BigDecimal.valueOf(f.getQuantity())))).append(" VND</li>");
             }
             foodHtml.append("</ul></div>");
         }
@@ -157,49 +157,49 @@ public class EmailOutboxWorkerService {
                 <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
                     <div style="background: #e11d48; color: #ffffff; padding: 20px; text-align: center;">
                         <h1 style="margin: 0; font-size: 24px; font-weight: bold; letter-spacing: 1px;">BOX CINEMA</h1>
-                        <p style="margin: 4px 0 0; opacity: 0.9; font-size: 14px;">Vé Điện Tử & Xác Nhận Đơn Hàng</p>
+                        <p style="margin: 4px 0 0; opacity: 0.9; font-size: 14px;">E-Ticket & Booking Confirmation</p>
                     </div>
                     
                     <div style="padding: 24px; text-align: center;">
                         <h2 style="color: #0f172a; margin: 0 0 4px;">%s</h2>
-                        <p style="color: #64748b; margin: 0 0 16px; font-size: 14px;">Mã đặt vé: <strong>%s</strong></p>
+                        <p style="color: #64748b; margin: 0 0 16px; font-size: 14px;">Booking Code: <strong>%s</strong></p>
                         
                         <div style="background: #f1f5f9; padding: 16px; border-radius: 8px; margin-bottom: 20px; display: inline-block;">
                             <img src="cid:bookingQrCode" alt="Booking QR Code" width="220" height="220" style="display:block; margin: 0 auto; border-radius: 4px;"/>
-                            <p style="margin: 8px 0 0; color: #0284c7; font-weight: 600; font-size: 13px;">Mã QR dùng check-in cho toàn bộ ghế trong đơn</p>
+                            <p style="margin: 8px 0 0; color: #0284c7; font-weight: 600; font-size: 13px;">QR code for checking in all seats in this booking</p>
                             <div style="margin-top: 12px;">
-                                <a href="%s" style="display:inline-block; background-color:#e11d48; color:#ffffff; padding:8px 20px; border-radius:6px; font-weight:bold; font-size:13px; text-decoration:none;">Xem Vé Trực Tuyến</a>
+                                <a href="%s" style="display:inline-block; background-color:#e11d48; color:#ffffff; padding:8px 20px; border-radius:6px; font-weight:bold; font-size:13px; text-decoration:none;">View E-Ticket Online</a>
                             </div>
                             <p style="margin: 10px 0 0; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; padding: 6px 10px; border-radius: 6px; font-size: 11px; line-height: 1.35; text-align: left;">
-                                ⚠️ Mã QR này đại diện cho toàn bộ số vé trong đơn đặt hàng. Không chia sẻ với người không thuộc nhóm đặt vé.
+                                ⚠️ This QR code represents all tickets in this order. Do not share with people outside your booking group.
                             </p>
                         </div>
                         
                         <div style="text-align: left; background: #fafafa; border: 1px solid #f1f5f9; border-radius: 8px; padding: 16px;">
-                            <p style="margin: 4px 0;"><strong>Rạp:</strong> %s</p>
-                            <p style="margin: 4px 0;"><strong>Phòng chiếu:</strong> %s</p>
-                            <p style="margin: 4px 0;"><strong>Suất chiếu:</strong> %s</p>
-                            <p style="margin: 4px 0;"><strong>Ghế ngồi:</strong> %s</p>
+                            <p style="margin: 4px 0;"><strong>Cinema:</strong> %s</p>
+                            <p style="margin: 4px 0;"><strong>Hall:</strong> %s</p>
+                            <p style="margin: 4px 0;"><strong>Showtime:</strong> %s</p>
+                            <p style="margin: 4px 0;"><strong>Seats:</strong> %s</p>
                             %s
                             <div style="margin-top: 16px; border-top: 2px solid #e2e8f0; padding-top: 12px; font-size: 16px;">
-                                <strong>Tổng cộng:</strong> <span style="color: #e11d48; font-weight: bold; font-size: 18px;">%s đ</span>
+                                <strong>Total Amount:</strong> <span style="color: #e11d48; font-weight: bold; font-size: 18px;">%s VND</span>
                             </div>
                         </div>
                         
                         <p style="color: #94a3b8; font-size: 12px; margin-top: 24px; line-height: 1.5;">
-                            Vui lòng xuất trình mã QR này tại quầy soát vé hoặc cổng tự động trước giờ chiếu ít nhất 15 phút.<br/>
-                            Chúc bạn có những giây phút thưởng thức điện ảnh tuyệt vời tại BOX Cinema!
+                            Please present this QR code at the ticket counter or automated gate at least 15 minutes before showtime.<br/>
+                            Enjoy your movie experience at BOX Cinema!
                         </p>
                     </div>
                 </div>
             </body>
             </html>
             """.formatted(
-                ticket.getMovieTitle() != null ? ticket.getMovieTitle() : "Vé xem phim",
+                ticket.getMovieTitle() != null ? ticket.getMovieTitle() : "Movie Ticket",
                 ticket.getBookingCode(),
                 ticketUrl != null ? ticketUrl : "#",
                 ticket.getCinemaName() != null ? ticket.getCinemaName() : "BOX Cinema",
-                ticket.getRoomName() != null ? ticket.getRoomName() : "Phòng chiếu",
+                ticket.getRoomName() != null ? ticket.getRoomName() : "Auditorium",
                 ticket.getShowtimeStart() != null ? ticket.getShowtimeStart() : "",
                 seatsHtml.toString(),
                 foodHtml.toString(),

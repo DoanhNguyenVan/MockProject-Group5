@@ -97,15 +97,14 @@
       <div id="bookingExpiryNotice" class="booking-expiry-alert" role="alert" hidden>
         <div class="booking-expiry-alert-icon" aria-hidden="true">&#9200;</div>
         <div class="booking-expiry-alert-body">
-          <strong id="bookingExpiryTitle">Hết thời gian giữ ghế tạm thời</strong>
-          <p id="bookingExpiryMessage">Thời gian giữ ghế đã hết hạn và các ghế đã được mở lại cho khách hàng khác. Vui
-            lòng chọn lại vị trí ghế trên sơ đồ để tiếp tục.</p>
+          <strong id="bookingExpiryTitle">Temporary Seat Hold Expired</strong>
+          <p id="bookingExpiryMessage">Your temporary seat reservation has expired and the seats have been released. Please reselect your seats on the map to continue.</p>
         </div>
-        <button type="button" id="bookingExpiryDismiss" class="booking-secondary booking-btn-sm">Chọn lại ghế</button>
+        <button type="button" id="bookingExpiryDismiss" class="booking-secondary booking-btn-sm">Reselect Seats</button>
       </div>
       <div id="bookingLoading" class="booking-loading-state" hidden>
         <div class="booking-spinner"></div>
-        <p class="booking-loading-text">Đang tải thông tin phòng chiếu & sơ đồ ghế...</p>
+        <p class="booking-loading-text">Loading auditorium &amp; seat map...</p>
       </div>
       <section id="bookingEmpty" class="booking-panel booking-empty" hidden>
         <span class="booking-empty-icon" aria-hidden="true">&#9678;</span>
@@ -128,7 +127,7 @@
         </nav>
 
         <!-- Hold Seats with Expiry Live Banner -->
-        <div id="bookingHoldBanner" class="booking-hold-banner" role="region" aria-label="Thời gian giữ ghế tạm thời"
+        <div id="bookingHoldBanner" class="booking-hold-banner" role="region" aria-label="Temporary seat reservation countdown"
           hidden>
           <div class="booking-hold-banner-main">
             <div class="booking-hold-pulse-wrap" aria-hidden="true">
@@ -140,14 +139,13 @@
             </div>
             <div class="booking-hold-info">
               <div class="booking-hold-title-row">
-                <span class="booking-hold-badge" id="bookingHoldStateBadge">ĐANG GIỮ GHẾ TẠM THỜI</span>
+                <span class="booking-hold-badge" id="bookingHoldStateBadge">TEMPORARY SEAT HOLD ACTIVE</span>
                 <span class="booking-hold-seats-text" id="bookingHoldBannerSeats"></span>
               </div>
-              <p class="booking-hold-desc" id="bookingHoldBannerDesc">Ghế bạn chọn đã được giữ chỗ trong 10 phút. Các
-                tài khoản khác sẽ không thể chọn ghế này trong thời gian đếm ngược.</p>
+              <p class="booking-hold-desc" id="bookingHoldBannerDesc">Your selected seats are held for 10 minutes. Other customers cannot select these seats while the countdown is active.</p>
             </div>
             <div class="booking-hold-timer-box">
-              <span class="booking-hold-timer-label">Thời gian giữ ghế</span>
+              <span class="booking-hold-timer-label">Seat Hold Timer</span>
               <strong class="booking-hold-countdown" id="bookingHoldCountdown" aria-live="off">10:00</strong>
             </div>
           </div>
@@ -165,43 +163,40 @@
                   <h2 id="seatTitle" tabindex="-1">Choose your seats</h2>
                 </div>
                 <div class="booking-heading-badges">
-                  <span class="booking-tag" id="bookingAvailableStat">Đang tải...</span>
+                  <span class="booking-tag" id="bookingAvailableStat">Loading...</span>
                   <span class="booking-tag">Up to 8 seats</span>
                 </div>
               </div>
-              <p class="booking-muted">Chạm vào ghế trống để chọn và giữ chỗ ngay lập tức. Chạm lại vào ghế đang chọn để
-                bỏ chọn.</p>
+              <p class="booking-muted">Click or tap on any available seat to reserve it. Click again to deselect.</p>
 
-              <div id="bookingLegend" class="booking-legend-container" aria-label="Chú thích ghế"></div>
+              <div id="bookingLegend" class="booking-legend-container" aria-label="Seat Legend"></div>
 
               <!-- Live Seat Info Bar on Hover / Focus / Tap -->
               <div id="bookingSeatHoverInfo" class="booking-seat-hover-bar" aria-live="polite">
                 <span class="seat-hover-dot"></span>
-                <span id="bookingSeatHoverText">Di chuột hoặc chạm vào ghế bất kỳ trên sơ đồ để xem hạng ghế, giá vé và
-                  trạng thái giữ chỗ.</span>
+                <span id="bookingSeatHoverText">Hover or tap on any seat to view its category, ticket price, and availability status.</span>
               </div>
 
               <div class="booking-screen" aria-hidden="true">
-                <div></div><span>MÀN HÌNH CHIẾU (SCREEN)</span>
+                <div></div><span>CINEMA SCREEN</span>
               </div>
               <div class="booking-seat-scroll" id="bookingSeatScroll" tabindex="0" role="region"
                 aria-label="Seat map. Scroll horizontally on smaller screens.">
                 <div id="bookingSeats" class="booking-seats"></div>
               </div>
-              <p class="booking-scroll-hint">Kéo ngang để xem toàn bộ sơ đồ ghế.</p>
+              <p class="booking-scroll-hint">Scroll horizontally to view the entire seat map.</p>
 
               <!-- Interactive Selected Seat Chips Tray -->
               <div id="bookingSelectedTray" class="booking-selected-tray" hidden>
                 <div class="booking-selected-tray-header">
-                  <span>Ghế bạn đang chọn &amp; giữ (<strong id="bookingTrayCount">0</strong>/8):</span>
-                  <button type="button" id="bookingClearSeats" class="booking-clear-link">Bỏ chọn tất cả</button>
+                  <span>Selected seats (<strong id="bookingTrayCount">0</strong>/8):</span>
+                  <button type="button" id="bookingClearSeats" class="booking-clear-link">Deselect All</button>
                 </div>
-                <div id="bookingSelectedChips" class="booking-selected-chips" aria-label="Danh sách ghế đang chọn">
+                <div id="bookingSelectedChips" class="booking-selected-chips" aria-label="Selected seats list">
                 </div>
               </div>
 
-              <p class="booking-seat-note">Ghế đang chọn sẽ được giữ tạm thời trong 10 phút. Vui lòng hoàn tất thanh
-                toán trong thời gian quy định.</p>
+              <p class="booking-seat-note">Selected seats are reserved for 10 minutes. Please complete your checkout before the timer expires.</p>
             </section>
             <section class="booking-panel" data-booking-step="1" aria-labelledby="comboTitle" hidden>
               <div class="booking-section-heading">
@@ -221,24 +216,23 @@
 
               <!-- Customer contact information for ticket delivery (Section 1.1, 15.1) -->
               <div class="booking-contact-box mt-4 p-3 rounded" style="background:#111827; border:1px solid #1f2937;">
-                <h4 class="h6 text-white mb-2">Thông tin nhận vé điện tử &amp; mã QR</h4>
-                <p class="text-white-50 small mb-3">Vé điện tử và hóa đơn sẽ được gửi đến email này ngay sau khi thanh
-                  toán thành công.</p>
+                <h4 class="h6 text-white mb-2">E-Ticket &amp; QR Delivery Details</h4>
+                <p class="text-white-50 small mb-3">Your e-tickets and invoice will be sent to this email immediately upon successful payment.</p>
                 <div class="row g-3">
                   <div class="col-md-4">
-                    <label class="form-label text-white-50 small" for="bookingCustomerName">Họ và tên *</label>
+                    <label class="form-label text-white-50 small" for="bookingCustomerName">Full Name *</label>
                     <input type="text" id="bookingCustomerName"
                       class="form-control form-control-sm bg-dark text-white border-secondary"
-                      placeholder="Nguyễn Văn A" required>
+                      placeholder="John Doe" required>
                   </div>
                   <div class="col-md-4">
-                    <label class="form-label text-white-50 small" for="bookingCustomerEmail">Email nhận vé *</label>
+                    <label class="form-label text-white-50 small" for="bookingCustomerEmail">Delivery Email *</label>
                     <input type="email" id="bookingCustomerEmail"
                       class="form-control form-control-sm bg-dark text-white border-secondary"
                       placeholder="email@example.com" required>
                   </div>
                   <div class="col-md-4">
-                    <label class="form-label text-white-50 small" for="bookingCustomerPhone">Số điện thoại *</label>
+                    <label class="form-label text-white-50 small" for="bookingCustomerPhone">Phone Number *</label>
                     <input type="tel" id="bookingCustomerPhone"
                       class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="0912345678"
                       required>
@@ -248,14 +242,13 @@
             </section>
             <section class="booking-panel" id="bookingPayment" data-booking-step="3" aria-labelledby="paymentTitle"
               hidden>
-              <p class="booking-eyebrow">THANH TOÁN TRỰC TIẾP QUA PAYOS</p>
-              <h2 id="paymentTitle" tabindex="-1">Quét mã QR để thanh toán</h2>
-              <p class="booking-muted">Mở app ngân hàng bất kỳ để quét mã PayOS QR trực tiếp trên màn hình này (không
-                chuyển hướng).</p>
+              <p class="booking-eyebrow">DIRECT ONLINE PAYMENT VIA PAYOS</p>
+              <h2 id="paymentTitle" tabindex="-1">Scan QR Code to Pay</h2>
+              <p class="booking-muted">Open any mobile banking app to scan the PayOS QR code directly on this screen (no redirect required).</p>
 
               <div id="payosLoading" class="text-center py-5">
                 <div class="spinner-border text-danger" role="status"></div>
-                <p class="mt-2 text-white-50">Đang khởi tạo giao dịch thanh toán PayOS...</p>
+                <p class="mt-2 text-white-50">Initializing PayOS checkout transaction...</p>
               </div>
 
               <div id="payosActiveLayout" class="d-none">
@@ -263,46 +256,46 @@
                   <div class="row align-items-center">
                     <div class="col-md-5 text-center mb-4 mb-md-0">
                       <div class="p-3 bg-white rounded d-inline-block shadow">
-                        <img id="payosQrImage" src="" alt="Mã QR PayOS" width="220" height="220"
+                        <img id="payosQrImage" src="" alt="PayOS QR Code" width="220" height="220"
                           class="d-block mx-auto">
                         <div class="mt-2 text-dark fw-bold small">VIETQR · PAYOS</div>
                       </div>
                       <div class="mt-2">
-                        <span class="badge bg-danger" id="payosTimerBadge">⏱ Hết hạn sau: <span
+                        <span class="badge bg-danger" id="payosTimerBadge">⏱ Expires in: <span
                             id="payosTimer">10:00</span></span>
                       </div>
                     </div>
                     <div class="col-md-7">
                       <div class="mb-3 pb-2 border-bottom border-secondary">
-                        <div class="text-white-50 small">Ngân hàng thụ hưởng</div>
-                        <strong class="text-info fs-5" id="payosBankName">MBBank (Ngân hàng Quân Đội)</strong>
+                        <div class="text-white-50 small">Beneficiary Bank</div>
+                        <strong class="text-info fs-5" id="payosBankName">MBBank (Military Commercial Joint Stock Bank)</strong>
                       </div>
                       <div
                         class="mb-3 pb-2 border-bottom border-secondary d-flex justify-content-between align-items-center">
                         <div>
-                          <div class="text-white-50 small">Số tài khoản</div>
+                          <div class="text-white-50 small">Account Number</div>
                           <strong class="text-white fs-5" id="payosAccountNo">---</strong>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-light" id="btnCopyAccount">Sao chép</button>
+                        <button type="button" class="btn btn-sm btn-outline-light" id="btnCopyAccount">Copy</button>
                       </div>
                       <div class="mb-3 pb-2 border-bottom border-secondary">
-                        <div class="text-white-50 small">Tên chủ tài khoản</div>
+                        <div class="text-white-50 small">Account Holder</div>
                         <strong class="text-white fs-6" id="payosAccountName">BOX CINEMA</strong>
                       </div>
                       <div
                         class="mb-3 pb-2 border-bottom border-secondary d-flex justify-content-between align-items-center">
                         <div>
-                          <div class="text-white-50 small">Số tiền cần thanh toán</div>
-                          <strong class="text-danger fs-4" id="payosAmount">--- đ</strong>
+                          <div class="text-white-50 small">Amount to Pay</div>
+                          <strong class="text-danger fs-4" id="payosAmount">--- ₫</strong>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-light" id="btnCopyAmount">Sao chép</button>
+                        <button type="button" class="btn btn-sm btn-outline-light" id="btnCopyAmount">Copy</button>
                       </div>
                       <div class="mb-3 d-flex justify-content-between align-items-center">
                         <div>
-                          <div class="text-white-50 small">Nội dung chuyển khoản (chính xác)</div>
+                          <div class="text-white-50 small">Transfer Description (Exact)</div>
                           <strong class="text-warning fs-5" id="payosDescription">---</strong>
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-light" id="btnCopyDesc">Sao chép</button>
+                        <button type="button" class="btn btn-sm btn-outline-light" id="btnCopyDesc">Copy</button>
                       </div>
                     </div>
                   </div>
@@ -312,12 +305,11 @@
                 <div class="alert alert-secondary d-flex justify-content-between align-items-center"
                   style="background:#1e293b; border-color:#334155; color:#cbd5e1;">
                   <div>
-                    <strong>Chế độ thử nghiệm (Sandbox / Localhost):</strong>
-                    <div class="small text-white-50">Nhấn nút bên cạnh để mô phỏng webhook thanh toán thành công tức thì
-                      từ PayOS.</div>
+                    <strong>Development Sandbox Mode:</strong>
+                    <div class="small text-white-50">Click the button to simulate an instant successful payment webhook callback from PayOS.</div>
                   </div>
                   <button type="button" id="btnSimulatePayment" class="btn btn-success fw-bold">
-                    ⚡ Mô phỏng PayOS Thành Công
+                    ⚡ Simulate PayOS Success
                   </button>
                 </div>
               </div>
@@ -327,11 +319,10 @@
                 <div class="mb-3">
                   <span class="display-3 text-success">✓</span>
                 </div>
-                <h3 class="text-success fw-bold mb-2">THANH TOÁN THÀNH CÔNG!</h3>
-                <p class="text-white-50 mb-4">Giao dịch của bạn đã được hệ thống PayOS xác thực. Vé điện tử và mã QR
-                  check-in đã sẵn sàng.</p>
+                <h3 class="text-success fw-bold mb-2">PAYMENT SUCCESSFUL!</h3>
+                <p class="text-white-50 mb-4">Your transaction has been verified by PayOS. Your e-tickets and check-in QR code are ready.</p>
                 <a id="btnGoToTicket" href="#" class="btn btn-danger btn-lg px-4 fw-bold">
-                  🎟 XEM VÉ ĐIỆN TỬ NGAY →
+                  🎟 VIEW E-TICKET NOW →
                 </a>
               </div>
             </section>
@@ -344,7 +335,7 @@
             <h2 id="summaryTitle">Booking summary</h2>
             <div id="bookingSummaryHoldBox" class="booking-summary-hold" hidden>
               <div class="booking-summary-hold-row">
-                <span>&#9201; Thời gian giữ ghế</span>
+                <span>&#9201; Hold Timer</span>
                 <strong id="bookingSummaryCountdown">10:00</strong>
               </div>
             </div>
@@ -386,15 +377,15 @@
         </div>
 
         <!-- Sticky Bottom Bar for Mobile & Tablet Devices -->
-        <div id="bookingMobileBar" class="booking-mobile-bar" aria-label="Tóm tắt đặt vé nhanh trên thiết bị di động">
+        <div id="bookingMobileBar" class="booking-mobile-bar" aria-label="Mobile booking summary bar">
           <div class="booking-mobile-bar-info">
             <div class="booking-mobile-bar-top">
-              <span id="bookingMobileSeats" class="booking-mobile-seats">Chưa chọn ghế</span>
+              <span id="bookingMobileSeats" class="booking-mobile-seats">No seats selected</span>
               <span id="bookingMobileTimer" class="booking-mobile-timer" hidden>&#9201; 10:00</span>
             </div>
             <strong id="bookingMobileTotal" class="booking-mobile-total">0 ₫</strong>
           </div>
-          <button type="button" class="booking-primary booking-mobile-next" id="bookingMobileNext" disabled>Tiếp tục
+          <button type="button" class="booking-primary booking-mobile-next" id="bookingMobileNext" disabled>Continue
             &#8594;</button>
         </div>
       </div>
@@ -406,7 +397,7 @@
     <!-- Login Required Modal for Guest Seat Selection -->
     <div class="booking-auth-modal-backdrop" id="bookingAuthModal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle" hidden>
       <div class="booking-auth-modal-card">
-        <button type="button" class="booking-auth-modal-close" id="btnAuthModalClose" aria-label="Đóng popup">&times;</button>
+        <button type="button" class="booking-auth-modal-close" id="btnAuthModalClose" aria-label="Close modal">&times;</button>
         <div class="booking-auth-modal-icon-wrap">
           <div class="booking-auth-modal-icon">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -416,9 +407,9 @@
           </div>
         </div>
         <div class="booking-auth-modal-content">
-          <h3 id="authModalTitle" class="booking-auth-modal-title">Đăng nhập để chọn ghế</h3>
+          <h3 id="authModalTitle" class="booking-auth-modal-title">Sign In to Select Seats</h3>
           <p class="booking-auth-modal-desc">
-            Quý khách vui lòng đăng nhập tài khoản BOX Cinema để chọn vị trí ghế yêu thích và giữ chỗ cho suất chiếu này.
+            Please sign in with your BOX Cinema account to choose your favourite seats and reserve them for this screening.
           </p>
         </div>
         <div class="booking-auth-modal-actions">
@@ -428,15 +419,15 @@
               <polyline points="10 17 15 12 10 7"></polyline>
               <line x1="15" y1="12" x2="3" y2="12"></line>
             </svg>
-            Đăng nhập ngay
+            Sign In Now
           </a>
           <button type="button" id="btnAuthModalBack" class="booking-auth-modal-btn-back">
-            Quay lại
+            Back
           </button>
         </div>
         <div class="booking-auth-modal-footer">
-          <span>Chưa có tài khoản?</span>
-          <a id="btnAuthModalRegister" href="/register" class="booking-auth-modal-link">Đăng ký thành viên</a>
+          <span>Don't have an account?</span>
+          <a id="btnAuthModalRegister" href="/register" class="booking-auth-modal-link">Create an Account</a>
         </div>
       </div>
     </div>

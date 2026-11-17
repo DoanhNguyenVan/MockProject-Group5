@@ -465,7 +465,7 @@ export function initShowtimesPage(doc = document) {
     if (!slot?.dataset.showtimeId) return;
     if (isSlotExpired(slot.dataset.slotTime, getActiveDate())) {
       event.preventDefault();
-      alert("Suất chiếu này đã bắt đầu hoặc đã qua thời gian bán vé. Vui lòng chọn suất chiếu khác.");
+      alert("This screening has started or ticket sales have closed. Please select another screening.");
       pruneExpiredSlots();
       return;
     }
