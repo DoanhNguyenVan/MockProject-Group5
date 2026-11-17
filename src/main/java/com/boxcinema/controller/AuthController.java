@@ -162,7 +162,15 @@ public class AuthController {
     // ==================== AUTH PAGES & REGISTRATION (AUTH-01) ====================
 
     @GetMapping("/login")
-    public String loginPage(Model model) {
+    public String loginPage(@RequestParam(value = "redirect", required = false) String redirect,
+                            HttpSession session,
+                            Model model) {
+        if (redirect != null && !redirect.isBlank() && redirect.startsWith("/")) {
+            if (session != null) {
+                session.setAttribute("REDIRECT_AFTER_LOGIN", redirect);
+            }
+            model.addAttribute("redirectUrl", redirect);
+        }
         model.addAttribute("activePage", "login");
         model.addAttribute("googleOAuthConfigured", isGoogleOAuthConfigured());
         populateAuthShowcasePosters(model);
@@ -1007,11 +1015,33 @@ public class AuthController {
     // ==================== ACCOUNT MANAGEMENT & GOOGLE LINK/UNLINK (AUTH-05, AUTH-06, AUTH-08, 4A) ====================
 
     @GetMapping("/profile")
-    public String profilePage(
+    public String profilePage(HttpServletRequest request, Model model) {
+        UserSummaryDto currentUser = resolveAuthenticatedUser(request);
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+
+        if (userRepository != null) {
+            Optional<User> userOpt = userRepository.findById(currentUser.getUserId());
+            if (userOpt.isPresent()) {
+                model.addAttribute("user", userOpt.get());
+                model.addAttribute("activePage", "profile");
+                return "customer/profile";
+            }
+        }
+
+        model.addAttribute("user", currentUser);
+        model.addAttribute("activePage", "profile");
+        return "customer/profile";
+    }
+
+    @GetMapping("/account-settings")
+    public String accountSettingsPage(
             @RequestParam(value = "linkStatus", required = false) String linkStatus,
             @RequestParam(value = "linkError", required = false) String linkError,
             @RequestParam(value = "setPasswordReady", required = false) String setPasswordReadyParam,
             @RequestParam(value = "setPasswordError", required = false) String setPasswordError,
+            @RequestParam(value = "changePassword", required = false) String changePasswordParam,
             HttpServletRequest request,
             Model model) {
         UserSummaryDto currentUser = resolveAuthenticatedUser(request);
@@ -1024,8 +1054,11 @@ public class AuthController {
         model.addAttribute("hasRecentReauth", hasRecentReauth(session, currentUser.getUserId(), REAUTH_VALIDITY_MS));
         model.addAttribute("setPasswordReady", hasValidSetPasswordReauth(session, currentUser.getUserId()));
 
+        if ("success".equalsIgnoreCase(changePasswordParam) && !model.containsAttribute("successMessage")) {
+            model.addAttribute("successMessage", "Đổi mật khẩu thành công!");
+        }
         if ("success".equalsIgnoreCase(linkStatus) && !model.containsAttribute("successMessage")) {
-            model.addAttribute("successMessage", "Google account connected successfully!");
+            model.addAttribute("successMessage", "Tài khoản Google đã được kết nối thành công!");
         }
         if ("error".equalsIgnoreCase(linkStatus) && linkError != null && !model.containsAttribute("errorMessage")) {
             model.addAttribute("errorMessage", mapFriendlyErrorCode(linkError));
@@ -1035,7 +1068,7 @@ public class AuthController {
         }
         if ("true".equalsIgnoreCase(setPasswordReadyParam) && hasValidSetPasswordReauth(session, currentUser.getUserId())
                 && !model.containsAttribute("infoMessage")) {
-            model.addAttribute("infoMessage", "Google identity verified. Enter your new password (min 6 characters, including 1 uppercase letter, 1 number, and 1 special character) below.");
+            model.addAttribute("infoMessage", "Google identity verified. Enter your new password below.");
         }
 
         if (userRepository != null) {
@@ -1047,16 +1080,16 @@ public class AuthController {
                 model.addAttribute("user", user);
                 model.addAttribute("hasPassword", hasPassword);
                 model.addAttribute("isGoogleLinked", isGoogleLinked);
-                model.addAttribute("activePage", "profile");
-                return "customer/profile";
+                model.addAttribute("activePage", "account-settings");
+                return "customer/account-settings";
             }
         }
 
         model.addAttribute("user", currentUser);
         model.addAttribute("hasPassword", true);
         model.addAttribute("isGoogleLinked", false);
-        model.addAttribute("activePage", "profile");
-        return "customer/profile";
+        model.addAttribute("activePage", "account-settings");
+        return "customer/account-settings";
     }
 
     @PostMapping("/api/account/google/link/start")
@@ -1146,13 +1179,13 @@ public class AuthController {
             return startIsolatedGoogleLinkRedirect(session, currentUser.getUserId(), request, redirectAttributes);
         } catch (AuthRateLimitService.RateLimitExceededException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
-            return "redirect:/profile?linkStatus=error&linkError=RATE_LIMITED";
+            return "redirect:/account-settings?linkStatus=error&linkError=RATE_LIMITED";
         } catch (ReauthRequiredException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", "Please enter your current BOX Cinema password to connect Google.");
-            return "redirect:/profile?linkStatus=error&linkError=RECENT_AUTH_REQUIRED";
+            return "redirect:/account-settings?linkStatus=error&linkError=RECENT_AUTH_REQUIRED";
         } catch (IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
-            return "redirect:/profile?linkStatus=error&linkError=AUTH_INVALID_CREDENTIALS";
+            return "redirect:/account-settings?linkStatus=error&linkError=AUTH_INVALID_CREDENTIALS";
         }
     }
 
@@ -1166,13 +1199,13 @@ public class AuthController {
         if (!hasValidLinkTransaction(session, currentUser.getUserId())) {
             String errCode = resolveMissingLinkTxErrorCode(session);
             redirectAttributes.addFlashAttribute("errorMessage", mapFriendlyErrorCode(errCode));
-            return "redirect:/profile?linkStatus=error&linkError=" + errCode;
+            return "redirect:/account-settings?linkStatus=error&linkError=" + errCode;
         }
         try {
             return startIsolatedGoogleLinkRedirect(session, currentUser.getUserId(), request, redirectAttributes);
         } catch (AuthRateLimitService.RateLimitExceededException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
-            return "redirect:/profile?linkStatus=error&linkError=RATE_LIMITED";
+            return "redirect:/account-settings?linkStatus=error&linkError=RATE_LIMITED";
         }
     }
 
@@ -1206,7 +1239,7 @@ public class AuthController {
             authAuditService.logGoogleEvent("GOOGLE_LINK_FAILURE", currentUser.getUserId(), currentUser.getEmail(),
                     "CANCELLED", error != null ? error : "Missing code");
             redirectAttributes.addFlashAttribute("errorMessage", "Google authorization was cancelled or failed.");
-            return "redirect:/profile?linkStatus=error&linkError=OAUTH_CANCELLED";
+            return "redirect:/account-settings?linkStatus=error&linkError=OAUTH_CANCELLED";
         }
 
         if (expectedUserId == null || !expectedUserId.equals(currentUser.getUserId())
@@ -1216,7 +1249,7 @@ public class AuthController {
             authAuditService.logGoogleEvent("GOOGLE_LINK_FAILURE", currentUser.getUserId(), currentUser.getEmail(),
                     "REJECTED", "OAUTH_STATE_INVALID");
             redirectAttributes.addFlashAttribute("errorMessage", "Security verification (OAuth state) failed. Please retry linking.");
-            return "redirect:/profile?linkStatus=error&linkError=OAUTH_STATE_INVALID";
+            return "redirect:/account-settings?linkStatus=error&linkError=OAUTH_STATE_INVALID";
         }
 
         if (!(expectedExpiresObj instanceof Long expiresAtMs) || System.currentTimeMillis() > expiresAtMs) {
@@ -1224,7 +1257,7 @@ public class AuthController {
             authAuditService.logGoogleEvent("GOOGLE_LINK_FAILURE", currentUser.getUserId(), currentUser.getEmail(),
                     "REJECTED", "LINK_TRANSACTION_EXPIRED");
             redirectAttributes.addFlashAttribute("errorMessage", "Google link authorization expired. Please retry.");
-            return "redirect:/profile?linkStatus=error&linkError=LINK_TRANSACTION_EXPIRED";
+            return "redirect:/account-settings?linkStatus=error&linkError=LINK_TRANSACTION_EXPIRED";
         }
 
         if (!hasValidLinkTransaction(session, currentUser.getUserId())) {
@@ -1232,7 +1265,7 @@ public class AuthController {
             authAuditService.logGoogleEvent("GOOGLE_LINK_FAILURE", currentUser.getUserId(), currentUser.getEmail(),
                     "REJECTED", errCode);
             redirectAttributes.addFlashAttribute("errorMessage", mapFriendlyErrorCode(errCode));
-            return "redirect:/profile?linkStatus=error&linkError=" + errCode;
+            return "redirect:/account-settings?linkStatus=error&linkError=" + errCode;
         }
 
         // Consume single-use Link Transaction before invoking token exchange/linking
@@ -1240,7 +1273,7 @@ public class AuthController {
 
         if (!isGoogleOAuthConfigured()) {
             redirectAttributes.addFlashAttribute("errorMessage", "Google OAuth2 is not configured.");
-            return "redirect:/profile?linkStatus=error&linkError=SERVICE_UNAVAILABLE";
+            return "redirect:/account-settings?linkStatus=error&linkError=SERVICE_UNAVAILABLE";
         }
 
         try {
@@ -1265,17 +1298,17 @@ public class AuthController {
             clearReauth(session);
 
             redirectAttributes.addFlashAttribute("successMessage", "Google account connected successfully!");
-            return "redirect:/profile?linkStatus=success";
+            return "redirect:/account-settings?linkStatus=success";
         } catch (AuthException ex) {
             authAuditService.logGoogleEvent("GOOGLE_LINK_FAILURE", currentUser.getUserId(), currentUser.getEmail(),
                     "FAILED", ex.getErrorCode() + ": " + ex.getMessage());
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
-            return "redirect:/profile?linkStatus=error&linkError=" + urlEncode(ex.getErrorCode());
+            return "redirect:/account-settings?linkStatus=error&linkError=" + urlEncode(ex.getErrorCode());
         } catch (IllegalArgumentException | IllegalStateException ex) {
             authAuditService.logGoogleEvent("GOOGLE_LINK_FAILURE", currentUser.getUserId(), currentUser.getEmail(),
                     "FAILED", ex.getMessage());
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
-            return "redirect:/profile?linkStatus=error&linkError=OAUTH_LINK_FAILED";
+            return "redirect:/account-settings?linkStatus=error&linkError=OAUTH_LINK_FAILED";
         }
     }
 
@@ -1354,7 +1387,7 @@ public class AuthController {
         } catch (IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
         }
-        return "redirect:/profile";
+        return "redirect:/account-settings";
     }
 
     @DeleteMapping("/api/auth/google/link")
@@ -1414,11 +1447,11 @@ public class AuthController {
         AuthMethodsDto methods = userService.getAuthMethods(currentUser.getUserId());
         if (methods.isHasPassword() || !methods.isGoogleLinked()) {
             redirectAttributes.addFlashAttribute("errorMessage", "Set Password is only available for Google-only accounts.");
-            return "redirect:/profile?setPasswordError=VALIDATION_ERROR";
+            return "redirect:/account-settings?setPasswordError=VALIDATION_ERROR";
         }
         if (!isGoogleOAuthConfigured()) {
             redirectAttributes.addFlashAttribute("infoMessage", "Google OAuth2 client credentials are not configured.");
-            return "redirect:/profile?setPasswordError=SERVICE_UNAVAILABLE";
+            return "redirect:/account-settings?setPasswordError=SERVICE_UNAVAILABLE";
         }
 
         String state = googleOidcService.generateCryptographicToken();
@@ -1464,21 +1497,21 @@ public class AuthController {
 
         if (error != null || code == null || code.isBlank()) {
             redirectAttributes.addFlashAttribute("errorMessage", "Google verification was cancelled.");
-            return "redirect:/profile?setPasswordError=OAUTH_CANCELLED";
+            return "redirect:/account-settings?setPasswordError=OAUTH_CANCELLED";
         }
         if (expectedUserId == null || !expectedUserId.equals(currentUser.getUserId())
                 || expectedState == null || expectedNonce == null || state == null
                 || !constantTimeEquals(expectedState, state)) {
             redirectAttributes.addFlashAttribute("errorMessage", "Google verification state is invalid or expired.");
-            return "redirect:/profile?setPasswordError=OAUTH_STATE_INVALID";
+            return "redirect:/account-settings?setPasswordError=OAUTH_STATE_INVALID";
         }
         if (!(expiresObj instanceof Long expiresAtMs) || System.currentTimeMillis() > expiresAtMs) {
             redirectAttributes.addFlashAttribute("errorMessage", "Google verification request expired. Please try again.");
-            return "redirect:/profile?setPasswordError=LINK_TRANSACTION_EXPIRED";
+            return "redirect:/account-settings?setPasswordError=LINK_TRANSACTION_EXPIRED";
         }
         if (!isGoogleOAuthConfigured()) {
             redirectAttributes.addFlashAttribute("errorMessage", "Google OAuth2 is not configured.");
-            return "redirect:/profile?setPasswordError=SERVICE_UNAVAILABLE";
+            return "redirect:/account-settings?setPasswordError=SERVICE_UNAVAILABLE";
         }
 
         try {
@@ -1504,13 +1537,13 @@ public class AuthController {
 
             redirectAttributes.addFlashAttribute("infoMessage",
                     "Google identity confirmed! Enter your new password (min 6 characters, including 1 uppercase letter, 1 number, and 1 special character).");
-            return "redirect:/profile?setPasswordReady=true";
+            return "redirect:/account-settings?setPasswordReady=true";
         } catch (AuthException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
-            return "redirect:/profile?setPasswordError=" + urlEncode(ex.getErrorCode());
+            return "redirect:/account-settings?setPasswordError=" + urlEncode(ex.getErrorCode());
         } catch (IllegalArgumentException | IllegalStateException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
-            return "redirect:/profile?setPasswordError=VALIDATION_ERROR";
+            return "redirect:/account-settings?setPasswordError=VALIDATION_ERROR";
         }
     }
 
@@ -1528,7 +1561,7 @@ public class AuthController {
         if (!hasValidSetPasswordReauth(session, currentUser.getUserId())) {
             redirectAttributes.addFlashAttribute("errorMessage",
                     "Please verify your Google account first before creating a BOX Cinema password.");
-            return "redirect:/profile?setPasswordError=SET_PASSWORD_REAUTH_REQUIRED";
+            return "redirect:/account-settings?setPasswordError=SET_PASSWORD_REAUTH_REQUIRED";
         }
         try {
             userService.setPasswordForGoogleUser(currentUser.getUserId(), newPassword, confirmPassword);
@@ -1539,7 +1572,7 @@ public class AuthController {
         } catch (IllegalArgumentException | IllegalStateException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
         }
-        return "redirect:/profile";
+        return "redirect:/account-settings";
     }
 
     @PostMapping({"/api/account/set-password", "/api/auth/set-password"})
@@ -1572,6 +1605,77 @@ public class AuthController {
                     "success", true,
                     "hasPassword", true,
                     "message", "Password created successfully."
+            ));
+        } catch (AuthException ex) {
+            return ResponseEntity.status(ex.getHttpStatus()).body(errorBody(ex.getErrorCode(), ex.getMessage()));
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            return ResponseEntity.badRequest().body(errorBody("VALIDATION_ERROR", ex.getMessage()));
+        }
+    }
+
+    // ==================== CHANGE PASSWORD ====================
+
+    @GetMapping("/profile/change-password")
+    public String changePasswordPage(HttpServletRequest request, Model model, RedirectAttributes redirectAttributes) {
+        UserSummaryDto currentUser = resolveAuthenticatedUser(request);
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+        if (userRepository != null) {
+            Optional<User> userOpt = userRepository.findById(currentUser.getUserId());
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                if (user.getPasswordHash() == null || user.getPasswordHash().isBlank()) {
+                    redirectAttributes.addFlashAttribute("infoMessage",
+                            "Tài khoản của bạn chưa có mật khẩu. Vui lòng sử dụng tính năng Tạo mật khẩu.");
+                    return "redirect:/account-settings";
+                }
+                model.addAttribute("user", user);
+            }
+        }
+        model.addAttribute("activePage", "account-settings");
+        return "customer/change-password";
+    }
+
+    @PostMapping("/auth/account/change-password")
+    public String changePasswordForm(
+            @RequestParam(value = "currentPassword", required = false) String currentPassword,
+            @RequestParam(value = "newPassword", required = false) String newPassword,
+            @RequestParam(value = "confirmPassword", required = false) String confirmPassword,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+        UserSummaryDto currentUser = resolveAuthenticatedUser(request);
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+        try {
+            userService.changePassword(currentUser.getUserId(), currentPassword, newPassword, confirmPassword);
+            redirectAttributes.addFlashAttribute("successMessage", "Đổi mật khẩu thành công!");
+            return "redirect:/account-settings?changePassword=success";
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            return "redirect:/profile/change-password";
+        }
+    }
+
+    @PostMapping({"/api/account/change-password", "/api/auth/change-password"})
+    @ResponseBody
+    public ResponseEntity<?> apiChangePassword(
+            @RequestBody(required = false) Map<String, String> body,
+            HttpServletRequest request) {
+        UserSummaryDto currentUser = resolveAuthenticatedUser(request);
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(errorBody("ACCOUNT_NOT_AUTHENTICATED", "Authentication required."));
+        }
+        String currentPassword = body != null ? body.get("currentPassword") : null;
+        String newPassword = body != null ? body.get("newPassword") : null;
+        String confirmPassword = body != null ? body.get("confirmPassword") : null;
+        try {
+            userService.changePassword(currentUser.getUserId(), currentPassword, newPassword, confirmPassword);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Đổi mật khẩu thành công!"
             ));
         } catch (AuthException ex) {
             return ResponseEntity.status(ex.getHttpStatus()).body(errorBody(ex.getErrorCode(), ex.getMessage()));
@@ -1622,11 +1726,11 @@ public class AuthController {
             validateGoogleLinkAccountEligibility(userId);
         } catch (AuthException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
-            return "redirect:/profile?linkStatus=error&linkError=" + urlEncode(ex.getErrorCode());
+            return "redirect:/account-settings?linkStatus=error&linkError=" + urlEncode(ex.getErrorCode());
         }
         if (!isGoogleOAuthConfigured()) {
             redirectAttributes.addFlashAttribute("infoMessage", "Google OAuth2 client credentials are not configured.");
-            return "redirect:/profile?linkStatus=error&linkError=SERVICE_UNAVAILABLE";
+            return "redirect:/account-settings?linkStatus=error&linkError=SERVICE_UNAVAILABLE";
         }
         String state = googleOidcService.generateCryptographicToken();
         String nonce = googleOidcService.generateCryptographicToken();

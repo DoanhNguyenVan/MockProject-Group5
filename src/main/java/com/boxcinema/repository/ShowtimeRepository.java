@@ -49,10 +49,17 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
     List<Showtime> findUpcomingShowtimesByMovie(@Param("movieId") Long movieId, @Param("fromTime") LocalDateTime fromTime);
 
     @Query("SELECT DISTINCT s.movie.movieId, s.room.cinema.cinemaId FROM Showtime s " +
+           "WHERE s.startAt >= :fromTime " +
+           "AND s.status = 'ACTIVE' " +
+           "AND s.room.status = 'ACTIVE' " +
+           "AND s.room.cinema.status = 'ACTIVE'")
+    List<Object[]> findActiveMovieCinemaPairs(@Param("fromTime") LocalDateTime fromTime);
+
+    @Query("SELECT DISTINCT s.movie.movieId, s.room.roomType FROM Showtime s " +
            "WHERE s.status = 'ACTIVE' " +
            "AND s.room.status = 'ACTIVE' " +
            "AND s.room.cinema.status = 'ACTIVE'")
-    List<Object[]> findActiveMovieCinemaPairs();
+    List<Object[]> findActiveMovieRoomTypes();
 
     @Query("SELECT s FROM Showtime s " +
            "JOIN FETCH s.movie m " +

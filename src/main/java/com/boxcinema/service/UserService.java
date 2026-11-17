@@ -44,6 +44,8 @@ public interface UserService {
 
     void reauthenticatePassword(Long userId, String rawPassword);
 
+    void changePassword(Long userId, String currentPassword, String newPassword, String confirmPassword);
+
     default void setPasswordForGoogleUser(Long userId, String newPassword, String confirmPassword) {
         throw new UnsupportedOperationException("Set password is not configured.");
     }

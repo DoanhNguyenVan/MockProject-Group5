@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="'Vé Điện Tử #' + ${ticket.bookingCode} + ' | BOX Cinema'">Vé Điện Tử | BOX Cinema</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/main.css?v=20261113c" th:href="@{/css/main.css(v='20261113c')}">
+  <style>
+    .ticket-wrapper {
+      max-width: 840px;
+      margin: 40px auto 60px;
+      padding: 0 16px;
+    }
+    .ticket-card {
+      background: var(--box-bg-card);
+      border: 1px solid var(--box-border-color);
+      border-radius: var(--box-radius-md);
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+      color: var(--box-text-primary);
+    }
+    .ticket-header {
+      background: linear-gradient(135deg, var(--box-accent), #a9152c);
+      padding: 24px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .ticket-header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #ffffff;
+    }
+    .ticket-header .code-badge {
+      background: rgba(0,0,0,0.3);
+      padding: 6px 14px;
+      border-radius: var(--box-radius-sm);
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #ffffff;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .ticket-body {
+      padding: 32px;
+    }
+    .ticket-main-grid {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+    @media (max-width: 768px) {
+      .ticket-main-grid {
+        grid-template-columns: 1fr;
+        justify-items: center;
+        text-align: center;
+      }
+    }
+    .qr-container {
+      background: #ffffff;
+      padding: 16px;
+      border-radius: var(--box-radius-md);
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      width: 100%;
+      max-width: 240px;
+    }
+    .qr-container img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 6px;
+    }
+    .qr-caption {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .qr-subcaption {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 2px;
+    }
+    .movie-info h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--box-text-primary);
+      margin: 0 0 16px;
+    }
+    .info-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .info-item {
+      background: var(--box-bg-secondary);
+      padding: 12px 16px;
+      border-radius: var(--box-radius-sm);
+      border: 1px solid var(--box-border-color);
+    }
+    .info-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--box-text-muted);
+      margin-bottom: 4px;
+    }
+    .info-val {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--box-text-primary);
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .status-pending { background: #d97706; color: #fff; }
+    .status-checked-in { background: #059669; color: #fff; }
+    .status-ready { background: #10b981; color: #fff; }
+    .status-preparing { background: #3b82f6; color: #fff; }
+    .status-queued { background: #6b7280; color: #fff; }
+    .status-picked-up { background: #8b5cf6; color: #fff; }
+    
+    .section-divider {
+      border-top: 1px dashed var(--box-border-color);
+      margin: 28px 0;
+    }
+    .section-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--box-text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .seat-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .seat-badge {
+      background: var(--box-bg-secondary);
+      border: 1px solid var(--box-border-red);
+      padding: 6px 14px;
+      border-radius: var(--box-radius-sm);
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--box-text-primary);
+    }
+    .food-card {
+      background: var(--box-bg-secondary);
+      border-radius: var(--box-radius-sm);
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      border: 1px solid var(--box-border-color);
+    }
+    .food-details {
+      display: flex;
+      flex-direction: column;
+    }
+    .food-name {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--box-text-primary);
+    }
+    .food-variant {
+      font-size: 0.85rem;
+      color: var(--box-text-muted);
+    }
+    .ticket-footer {
+      background: var(--box-bg-secondary);
+      padding: 24px 32px;
+      border-top: 1px solid var(--box-border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .total-display {
+      font-size: 1.1rem;
+      color: var(--box-text-secondary);
+    }
+    .total-display strong {
+      font-size: 1.5rem;
+      color: var(--box-accent);
+      font-weight: 800;
+      margin-left: 8px;
+    }
+    .actions {
+      display: flex;
+      gap: 12px;
+    }
+    .booking-back {
+      color: var(--box-text-muted);
+      font-size: 0.9rem;
+      transition: color 0.2s ease;
+    }
+    .booking-back:hover {
+      color: var(--box-accent);
+    }
+    @media print {
+      header, footer, .actions, .resend-notice, .booking-back-wrapper { display: none !important; }
+      body { background: #fff !important; color: #000 !important; }
+      .ticket-card { border: none !important; box-shadow: none !important; color: #000 !important; background: #fff !important; }
+      .ticket-header { background: #e11d48 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .qr-container { border: 1px solid #ccc; }
+      .info-item, .food-card { background: #f8fafc !important; color: #000 !important; border: 1px solid #e2e8f0 !important; }
+      .info-label { color: #475569 !important; }
+      .info-val, .food-name { color: #0f172a !important; }
+      .ticket-footer { background: #f1f5f9 !important; color: #000 !important; }
+    }
+  </style>
+</head>
+<body>
+  <header th:replace="~{fragments/navbar :: navbar}"></header>
+
+  <main class="ticket-wrapper">
+    <div class="booking-back-wrapper mb-3">
+      <a th:href="@{/}" class="booking-back d-inline-flex align-items-center gap-2 text-decoration-none">
+        ← Quay lại trang chủ
+      </a>
+    </div>
+
+    <div id="resendAlert" class="alert alert-success d-none mb-4" role="alert"></div>
+
+    <div class="ticket-card">
+      <div class="ticket-header">
+        <div>
+          <h1>BOX CINEMA</h1>
+          <p class="mb-0 text-white-50 small">Vé Điện Tử &amp; Biên Nhận Xác Thực</p>
+        </div>
+        <div class="code-badge">
+          MÃ VÉ: <span th:text="${ticket.bookingCode}">BOX-123456</span>
+        </div>
+      </div>
+
+      <div class="ticket-body">
+        <div class="ticket-main-grid">
+          <!-- QR Block (Section 11.2, 11.3 - Single Booking QR generated locally via ZXing) -->
+          <div class="qr-container">
+            <img th:src="@{'/api/customer/bookings/' + ${ticket.bookingId} + '/ticket/qr'}"
+                 alt="Mã QR Check-in"
+                 width="240"
+                 height="240">
+            <div class="qr-caption">MÃ QR CHECK-IN VÉ</div>
+            <div class="qr-subcaption">1 mã đại diện cho toàn bộ số vé trong đơn</div>
+            <div class="mt-2">
+              <span th:if="${ticket.checkinStatus == 'CHECKED_IN'}" class="status-badge status-checked-in">
+                ✓ ĐÃ CHECK-IN VÀO RẠP
+              </span>
+              <span th:unless="${ticket.checkinStatus == 'CHECKED_IN'}" class="status-badge status-pending">
+                CHƯA SOÁT VÉ
+              </span>
+            </div>
+            <div class="qr-warning mt-2 p-2 rounded" style="background: #fffbeb; color: #92400e; font-size: 0.72rem; line-height: 1.35; border: 1px solid #fde68a; text-align: center;">
+              ⚠️ Mã QR này đại diện cho toàn bộ số vé trong đơn đặt hàng. Không chia sẻ với người không thuộc nhóm đặt vé.
+            </div>
+          </div>
+
+          <!-- Movie & Screening Info -->
+          <div class="movie-info">
+            <h2 th:text="${ticket.movieTitle != null ? ticket.movieTitle : 'Phim đã chọn'}">Tên Phim</h2>
+            
+            <div class="info-list">
+              <div class="info-item">
+                <div class="info-label">Rạp chiếu</div>
+                <div class="info-val" th:text="${ticket.cinemaName != null ? ticket.cinemaName : 'BOX Cinema'}">BOX Cinema Royal City</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Phòng chiếu</div>
+                <div class="info-val" th:text="${ticket.roomName != null ? ticket.roomName : 'Phòng 01'}">Screen 01</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Suất chiếu</div>
+                <div class="info-val" th:text="${ticket.showtimeStart}">19:30 - 16/11/2026</div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Khách hàng</div>
+                <div class="info-val" th:text="${ticket.guestName != null && !ticket.guestName.isEmpty() ? ticket.guestName : 'Khách vãng lai'}">Nguyễn Văn A</div>
+              </div>
+            </div>
+
+            <!-- Seat List -->
+            <div>
+              <div class="info-label mb-2">Vị trí ghế ngồi (<span th:text="${ticket.tickets != null ? ticket.tickets.size() : 0}">0</span> vé):</div>
+              <div class="seat-badges">
+                <th:block th:each="t : ${ticket.tickets}">
+                  <span class="seat-badge" th:text="${t.seatLabel}">A1</span>
+                </th:block>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Food & Beverage Fulfillment Section (Section 11.4, 14.1) -->
+        <th:block th:if="${ticket.foodItems != null && !ticket.foodItems.isEmpty()}">
+          <div class="section-divider"></div>
+          <div class="section-title">
+            <span>🍿 Đồ ăn &amp; Thức uống đã đặt</span>
+            <span class="ms-auto">
+              <span th:if="${ticket.foodFulfillmentStatus == 'QUEUED'}" class="status-badge status-queued">Đã tiếp nhận (Chờ bếp)</span>
+              <span th:if="${ticket.foodFulfillmentStatus == 'PREPARING'}" class="status-badge status-preparing">Đang chuẩn bị</span>
+              <span th:if="${ticket.foodFulfillmentStatus == 'READY'}" class="status-badge status-ready">Sẵn sàng nhận tại quầy</span>
+              <span th:if="${ticket.foodFulfillmentStatus == 'PICKED_UP'}" class="status-badge status-picked-up">Đã nhận hàng</span>
+            </span>
+          </div>
+          <div>
+            <div class="food-card" th:each="f : ${ticket.foodItems}">
+              <div class="food-details">
+                <span class="food-name" th:text="${f.productName}">Bắp Rang Bơ</span>
+                <span class="food-variant" th:if="${f.variantName != null && !f.variantName.isEmpty()}" th:text="'Phân loại: ' + ${f.variantName}">Size L</span>
+              </div>
+              <div class="text-end">
+                <strong class="text-white" th:text="'Số lượng: ' + ${f.quantity}">2</strong>
+                <div class="text-white-50 small" th:text="${#numbers.formatDecimal(f.subtotal, 0, 'COMMA', 0, 'POINT')} + ' đ'">120,000 đ</div>
+              </div>
+            </div>
+          </div>
+        </th:block>
+
+      </div>
+
+      <div class="ticket-footer">
+        <div class="total-display">
+          Tổng thanh toán:
+          <strong th:text="${#numbers.formatDecimal(ticket.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' đ'">250,000 đ</strong>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn btn-box-outline" onclick="resendEmail()">
+            ✉ Gửi lại Email
+          </button>
+          <button type="button" class="btn btn-box-primary" onclick="window.print()">
+            🖨 In vé / Lưu PDF
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer th:replace="~{fragments/footer :: footer}"></footer>
+
+  <script th:inline="javascript">
+    const bookingId = /*[[${bookingId}]]*/ 0;
+
+    async function resendEmail() {
+      try {
+        const res = await fetch(`/api/customer/bookings/${bookingId}/email/resend`, { method: 'POST' });
+        const data = await res.json();
+        const alertEl = document.getElementById('resendAlert');
+        alertEl.textContent = data.message || "Yêu cầu gửi lại vé đã được gửi.";
+        alertEl.classList.remove('d-none');
+        setTimeout(() => alertEl.classList.add('d-none'), 5000);
+      } catch (err) {
+        alert("Có lỗi khi gửi lại email: " + err.message);
+      }
+    }
+  </script>
+</body>
+</html>

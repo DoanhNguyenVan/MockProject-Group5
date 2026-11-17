@@ -11,6 +11,8 @@ public interface ShowtimeService {
     List<ShowtimeOptionDto> getShowtimeOptions(Long movieId, Long cinemaId, LocalDate date);
     List<LocalDate> getAvailableDates(Long movieId, Long cinemaId);
     java.util.Map<Long, String> getMovieCinemaIdsMap();
+    java.util.Map<Long, String> getMovieFormatsMap();
+    List<String> getAllActiveRoomFormats();
     List<MovieShowtimeGroupDto> getMovieShowtimeGroups(Long cinemaId, LocalDate date);
     List<DateTabDto> getDateTabs(LocalDate selectedDate);
 }

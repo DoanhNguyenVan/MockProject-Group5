@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}" content="">
+  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}" content="X-CSRF-TOKEN">
+  <title>Account Settings | BOX Cinema</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/main.css" th:href="@{/css/main.css(v='2.4')}">
+  <link rel="stylesheet" href="/css/auth.css" th:href="@{/css/auth.css(v='2.4')}">
+  <style>
+    .profile-card {
+      background: var(--box-bg-card);
+      border: 1px solid var(--box-border-color);
+      border-radius: var(--box-radius-md);
+      padding: clamp(1.5rem, 4vw, 2.25rem);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .account-link-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.15rem 1.35rem;
+      background: var(--box-bg-secondary);
+      border: 1px solid var(--box-border-color);
+      border-radius: var(--box-radius-sm);
+      margin-bottom: 0.85rem;
+      transition: var(--box-transition);
+    }
+
+    .account-link-item:hover {
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .booking-eyebrow {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--box-accent);
+      margin-bottom: 0.35rem;
+    }
+
+    html[data-theme="light"] .profile-card {
+      background: #ffffff;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    html[data-theme="light"] .profile-card h1,
+    html[data-theme="light"] .profile-card h2,
+    html[data-theme="light"] .profile-card .text-white,
+    html[data-theme="light"] main h1.text-white {
+      color: #0f172a !important;
+    }
+
+    html[data-theme="light"] .account-link-item {
+      background: #f8fafc;
+      border: 1px solid rgba(15, 23, 42, 0.08);
+    }
+
+    html[data-theme="light"] .account-link-item:hover {
+      background: #f1f5f9;
+      border-color: rgba(15, 23, 42, 0.16);
+    }
+
+    html[data-theme="light"] .account-link-item .text-white {
+      color: #0f172a !important;
+    }
+
+    html[data-theme="light"] .account-link-item .bg-dark {
+      background-color: #f1f5f9 !important;
+      border-color: rgba(15, 23, 42, 0.14) !important;
+      color: #0f172a !important;
+    }
+  </style>
+</head>
+
+<body>
+  <header th:replace="~{fragments/navbar :: navbar}"></header>
+
+  <main class="container py-5" style="max-width: 800px; min-height: 70vh;">
+    <div class="mb-4">
+      <p class="booking-eyebrow">BẢO MẬT &amp; ĐĂNG NHẬP</p>
+      <h1 class="h3 fw-bold text-white mb-1">Account Settings<span class="text-danger">.</span></h1>
+      <p class="text-secondary small">Manage your sign-in methods and account security.</p>
+    </div>
+
+    <!-- Account Section Tabs -->
+    <div class="d-flex align-items-center gap-2 mb-4 flex-wrap">
+      <a th:href="@{/profile}" class="btn-box-outline btn-sm px-3 text-decoration-none">
+        Thông tin cá nhân
+      </a>
+      <a th:href="@{/account-settings}" class="btn-box-primary btn-sm px-3 text-white text-decoration-none">
+        Phương thức đăng nhập
+      </a>
+    </div>
+
+    <!-- Flash Status Messages -->
+    <div th:if="${errorMessage != null}" class="auth-alert auth-alert-danger mb-4" role="alert">
+      <span th:text="${errorMessage}">Error message</span>
+    </div>
+    <div th:if="${infoMessage != null}" class="auth-alert mb-4"
+      style="background: rgba(59, 130, 246, 0.14); border: 1px solid rgba(59, 130, 246, 0.35); color: #bfdbfe;"
+      role="status">
+      <span th:text="${infoMessage}">Info message</span>
+    </div>
+    <div th:if="${successMessage != null}" class="auth-alert auth-alert-success mb-4" role="alert">
+      <span th:text="${successMessage}">Success message</span>
+    </div>
+
+    <!-- Linked Sign-in Methods Card -->
+    <div class="profile-card">
+      <h2 class="h5 fw-bold text-white mb-3 pb-2 border-bottom border-secondary border-opacity-25">Linked Sign-in Methods</h2>
+      <p class="text-secondary small mb-3">You can connect multiple login methods to access the same BOX Cinema account.</p>
+
+      <!-- Card 1: Password Authentication -->
+      <div class="account-link-item">
+        <div class="d-flex align-items-center gap-3">
+          <div class="p-2 rounded bg-dark border border-secondary border-opacity-25 text-white">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <div>
+            <div class="text-white fw-semibold">Password Authentication</div>
+            <div class="text-secondary small"
+              th:text="${hasPassword ? 'Standard Email & Password login enabled' : 'No password set (Google-only account)'}">
+              Status</div>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <span th:if="${hasPassword}" class="badge bg-success bg-opacity-75 text-white px-3 py-2">Connected</span>
+          <a th:if="${hasPassword}" th:href="@{/profile/change-password}" class="btn-box-outline btn-sm px-3 d-inline-flex align-items-center gap-2 text-decoration-none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 20h9"></path>
+              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
+            </svg>
+            Đổi mật khẩu
+          </a>
+          <th:block th:unless="${hasPassword}">
+            <span class="badge bg-secondary text-white px-2 py-2">Chưa tạo</span>
+            <button type="button" id="openSetPasswordModalBtn" class="btn-box-primary btn-sm px-3"
+              th:attr="data-set-password-ready=${setPasswordReady}" th:disabled="${googleOAuthConfigured == false}"
+              th:title="${googleOAuthConfigured == false ? 'Configure Google OAuth2 client credentials to verify your Google session first' : 'Verify with Google and set a BOX Cinema password'}">
+              Tạo mật khẩu
+            </button>
+          </th:block>
+        </div>
+      </div>
+
+      <!-- Card 2: Google Account -->
+      <div class="account-link-item">
+        <div class="d-flex align-items-center gap-3">
+          <div class="p-2 rounded bg-white text-dark d-flex align-items-center justify-content-center"
+            style="width: 38px; height: 38px;">
+            <svg width="20" height="20" viewBox="0 0 48 48">
+              <path fill="#EA4335"
+                d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+              <path fill="#4285F4"
+                d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+              <path fill="#FBBC05"
+                d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+              <path fill="#34A853"
+                d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+            </svg>
+          </div>
+          <div>
+            <div class="text-white fw-semibold">Tài khoản Google</div>
+            <div id="googleStatusSubtext" class="text-secondary small"
+              th:text="${isGoogleLinked ? 'Đã kết nối tài khoản Google' : 'Chưa kết nối'}">Chưa kết nối</div>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <span id="googleStatusBadge" th:if="${isGoogleLinked}"
+            class="badge bg-success bg-opacity-75 text-white px-3 py-2">Đã liên kết</span>
+          <span id="googleStatusBadge" th:unless="${isGoogleLinked}" class="badge bg-secondary text-white px-3 py-2">Chưa liên kết</span>
+          <th:block th:if="${isGoogleLinked}">
+            <button type="button" id="openUnlinkGoogleModalBtn" class="btn btn-outline-danger btn-sm px-3"
+              th:disabled="${!hasPassword}"
+              th:title="${!hasPassword ? 'Set a BOX Cinema password first before disconnecting Google' : 'Disconnect Google Sign-In'}">
+              Hủy kết nối Google
+            </button>
+          </th:block>
+          <th:block th:unless="${isGoogleLinked}">
+            <button type="button" id="openLinkGoogleModalBtn" class="btn-box-outline btn-sm px-3"
+              th:disabled="${googleOAuthConfigured == false}"
+              th:title="${googleOAuthConfigured == false ? 'Configure Google OAuth2 client credentials in application-local.properties' : 'Connect your Google account'}">
+              Kết nối Google
+            </button>
+          </th:block>
+        </div>
+      </div>
+      <div th:if="${isGoogleLinked and !hasPassword}" class="small text-secondary mt-2">
+        Google is currently your only sign-in method, so disconnecting is disabled until a BOX Cinema password is set.
+      </div>
+      <div id="googleActionInlineError" class="auth-alert auth-alert-danger small mt-3 d-none" role="alert"></div>
+    </div>
+  </main>
+
+  <!-- Password Re-Authentication Modal for Google Link / Unlink (Decision 4A) -->
+  <div class="auth-modal-backdrop d-none" id="googleReauthModal" role="dialog" aria-modal="true"
+    aria-labelledby="googleReauthTitle">
+    <div class="auth-modal-card">
+      <div class="auth-modal-header">
+        <div>
+          <h3 id="googleReauthTitle" class="h6 fw-bold text-white mb-0">Confirm Your Password</h3>
+          <p id="googleReauthSubtitle" class="small text-secondary mb-0">Enter your BOX Cinema password to continue.</p>
+        </div>
+        <button type="button" class="auth-modal-close" id="closeGoogleReauthModalBtn"
+          aria-label="Close">&times;</button>
+      </div>
+      <div class="auth-modal-body">
+        <form id="googleReauthActionForm" action="/auth/account/link/google" method="post">
+          <input type="hidden" name="_csrf" th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}"
+            th:value="${_csrf != null ? _csrf.token : ''}">
+          <div id="googleReauthInlineError" class="auth-alert auth-alert-danger small mb-3 d-none" role="alert"></div>
+          <div class="mb-3">
+            <label for="reauthPasswordInput" class="form-label small text-secondary fw-semibold">Current Password
+              *</label>
+            <input type="password" id="reauthPasswordInput" name="password" class="form-control form-control-dark"
+              placeholder="Enter your current password" required>
+          </div>
+          <button type="submit" id="googleReauthSubmitBtn" class="btn btn-box-primary w-100 py-2">
+            Confirm &amp; Continue
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Set Password Modal for Google-only Accounts -->
+  <div class="auth-modal-backdrop d-none" id="setPasswordModal" role="dialog" aria-modal="true"
+    aria-labelledby="setPasswordTitle">
+    <div class="auth-modal-card">
+      <div class="auth-modal-header">
+        <div>
+          <h3 id="setPasswordTitle" class="h6 fw-bold text-white mb-0">Set BOX Cinema Password</h3>
+          <p class="small text-secondary mb-0">Create a password (at least 6 characters, including 1 uppercase letter, 1
+            number, and 1 special character) so you can also sign in with email &amp; password.</p>
+        </div>
+        <button type="button" class="auth-modal-close" id="closeSetPasswordModalBtn" aria-label="Close">&times;</button>
+      </div>
+      <div class="auth-modal-body">
+        <form id="setPasswordForm" action="/auth/account/set-password" method="post">
+          <input type="hidden" name="_csrf" th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}"
+            th:value="${_csrf != null ? _csrf.token : ''}">
+          <div id="setPasswordInlineError" class="auth-alert auth-alert-danger small mb-3 d-none" role="alert"></div>
+          <div class="mb-3">
+            <label for="setNewPasswordInput" class="form-label small text-secondary fw-semibold">New Password (Min 6
+              chars) *</label>
+            <input type="password" id="setNewPasswordInput" name="newPassword" class="form-control form-control-dark"
+              placeholder="At least 6 characters" minlength="6" maxlength="128" required>
+          </div>
+          <div class="mb-3">
+            <label for="setConfirmPasswordInput" class="form-label small text-secondary fw-semibold">Confirm Password
+              *</label>
+            <input type="password" id="setConfirmPasswordInput" name="confirmPassword"
+              class="form-control form-control-dark" placeholder="Re-enter your new password" minlength="6"
+              maxlength="128" required>
+          </div>
+          <button type="submit" class="btn btn-box-primary w-100 py-2">
+            Save Password
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <footer th:replace="~{fragments/footer :: footer}"></footer>
+  <script>
+    (function () {
+      const setPassModal = document.getElementById("setPasswordModal");
+      const openSetPassBtn = document.getElementById("openSetPasswordModalBtn");
+      const closeSetPassBtn = document.getElementById("closeSetPasswordModalBtn");
+      const setNewPassInput = document.getElementById("setNewPasswordInput");
+      const setConfirmPassInput = document.getElementById("setConfirmPasswordInput");
+      const setPassForm = document.getElementById("setPasswordForm");
+      const setPassInlineErr = document.getElementById("setPasswordInlineError");
+
+      function showSetPassError(msg) {
+        if (setPassInlineErr) {
+          setPassInlineErr.textContent = msg;
+          setPassInlineErr.classList.remove("d-none");
+        }
+      }
+
+      function hideSetPassError() {
+        if (setPassInlineErr) {
+          setPassInlineErr.classList.add("d-none");
+          setPassInlineErr.textContent = "";
+        }
+      }
+
+      function openVerifiedSetPasswordModal() {
+        hideSetPassError();
+        setPassModal?.classList.remove("d-none");
+        setNewPassInput?.focus();
+      }
+
+      openSetPassBtn?.addEventListener("click", () => {
+        const isReady = openSetPassBtn.dataset.setPasswordReady === "true";
+        if (isReady) {
+          openVerifiedSetPasswordModal();
+        } else {
+          window.location.href = "/oauth2/set-password/google/start";
+        }
+      });
+
+      if (openSetPassBtn?.dataset.setPasswordReady === "true") {
+        openVerifiedSetPasswordModal();
+      }
+
+      setPassForm?.addEventListener("submit", (e) => {
+        hideSetPassError();
+        const pw = String(setNewPassInput?.value ?? "");
+        const confirmPw = String(setConfirmPassInput?.value ?? "");
+        const codePoints = Array.from(pw).length;
+        if (!pw.trim()) {
+          e.preventDefault();
+          showSetPassError("Password cannot be empty or blank whitespace.");
+          setNewPassInput?.focus();
+          return;
+        }
+        if (codePoints < 6) {
+          e.preventDefault();
+          showSetPassError("Password must be at least 6 characters long.");
+          setNewPassInput?.focus();
+          return;
+        }
+        if (codePoints > 128) {
+          e.preventDefault();
+          showSetPassError("Password must not exceed 128 characters.");
+          setNewPassInput?.focus();
+          return;
+        }
+        if (!/\p{Lu}/u.test(pw) || !/\d/.test(pw) || !/[^\p{L}\p{N}\s]/u.test(pw)) {
+          e.preventDefault();
+          showSetPassError("Password must include at least 1 uppercase letter, 1 number, and 1 special character.");
+          setNewPassInput?.focus();
+          return;
+        }
+        if (pw !== confirmPw) {
+          e.preventDefault();
+          showSetPassError("Passwords do not match.");
+          setConfirmPassInput?.focus();
+        }
+      });
+
+      closeSetPassBtn?.addEventListener("click", () => setPassModal?.classList.add("d-none"));
+      setPassModal?.addEventListener("click", (e) => {
+        if (e.target === setPassModal) setPassModal.classList.add("d-none");
+      });
+
+      const modal = document.getElementById("googleReauthModal");
+      const closeBtn = document.getElementById("closeGoogleReauthModalBtn");
+      const linkBtn = document.getElementById("openLinkGoogleModalBtn");
+      const unlinkBtn = document.getElementById("openUnlinkGoogleModalBtn");
+      const form = document.getElementById("googleReauthActionForm");
+      const title = document.getElementById("googleReauthTitle");
+      const subtitle = document.getElementById("googleReauthSubtitle");
+      const submitBtn = document.getElementById("googleReauthSubmitBtn");
+      const passInput = document.getElementById("reauthPasswordInput");
+      const reauthErr = document.getElementById("googleReauthInlineError");
+
+      const actionErr = document.getElementById("googleActionInlineError");
+
+      if (!modal || !form) return;
+
+      let currentReauthMode = "link";
+      const linkBtnDefaultText = linkBtn?.textContent?.trim() || "Connect Google";
+
+      function buildCsrfJsonHeaders() {
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute("content") || "";
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute("content") || "X-CSRF-TOKEN";
+        const headers = { "Content-Type": "application/json" };
+        if (csrfToken) headers[csrfHeader] = csrfToken;
+        return headers;
+      }
+
+      function showActionError(msg) {
+        if (actionErr) {
+          actionErr.textContent = msg;
+          actionErr.classList.remove("d-none");
+        }
+      }
+
+      function hideActionError() {
+        if (actionErr) {
+          actionErr.classList.add("d-none");
+          actionErr.textContent = "";
+        }
+      }
+
+      function showReauthError(msg) {
+        if (reauthErr) {
+          reauthErr.textContent = msg;
+          reauthErr.classList.remove("d-none");
+        }
+      }
+
+      function hideReauthError() {
+        if (reauthErr) {
+          reauthErr.classList.add("d-none");
+          reauthErr.textContent = "";
+        }
+      }
+
+      function setLinkingLoading(loading) {
+        if (!linkBtn) return;
+        if (loading) {
+          linkBtn.disabled = true;
+          linkBtn.textContent = "Connecting...";
+        } else {
+          linkBtn.disabled = false;
+          linkBtn.textContent = linkBtnDefaultText;
+        }
+      }
+
+      function openModal(mode) {
+        currentReauthMode = mode;
+        hideActionError();
+        hideReauthError();
+        if (passInput) passInput.value = "";
+
+        if (mode === "unlink") {
+          if (title) title.textContent = "Disconnect Google Account";
+          if (subtitle) subtitle.textContent = "Enter your BOX Cinema password to confirm disconnecting Google.";
+          if (submitBtn) submitBtn.textContent = "Confirm Disconnect";
+          form.action = "/auth/account/unlink/google";
+        } else {
+          if (title) title.textContent = "Connect Google Account";
+          if (subtitle) subtitle.textContent = "Enter your current BOX Cinema password to verify ownership before connecting Google.";
+          if (submitBtn) submitBtn.textContent = "Verify & Connect";
+          form.action = "/auth/account/link/google";
+        }
+        modal.classList.remove("d-none");
+        passInput?.focus();
+      }
+
+      function closeModal() {
+        modal.classList.add("d-none");
+        hideReauthError();
+      }
+
+      async function triggerGoogleLinkDirect() {
+        hideActionError();
+        setLinkingLoading(true);
+        try {
+          const res = await fetch("/api/auth/google/link", {
+            method: "POST",
+            headers: buildCsrfJsonHeaders(),
+            body: JSON.stringify({})
+          });
+
+          const data = await res.json().catch(() => ({}));
+          if (res.status === 403 && (data.requiresReauth || data.errorCode === "RECENT_AUTH_REQUIRED")) {
+            setLinkingLoading(false);
+            openModal("link");
+            return;
+          }
+
+          if (!res.ok) {
+            setLinkingLoading(false);
+            showActionError(data.message || "Failed to initialize Google linking.");
+            return;
+          }
+
+          if (data.authorizationUrl) {
+            window.location.href = data.authorizationUrl;
+            return;
+          }
+
+          window.location.href = "/oauth2/authorization/google-link";
+        } catch (err) {
+          setLinkingLoading(false);
+          showActionError("Network error while connecting Google. Please try again.");
+        }
+      }
+
+      linkBtn?.addEventListener("click", () => {
+        triggerGoogleLinkDirect();
+      });
+
+      unlinkBtn?.addEventListener("click", () => {
+        openModal("unlink");
+      });
+
+      closeBtn?.addEventListener("click", closeModal);
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) closeModal();
+      });
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        hideReauthError();
+        const password = passInput?.value || "";
+        if (!password) {
+          showReauthError("Please enter your current password.");
+          return;
+        }
+
+        const isLinkMode = currentReauthMode === "link";
+        const endpoint = isLinkMode ? "/api/auth/google/link" : "/api/account/google-link/unlink";
+        const originalText = submitBtn?.textContent || "Confirm";
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = "Processing...";
+        }
+
+        try {
+          const res = await fetch(endpoint, {
+            method: "POST",
+            headers: buildCsrfJsonHeaders(),
+            body: JSON.stringify({ password })
+          });
+
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || data.success === false) {
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = originalText;
+            }
+            showReauthError(data.message || (isLinkMode ? "Failed to verify password." : "Failed to disconnect Google."));
+            return;
+          }
+
+          closeModal();
+          window.location.href = isLinkMode ? (data.authorizationUrl || "/oauth2/authorization/google-link") : "/account-settings";
+          return;
+        } catch (err) {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+          }
+          showReauthError("Network error occurred. Please try again.");
+        }
+      });
+    })();
+  </script>
+</body>
+
+</html>

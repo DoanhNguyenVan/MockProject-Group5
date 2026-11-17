@@ -318,6 +318,9 @@ public class BookingContextApiController {
         if (showtime == null || !"ACTIVE".equalsIgnoreCase(showtime.getStatus())) {
             return error(HttpStatus.NOT_FOUND, "SHOWTIME_NOT_FOUND", "This screening could not be found. Please choose another showtime.");
         }
+        if (showtime.getStartAt() != null && !showtime.getStartAt().isAfter(LocalDateTime.now())) {
+            return error(HttpStatus.CONFLICT, "SHOWTIME_STARTED", "Suất chiếu này đã bắt đầu hoặc đã qua thời gian bán vé. Vui lòng chọn suất chiếu khác.");
+        }
 
         var movie = showtime.getMovie();
         var room = showtime.getRoom();
@@ -434,7 +437,7 @@ public class BookingContextApiController {
         }
 
         // 4. Build seats list according to frontend contract
-        int basePriceInt = showtime.getBasePrice() != null ? showtime.getBasePrice().intValue() : 90000;
+        int basePriceInt = showtime.getBasePrice() != null ? showtime.getBasePrice().intValue() : 9000;
         List<Map<String, Object>> seats = new ArrayList<>();
 
         if (seatRows.isEmpty()) {
@@ -454,7 +457,7 @@ public class BookingContextApiController {
                     seat.put("type", meta.get("name"));
                     seat.put("typeSlug", meta.get("slug"));
                     seat.put("shapeType", meta.getOrDefault("shapeType", shape));
-                    seat.put("price", basePriceInt + ((r >= 2 && r <= 5) ? 30000 : (r == 6 ? 50000 : 0)));
+                    seat.put("price", basePriceInt + ((r >= 2 && r <= 5) ? 3000 : (r == 6 ? 5000 : 0)));
                     seat.put("status", bookedSeatLabels.contains(seatId) ? "BOOKED" : "AVAILABLE");
                     seat.put("aisleAfter", c == 5);
                     if (r == 6) {
@@ -595,40 +598,56 @@ public class BookingContextApiController {
             }
         }
 
-        // 5. Products / Combos
+        // 5. Products / Combos from food_combo and food_item
         List<Map<String, Object>> products = new ArrayList<>();
         try {
-            products = jdbcTemplate.query(
-                    "SELECT product_id, product_name, product_type, description, current_price " +
-                    "FROM products WHERE status = 'ACTIVE' ORDER BY product_id ASC",
+            List<Map<String, Object>> comboProducts = jdbcTemplate.query(
+                    "SELECT id, name, description, price, image_url FROM food_combo WHERE status = 'ACTIVE' AND is_available = 1 ORDER BY id ASC",
                     (rs, rowNum) -> {
                         Map<String, Object> p = new LinkedHashMap<>();
-                        String pType = rs.getString("product_type");
-                        String img = "/assets/img/fnb/box-combos.jpg";
-                        if (pType != null) {
-                            String upperType = pType.toUpperCase();
-                            if (upperType.contains("POPCORN") || upperType.contains("SNACK")) {
-                                img = "/assets/img/fnb/box-popcorn.jpg";
-                            } else if (upperType.contains("DRINK") || upperType.contains("BEVERAGE") || upperType.contains("WATER")) {
-                                img = "/assets/img/fnb/box-beverages.jpg";
-                            }
-                        }
-                        p.put("id", String.valueOf(rs.getLong("product_id")));
-                        p.put("name", rs.getString("product_name"));
+                        p.put("id", "combo_" + rs.getLong("id"));
+                        p.put("comboId", rs.getLong("id"));
+                        p.put("name", rs.getString("name"));
                         p.put("description", rs.getString("description") != null ? rs.getString("description") : "");
-                        p.put("price", (int) Math.round(rs.getDouble("current_price")));
-                        p.put("imageUrl", img);
+                        p.put("price", (int) Math.round(rs.getDouble("price")));
+                        p.put("imageUrl", rs.getString("image_url") != null && !rs.getString("image_url").isBlank() ? rs.getString("image_url") : "/assets/img/fnb/box-combos.jpg");
+                        p.put("type", "COMBO");
                         return p;
                     }
             );
+            products.addAll(comboProducts);
+
+            List<Map<String, Object>> itemProducts = jdbcTemplate.query(
+                    "SELECT fi.id, fi.name, fi.description, fi.price, fi.image_url, fc.name as cat_name " +
+                    "FROM food_item fi LEFT JOIN food_category fc ON fi.category_id = fc.id " +
+                    "WHERE fi.status = 'ACTIVE' AND fi.is_available = 1 ORDER BY fi.category_id ASC, fi.id ASC",
+                    (rs, rowNum) -> {
+                        Map<String, Object> p = new LinkedHashMap<>();
+                        p.put("id", "item_" + rs.getLong("id"));
+                        p.put("foodItemId", rs.getLong("id"));
+                        p.put("name", rs.getString("name"));
+                        p.put("description", rs.getString("description") != null ? rs.getString("description") : "");
+                        p.put("price", (int) Math.round(rs.getDouble("price")));
+                        String img = rs.getString("image_url");
+                        if (img == null || img.isBlank()) {
+                            String cat = rs.getString("cat_name");
+                            img = (cat != null && cat.toLowerCase().contains("nước")) ? "/assets/img/fnb/box-beverages.jpg" : "/assets/img/fnb/box-popcorn.jpg";
+                        }
+                        p.put("imageUrl", img);
+                        p.put("type", "FOOD_ITEM");
+                        return p;
+                    }
+            );
+            products.addAll(itemProducts);
         } catch (Exception ignored) {
         }
 
+
         if (products.isEmpty()) {
             products = List.of(
-                    Map.of("id", "solo", "name", "Solo combo", "description", "1 large popcorn + 1 soft drink", "price", 89000, "imageUrl", "/assets/img/fnb/box-popcorn.jpg"),
-                    Map.of("id", "duo", "name", "Movie night for two", "description", "1 large popcorn + 2 soft drinks", "price", 129000, "imageUrl", "/assets/img/fnb/box-combos.jpg"),
-                    Map.of("id", "drink", "name", "Refreshing soft drink", "description", "1 large soft drink", "price", 35000, "imageUrl", "/assets/img/fnb/box-beverages.jpg")
+                    Map.of("id", "solo", "name", "Solo combo", "description", "1 large popcorn + 1 soft drink", "price", 8900, "imageUrl", "/assets/img/fnb/box-popcorn.jpg"),
+                    Map.of("id", "duo", "name", "Movie night for two", "description", "1 large popcorn + 2 soft drinks", "price", 12900, "imageUrl", "/assets/img/fnb/box-combos.jpg"),
+                    Map.of("id", "drink", "name", "Refreshing soft drink", "description", "1 large soft drink", "price", 3500, "imageUrl", "/assets/img/fnb/box-beverages.jpg")
             );
         }
 
@@ -679,6 +698,9 @@ public class BookingContextApiController {
         Showtime showtime = showtimes.findById(showtimeId).orElse(null);
         if (showtime == null || !"ACTIVE".equalsIgnoreCase(showtime.getStatus())) {
             return error(HttpStatus.NOT_FOUND, "SHOWTIME_NOT_FOUND", "Suất chiếu không tồn tại hoặc đã ngừng phục vụ.");
+        }
+        if (showtime.getStartAt() != null && !showtime.getStartAt().isAfter(LocalDateTime.now())) {
+            return error(HttpStatus.CONFLICT, "SHOWTIME_STARTED", "Suất chiếu này đã bắt đầu hoặc đã qua thời gian đặt vé.");
         }
         var room = showtime.getRoom();
         if (room == null || !"ACTIVE".equalsIgnoreCase(room.getStatus())) {

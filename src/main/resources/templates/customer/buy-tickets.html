@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,31 +9,43 @@
   <title>Buy Tickets | BOX Cinema</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/css/main.css?v=20261113c" th:href="@{/css/main.css(v='20261113c')}">
-  <link rel="stylesheet" href="/css/booking.css?v=4.2" th:href="@{/css/booking.css(v='4.2')}">
+  <link rel="stylesheet" href="/css/booking.css?v=4.6" th:href="@{/css/booking.css(v='4.6')}">
   <link rel="stylesheet" href="/css/booking-payment.css?v=1.0" th:href="@{/css/booking-payment.css(v='1.0')}">
-  <link rel="stylesheet" href="/css/booking-screenings.css?v=20261113a" th:href="@{/css/booking-screenings.css(v='20261113a')}">
+  <link rel="stylesheet" href="/css/booking-screenings.css?v=20261113a"
+    th:href="@{/css/booking-screenings.css(v='20261113a')}">
 </head>
+
 <body class="booking-page">
   <header th:replace="~{fragments/navbar :: navbar}"></header>
   <main id="main-content" tabindex="-1">
     <div class="booking-shell" id="bookingApp"
-         th:data-user-id="${currentUser != null ? currentUser.userId : (session.currentUser != null ? session.currentUser.userId : 'GUEST')}">
+      th:data-user-id="${currentUser != null ? currentUser.userId : (session.currentUser != null ? session.currentUser.userId : 'GUEST')}">
       <a class="booking-back" href="/showtimes" th:href="@{/showtimes}">&#8592; Back to showtimes</a>
-      <div class="booking-heading"><div><p class="booking-eyebrow">YOUR NEXT BIG-SCREEN MOMENT</p><h1>Buy tickets<span>.</span></h1></div><p>Great stories. Your favourite seat.</p></div>
-      <div class="booking-notice" id="bookingPreviewNotice" hidden><strong>Preview experience</strong><span>Sample seats and prices. No seats are reserved and no payment is taken.</span></div>
+      <div class="booking-heading">
+        <div>
+          <p class="booking-eyebrow">YOUR NEXT BIG-SCREEN MOMENT</p>
+          <h1>Buy tickets<span>.</span></h1>
+        </div>
+        <p>Great stories. Your favourite seat.</p>
+      </div>
+      <div class="booking-notice" id="bookingPreviewNotice" hidden><strong>Preview experience</strong><span>Sample seats
+          and prices. No seats are reserved and no payment is taken.</span></div>
       <section class="screening-layout" id="bookingPicker" aria-labelledby="pickerTitle" hidden
-               th:data-movie-id="${bookingMovie != null ? bookingMovie.movieId : ''}"
-               th:data-movie-missing="${bookingMovieMissing == true}">
+        th:data-movie-id="${bookingMovie != null ? bookingMovie.movieId : ''}"
+        th:data-movie-missing="${bookingMovieMissing == true}">
         <aside class="screening-film" aria-labelledby="screeningMovieTitle">
           <div class="screening-poster-frame">
             <span class="screening-poster-empty">BOX<br><small>CINEMA</small></span>
-            <img id="screeningPoster" th:if="${bookingMovie != null and bookingMovie.posterUrl != null and !#strings.isEmpty(bookingMovie.posterUrl)}"
-                 th:src="${bookingMovie != null ? bookingMovie.posterUrl : ''}" th:alt="${bookingMovie != null ? bookingMovie.title : ''}" width="320" height="480">
+            <img id="screeningPoster"
+              th:if="${bookingMovie != null and bookingMovie.posterUrl != null and !#strings.isEmpty(bookingMovie.posterUrl)}"
+              th:src="${bookingMovie != null ? bookingMovie.posterUrl : ''}"
+              th:alt="${bookingMovie != null ? bookingMovie.title : ''}" width="320" height="480">
             <span class="screening-poster-label">THE BIG SCREEN IS CALLING</span>
           </div>
           <div class="screening-film-info">
             <p class="booking-eyebrow">YOUR SELECTED MOVIE</p>
-            <h2 id="screeningMovieTitle" th:text="${bookingMovie != null ? bookingMovie.title : 'Find your next movie'}">Find your next movie</h2>
+            <h2 id="screeningMovieTitle"
+              th:text="${bookingMovie != null ? bookingMovie.title : 'Find your next movie'}">Find your next movie</h2>
             <div class="screening-film-meta" th:if="${bookingMovie != null}">
               <span class="screening-rating" th:text="${bookingMovie != null ? bookingMovie.ageRating : ''}"></span>
               <span th:text="${bookingMovie != null ? bookingMovie.durationMinutes + ' min' : ''}"></span>
@@ -43,18 +56,35 @@
           </div>
         </aside>
         <div class="screening-browser">
-          <div class="screening-intro"><p class="booking-eyebrow">PLAN YOUR MOVIE NIGHT</p><h2 id="pickerTitle">Find your screening</h2><p>Pick a date. Find your cinema. Make it a movie night.</p></div>
-          <div id="screeningMovieChooser" hidden><label for="screeningMovieSelect">Movie</label><select id="screeningMovieSelect" class="form-control-dark"><option value="">Choose a movie</option></select></div>
+          <div class="screening-intro">
+            <p class="booking-eyebrow">PLAN YOUR MOVIE NIGHT</p>
+            <h2 id="pickerTitle">Find your screening</h2>
+            <p>Pick a date. Find your cinema. Make it a movie night.</p>
+          </div>
+          <div id="screeningMovieChooser" hidden><label for="screeningMovieSelect">Movie</label><select
+              id="screeningMovieSelect" class="form-control-dark">
+              <option value="">Choose a movie</option>
+            </select></div>
           <section class="screening-date-section" aria-labelledby="screeningDateLabel">
-            <div class="screening-section-label"><h3 id="screeningDateLabel">01 <span>Select a date</span></h3><span id="screeningMonth"></span></div>
+            <div class="screening-section-label">
+              <h3 id="screeningDateLabel">01 <span>Select a date</span></h3><span id="screeningMonth"></span>
+            </div>
             <div id="screeningDates" class="screening-dates" role="group" aria-label="Screening date"></div>
           </section>
           <section aria-labelledby="screeningCinemaLabel">
-            <div class="screening-section-label"><h3 id="screeningCinemaLabel">02 <span>Find a cinema</span></h3></div>
+            <div class="screening-section-label">
+              <h3 id="screeningCinemaLabel">02 <span>Find a cinema</span></h3>
+            </div>
             <label class="screening-search-label" for="screeningSearch">Search by cinema or city</label>
-            <div class="screening-search"><span aria-hidden="true">&#9906;</span><input id="screeningSearch" type="search" placeholder="Search all cinemas or cities..." autocomplete="off" aria-controls="screeningResults"><button id="screeningClear" type="button" aria-label="Clear cinema search" hidden>&#10005;</button></div>
+            <div class="screening-search"><span aria-hidden="true">&#9906;</span><input id="screeningSearch"
+                type="search" placeholder="Search all cinemas or cities..." autocomplete="off"
+                aria-controls="screeningResults"><button id="screeningClear" type="button"
+                aria-label="Clear cinema search" hidden>&#10005;</button></div>
             <div id="screeningCities" class="screening-cities" role="group" aria-label="Filter by city"></div>
-            <div class="screening-results-heading"><h3 id="screeningResultsTitle">Suggested cinemas</h3><span id="screeningResultCount" role="status" aria-live="polite"></span></div>
+            <div class="screening-results-heading">
+              <h3 id="screeningResultsTitle">Suggested cinemas</h3><span id="screeningResultCount" role="status"
+                aria-live="polite"></span>
+            </div>
             <p id="screeningMessage" class="screening-message" role="status" aria-live="polite"></p>
             <button id="screeningRetry" class="booking-secondary" type="button" hidden>Try again</button>
             <div id="screeningResults" class="screening-results"></div>
@@ -68,35 +98,53 @@
         <div class="booking-expiry-alert-icon" aria-hidden="true">&#9200;</div>
         <div class="booking-expiry-alert-body">
           <strong id="bookingExpiryTitle">Hết thời gian giữ ghế tạm thời</strong>
-          <p id="bookingExpiryMessage">Thời gian giữ ghế đã hết hạn và các ghế đã được mở lại cho khách hàng khác. Vui lòng chọn lại vị trí ghế trên sơ đồ để tiếp tục.</p>
+          <p id="bookingExpiryMessage">Thời gian giữ ghế đã hết hạn và các ghế đã được mở lại cho khách hàng khác. Vui
+            lòng chọn lại vị trí ghế trên sơ đồ để tiếp tục.</p>
         </div>
         <button type="button" id="bookingExpiryDismiss" class="booking-secondary booking-btn-sm">Chọn lại ghế</button>
       </div>
+      <div id="bookingLoading" class="booking-loading-state" hidden>
+        <div class="booking-spinner"></div>
+        <p class="booking-loading-text">Đang tải thông tin phòng chiếu & sơ đồ ghế...</p>
+      </div>
       <section id="bookingEmpty" class="booking-panel booking-empty" hidden>
-        <span class="booking-empty-icon" aria-hidden="true">&#9678;</span><h2 id="bookingEmptyTitle">Choose your showtime</h2>
+        <span class="booking-empty-icon" aria-hidden="true">&#9678;</span>
+        <h2 id="bookingEmptyTitle">Choose your showtime</h2>
         <p id="bookingEmptyText">Select a movie, cinema and screening above to begin.</p>
-        <div class="booking-empty-actions"><button type="button" class="booking-secondary" id="bookingRetry" hidden>Try again</button><a class="booking-primary" href="/showtimes">Choose another showtime</a></div>
+        <div class="booking-empty-actions"><button type="button" class="booking-secondary" id="bookingRetry" hidden>Try
+            again</button><a class="booking-primary" href="/showtimes">Choose another showtime</a></div>
       </section>
       <div id="bookingContent" hidden>
         <div class="booking-top-actions">
           <button id="bookingChangeScreening" class="booking-secondary" type="button">&#8592; Change screening</button>
-          <button id="bookingRefreshMap" class="booking-secondary booking-btn-sm" type="button" title="Cập nhật trạng thái ghế mới nhất">&#8635; Làm mới sơ đồ ghế</button>
         </div>
-        <nav class="booking-progress" aria-label="Booking progress"><ol class="booking-steps"><li aria-current="step" data-step-marker="0"><span>01</span> Choose seats</li><li data-step-marker="1"><span>02</span> Snacks &amp; drinks</li><li data-step-marker="2"><span>03</span> Review</li><li data-step-marker="3"><span>04</span> Payment</li></ol></nav>
+        <nav class="booking-progress" aria-label="Booking progress">
+          <ol class="booking-steps">
+            <li aria-current="step" data-step-marker="0"><span>01</span> Choose seats</li>
+            <li data-step-marker="1"><span>02</span> Snacks &amp; drinks</li>
+            <li data-step-marker="2"><span>03</span> Review</li>
+            <li data-step-marker="3"><span>04</span> Payment</li>
+          </ol>
+        </nav>
 
         <!-- Hold Seats with Expiry Live Banner -->
-        <div id="bookingHoldBanner" class="booking-hold-banner" role="region" aria-label="Thời gian giữ ghế tạm thời" hidden>
+        <div id="bookingHoldBanner" class="booking-hold-banner" role="region" aria-label="Thời gian giữ ghế tạm thời"
+          hidden>
           <div class="booking-hold-banner-main">
             <div class="booking-hold-pulse-wrap" aria-hidden="true">
               <span class="booking-hold-dot"></span>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 2" />
+              </svg>
             </div>
             <div class="booking-hold-info">
               <div class="booking-hold-title-row">
                 <span class="booking-hold-badge" id="bookingHoldStateBadge">ĐANG GIỮ GHẾ TẠM THỜI</span>
                 <span class="booking-hold-seats-text" id="bookingHoldBannerSeats"></span>
               </div>
-              <p class="booking-hold-desc" id="bookingHoldBannerDesc">Ghế bạn chọn đã được giữ chỗ trong 10 phút. Các tài khoản khác sẽ không thể chọn ghế này trong thời gian đếm ngược.</p>
+              <p class="booking-hold-desc" id="bookingHoldBannerDesc">Ghế bạn chọn đã được giữ chỗ trong 10 phút. Các
+                tài khoản khác sẽ không thể chọn ghế này trong thời gian đếm ngược.</p>
             </div>
             <div class="booking-hold-timer-box">
               <span class="booking-hold-timer-label">Thời gian giữ ghế</span>
@@ -121,28 +169,23 @@
                   <span class="booking-tag">Up to 8 seats</span>
                 </div>
               </div>
-              <p class="booking-muted">Chạm vào ghế trống để chọn và giữ chỗ ngay lập tức. Chạm lại vào ghế đang chọn để bỏ chọn.</p>
-
-              <!-- Quick Filter & Zoom Toolbar for All Users -->
-              <div class="booking-map-toolbar" aria-label="Công cụ hỗ trợ chọn ghế">
-                <div class="booking-type-filters" id="bookingTypeFilters" role="group" aria-label="Lọc theo hạng ghế"></div>
-                <div class="booking-zoom-controls" role="group" aria-label="Thu phóng sơ đồ ghế">
-                  <button type="button" id="bookingZoomOut" class="booking-zoom-btn" aria-label="Thu nhỏ sơ đồ ghế" title="Thu nhỏ">−</button>
-                  <span id="bookingZoomLabel" class="booking-zoom-label">100%</span>
-                  <button type="button" id="bookingZoomIn" class="booking-zoom-btn" aria-label="Phóng to sơ đồ ghế" title="Phóng to">+</button>
-                </div>
-              </div>
+              <p class="booking-muted">Chạm vào ghế trống để chọn và giữ chỗ ngay lập tức. Chạm lại vào ghế đang chọn để
+                bỏ chọn.</p>
 
               <div id="bookingLegend" class="booking-legend-container" aria-label="Chú thích ghế"></div>
 
               <!-- Live Seat Info Bar on Hover / Focus / Tap -->
               <div id="bookingSeatHoverInfo" class="booking-seat-hover-bar" aria-live="polite">
                 <span class="seat-hover-dot"></span>
-                <span id="bookingSeatHoverText">Di chuột hoặc chạm vào ghế bất kỳ trên sơ đồ để xem hạng ghế, giá vé và trạng thái giữ chỗ.</span>
+                <span id="bookingSeatHoverText">Di chuột hoặc chạm vào ghế bất kỳ trên sơ đồ để xem hạng ghế, giá vé và
+                  trạng thái giữ chỗ.</span>
               </div>
 
-              <div class="booking-screen" aria-hidden="true"><div></div><span>MÀN HÌNH CHIẾU (SCREEN)</span></div>
-              <div class="booking-seat-scroll" id="bookingSeatScroll" tabindex="0" role="region" aria-label="Seat map. Scroll horizontally on smaller screens.">
+              <div class="booking-screen" aria-hidden="true">
+                <div></div><span>MÀN HÌNH CHIẾU (SCREEN)</span>
+              </div>
+              <div class="booking-seat-scroll" id="bookingSeatScroll" tabindex="0" role="region"
+                aria-label="Seat map. Scroll horizontally on smaller screens.">
                 <div id="bookingSeats" class="booking-seats"></div>
               </div>
               <p class="booking-scroll-hint">Kéo ngang để xem toàn bộ sơ đồ ghế.</p>
@@ -153,66 +196,192 @@
                   <span>Ghế bạn đang chọn &amp; giữ (<strong id="bookingTrayCount">0</strong>/8):</span>
                   <button type="button" id="bookingClearSeats" class="booking-clear-link">Bỏ chọn tất cả</button>
                 </div>
-                <div id="bookingSelectedChips" class="booking-selected-chips" aria-label="Danh sách ghế đang chọn"></div>
+                <div id="bookingSelectedChips" class="booking-selected-chips" aria-label="Danh sách ghế đang chọn">
+                </div>
               </div>
 
-              <p class="booking-seat-note">Ghế đang chọn sẽ được giữ tạm thời trong 10 phút. Vui lòng hoàn tất thanh toán trong thời gian quy định.</p>
+              <p class="booking-seat-note">Ghế đang chọn sẽ được giữ tạm thời trong 10 phút. Vui lòng hoàn tất thanh
+                toán trong thời gian quy định.</p>
             </section>
             <section class="booking-panel" data-booking-step="1" aria-labelledby="comboTitle" hidden>
-              <div class="booking-section-heading"><div><p class="booking-eyebrow">THE PERFECT MOVIE PAIRING</p><h2 id="comboTitle" tabindex="-1">Snacks &amp; drinks</h2></div><span class="booking-tag">Optional</span></div>
-              <p class="booking-muted">A little crunch. A refreshing sip. Make it a movie night.</p><div id="bookingProducts" class="booking-products"></div>
+              <div class="booking-section-heading">
+                <div>
+                  <p class="booking-eyebrow">THE PERFECT MOVIE PAIRING</p>
+                  <h2 id="comboTitle" tabindex="-1">Snacks &amp; drinks</h2>
+                </div><span class="booking-tag">Optional</span>
+              </div>
+              <p class="booking-muted">A little crunch. A refreshing sip. Make it a movie night.</p>
+              <div id="bookingProducts" class="booking-products"></div>
             </section>
             <section class="booking-panel" data-booking-step="2" aria-labelledby="reviewTitle" hidden>
-              <p class="booking-eyebrow">ONE LAST LOOK</p><h2 id="reviewTitle" tabindex="-1">Review your selection</h2>
-              <p class="booking-muted">Check your screening, seats and extras below.</p><dl id="bookingReview" class="booking-review"></dl>
-              <p class="booking-muted">Continue to choose cash or VNPay QR.</p>
-            </section>
-            <section class="booking-panel" id="bookingPayment" data-booking-step="3" aria-labelledby="paymentTitle" hidden>
-              <p class="booking-eyebrow">YOUR WAY TO PAY</p><h2 id="paymentTitle" tabindex="-1">Payment</h2>
-              <p class="booking-muted">Choose how you would like to pay for your movie night.</p>
-              <fieldset class="payment-methods">
-                <legend>Payment method</legend>
-                <div class="payment-options">
-                  <label class="payment-option"><input type="radio" name="paymentMethod" value="CASH" checked aria-controls="paymentCash"><span><strong>Cash</strong><small>Pay at the cinema counter</small></span></label>
-                  <label class="payment-option"><input type="radio" name="paymentMethod" value="VNPAY" aria-controls="paymentVnpay"><span><strong>VNPay QR</strong><small>Scan with your banking app</small></span></label>
-                </div>
-              </fieldset>
-              <div id="paymentCash" class="payment-detail" data-payment-method="CASH">
-                <span class="booking-tag">AT THE COUNTER</span><h3>Pay with cash</h3>
-                <p>Complete your cash payment with a member of our cinema team.</p>
-                <ol><li>Visit the ticket counter at your selected cinema.</li><li>Ask staff to check your screening, seats and snacks.</li><li>Pay in cash and collect your tickets after confirmation.</li></ol>
-                <div class="payment-amount"><span>Estimated cash amount</span><strong data-payment-total></strong></div>
-              </div>
-              <div id="paymentVnpay" class="payment-detail" data-payment-method="VNPAY" hidden>
-                <span class="booking-tag">VNPAY QR</span><h3>Scan to pay</h3>
-                <div class="payment-qr-layout">
-                  <div class="payment-qr-placeholder" role="img" aria-label="QR code unavailable. Payment is not connected yet.">
-                    <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 5H5v11m27-11h11v11M5 32v11h11m27-11v11H32"/><rect x="17" y="22" width="14" height="12" rx="2"/><path d="M20 22v-5a4 4 0 0 1 8 0v5"/></svg>
-                    <span>QR not available yet</span>
+              <p class="booking-eyebrow">ONE LAST LOOK</p>
+              <h2 id="reviewTitle" tabindex="-1">Review your selection</h2>
+              <p class="booking-muted">Check your screening, seats and extras below.</p>
+              <dl id="bookingReview" class="booking-review"></dl>
+
+              <!-- Customer contact information for ticket delivery (Section 1.1, 15.1) -->
+              <div class="booking-contact-box mt-4 p-3 rounded" style="background:#111827; border:1px solid #1f2937;">
+                <h4 class="h6 text-white mb-2">Thông tin nhận vé điện tử &amp; mã QR</h4>
+                <p class="text-white-50 small mb-3">Vé điện tử và hóa đơn sẽ được gửi đến email này ngay sau khi thanh
+                  toán thành công.</p>
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label text-white-50 small" for="bookingCustomerName">Họ và tên *</label>
+                    <input type="text" id="bookingCustomerName"
+                      class="form-control form-control-sm bg-dark text-white border-secondary"
+                      placeholder="Nguyễn Văn A" required>
                   </div>
-                  <div><p>A payment QR code will appear here when checkout is available.</p><ol><li>Open a banking app that supports VNPay QR.</li><li>Scan the code and check the payment details.</li><li>Confirm in your app and wait for the payment result.</li></ol></div>
+                  <div class="col-md-4">
+                    <label class="form-label text-white-50 small" for="bookingCustomerEmail">Email nhận vé *</label>
+                    <input type="email" id="bookingCustomerEmail"
+                      class="form-control form-control-sm bg-dark text-white border-secondary"
+                      placeholder="email@example.com" required>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label text-white-50 small" for="bookingCustomerPhone">Số điện thoại *</label>
+                    <input type="tel" id="bookingCustomerPhone"
+                      class="form-control form-control-sm bg-dark text-white border-secondary" placeholder="0912345678"
+                      required>
+                  </div>
                 </div>
-                <div class="payment-amount"><span>Estimated transfer amount</span><strong data-payment-total></strong></div>
               </div>
-              <p class="payment-availability" id="bookingPaymentAvailability">Payment is not available yet. You can explore both methods, but no booking is confirmed, no seats are reserved and no money is collected.</p>
-              <button type="button" id="bookingPaymentAction" class="booking-primary" aria-describedby="bookingPaymentAvailability" disabled>Confirm cash payment</button>
             </section>
-            <div class="booking-navigation"><button type="button" id="bookingPrevious" class="booking-secondary" hidden>&#8592; Back</button><span id="bookingStepHint">Choose at least one seat to continue.</span></div>
+            <section class="booking-panel" id="bookingPayment" data-booking-step="3" aria-labelledby="paymentTitle"
+              hidden>
+              <p class="booking-eyebrow">THANH TOÁN TRỰC TIẾP QUA PAYOS</p>
+              <h2 id="paymentTitle" tabindex="-1">Quét mã QR để thanh toán</h2>
+              <p class="booking-muted">Mở app ngân hàng bất kỳ để quét mã PayOS QR trực tiếp trên màn hình này (không
+                chuyển hướng).</p>
+
+              <div id="payosLoading" class="text-center py-5">
+                <div class="spinner-border text-danger" role="status"></div>
+                <p class="mt-2 text-white-50">Đang khởi tạo giao dịch thanh toán PayOS...</p>
+              </div>
+
+              <div id="payosActiveLayout" class="d-none">
+                <div class="p-4 rounded mb-4" style="background: #111827; border: 1px solid #1f2937;">
+                  <div class="row align-items-center">
+                    <div class="col-md-5 text-center mb-4 mb-md-0">
+                      <div class="p-3 bg-white rounded d-inline-block shadow">
+                        <img id="payosQrImage" src="" alt="Mã QR PayOS" width="220" height="220"
+                          class="d-block mx-auto">
+                        <div class="mt-2 text-dark fw-bold small">VIETQR · PAYOS</div>
+                      </div>
+                      <div class="mt-2">
+                        <span class="badge bg-danger" id="payosTimerBadge">⏱ Hết hạn sau: <span
+                            id="payosTimer">10:00</span></span>
+                      </div>
+                    </div>
+                    <div class="col-md-7">
+                      <div class="mb-3 pb-2 border-bottom border-secondary">
+                        <div class="text-white-50 small">Ngân hàng thụ hưởng</div>
+                        <strong class="text-info fs-5" id="payosBankName">MBBank (Ngân hàng Quân Đội)</strong>
+                      </div>
+                      <div
+                        class="mb-3 pb-2 border-bottom border-secondary d-flex justify-content-between align-items-center">
+                        <div>
+                          <div class="text-white-50 small">Số tài khoản</div>
+                          <strong class="text-white fs-5" id="payosAccountNo">---</strong>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-light" id="btnCopyAccount">Sao chép</button>
+                      </div>
+                      <div class="mb-3 pb-2 border-bottom border-secondary">
+                        <div class="text-white-50 small">Tên chủ tài khoản</div>
+                        <strong class="text-white fs-6" id="payosAccountName">BOX CINEMA</strong>
+                      </div>
+                      <div
+                        class="mb-3 pb-2 border-bottom border-secondary d-flex justify-content-between align-items-center">
+                        <div>
+                          <div class="text-white-50 small">Số tiền cần thanh toán</div>
+                          <strong class="text-danger fs-4" id="payosAmount">--- đ</strong>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-light" id="btnCopyAmount">Sao chép</button>
+                      </div>
+                      <div class="mb-3 d-flex justify-content-between align-items-center">
+                        <div>
+                          <div class="text-white-50 small">Nội dung chuyển khoản (chính xác)</div>
+                          <strong class="text-warning fs-5" id="payosDescription">---</strong>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-light" id="btnCopyDesc">Sao chép</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Simulation Button for testing -->
+                <div class="alert alert-secondary d-flex justify-content-between align-items-center"
+                  style="background:#1e293b; border-color:#334155; color:#cbd5e1;">
+                  <div>
+                    <strong>Chế độ thử nghiệm (Sandbox / Localhost):</strong>
+                    <div class="small text-white-50">Nhấn nút bên cạnh để mô phỏng webhook thanh toán thành công tức thì
+                      từ PayOS.</div>
+                  </div>
+                  <button type="button" id="btnSimulatePayment" class="btn btn-success fw-bold">
+                    ⚡ Mô phỏng PayOS Thành Công
+                  </button>
+                </div>
+              </div>
+
+              <!-- Payment Success State (BR-04, BR-05, BR-09) -->
+              <div id="payosSuccessLayout" class="d-none text-center py-5">
+                <div class="mb-3">
+                  <span class="display-3 text-success">✓</span>
+                </div>
+                <h3 class="text-success fw-bold mb-2">THANH TOÁN THÀNH CÔNG!</h3>
+                <p class="text-white-50 mb-4">Giao dịch của bạn đã được hệ thống PayOS xác thực. Vé điện tử và mã QR
+                  check-in đã sẵn sàng.</p>
+                <a id="btnGoToTicket" href="#" class="btn btn-danger btn-lg px-4 fw-bold">
+                  🎟 XEM VÉ ĐIỆN TỬ NGAY →
+                </a>
+              </div>
+            </section>
+            <div class="booking-navigation"><button type="button" id="bookingPrevious" class="booking-secondary"
+                hidden>&#8592; Back</button><span id="bookingStepHint">Choose at least one seat to continue.</span>
+            </div>
           </div>
           <aside class="booking-panel booking-summary" aria-labelledby="summaryTitle">
-            <p class="booking-eyebrow">YOUR MOVIE NIGHT</p><h2 id="summaryTitle">Booking summary</h2>
+            <p class="booking-eyebrow">YOUR MOVIE NIGHT</p>
+            <h2 id="summaryTitle">Booking summary</h2>
             <div id="bookingSummaryHoldBox" class="booking-summary-hold" hidden>
               <div class="booking-summary-hold-row">
                 <span>&#9201; Thời gian giữ ghế</span>
                 <strong id="bookingSummaryCountdown">10:00</strong>
               </div>
             </div>
-            <div class="booking-movie"><img id="bookingPoster" src="/assets/img/crimson-horizon.webp" alt="" width="76" height="110"><div><span id="bookingRating" class="badge-age-t16">T16</span><h3 id="bookingTitle"></h3><p id="bookingFormat" class="booking-muted"></p></div></div>
-            <dl class="booking-details"><div><dt>Cinema</dt><dd id="bookingCinemaName"></dd></div><div><dt>Screening</dt><dd id="bookingScreening"></dd></div><div><dt>Room</dt><dd id="bookingRoom"></dd></div></dl>
-            <div class="booking-selection"><div class="booking-line"><span>Selected seats</span><strong id="bookingSeatCount">0 tickets</strong></div><p id="bookingSelectedSeats" aria-live="polite">No seats selected</p></div>
-            <div class="booking-line"><span>Tickets</span><strong id="bookingTicketTotal">0 ₫</strong></div><div class="booking-line"><span>Snacks &amp; drinks</span><strong id="bookingProductTotal">0 ₫</strong></div><div id="bookingExtras" class="booking-muted"></div>
-            <div class="booking-total" aria-live="polite"><span>Estimated total<small>All prices in VND</small></span><strong id="bookingTotal">0 ₫</strong></div>
-            <button type="button" class="booking-primary" id="bookingNext" disabled>Continue to snacks &#8594;</button><p id="bookingCheckoutNote" class="booking-summary-note">Select your seats to get started.</p>
+            <div class="booking-movie"><img id="bookingPoster" src="/assets/img/crimson-horizon.webp" alt="" width="76"
+                height="110">
+              <div><span id="bookingRating" class="badge-age-t16">T16</span>
+                <h3 id="bookingTitle"></h3>
+                <p id="bookingFormat" class="booking-muted"></p>
+              </div>
+            </div>
+            <dl class="booking-details">
+              <div>
+                <dt>Cinema</dt>
+                <dd id="bookingCinemaName"></dd>
+              </div>
+              <div>
+                <dt>Screening</dt>
+                <dd id="bookingScreening"></dd>
+              </div>
+              <div>
+                <dt>Room</dt>
+                <dd id="bookingRoom"></dd>
+              </div>
+            </dl>
+            <div class="booking-selection">
+              <div class="booking-line"><span>Selected seats</span><strong id="bookingSeatCount">0 tickets</strong>
+              </div>
+              <p id="bookingSelectedSeats" aria-live="polite">No seats selected</p>
+            </div>
+            <div class="booking-line"><span>Tickets</span><strong id="bookingTicketTotal">0 ₫</strong></div>
+            <div class="booking-line"><span>Snacks &amp; drinks</span><strong id="bookingProductTotal">0 ₫</strong>
+            </div>
+            <div id="bookingExtras" class="booking-muted"></div>
+            <div class="booking-total" aria-live="polite"><span>Estimated total<small>All prices in
+                  VND</small></span><strong id="bookingTotal">0 ₫</strong></div>
+            <button type="button" class="booking-primary" id="bookingNext" disabled>Continue to snacks &#8594;</button>
+            <p id="bookingCheckoutNote" class="booking-summary-note">Select your seats to get started.</p>
           </aside>
         </div>
 
@@ -225,15 +394,57 @@
             </div>
             <strong id="bookingMobileTotal" class="booking-mobile-total">0 ₫</strong>
           </div>
-          <button type="button" class="booking-primary booking-mobile-next" id="bookingMobileNext" disabled>Tiếp tục &#8594;</button>
+          <button type="button" class="booking-primary booking-mobile-next" id="bookingMobileNext" disabled>Tiếp tục
+            &#8594;</button>
         </div>
       </div>
-      <noscript><p class="booking-notice">Enable JavaScript to choose your screening and seats.</p></noscript>
+      <noscript>
+        <p class="booking-notice">Enable JavaScript to choose your screening and seats.</p>
+      </noscript>
+    </div>
+
+    <!-- Login Required Modal for Guest Seat Selection -->
+    <div class="booking-auth-modal-backdrop" id="bookingAuthModal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle" hidden>
+      <div class="booking-auth-modal-card">
+        <button type="button" class="booking-auth-modal-close" id="btnAuthModalClose" aria-label="Đóng popup">&times;</button>
+        <div class="booking-auth-modal-icon-wrap">
+          <div class="booking-auth-modal-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="booking-auth-modal-content">
+          <h3 id="authModalTitle" class="booking-auth-modal-title">Đăng nhập để chọn ghế</h3>
+          <p class="booking-auth-modal-desc">
+            Quý khách vui lòng đăng nhập tài khoản BOX Cinema để chọn vị trí ghế yêu thích và giữ chỗ cho suất chiếu này.
+          </p>
+        </div>
+        <div class="booking-auth-modal-actions">
+          <a id="btnAuthModalLogin" href="/login" class="booking-auth-modal-btn-login">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px;">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+              <polyline points="10 17 15 12 10 7"></polyline>
+              <line x1="15" y1="12" x2="3" y2="12"></line>
+            </svg>
+            Đăng nhập ngay
+          </a>
+          <button type="button" id="btnAuthModalBack" class="booking-auth-modal-btn-back">
+            Quay lại
+          </button>
+        </div>
+        <div class="booking-auth-modal-footer">
+          <span>Chưa có tài khoản?</span>
+          <a id="btnAuthModalRegister" href="/register" class="booking-auth-modal-link">Đăng ký thành viên</a>
+        </div>
+      </div>
     </div>
   </main>
   <footer th:replace="~{fragments/footer :: footer}"></footer>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script type="module" src="/js/modules/navbar.js?v=20261113a" th:src="@{/js/modules/navbar.js(v='20261113a')}"></script>
-  <script type="module" src="/js/modules/booking.js?v=4.4" th:src="@{/js/modules/booking.js(v='4.4')}"></script>
+  <script type="module" src="/js/modules/navbar.js?v=20261116b" th:src="@{/js/modules/navbar.js(v='20261116b')}"></script>
+  <script type="module" src="/js/modules/booking.js?v=5.6" th:src="@{/js/modules/booking.js(v='5.6')}"></script>
 </body>
+
 </html>

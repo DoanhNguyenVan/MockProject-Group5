@@ -90,6 +90,31 @@
             background: rgba(255, 255, 255, 0.07);
             border-color: rgba(255, 255, 255, 0.35);
         }
+        .booking-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--box-text-muted);
+            font-size: 0.88rem;
+            font-weight: 600;
+            text-decoration: none;
+            margin-bottom: 1.25rem;
+            transition: var(--box-transition);
+        }
+
+        .booking-back:hover {
+            color: var(--box-accent);
+            transform: translateX(-3px);
+        }
+
+        .booking-eyebrow {
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--box-accent);
+            margin-bottom: 0.35rem;
+        }
     </style>
 </head>
 
@@ -98,12 +123,17 @@
 
 <main class="profile-edit-page">
     <div class="mb-4">
-        <p class="text-uppercase small fw-bold mb-2" style="color: #e05a6d; letter-spacing: 0.12em;">
-            Account settings
-        </p>
-        <h1 class="h3 fw-bold text-white mb-2">Edit Profile</h1>
+        <a th:href="@{/profile}" class="booking-back">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Quay lại My Profile
+        </a>
+        <p class="booking-eyebrow">CẬP NHẬT HỒ SƠ</p>
+        <h1 class="h3 fw-bold text-white mb-2">Chỉnh sửa hồ sơ<span class="text-danger">.</span></h1>
         <p class="text-secondary mb-0">
-            Update the personal information associated with your BOX Cinema account.
+            Cập nhật thông tin cá nhân liên kết với tài khoản BOX Cinema của bạn.
         </p>
     </div>
 
@@ -178,11 +208,11 @@
             </div>
 
             <div class="d-flex flex-column flex-sm-row justify-content-end gap-2 pt-3 border-top border-secondary border-opacity-25">
-                <a th:href="@{/profile}" class="btn btn-profile-cancel text-center">
-                    Cancel
+                <a th:href="@{/profile}" class="btn-box-outline text-center text-decoration-none">
+                    Hủy bỏ
                 </a>
-                <button type="submit" class="btn btn-profile-save">
-                    Save Changes
+                <button type="submit" class="btn-box-primary">
+                    Lưu Thay Đổi
                 </button>
             </div>
         </form>

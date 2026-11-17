@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${found ? (ticket.movieTitle + ' | Vé Điện Tử BOX Cinema') : 'Không tìm thấy vé | BOX Cinema'}">Vé Điện Tử | BOX Cinema</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/main.css" th:href="@{/css/main.css(v='2.4')}">
+  <link rel="stylesheet" href="/css/auth.css" th:href="@{/css/auth.css(v='2.4')}">
+  
+  <style>
+    :root {
+      --box-accent: #e50914;
+      --box-bg-card: #12141f;
+      --box-border-color: rgba(255, 255, 255, 0.08);
+      --box-text-secondary: #94a3b8;
+    }
+
+    body {
+      background-color: #0b0c14;
+      color: #f8fafc;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .public-ticket-container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem 1rem;
+    }
+
+    .ticket-card {
+      background: var(--box-bg-card);
+      border: 1px solid var(--box-border-color);
+      border-radius: 1.25rem;
+      padding: clamp(1.25rem, 3.5vw, 2rem);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ticket-top-accent {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #e50914, #ff4d5a, #e50914);
+    }
+
+    .ticket-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .ticket-row:last-child {
+      border-bottom: none;
+    }
+
+    .ticket-label {
+      font-size: 0.88rem;
+      color: var(--box-text-secondary);
+      font-weight: 500;
+    }
+
+    .ticket-value {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #ffffff;
+      text-align: right;
+    }
+
+    .seat-badge {
+      display: inline-block;
+      padding: 0.25rem 0.65rem;
+      background: rgba(229, 9, 20, 0.15);
+      border: 1px solid rgba(229, 9, 20, 0.35);
+      color: #ff4d5a;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      margin-left: 0.25rem;
+    }
+
+    .food-card-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 0.75rem;
+      padding: 0.85rem 1rem;
+      margin-top: 0.5rem;
+    }
+
+    .badge-status-paid {
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      color: #4ade80;
+      font-weight: 700;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-status-valid {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #38bdf8;
+      font-weight: 700;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+    }
+
+    .security-notice {
+      background: rgba(56, 189, 248, 0.05);
+      border: 1px solid rgba(56, 189, 248, 0.18);
+      border-radius: 0.75rem;
+      padding: 0.75rem 1rem;
+      font-size: 0.8rem;
+      color: #94a3b8;
+    }
+
+    /* Light Theme Support */
+    html[data-theme="light"] body {
+      background-color: #f1f5f9;
+      color: #0f172a;
+    }
+
+    html[data-theme="light"] .ticket-card {
+      background: #ffffff;
+      border: 1px solid rgba(15, 23, 42, 0.1);
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+    }
+
+    html[data-theme="light"] .ticket-row {
+      border-bottom-color: rgba(15, 23, 42, 0.06);
+    }
+
+    html[data-theme="light"] .ticket-value {
+      color: #0f172a;
+    }
+
+    html[data-theme="light"] .food-card-box {
+      background: #f8fafc;
+      border-color: rgba(15, 23, 42, 0.08);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Brand Navbar Header -->
+  <nav class="navbar navbar-dark bg-transparent py-3 border-bottom border-secondary border-opacity-10">
+    <div class="container d-flex justify-content-between align-items-center" style="max-width: 680px;">
+      <a href="/" class="navbar-brand d-flex align-items-center gap-2 m-0 text-decoration-none">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#e50914" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+          <line x1="7" y1="2" x2="7" y2="22"></line>
+          <line x1="17" y1="2" x2="17" y2="22"></line>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+          <line x1="2" y1="7" x2="7" y2="7"></line>
+          <line x1="2" y1="17" x2="7" y2="17"></line>
+          <line x1="17" y1="17" x2="22" y2="17"></line>
+          <line x1="17" y1="7" x2="22" y2="7"></line>
+        </svg>
+        <span class="fw-extrabold fs-5 tracking-tight text-white font-space">BOX <span class="text-danger">CINEMA</span></span>
+      </a>
+
+      <div class="d-flex align-items-center gap-2">
+        <a href="/scan" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1.5 px-2.5 py-1 text-decoration-none">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+            <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+            <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+            <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+          </svg>
+          <span class="small">Quét QR</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content Area -->
+  <main class="public-ticket-container flex-grow-1">
+
+    <!-- Case 1: Valid Ticket Found -->
+    <div th:if="${found and ticket.valid}" class="ticket-card">
+      <div class="ticket-top-accent"></div>
+
+      <!-- Ticket Header Status -->
+      <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom border-secondary border-opacity-25">
+        <div>
+          <span class="badge-status-valid d-inline-flex align-items-center gap-1">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span th:text="${ticket.bookingStatus == 'CONFIRMED' ? 'VÉ HỢP LỆ' : ticket.bookingStatus}">VÉ HỢP LỆ</span>
+          </span>
+          <span class="badge-status-paid ms-1">ĐÃ THANH TOÁN</span>
+        </div>
+        <div class="font-monospace text-secondary small fw-bold" th:text="${ticket.bookingCode}">
+          BOX-20261116-3484
+        </div>
+      </div>
+
+      <!-- Movie Section -->
+      <div class="mb-4">
+        <div class="text-secondary small text-uppercase fw-semibold" style="letter-spacing: 0.08em; font-size: 0.72rem;">Phim Chiếu</div>
+        <h1 class="h4 fw-bold text-white mt-1 mb-0" th:text="${ticket.movieTitle}">Alien: Romulus</h1>
+      </div>
+
+      <!-- Showtime & Cinema Details -->
+      <div class="mb-3">
+        <div class="ticket-row">
+          <span class="ticket-label">Rạp chiếu:</span>
+          <span class="ticket-value" th:text="${ticket.cinemaName}">BOX Cinema Royal City</span>
+        </div>
+
+        <div class="ticket-row">
+          <span class="ticket-label">Phòng chiếu:</span>
+          <span class="ticket-value" th:text="${ticket.roomName}">Screen 01 - Standard Luxe</span>
+        </div>
+
+        <div class="ticket-row">
+          <span class="ticket-label">Ngày chiếu:</span>
+          <span class="ticket-value" th:text="${ticket.showDate}">17/11/2026</span>
+        </div>
+
+        <div class="ticket-row">
+          <span class="ticket-label">Giờ chiếu:</span>
+          <span class="ticket-value text-danger" th:text="${ticket.showTime}">09:00</span>
+        </div>
+
+        <div class="ticket-row">
+          <span class="ticket-label">Vị trí ghế:</span>
+          <span class="ticket-value">
+            <span th:each="s : ${ticket.seats}" class="seat-badge" th:text="${s}">C8</span>
+          </span>
+        </div>
+
+        <div class="ticket-row">
+          <span class="ticket-label">Tổng số vé:</span>
+          <span class="ticket-value fw-bold text-white" th:text="${ticket.ticketCount} + ' vé'">2 vé</span>
+        </div>
+      </div>
+
+      <!-- Food & Concessions Section -->
+      <div class="mt-4 pt-3 border-top border-secondary border-opacity-25">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="fw-bold text-white fs-6">Đồ Ăn &amp; Thức Uống</span>
+          <span class="badge bg-secondary bg-opacity-25 text-secondary px-2 py-0.5 small"
+                th:if="${ticket.foodItems != null and !ticket.foodItems.isEmpty()}"
+                th:text="${ticket.foodFulfillmentStatus}">
+            Chờ lấy tại quầy
+          </span>
+        </div>
+
+        <!-- Food List -->
+        <div th:if="${ticket.foodItems != null and !ticket.foodItems.isEmpty()}">
+          <div th:each="f : ${ticket.foodItems}" class="food-card-box d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-semibold text-white small" th:text="${f.productName}">Bắp Rang Bơ Phô Mai</div>
+              <div class="text-secondary small" th:if="${f.variantName != null and !f.variantName.isBlank()}" th:text="${f.variantName}">Size L</div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-danger bg-opacity-20 text-danger border border-danger border-opacity-25" th:text="'x' + ${f.quantity}">x1</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- No Food Notice -->
+        <div th:if="${ticket.foodItems == null or ticket.foodItems.isEmpty()}" class="text-secondary small py-1">
+          Đơn đặt vé này không kèm đồ ăn / nước uống.
+        </div>
+      </div>
+
+      <!-- Privacy & Verification Notice -->
+      <div class="security-notice mt-4 d-flex align-items-start gap-2">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" class="flex-shrink-0 mt-0.5">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <div>
+          <div class="fw-semibold" style="color: #38bdf8;">Vé điện tử chính thức từ BOX Cinema</div>
+          <div>Mã QR này được sử dụng để tra cứu thông tin vé công khai. Dữ liệu cá nhân (email, số điện thoại, ngân hàng) được bảo vệ tuyệt đối.</div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="mt-4 pt-2 text-center">
+        <a href="/scan" class="btn btn-outline-light btn-sm px-4 py-2 text-decoration-none">
+          Quét mã vé khác
+        </a>
+      </div>
+    </div>
+
+    <!-- Case 2: Not Found or Invalid -->
+    <div th:if="${!found or !ticket.valid}" class="ticket-card text-center py-5">
+      <div class="ticket-top-accent"></div>
+      
+      <div class="mb-3">
+        <div class="d-inline-flex p-3 rounded-circle bg-danger bg-opacity-15 text-danger mb-2">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+        </div>
+        <h2 class="h4 fw-bold text-white">Không Tìm Thấy Vé</h2>
+        <p class="text-secondary small mt-2" th:text="${ticket.message != null ? ticket.message : 'Mã truy cập vé không hợp lệ hoặc đã hết hạn.'}">
+          Mã truy cập vé không hợp lệ hoặc đã hết hạn.
+        </p>
+      </div>
+
+      <div class="mt-4">
+        <a href="/scan" class="btn btn-danger px-4 py-2 text-decoration-none">
+          Mở máy quét QR
+        </a>
+        <a href="/" class="btn btn-outline-secondary px-4 py-2 text-decoration-none ms-2">
+          Trang chủ
+        </a>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="py-3 text-center text-secondary small border-top border-secondary border-opacity-10">
+    <div>&copy; 2026 BOX Cinema. All rights reserved.</div>
+  </footer>
+
+</body>
+
+</html>

@@ -38,7 +38,7 @@ public class CinemaServiceImpl implements CinemaService {
 
     @Override
     public List<CinemaDto> getCinemasShowingMovie(Long movieId) {
-        List<Cinema> cinemas = showtimeRepository.findCinemasByMovie(movieId, LocalDateTime.now().minusHours(2));
+        List<Cinema> cinemas = showtimeRepository.findCinemasByMovie(movieId, LocalDateTime.now());
         if (cinemas == null || cinemas.isEmpty()) {
             return getActiveCinemaDtos();
         }

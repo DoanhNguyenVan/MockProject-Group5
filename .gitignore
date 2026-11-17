@@ -21,3 +21,8 @@ Thumbs.db
 src/main/resources/application-local.properties
 application-local.properties
 *.local.properties
+ 
+uploads/*
+!uploads/booking-qr/
+uploads/booking-qr/*
+!uploads/booking-qr/.gitkeep

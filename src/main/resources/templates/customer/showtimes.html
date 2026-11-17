@@ -55,6 +55,62 @@
       </div>
     </section>
 
+    <!-- Showtimes Filter Controls Bar (Matching Movie Page Filter) -->
+    <div class="cinema-container my-3">
+      <div class="catalog-filter-bar" id="showtimesFilterBar">
+        <div class="filter-item">
+          <div class="filter-control-wrap">
+            <label for="showtimeFilterGenre" class="filter-label">Genre</label>
+            <select id="showtimeFilterGenre" class="catalog-filter-select">
+              <option value="all">All Genres</option>
+              <option th:each="g : ${genres}" th:value="${g.genreName}" th:text="${g.genreName}">Action</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-item">
+          <div class="filter-control-wrap">
+            <label for="showtimeFilterAge" class="filter-label">Age Rating</label>
+            <select id="showtimeFilterAge" class="catalog-filter-select">
+              <option value="all">All Ratings</option>
+              <option value="P">P (All Ages)</option>
+              <option value="T13">T13 (13+)</option>
+              <option value="T16">T16 (16+)</option>
+              <option value="T18">T18 (18+)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-item">
+          <div class="filter-control-wrap">
+            <label for="showtimeFilterFormat" class="filter-label">Format</label>
+            <select id="showtimeFilterFormat" class="catalog-filter-select">
+              <option value="all">All Formats</option>
+              <option th:each="fmt : ${roomFormats}" th:value="${fmt}" th:text="${fmt}">2D Standard</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-item">
+          <div class="filter-control-wrap">
+            <label for="showtimeFilterSort" class="filter-label">Sort By</label>
+            <select id="showtimeFilterSort" class="catalog-filter-select">
+              <option value="default">Featured / Default</option>
+              <option value="title-asc">Title (A - Z)</option>
+              <option value="duration-desc">Duration (Longest)</option>
+              <option value="duration-asc">Duration (Shortest)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-actions">
+          <button type="button" class="btn-filter-reset" id="btnResetShowtimeFilters" title="Reset all filters">
+            <span>Reset</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Legend bar -->
     <div class="cinema-container">
       <div class="showtime-legend-bar">
@@ -66,15 +122,22 @@
     <!-- 2-Column Movie Showtimes Grid (Matching Image 1 & 2) -->
     <div class="cinema-container showtimes-container">
       <div class="showtime-movies-grid" id="showtimeMoviesGrid">
-        <th:block th:each="movie : ${movieGroups}">
-          <div class="showtime-movie-card">
+        <th:block th:each="movie, stat : ${movieGroups}">
+          <div class="showtime-movie-card"
+            th:data-movie-id="${movie.movieId}"
+            th:data-title="${movie.title}"
+            th:data-genres="${movie.genreNamesDisplay != null ? movie.genreNamesDisplay : ''}"
+            th:data-age="${movie.ageRating}"
+            th:data-duration="${movie.durationMinutes}"
+            th:data-formats="${movie.formatNamesDisplay}"
+            th:data-orig-order="${stat.index}">
             <!-- Left: Poster Column -->
             <div class="showtime-poster-col">
               <span class="showtime-age-badge"
                 th:classappend="${movie.ageRating == 'P' ? 'badge-age-p' : (movie.ageRating == 'T13' ? 'badge-age-t13' : (movie.ageRating == 'T16' ? 'badge-age-t16' : 'badge-age-t18'))}"
                 th:text="${movie.ageRating}">T16</span>
               <img th:src="${movie.posterUrl}" th:alt="${movie.title}" loading="lazy"
-                onerror="this.style.display='none'">
+                onerror="this.onerror=null;this.src='/assets/img/crimson-horizon.webp'">
 
               <!-- Trailer Play Button on Hover (Matching Image 2) -->
               <button type="button" class="poster-trailer-overlay" th:if="${movie.trailerUrl != null}"
@@ -155,14 +218,9 @@
 
   <!-- Shared Footer -->
   <footer th:replace="~{fragments/footer :: footer}"></footer>
-  <script type="module" src="/js/modules/navbar.js?v=20261113a"
-    th:src="@{/js/modules/navbar.js(v='20261113a')}"></script>
-  <script type="module" src="/js/modules/showtimes.js?v=2.6" th:src="@{/js/modules/showtimes.js(v='2.6')}"></script>
-
-  <script type="module" src="/js/modules/navbar.js?v=2.4" th:src="@{/js/modules/navbar.js(v='2.4')}"></script>
-  <script type="module" src="/js/modules/showtimes.js?v=2.4" th:src="@{/js/modules/showtimes.js(v='2.4')}"></script>
-  <script type="module" src="/js/modules/navbar.js?v=2.4" th:src="@{/js/modules/navbar.js(v='2.4')}"></script>
-  <script type="module" src="/js/modules/showtimes.js?v=2.4" th:src="@{/js/modules/showtimes.js(v='2.4')}"></script>
+  <script type="module" src="/js/modules/navbar.js?v=20261116b"
+    th:src="@{/js/modules/navbar.js(v='20261116b')}"></script>
+  <script type="module" src="/js/modules/showtimes.js?v=20261116c" th:src="@{/js/modules/showtimes.js(v='20261116c')}"></script>
 </body>
 
 </html>

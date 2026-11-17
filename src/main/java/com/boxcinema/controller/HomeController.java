@@ -44,6 +44,8 @@ public class HomeController {
         List<Genre> genres = genreRepository.findAll();
 
         Map<Long, String> movieCinemaIdsMap = showtimeService.getMovieCinemaIdsMap();
+        Map<Long, String> movieFormatsMap = showtimeService.getMovieFormatsMap();
+        List<String> roomFormats = showtimeService.getAllActiveRoomFormats();
         Map<String, List<Cinema>> cinemasByCity = cinemas.stream()
                 .collect(Collectors.groupingBy(Cinema::getCity, LinkedHashMap::new, Collectors.toList()));
 
@@ -55,6 +57,8 @@ public class HomeController {
         model.addAttribute("cinemas", cinemas);
         model.addAttribute("cinemasByCity", cinemasByCity);
         model.addAttribute("movieCinemaIdsMap", movieCinemaIdsMap);
+        model.addAttribute("movieFormatsMap", movieFormatsMap);
+        model.addAttribute("roomFormats", roomFormats);
         model.addAttribute("genres", genres);
 
         return "customer/home";

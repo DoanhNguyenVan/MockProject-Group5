@@ -5,8 +5,10 @@ import com.boxcinema.dto.MovieShowtimeGroupDto;
 import com.boxcinema.dto.ShowtimeOptionDto;
 import com.boxcinema.entity.Movie;
 import com.boxcinema.entity.Showtime;
+import com.boxcinema.repository.RoomRepository;
 import com.boxcinema.repository.ShowtimeRepository;
 import com.boxcinema.service.ShowtimeService;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,18 +24,32 @@ import java.util.stream.Collectors;
 public class ShowtimeServiceImpl implements ShowtimeService {
 
     private final ShowtimeRepository showtimeRepository;
+    private final RoomRepository roomRepository;
+    private final JdbcTemplate jdbcTemplate;
 
-    public ShowtimeServiceImpl(ShowtimeRepository showtimeRepository) {
+    public ShowtimeServiceImpl(ShowtimeRepository showtimeRepository,
+                               RoomRepository roomRepository,
+                               JdbcTemplate jdbcTemplate) {
         this.showtimeRepository = showtimeRepository;
+        this.roomRepository = roomRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
     public List<ShowtimeOptionDto> getShowtimeOptions(Long movieId, Long cinemaId, LocalDate date) {
-        LocalDateTime start = date.atStartOfDay();
+        if (date == null) {
+            date = LocalDate.now();
+        }
+        if (date.isBefore(LocalDate.now())) {
+            return Collections.emptyList();
+        }
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime start = date.equals(LocalDate.now()) ? now : date.atStartOfDay();
         LocalDateTime end = date.atTime(LocalTime.MAX);
 
         List<Showtime> showtimes = showtimeRepository.findShowtimesByMovieCinemaAndDate(movieId, cinemaId, start, end);
         return showtimes.stream()
+                .filter(s -> s.getStartAt() != null && s.getStartAt().isAfter(now))
                 .map(s -> new ShowtimeOptionDto(
                         s.getShowtimeId(),
                         s.getFormattedStartTime(),
@@ -56,7 +72,7 @@ public class ShowtimeServiceImpl implements ShowtimeService {
 
     @Override
     public Map<Long, String> getMovieCinemaIdsMap() {
-        List<Object[]> pairs = showtimeRepository.findActiveMovieCinemaPairs();
+        List<Object[]> pairs = showtimeRepository.findActiveMovieCinemaPairs(LocalDateTime.now());
         Map<Long, Set<Long>> map = new HashMap<>();
         for (Object[] row : pairs) {
             Long movieId = ((Number) row[0]).longValue();
@@ -74,17 +90,70 @@ public class ShowtimeServiceImpl implements ShowtimeService {
     }
 
     @Override
+    public List<String> getAllActiveRoomFormats() {
+        return roomRepository.findDistinctActiveRoomTypes();
+    }
+
+    @Override
+    public Map<Long, String> getMovieFormatsMap() {
+        List<Object[]> pairs = showtimeRepository.findActiveMovieRoomTypes();
+        Map<Long, Set<String>> map = new LinkedHashMap<>();
+        for (Object[] row : pairs) {
+            Long movieId = ((Number) row[0]).longValue();
+            String roomType = (String) row[1];
+            if (roomType != null && !roomType.isBlank()) {
+                map.computeIfAbsent(movieId, k -> new LinkedHashSet<>()).add(roomType);
+            }
+        }
+        Map<Long, String> result = new HashMap<>();
+        for (Map.Entry<Long, Set<String>> entry : map.entrySet()) {
+            result.put(entry.getKey(), String.join(",", entry.getValue()));
+        }
+        return result;
+    }
+
+    @Override
     public List<MovieShowtimeGroupDto> getMovieShowtimeGroups(Long cinemaId, LocalDate date) {
         if (date == null) {
             date = LocalDate.now();
         }
-        LocalDateTime start = date.atStartOfDay();
+        if (date.isBefore(LocalDate.now())) {
+            return Collections.emptyList();
+        }
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime start = date.equals(LocalDate.now()) ? now : date.atStartOfDay();
         LocalDateTime end = date.atTime(LocalTime.MAX);
 
         List<Showtime> showtimes = showtimeRepository.findShowtimesByCinemaAndDate(cinemaId, start, end);
         Map<Long, MovieShowtimeGroupDto> groupMap = new LinkedHashMap<>();
 
+        // Real room seat capacities from database
+        Map<Long, Integer> roomCapacityMap = new HashMap<>();
+        try {
+            jdbcTemplate.query("SELECT room_id, COUNT(*) as cnt FROM seats WHERE status = 'ACTIVE' GROUP BY room_id", rs -> {
+                roomCapacityMap.put(rs.getLong("room_id"), rs.getInt("cnt"));
+            });
+        } catch (Exception ignored) {
+        }
+
+        // Real unavailable seats (BOOKED or currently active HELD)
+        Map<Long, Integer> showtimeOccupiedMap = new HashMap<>();
+        try {
+            jdbcTemplate.query(
+                    "SELECT showtime_id, COUNT(*) as cnt FROM showtime_seats " +
+                    "WHERE seat_status = 'BOOKED' OR (seat_status = 'HELD' AND hold_expires_at > NOW()) " +
+                    "GROUP BY showtime_id",
+                    rs -> {
+                        showtimeOccupiedMap.put(rs.getLong("showtime_id"), rs.getInt("cnt"));
+                    }
+            );
+        } catch (Exception ignored) {
+        }
+
         for (Showtime s : showtimes) {
+            if (s.getStartAt() == null || !s.getStartAt().isAfter(now)) {
+                continue;
+            }
             Movie m = s.getMovie();
             if (m == null) continue;
 
@@ -105,15 +174,12 @@ public class ShowtimeServiceImpl implements ShowtimeService {
             String dateSub = s.getStartAt().format(DateTimeFormatter.ofPattern("dd/MM"));
             boolean isLate = s.getStartAt().getHour() >= 22;
 
-            int capacity = 150;
-            if (s.getRoom() != null && s.getRoom().getRoomType() != null) {
-                String rt = s.getRoom().getRoomType().toLowerCase();
-                if (rt.contains("imax")) capacity = 180;
-                else if (rt.contains("dolby")) capacity = 160;
-                else if (rt.contains("4dx")) capacity = 140;
-            }
-            int booked = Math.abs((int)(s.getShowtimeId() * 17 + 5)) % 45;
-            int availableSeats = Math.max(10, capacity - booked);
+            Long roomId = (s.getRoom() != null) ? s.getRoom().getRoomId() : null;
+            int totalSeats = (roomId != null && roomCapacityMap.containsKey(roomId))
+                    ? roomCapacityMap.get(roomId)
+                    : (s.getRoom() != null && s.getRoom().getRoomType() != null && s.getRoom().getRoomType().toLowerCase().contains("imax") ? 70 : 60);
+            int occupied = showtimeOccupiedMap.getOrDefault(s.getShowtimeId(), 0);
+            int availableSeats = Math.max(0, totalSeats - occupied);
 
             String roomType = (s.getRoom() != null && s.getRoom().getRoomType() != null) ? s.getRoom().getRoomType() : "Standard";
             String roomName = (s.getRoom() != null) ? s.getRoom().getRoomName() : "Screen";

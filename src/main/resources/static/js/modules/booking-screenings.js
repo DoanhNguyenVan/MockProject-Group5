@@ -11,10 +11,32 @@ export function findCinemas(cinemas, search = "", city = "", preferredId = "") {
     .sort((a, b) => Number(String(b.cinemaId) === preferredId) - Number(String(a.cinemaId) === preferredId));
 }
 
-export function groupShowtimes(slots) {
+export function isSlotExpired(slotTimeStr, selectedDateStr) {
+  if (!slotTimeStr) return false;
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  if (!selectedDateStr || selectedDateStr === todayStr) {
+    const parts = slotTimeStr.trim().split(":");
+    if (parts.length >= 2) {
+      const slotHour = parseInt(parts[0], 10);
+      const slotMin = parseInt(parts[1], 10);
+      const curHour = now.getHours();
+      const curMin = now.getMinutes();
+      if (slotHour < curHour || (slotHour === curHour && slotMin <= curMin)) {
+        return true;
+      }
+    }
+  } else if (selectedDateStr < todayStr) {
+    return true;
+  }
+  return false;
+}
+
+export function groupShowtimes(slots, date) {
   const groups = new Map();
   for (const slot of slots) {
     if (slot.showtimeId == null || !slot.timeDisplay) continue;
+    if (date && isSlotExpired(slot.timeDisplay, date)) continue;
     const format = slot.roomType || "Standard";
     if (!groups.has(format)) groups.set(format, []);
     groups.get(format).push(slot);
@@ -127,13 +149,18 @@ export function initScreenings(doc = document, { onSelect = () => {}, onReset = 
           }
           if (current !== revision) return;
           times.replaceChildren();
-          const groups = groupShowtimes(slots);
+          const groups = groupShowtimes(slots, date);
           if (!groups.size) times.append(node("p", "No showtimes on this date. Try another day.", "screening-card-status"));
           for (const [format, group] of groups) {
             times.append(node("span", format, "screening-format"));
             const row = node("div", null, "screening-times");
             for (const slot of group) {
               const link = button(slot.timeDisplay, "screening-time", () => {
+                if (isSlotExpired(slot.timeDisplay, date)) {
+                  alert("Suất chiếu này đã bắt đầu hoặc đã qua thời gian bán vé. Vui lòng chọn suất chiếu khác.");
+                  renderResults();
+                  return;
+                }
                 const url = new URL(win.location.href); url.searchParams.set("movieId", movieId); url.searchParams.set("showtimeId", slot.showtimeId); url.searchParams.set("cinemaId", cinema.cinemaId); url.searchParams.set("date", date);
                 win.history.replaceState({}, "", url); onSelect(String(slot.showtimeId));
               });
