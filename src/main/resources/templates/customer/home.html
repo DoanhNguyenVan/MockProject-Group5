@@ -250,7 +250,7 @@
               <div class="coverflow-pagination" id="coverflowPagination" aria-label="Slide indicators">
                 <button th:each="movie, iter : ${spotlightMovies}" type="button" class="coverflow-dot"
                   th:classappend="${iter.index == 0 ? 'active' : ''}" th:data-index="${iter.index}"
-                  th:aria-label="${'Phim ' + iter.count}"></button>
+                  th:aria-label="${'Movie ' + iter.count}"></button>
               </div>
             </div>
 
