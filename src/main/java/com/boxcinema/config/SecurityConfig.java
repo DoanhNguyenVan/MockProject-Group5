@@ -114,28 +114,34 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.ignoringRequestMatchers(
                         "/api/quick-booking/**",
                         "/api/booking/showtimes/**",
-                        "/admin/api/**"
-                ))
+                        "/admin/api/**",
+                        "/api/payments/**",
+                        "/api/bookings/**",
+                        "/api/customer/bookings/**",
+                        "/api/food/**",
+                        "/api/staff/**",
+                        "/api/auth/**",
+                        "/api/public/**",
+                        "/api/account/**"))
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .exceptionHandling(ex -> ex
                         .defaultAuthenticationEntryPointFor(
                                 (request, response, authException) -> {
                                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                                     response.setContentType("application/json;charset=UTF-8");
-                                    response.getWriter().write("{\"success\":false,\"errorCode\":\"ACCOUNT_NOT_AUTHENTICATED\",\"message\":\"Authentication required.\"}");
+                                    response.getWriter().write(
+                                            "{\"success\":false,\"errorCode\":\"ACCOUNT_NOT_AUTHENTICATED\",\"message\":\"Authentication required.\"}");
                                 },
-                                new AntPathRequestMatcher("/api/**")
-                        )
+                                new AntPathRequestMatcher("/api/**"))
                         .defaultAuthenticationEntryPointFor(
                                 new LoginUrlAuthenticationEntryPoint("/login"),
-                                AnyRequestMatcher.INSTANCE
-                        )
-                )
+                                AnyRequestMatcher.INSTANCE))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/oauth2/authorization/google-link").authenticated()
                         .requestMatchers(
                                 "/", "/home", "/about", "/contact", "/showtimes/**", "/movies/**",
-                                "/login", "/register", "/signup", "/verify-email", "/verify-email/**", "/forgot-password",
+                                "/login", "/register", "/signup", "/verify-email", "/verify-email/**",
+                                "/forgot-password",
                                 "/oauth2/authorization/**",
                                 "/auth/oauth2/**",
                                 "/login/oauth2/code/**",
@@ -151,13 +157,25 @@ public class SecurityConfig {
                                 "/api/quick-booking/**",
                                 "/api/booking/showtimes/**",
                                 "/booking/buy-tickets",
-                                "/css/**", "/js/**", "/assets/**", "/images/**", "/favicon.ico", "/error"
-                        ).permitAll()
+                                "/booking/ticket/**",
+                                "/t/**",
+                                "/scan",
+                                "/ticket-scanner",
+                                "/api/public/**",
+                                "/api/food/**",
+                                "/api/payments/**",
+                                "/api/bookings/**",
+                                "/api/customer/bookings/**",
+                                "/css/**", "/js/**", "/assets/**", "/images/**", "/favicon.ico", "/error")
+                        .permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/manager/**").hasAnyRole("MANAGER", "ADMIN")
-                        .requestMatchers("/staff/**").hasAnyRole("STAFF", "MANAGER", "ADMIN")
+                        .requestMatchers("/staff/**", "/api/staff/**").hasAnyRole("STAFF", "MANAGER", "ADMIN")
                         .requestMatchers(
+                                "/profile",
                                 "/profile/**",
+                                "/account-settings",
+                                "/account-settings/**",
                                 "/auth/account/**",
                                 "/oauth2/link/google/**",
                                 "/oauth2/set-password/google/**",
@@ -168,10 +186,9 @@ public class SecurityConfig {
                                 "/api/users/**",
                                 "/booking/**",
                                 "/my-tickets/**",
-                                "/api/booking/**"
-                        ).authenticated()
-                        .anyRequest().authenticated()
-                )
+                                "/api/booking/**")
+                        .authenticated()
+                        .anyRequest().authenticated())
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/login")
@@ -179,19 +196,16 @@ public class SecurityConfig {
                         .passwordParameter("password")
                         .successHandler(authenticationSuccessHandler(sessionManagementService))
                         .failureHandler(authenticationFailureHandler())
-                        .permitAll()
-                )
+                        .permitAll())
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
                         .logoutSuccessHandler(logoutSuccessHandler(sessionManagementService, authAuditService))
-                        .permitAll()
-                )
+                        .permitAll())
                 .addFilterAfter(
                         sessionValidationFilter(sessionManagementService, userRepository),
-                        AnonymousAuthenticationFilter.class
-                );
+                        AnonymousAuthenticationFilter.class);
 
         // Remember Me is intentionally disabled per Baseline v1.0 Session Architecture.
 
@@ -219,7 +233,8 @@ public class SecurityConfig {
                     HttpServletResponse response,
                     FilterChain filterChain) throws ServletException, IOException {
                 Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-                if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof BoxCinemaUserDetails details) {
+                if (auth != null && auth.isAuthenticated()
+                        && auth.getPrincipal() instanceof BoxCinemaUserDetails details) {
                     Long userId = details.getUserSummary() != null ? details.getUserSummary().getUserId() : null;
                     HttpSession session = request.getSession(false);
 
@@ -235,7 +250,8 @@ public class SecurityConfig {
                         userInactiveInDb = dbUserOpt.isEmpty()
                                 || !"ACTIVE".equalsIgnoreCase(dbUserOpt.get().getAccountStatus());
                         if (!userInactiveInDb) {
-                            String sessionRole = details.getUserSummary() != null ? details.getUserSummary().getRole() : null;
+                            String sessionRole = details.getUserSummary() != null ? details.getUserSummary().getRole()
+                                    : null;
                             String dbRole = dbUserOpt.get().getRole();
                             userRoleChangedInDb = sessionRole != null && dbRole != null
                                     && !sessionRole.trim().equalsIgnoreCase(dbRole.trim());
@@ -256,14 +272,15 @@ public class SecurityConfig {
                         if (uri != null && uri.startsWith("/api/")) {
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                             response.setContentType("application/json;charset=UTF-8");
-                            response.getWriter().write("{\"success\":false,\"message\":\"Your session has expired or been revoked. Please sign in again.\"}");
+                            response.getWriter().write(
+                                    "{\"success\":false,\"message\":\"Your session has expired or been revoked. Please sign in again.\"}");
                             return;
                         }
                         SecuritySessionHelper.saveFlashAttributes(
                                 request,
                                 response,
-                                Map.of("errorMessage", "Your session has expired or your account status changed. Please sign in again.")
-                        );
+                                Map.of("errorMessage",
+                                        "Your session has expired or your account status changed. Please sign in again."));
                         response.sendRedirect("/login?sessionExpired=true");
                         return;
                     }
@@ -286,7 +303,8 @@ public class SecurityConfig {
         return authenticationSuccessHandler(null);
     }
 
-    private AuthenticationSuccessHandler authenticationSuccessHandler(SessionManagementService sessionManagementService) {
+    private AuthenticationSuccessHandler authenticationSuccessHandler(
+            SessionManagementService sessionManagementService) {
         SavedRequestAwareAuthenticationSuccessHandler delegate = new SavedRequestAwareAuthenticationSuccessHandler();
         delegate.setDefaultTargetUrl("/");
 
@@ -300,8 +318,7 @@ public class SecurityConfig {
                     sessionManagementService.registerSession(
                             details.getUserSummary().getUserId(),
                             details.getUserSummary().getRole(),
-                            session
-                    );
+                            session);
                 }
 
                 String role = details.getUserSummary().getRole();
@@ -313,6 +330,14 @@ public class SecurityConfig {
                     return;
                 } else if ("STAFF".equalsIgnoreCase(role)) {
                     response.sendRedirect("/staff");
+                    return;
+                }
+
+                // Check for saved redirect after customer login (e.g. from seat selection)
+                String redirect = (String) session.getAttribute("REDIRECT_AFTER_LOGIN");
+                if (redirect != null && !redirect.isBlank() && redirect.startsWith("/")) {
+                    session.removeAttribute("REDIRECT_AFTER_LOGIN");
+                    response.sendRedirect(redirect);
                     return;
                 }
             }
@@ -327,8 +352,7 @@ public class SecurityConfig {
                 SecuritySessionHelper.saveFlashAttributes(
                         request,
                         response,
-                        Map.of("errorMessage", unverified.getMessage())
-                );
+                        Map.of("errorMessage", unverified.getMessage()));
                 String encodedEmail = URLEncoder.encode(unverified.getEmail(), StandardCharsets.UTF_8);
                 response.sendRedirect("/verify-email?email=" + encodedEmail);
                 return;
@@ -343,9 +367,7 @@ public class SecurityConfig {
                     response,
                     Map.of(
                             "errorMessage", message,
-                            "enteredEmail", enteredEmail != null ? enteredEmail.trim() : ""
-                    )
-            );
+                            "enteredEmail", enteredEmail != null ? enteredEmail.trim() : ""));
             response.sendRedirect("/login?error=true");
         };
     }
@@ -362,7 +384,8 @@ public class SecurityConfig {
             if (authentication != null && authentication.getPrincipal() instanceof BoxCinemaUserDetails details
                     && details.getUserSummary() != null) {
                 if (sessionManagementService != null) {
-                    sessionManagementService.unregisterSession(details.getUserSummary().getUserId(), request.getSession(false));
+                    sessionManagementService.unregisterSession(details.getUserSummary().getUserId(),
+                            request.getSession(false));
                 }
                 if (authAuditService != null) {
                     authAuditService.logEvent(
@@ -370,15 +393,13 @@ public class SecurityConfig {
                             details.getUserSummary().getUserId(),
                             details.getUserSummary().getEmail(),
                             "SUCCESS",
-                            "User signed out"
-                    );
+                            "User signed out");
                 }
             }
             SecuritySessionHelper.saveFlashAttributes(
                     request,
                     response,
-                    Map.of("successMessage", "You have been signed out safely.")
-            );
+                    Map.of("successMessage", "You have been signed out safely."));
             response.sendRedirect("/login?logout=true");
         };
     }
