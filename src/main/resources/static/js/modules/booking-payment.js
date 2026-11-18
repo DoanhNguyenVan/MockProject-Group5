@@ -107,14 +107,14 @@ export function initPayment(doc = document) {
     const orderAmount = getBaseSubtotal();
     if (!code || code.trim() === "") {
       if (voucherMsg) {
-        voucherMsg.textContent = "Vui lòng nhập mã giảm giá.";
+        voucherMsg.textContent = "Please enter a voucher code.";
         voucherMsg.className = "voucher-message text-danger";
       }
       return;
     }
     if (btnApplyVoucher) btnApplyVoucher.disabled = true;
     if (voucherMsg) {
-      voucherMsg.textContent = "Đang kiểm tra...";
+      voucherMsg.textContent = "Validating...";
       voucherMsg.className = "voucher-message text-muted";
     }
 
@@ -130,14 +130,14 @@ export function initPayment(doc = document) {
         if (voucherListContainer) voucherListContainer.classList.add("d-none");
       } else {
         if (voucherMsg) {
-          voucherMsg.textContent = data.message || "Mã không hợp lệ.";
+          voucherMsg.textContent = data.message || "Invalid voucher code.";
           voucherMsg.className = "voucher-message text-danger";
         }
         if (btnApplyVoucher) btnApplyVoucher.disabled = false;
       }
     } catch (e) {
       if (voucherMsg) {
-        voucherMsg.textContent = "Lỗi kết nối, vui lòng thử lại sau.";
+        voucherMsg.textContent = "Connection error. Please try again.";
         voucherMsg.className = "voucher-message text-danger";
       }
       if (btnApplyVoucher) btnApplyVoucher.disabled = false;
@@ -169,7 +169,7 @@ export function initPayment(doc = document) {
         voucherListContainer.classList.add("d-none");
         return;
       }
-      voucherListContainer.innerHTML = "<div class='text-muted small p-2'>Đang tải danh sách ưu đãi...</div>";
+      voucherListContainer.innerHTML = "<div class='text-muted small p-2'>Loading available vouchers...</div>";
       voucherListContainer.classList.remove("d-none");
 
       const amount = getBaseSubtotal();
@@ -177,21 +177,21 @@ export function initPayment(doc = document) {
         const res = await fetch(`/api/vouchers/available?amount=${amount}`);
         const promos = await res.json();
         if (!promos || !promos.length) {
-          voucherListContainer.innerHTML = "<div class='text-muted small p-2'>Hiện chưa có mã ưu đãi phù hợp cho đơn hàng này.</div>";
+          voucherListContainer.innerHTML = "<div class='text-muted small p-2'>No vouchers available for this order.</div>";
           return;
         }
         voucherListContainer.innerHTML = promos.map(p => {
           let discountDesc = p.discountType === "PERCENT"
-            ? `Giảm ${p.discountValue}%${p.maxDiscount ? ' (Tối đa ' + formatMoney(p.maxDiscount) + ')' : ''}`
-            : `Giảm ${formatMoney(p.discountValue)}`;
+            ? `${p.discountValue}% off${p.maxDiscount ? ' (max ' + formatMoney(p.maxDiscount) + ')' : ''}`
+            : `${formatMoney(p.discountValue)} off`;
           return `
             <div class="voucher-list-item d-flex justify-content-between align-items-center p-2 border-bottom border-secondary">
               <div>
                 <span class="badge bg-danger fs-6">${p.voucherCode}</span>
                 <span class="ms-2 text-white small fw-semibold">${p.promotionName || ""}</span>
-                <div class="text-white-50" style="font-size:12px;">${discountDesc} · Đơn tối thiểu: ${formatMoney(p.minOrderAmount || 0)}</div>
+                <div class="text-white-50" style="font-size:12px;">${discountDesc} · Min. order: ${formatMoney(p.minOrderAmount || 0)}</div>
               </div>
-              <button type="button" class="btn btn-sm btn-outline-success ms-2 btn-pick-voucher" data-code="${p.voucherCode}">Dùng mã</button>
+              <button type="button" class="btn btn-sm btn-outline-success ms-2 btn-pick-voucher" data-code="${p.voucherCode}">Use</button>
             </div>`;
         }).join("");
 
@@ -203,7 +203,7 @@ export function initPayment(doc = document) {
           });
         });
       } catch (e) {
-        voucherListContainer.innerHTML = "<div class='text-danger small p-2'>Không thể tải danh sách voucher.</div>";
+        voucherListContainer.innerHTML = "<div class='text-danger small p-2'>Failed to load vouchers.</div>";
       }
     });
   }

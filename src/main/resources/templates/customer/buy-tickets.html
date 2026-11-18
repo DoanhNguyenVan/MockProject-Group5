@@ -218,17 +218,17 @@
               <div class="voucher-box-panel mt-4 p-3 rounded" style="background: #111827; border: 1px solid #1f2937;">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                   <span class="text-white fw-bold">
-                    <span style="color: #ef4444;">🏷</span> Khuyến mãi &amp; Voucher
+                    <span style="color: #ef4444;">🏷</span> Promotions &amp; Vouchers
                   </span>
                   <button type="button" class="btn btn-sm btn-link text-decoration-none text-danger p-0" id="btnShowVoucherList">
-                    Xem mã ưu đãi &#8595;
+                    View available vouchers &#8595;
                   </button>
                 </div>
 
                 <!-- Input code form -->
                 <div class="input-group mb-2">
-                  <input type="text" id="voucherCodeInput" class="form-control bg-dark text-white border-secondary" placeholder="Nhập mã ưu đãi (VD: BOXMIDWEEK)..." style="text-transform: uppercase;">
-                  <button class="btn btn-danger fw-semibold px-3" type="button" id="btnApplyVoucher">Áp dụng</button>
+                  <input type="text" id="voucherCodeInput" class="form-control bg-dark text-white border-secondary" placeholder="Enter voucher code (e.g. BOXMIDWEEK)..." style="text-transform: uppercase;">
+                  <button class="btn btn-danger fw-semibold px-3" type="button" id="btnApplyVoucher">Apply</button>
                 </div>
 
                 <!-- Message feedback -->
@@ -237,10 +237,10 @@
                 <!-- Applied badge -->
                 <div id="voucherAppliedBadge" class="d-none mt-2 p-2 rounded d-flex justify-content-between align-items-center" style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981;">
                   <div>
-                    <span class="text-success fw-bold">✓ Đã áp dụng mã:</span>
+                    <span class="text-success fw-bold">✓ Voucher applied:</span>
                     <strong class="text-white ms-1" id="voucherAppliedCode"></strong>
                   </div>
-                  <button type="button" class="btn btn-sm text-danger p-0 fw-bold" id="btnRemoveVoucher" title="Bỏ mã này">✕ Bỏ chọn</button>
+                  <button type="button" class="btn btn-sm text-danger p-0 fw-bold" id="btnRemoveVoucher" title="Remove this voucher">✕ Remove</button>
                 </div>
 
                 <!-- Available vouchers dropdown container -->
@@ -367,7 +367,7 @@
             <div class="booking-line"><span>Tickets</span><strong id="bookingTicketTotal">0 ₫</strong></div>
             <div class="booking-line"><span>Snacks &amp; drinks</span><strong id="bookingProductTotal">0 ₫</strong></div>
             <div class="booking-line d-none" id="bookingDiscountLine">
-              <span class="text-success">Khuyến mãi (<span id="voucherAppliedCodeSidebar"></span>)</span>
+              <span class="text-success">Discount (<span id="voucherAppliedCodeSidebar"></span>)</span>
               <strong id="bookingDiscountAmount" class="text-success">-0 ₫</strong>
             </div>
             <div id="bookingExtras" class="booking-muted"></div>

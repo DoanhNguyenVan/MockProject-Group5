@@ -31,12 +31,12 @@ public class PromotionServiceImpl implements PromotionService {
     @Override
     public BigDecimal validateAndCalculateDiscount(String voucherCode, BigDecimal orderAmount, Long userId) {
         if (voucherCode == null || voucherCode.isBlank()) {
-            throw new IllegalArgumentException("Vui lòng nhập mã giảm giá.");
+            throw new IllegalArgumentException("Please enter a voucher code.");
         }
 
         Optional<Promotion> opt = promotionRepository.findByVoucherCodeIgnoreCase(voucherCode.trim());
         if (opt.isEmpty()) {
-            throw new IllegalArgumentException("Mã giảm giá \"" + voucherCode + "\" không tồn tại.");
+            throw new IllegalArgumentException("Voucher code \"" + voucherCode + "\" does not exist.");
         }
 
         Promotion p = opt.get();
@@ -44,29 +44,29 @@ public class PromotionServiceImpl implements PromotionService {
 
         // 1. Status check
         if (!"ACTIVE".equalsIgnoreCase(p.getStatus())) {
-            throw new IllegalArgumentException("Mã giảm giá \"" + voucherCode + "\" đã ngừng hoạt động.");
+            throw new IllegalArgumentException("Voucher code \"" + voucherCode + "\" is no longer active.");
         }
 
         // 2. Date range check
         if (p.getStartAt() != null && now.isBefore(p.getStartAt())) {
-            throw new IllegalArgumentException("Mã giảm giá \"" + voucherCode + "\" chưa đến ngày áp dụng.");
+            throw new IllegalArgumentException("Voucher code \"" + voucherCode + "\" is not yet valid.");
         }
         if (p.getEndAt() != null && now.isAfter(p.getEndAt())) {
-            throw new IllegalArgumentException("Mã giảm giá \"" + voucherCode + "\" đã hết hạn sử dụng.");
+            throw new IllegalArgumentException("Voucher code \"" + voucherCode + "\" has expired.");
         }
 
         // 3. Minimum order check
         if (p.getMinOrderAmount() != null && orderAmount.compareTo(p.getMinOrderAmount()) < 0) {
             String minFormatted = String.format("%,.0f", p.getMinOrderAmount()) + " ₫";
             throw new IllegalArgumentException(
-                    "Đơn hàng chưa đạt giá trị tối thiểu " + minFormatted + " để áp dụng mã này.");
+                    "Minimum order amount of " + minFormatted + " required to use this voucher.");
         }
 
         // 4. Total usage limit check
         if (p.getUsageLimit() != null) {
             long totalUsed = promotionRepository.countTotalUsage(p.getPromotionId());
             if (totalUsed >= p.getUsageLimit()) {
-                throw new IllegalArgumentException("Mã giảm giá \"" + voucherCode + "\" đã hết lượt sử dụng.");
+                throw new IllegalArgumentException("Voucher code \"" + voucherCode + "\" has reached its usage limit.");
             }
         }
 
@@ -74,7 +74,7 @@ public class PromotionServiceImpl implements PromotionService {
         if (userId != null && p.getPerUserLimit() != null) {
             long userUsed = promotionRepository.countUsageByUser(p.getPromotionId(), userId);
             if (userUsed >= p.getPerUserLimit()) {
-                throw new IllegalArgumentException("Bạn đã dùng hết lượt sử dụng mã giảm giá này.");
+                throw new IllegalArgumentException("You have reached the usage limit for this voucher.");
             }
         }
 
