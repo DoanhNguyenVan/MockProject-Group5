@@ -81,6 +81,13 @@ public class Booking {
     @Column(name = "cancelled_at")
     private LocalDateTime cancelledAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "promotion_id")
+    private Promotion promotion;
+
+    @Column(name = "voucher_code_snapshot", length = 50)
+    private String voucherCodeSnapshot;
+
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BookingSeat> bookingSeats = new ArrayList<>();
 
@@ -198,4 +205,10 @@ public class Booking {
 
     public List<BookingFoodItem> getBookingFoodItems() { return bookingFoodItems; }
     public void setBookingFoodItems(List<BookingFoodItem> bookingFoodItems) { this.bookingFoodItems = bookingFoodItems; }
+
+    public Promotion getPromotion() { return promotion; }
+    public void setPromotion(Promotion promotion) { this.promotion = promotion; }
+
+    public String getVoucherCodeSnapshot() { return voucherCodeSnapshot; }
+    public void setVoucherCodeSnapshot(String voucherCodeSnapshot) { this.voucherCodeSnapshot = voucherCodeSnapshot; }
 }
