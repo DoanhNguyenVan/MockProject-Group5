@@ -20,6 +20,7 @@ public class BookingResponseDto {
     private BigDecimal ticketSubtotal;
     private BigDecimal foodSubtotal;
     private BigDecimal discountAmount;
+    private String voucherCode;
     private BigDecimal serviceFee;
     private BigDecimal totalAmount;
     private String bookingStatus;
@@ -58,6 +59,8 @@ public class BookingResponseDto {
     public void setFoodSubtotal(BigDecimal foodSubtotal) { this.foodSubtotal = foodSubtotal; }
     public BigDecimal getDiscountAmount() { return discountAmount; }
     public void setDiscountAmount(BigDecimal discountAmount) { this.discountAmount = discountAmount; }
+    public String getVoucherCode() { return voucherCode; }
+    public void setVoucherCode(String voucherCode) { this.voucherCode = voucherCode; }
     public BigDecimal getServiceFee() { return serviceFee; }
     public void setServiceFee(BigDecimal serviceFee) { this.serviceFee = serviceFee; }
     public BigDecimal getTotalAmount() { return totalAmount; }

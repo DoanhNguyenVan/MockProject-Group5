@@ -1,4 +1,4 @@
-﻿USE box_cinema;
+USE box_cinema;
 SET NAMES utf8mb4;
 
 -- 1. Update bookings table columns
@@ -273,3 +273,9 @@ INSERT IGNORE INTO food_combo_item (id, combo_id, food_item_id, variant_id, quan
 -- 16. Seed Initial Inventory
 INSERT IGNORE INTO food_inventory (food_item_id, on_hand_quantity, reserved_quantity)
 SELECT id, 200, 0 FROM food_item;
+
+-- 17. Seed Sample Promotions / Vouchers (Beta Cinema Style)
+INSERT IGNORE INTO promotions (promotion_id, promotion_name, description, voucher_code, discount_type, discount_value, max_discount, min_order_amount, start_at, end_at, usage_limit, per_user_limit, status) VALUES
+(1, 'Giảm giá 20K cho đơn từ 100K', 'Ưu đãi chào bạn mới áp dụng cho mọi suất chiếu', 'BOX20K', 'FIXED', 20000.00, 20000.00, 100000.00, '2026-01-01 00:00:00', '2027-12-31 23:59:59', 1000, 2, 'ACTIVE'),
+(2, 'Ưu Đãi Thứ Tư Vui Vẻ - Giảm 15%', 'Giảm ngay 15% tối đa 50K cho đơn từ 150K', 'BOXMIDWEEK', 'PERCENT', 15.00, 50000.00, 150000.00, '2026-01-01 00:00:00', '2027-12-31 23:59:59', 500, 1, 'ACTIVE'),
+(3, 'Đại Tiệc Phim Bom Tấn - Giảm 50K', 'Giảm 50K cho đơn hàng từ 250K khi mua kèm bắp nước', 'VIPPARTY', 'FIXED', 50000.00, 50000.00, 250000.00, '2026-01-01 00:00:00', '2027-12-31 23:59:59', 200, 2, 'ACTIVE');

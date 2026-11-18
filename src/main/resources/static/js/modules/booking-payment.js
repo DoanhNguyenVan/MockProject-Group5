@@ -8,6 +8,10 @@ export function initPayment(doc = document) {
   let pollInterval = null;
   let timerInterval = null;
 
+  // Voucher state
+  let appliedVoucherCode = null;
+  let appliedDiscountAmount = 0;
+
   const loadingEl = doc.getElementById("payosLoading");
   const activeLayout = doc.getElementById("payosActiveLayout");
   const successLayout = doc.getElementById("payosSuccessLayout");
@@ -19,6 +23,190 @@ export function initPayment(doc = document) {
   const descEl = doc.getElementById("payosDescription");
   const timerEl = doc.getElementById("payosTimer");
   const goToTicketBtn = doc.getElementById("btnGoToTicket");
+
+  // ---- Voucher UI elements ----
+  const voucherInput = doc.getElementById("voucherCodeInput");
+  const btnApplyVoucher = doc.getElementById("btnApplyVoucher");
+  const voucherMsg = doc.getElementById("voucherMessage");
+  const appliedBadge = doc.getElementById("voucherAppliedBadge");
+  const appliedCodeEl = doc.getElementById("voucherAppliedCode");
+  const appliedCodeSidebar = doc.getElementById("voucherAppliedCodeSidebar");
+  const discountLineEl = doc.getElementById("bookingDiscountLine");
+  const discountAmountEl = doc.getElementById("bookingDiscountAmount");
+  const btnRemoveVoucher = doc.getElementById("btnRemoveVoucher");
+  const btnShowVoucherList = doc.getElementById("btnShowVoucherList");
+  const voucherListContainer = doc.getElementById("voucherListContainer");
+
+  // Format money VND
+  function formatMoney(amount) {
+    return Number(amount).toLocaleString("vi-VN") + " ₫";
+  }
+
+  function getBaseSubtotal() {
+    const ticketRaw = doc.getElementById("bookingTicketTotal")?.textContent?.replace(/[^0-9]/g, "") || "0";
+    const productRaw = doc.getElementById("bookingProductTotal")?.textContent?.replace(/[^0-9]/g, "") || "0";
+    return (parseInt(ticketRaw, 10) || 0) + (parseInt(productRaw, 10) || 0);
+  }
+
+  function refreshDisplayedTotals() {
+    const base = getBaseSubtotal();
+    const finalTotal = Math.max(0, base - appliedDiscountAmount);
+
+    const totalEl = doc.getElementById("bookingTotal");
+    if (totalEl) totalEl.textContent = formatMoney(finalTotal);
+
+    const mobileTotalEl = doc.getElementById("bookingMobileTotal");
+    if (mobileTotalEl) mobileTotalEl.textContent = formatMoney(finalTotal);
+
+    doc.querySelectorAll("[data-payment-total]").forEach(amount => {
+      amount.textContent = formatMoney(finalTotal);
+    });
+  }
+
+  function showVoucherSuccess(code, discountAmount, promotionName) {
+    appliedVoucherCode = code;
+    appliedDiscountAmount = Number(discountAmount) || 0;
+
+    if (voucherMsg) {
+      voucherMsg.textContent = "";
+      voucherMsg.className = "voucher-message";
+    }
+    if (appliedBadge) appliedBadge.classList.remove("d-none");
+    if (appliedCodeEl) appliedCodeEl.textContent = code;
+    if (appliedCodeSidebar) appliedCodeSidebar.textContent = code;
+    if (discountLineEl) discountLineEl.classList.remove("d-none");
+    if (discountAmountEl) discountAmountEl.textContent = "-" + formatMoney(appliedDiscountAmount);
+    if (btnApplyVoucher) btnApplyVoucher.disabled = true;
+    if (voucherInput) voucherInput.disabled = true;
+
+    refreshDisplayedTotals();
+  }
+
+  function clearVoucher() {
+    appliedVoucherCode = null;
+    appliedDiscountAmount = 0;
+
+    if (voucherInput) {
+      voucherInput.value = "";
+      voucherInput.disabled = false;
+    }
+    if (voucherMsg) {
+      voucherMsg.textContent = "";
+      voucherMsg.className = "voucher-message";
+    }
+    if (appliedBadge) appliedBadge.classList.add("d-none");
+    if (discountLineEl) discountLineEl.classList.add("d-none");
+    if (discountAmountEl) discountAmountEl.textContent = "";
+    if (appliedCodeSidebar) appliedCodeSidebar.textContent = "";
+    if (btnApplyVoucher) btnApplyVoucher.disabled = false;
+
+    refreshDisplayedTotals();
+  }
+
+  async function applyVoucher(code) {
+    const orderAmount = getBaseSubtotal();
+    if (!code || code.trim() === "") {
+      if (voucherMsg) {
+        voucherMsg.textContent = "Vui lòng nhập mã giảm giá.";
+        voucherMsg.className = "voucher-message text-danger";
+      }
+      return;
+    }
+    if (btnApplyVoucher) btnApplyVoucher.disabled = true;
+    if (voucherMsg) {
+      voucherMsg.textContent = "Đang kiểm tra...";
+      voucherMsg.className = "voucher-message text-muted";
+    }
+
+    try {
+      const res = await fetch("/api/vouchers/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ voucherCode: code.trim().toUpperCase(), orderAmount })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showVoucherSuccess(data.voucherCode, data.discountAmount, data.promotionName);
+        if (voucherListContainer) voucherListContainer.classList.add("d-none");
+      } else {
+        if (voucherMsg) {
+          voucherMsg.textContent = data.message || "Mã không hợp lệ.";
+          voucherMsg.className = "voucher-message text-danger";
+        }
+        if (btnApplyVoucher) btnApplyVoucher.disabled = false;
+      }
+    } catch (e) {
+      if (voucherMsg) {
+        voucherMsg.textContent = "Lỗi kết nối, vui lòng thử lại sau.";
+        voucherMsg.className = "voucher-message text-danger";
+      }
+      if (btnApplyVoucher) btnApplyVoucher.disabled = false;
+    }
+  }
+
+  // Wire up voucher events
+  if (btnApplyVoucher) {
+    btnApplyVoucher.addEventListener("click", () => applyVoucher(voucherInput?.value || ""));
+  }
+  if (voucherInput) {
+    voucherInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        applyVoucher(voucherInput.value);
+      }
+    });
+  }
+  if (btnRemoveVoucher) {
+    btnRemoveVoucher.addEventListener("click", () => clearVoucher());
+  }
+
+  // Show/hide voucher list popup
+  if (btnShowVoucherList) {
+    btnShowVoucherList.addEventListener("click", async () => {
+      if (!voucherListContainer) return;
+      const isVisible = !voucherListContainer.classList.contains("d-none");
+      if (isVisible) {
+        voucherListContainer.classList.add("d-none");
+        return;
+      }
+      voucherListContainer.innerHTML = "<div class='text-muted small p-2'>Đang tải danh sách ưu đãi...</div>";
+      voucherListContainer.classList.remove("d-none");
+
+      const amount = getBaseSubtotal();
+      try {
+        const res = await fetch(`/api/vouchers/available?amount=${amount}`);
+        const promos = await res.json();
+        if (!promos || !promos.length) {
+          voucherListContainer.innerHTML = "<div class='text-muted small p-2'>Hiện chưa có mã ưu đãi phù hợp cho đơn hàng này.</div>";
+          return;
+        }
+        voucherListContainer.innerHTML = promos.map(p => {
+          let discountDesc = p.discountType === "PERCENT"
+            ? `Giảm ${p.discountValue}%${p.maxDiscount ? ' (Tối đa ' + formatMoney(p.maxDiscount) + ')' : ''}`
+            : `Giảm ${formatMoney(p.discountValue)}`;
+          return `
+            <div class="voucher-list-item d-flex justify-content-between align-items-center p-2 border-bottom border-secondary">
+              <div>
+                <span class="badge bg-danger fs-6">${p.voucherCode}</span>
+                <span class="ms-2 text-white small fw-semibold">${p.promotionName || ""}</span>
+                <div class="text-white-50" style="font-size:12px;">${discountDesc} · Đơn tối thiểu: ${formatMoney(p.minOrderAmount || 0)}</div>
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-success ms-2 btn-pick-voucher" data-code="${p.voucherCode}">Dùng mã</button>
+            </div>`;
+        }).join("");
+
+        voucherListContainer.querySelectorAll(".btn-pick-voucher").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const code = btn.getAttribute("data-code");
+            if (voucherInput) voucherInput.value = code;
+            applyVoucher(code);
+          });
+        });
+      } catch (e) {
+        voucherListContainer.innerHTML = "<div class='text-danger small p-2'>Không thể tải danh sách voucher.</div>";
+      }
+    });
+  }
 
   // Copy helper
   function setupCopyBtn(btnId, getText) {
@@ -97,12 +285,25 @@ export function initPayment(doc = document) {
   }
 
   return {
+    getDiscountAmount() {
+      return appliedDiscountAmount;
+    },
+
+    getVoucherCode() {
+      return appliedVoucherCode;
+    },
+
     async startCheckout(bookingPayload) {
       if (loadingEl) loadingEl.classList.remove("d-none");
       if (activeLayout) activeLayout.classList.add("d-none");
       if (successLayout) successLayout.classList.add("d-none");
       clearInterval(pollInterval);
       clearInterval(timerInterval);
+
+      // Attach voucher code to booking payload if applied
+      if (appliedVoucherCode) {
+        bookingPayload.voucherCode = appliedVoucherCode;
+      }
 
       try {
         // 1. Create Unified Booking (BR-01, BR-02)
@@ -173,6 +374,7 @@ export function initPayment(doc = document) {
       activePaymentId = null;
       activeBookingId = null;
       activeOrderCode = null;
+      clearVoucher();
       if (loadingEl) loadingEl.classList.remove("d-none");
       if (activeLayout) activeLayout.classList.add("d-none");
       if (successLayout) successLayout.classList.add("d-none");

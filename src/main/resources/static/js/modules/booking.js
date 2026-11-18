@@ -658,11 +658,13 @@ export function initBooking(doc = document) {
     el("SelectedSeats").textContent = displayedLabels.join(", ") || "No seats selected";
     el("TicketTotal").textContent = formatVnd(totals.tickets);
     el("ProductTotal").textContent = formatVnd(totals.extras);
-    el("Total").textContent = formatVnd(totals.total);
+    const voucherDiscount = (typeof payment.getDiscountAmount === "function") ? payment.getDiscountAmount() : 0;
+    const finalTotal = Math.max(0, totals.total - voucherDiscount);
+    el("Total").textContent = formatVnd(finalTotal);
     el("Extras").textContent = data.products.filter(p => quantities[p.id]).map(p => `${quantities[p.id]} × ${p.name}`).join(" · ");
     el("Next").disabled = !selected.length || step === 3;
     el("Next").hidden = step === 3;
-    app.querySelectorAll("[data-payment-total]").forEach(amount => { amount.textContent = formatVnd(totals.total); });
+    app.querySelectorAll("[data-payment-total]").forEach(amount => { amount.textContent = formatVnd(finalTotal); });
     const nextLabel = ["Continue to Concessions →", "Review Selected Tickets →", "Proceed to Payment →", "Pay Now"][step];
     el("Next").textContent = nextLabel;
     el("CheckoutNote").textContent = selected.length ? "Seats are temporarily held. Proceed to complete your booking." : "Please select seats to begin.";
@@ -677,7 +679,7 @@ export function initBooking(doc = document) {
         ? `Seats (${seats.length}): ${displayedLabels.join(", ")}`
         : "No seats selected";
     }
-    if (mobileTotal) mobileTotal.textContent = formatVnd(totals.total);
+    if (mobileTotal) mobileTotal.textContent = formatVnd(finalTotal);
     if (mobileNext) {
       mobileNext.disabled = !selected.length || step === 3;
       mobileNext.textContent = ["Continue →", "Review Tickets →", "Pay Now →", "Pay Now"][step];
@@ -1154,7 +1156,22 @@ export function initBooking(doc = document) {
     el("Previous").hidden = step === 0;
     if (step === 2) {
       el("Review").replaceChildren();
-      for (const [label, value] of [["Movie", data.movieTitle], ["Cinema", data.cinemaName], ["Screening", data.screeningLabel], ["Room", data.roomName], ["Seats", selected.join(", ")], ["Extras", el("Extras").textContent || "No snacks added"], ["Estimate", formatVnd(calculateTotals(data.seats, selected, data.products, quantities).total)]]) {
+      const voucherDiscount = (typeof payment.getDiscountAmount === "function") ? payment.getDiscountAmount() : 0;
+      const voucherCode = (typeof payment.getVoucherCode === "function") ? payment.getVoucherCode() : null;
+      const baseTotal = calculateTotals(data.seats, selected, data.products, quantities).total;
+      const reviewRows = [
+        ["Movie", data.movieTitle],
+        ["Cinema", data.cinemaName],
+        ["Screening", data.screeningLabel],
+        ["Room", data.roomName],
+        ["Seats", selected.join(", ")],
+        ["Extras", el("Extras").textContent || "No snacks added"]
+      ];
+      if (voucherCode && voucherDiscount > 0) {
+        reviewRows.push(["Voucher (" + voucherCode + ")", "-" + formatVnd(voucherDiscount)]);
+      }
+      reviewRows.push(["Estimate", formatVnd(Math.max(0, baseTotal - voucherDiscount))]);
+      for (const [label, value] of reviewRows) {
         const row = node("div"); row.append(node("dt", label), node("dd", value)); el("Review").append(row);
       }
     }

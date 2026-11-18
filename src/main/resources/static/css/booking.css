@@ -1750,3 +1750,18 @@ html[data-theme="light"] .booking-auth-modal-btn-back:hover {
   background: #f1f5f9;
   color: #0f172a;
 }
+
+/* Voucher & Promotion styling (Beta Cinema style) */
+.voucher-box-panel {
+  transition: all 0.2s ease-in-out;
+}
+.voucher-list-item {
+  transition: background 0.15s ease;
+  border-radius: 6px;
+}
+.voucher-list-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.voucher-list-item:last-child {
+  border-bottom: none !important;
+}

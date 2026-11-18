@@ -214,6 +214,39 @@
               <p class="booking-muted">Check your screening, seats and extras below.</p>
               <dl id="bookingReview" class="booking-review"></dl>
 
+              <!-- Voucher / Promotion Section (Beta Cinema Style) -->
+              <div class="voucher-box-panel mt-4 p-3 rounded" style="background: #111827; border: 1px solid #1f2937;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="text-white fw-bold">
+                    <span style="color: #ef4444;">🏷</span> Khuyến mãi &amp; Voucher
+                  </span>
+                  <button type="button" class="btn btn-sm btn-link text-decoration-none text-danger p-0" id="btnShowVoucherList">
+                    Xem mã ưu đãi &#8595;
+                  </button>
+                </div>
+
+                <!-- Input code form -->
+                <div class="input-group mb-2">
+                  <input type="text" id="voucherCodeInput" class="form-control bg-dark text-white border-secondary" placeholder="Nhập mã ưu đãi (VD: BOXMIDWEEK)..." style="text-transform: uppercase;">
+                  <button class="btn btn-danger fw-semibold px-3" type="button" id="btnApplyVoucher">Áp dụng</button>
+                </div>
+
+                <!-- Message feedback -->
+                <div id="voucherMessage" class="voucher-message small"></div>
+
+                <!-- Applied badge -->
+                <div id="voucherAppliedBadge" class="d-none mt-2 p-2 rounded d-flex justify-content-between align-items-center" style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981;">
+                  <div>
+                    <span class="text-success fw-bold">✓ Đã áp dụng mã:</span>
+                    <strong class="text-white ms-1" id="voucherAppliedCode"></strong>
+                  </div>
+                  <button type="button" class="btn btn-sm text-danger p-0 fw-bold" id="btnRemoveVoucher" title="Bỏ mã này">✕ Bỏ chọn</button>
+                </div>
+
+                <!-- Available vouchers dropdown container -->
+                <div id="voucherListContainer" class="d-none mt-3 p-2 rounded" style="background: #1f2937; max-height: 220px; overflow-y: auto;"></div>
+              </div>
+
               <p class="text-white-50 small mt-4 mb-0">
                 <span class="text-danger fw-semibold">Delivery:</span> E-tickets and booking confirmation will be sent directly to your registered account email.
               </p>
@@ -332,7 +365,10 @@
               <p id="bookingSelectedSeats" aria-live="polite">No seats selected</p>
             </div>
             <div class="booking-line"><span>Tickets</span><strong id="bookingTicketTotal">0 ₫</strong></div>
-            <div class="booking-line"><span>Snacks &amp; drinks</span><strong id="bookingProductTotal">0 ₫</strong>
+            <div class="booking-line"><span>Snacks &amp; drinks</span><strong id="bookingProductTotal">0 ₫</strong></div>
+            <div class="booking-line d-none" id="bookingDiscountLine">
+              <span class="text-success">Khuyến mãi (<span id="voucherAppliedCodeSidebar"></span>)</span>
+              <strong id="bookingDiscountAmount" class="text-success">-0 ₫</strong>
             </div>
             <div id="bookingExtras" class="booking-muted"></div>
             <div class="booking-total" aria-live="polite"><span>Estimated total<small>All prices in
