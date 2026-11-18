@@ -12,6 +12,7 @@ public class BookingCreateRequestDto {
     private String guestPhone;
     private List<BookingFoodItemRequestDto> foodItems = new ArrayList<>();
     private List<BookingComboRequestDto> combos = new ArrayList<>();
+    private String voucherCode;
 
     public BookingCreateRequestDto() {}
 
@@ -31,4 +32,6 @@ public class BookingCreateRequestDto {
     public void setFoodItems(List<BookingFoodItemRequestDto> foodItems) { this.foodItems = foodItems; }
     public List<BookingComboRequestDto> getCombos() { return combos; }
     public void setCombos(List<BookingComboRequestDto> combos) { this.combos = combos; }
+    public String getVoucherCode() { return voucherCode; }
+    public void setVoucherCode(String voucherCode) { this.voucherCode = voucherCode; }
 }

@@ -5,6 +5,7 @@ import com.boxcinema.entity.*;
 import com.boxcinema.repository.*;
 import com.boxcinema.service.BookingService;
 import com.boxcinema.service.FoodService;
+import com.boxcinema.service.PromotionService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +30,7 @@ public class BookingServiceImpl implements BookingService {
     private final FoodVariantRepository foodVariantRepository;
     private final FoodComboRepository foodComboRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final PromotionService promotionService;
 
     private final SecureRandom random = new SecureRandom();
 
@@ -42,7 +44,8 @@ public class BookingServiceImpl implements BookingService {
             FoodItemRepository foodItemRepository,
             FoodVariantRepository foodVariantRepository,
             FoodComboRepository foodComboRepository,
-            JdbcTemplate jdbcTemplate
+            JdbcTemplate jdbcTemplate,
+            PromotionService promotionService
     ) {
         this.bookingRepository = bookingRepository;
         this.bookingSeatRepository = bookingSeatRepository;
@@ -54,6 +57,7 @@ public class BookingServiceImpl implements BookingService {
         this.foodVariantRepository = foodVariantRepository;
         this.foodComboRepository = foodComboRepository;
         this.jdbcTemplate = jdbcTemplate;
+        this.promotionService = promotionService;
     }
 
     @Override
@@ -137,6 +141,23 @@ public class BookingServiceImpl implements BookingService {
         processFoodAndCombos(booking, request.getFoodItems(), request.getCombos());
 
         booking.recalculateTotals();
+
+        // Apply voucher discount if provided
+        if (request.getVoucherCode() != null && !request.getVoucherCode().isBlank()) {
+            try {
+                BigDecimal subtotalForVoucher = booking.getSubtotal();
+                BigDecimal discount = promotionService.validateAndCalculateDiscount(
+                        request.getVoucherCode(), subtotalForVoucher, currentUserId);
+                Promotion promo = promotionService.findByVoucherCode(request.getVoucherCode());
+                booking.setPromotion(promo);
+                booking.setVoucherCodeSnapshot(request.getVoucherCode().toUpperCase());
+                booking.setDiscountAmount(discount);
+                booking.recalculateTotals();
+            } catch (IllegalArgumentException e) {
+                // Voucher invalid — ignore silently (frontend validated first, this is a safety net)
+            }
+        }
+
         booking = bookingRepository.save(booking);
 
         return mapToDto(booking);
@@ -310,6 +331,7 @@ public class BookingServiceImpl implements BookingService {
         dto.setTicketSubtotal(b.getTicketSubtotal());
         dto.setFoodSubtotal(b.getFoodSubtotal());
         dto.setDiscountAmount(b.getDiscountAmount());
+        dto.setVoucherCode(b.getVoucherCodeSnapshot());
         dto.setServiceFee(b.getServiceFee());
         dto.setTotalAmount(b.getTotalAmount());
         dto.setBookingStatus(b.getBookingStatus());
