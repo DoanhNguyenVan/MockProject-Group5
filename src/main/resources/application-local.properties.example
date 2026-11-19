@@ -1,0 +1,30 @@
+# ===================================================================
+# Local Development Configuration Template (COPY TO application-local.properties)
+# ===================================================================
+# Instructions:
+# 1. Copy this file and rename it to: application-local.properties
+# 2. Update spring.datasource.password with your local MySQL root password.
+# 3. Update PayOS credentials with your team's PayOS keys.
+# ===================================================================
+
+# Local MySQL Database Configuration
+spring.datasource.url=jdbc:mysql://localhost:3306/box_cinema?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
+spring.datasource.username=root
+spring.datasource.password=YOUR_MYSQL_PASSWORD_HERE
+
+# PayOS Payment Gateway Credentials
+payos.client-id=YOUR_PAYOS_CLIENT_ID
+payos.api-key=YOUR_PAYOS_API_KEY
+payos.checksum-key=YOUR_PAYOS_CHECKSUM_KEY
+payos.base-url=https://api-merchant.payos.vn
+payos.return-url=http://localhost:8080/booking/buy-tickets
+payos.cancel-url=http://localhost:8080/booking/buy-tickets
+
+# Google OAuth2 Credentials (Optional - for social login)
+# app.oauth2.google.client-id=
+# app.oauth2.google.client-secret=
+# app.oauth2.google.redirect-uri=http://localhost:8080/login/oauth2/code/google
+
+# Gmail SMTP Credentials (Optional - for OTP and ticket emails)
+# spring.mail.username=
+# spring.mail.password=
