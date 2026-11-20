@@ -131,6 +131,14 @@ export function initAdmin(doc = document) {
   doc.title = `${config.title} | BOX Cinema Admin`;
   let lastGroup = '';
   for (const [key, item] of Object.entries(ADMIN_SECTIONS)) {
+    if (key === 'staff') {
+      if (item.group !== lastGroup) { get('adminNavigation').append(element('p', item.group)); lastGroup = item.group; }
+      const accountLink = element('a'); accountLink.href = '/admin/accounts';
+      const icon = element('span', '♙'); icon.setAttribute('aria-hidden', 'true');
+      accountLink.append(icon, element('span', 'Accounts & roles'));
+      get('adminNavigation').append(accountLink);
+      continue;
+    }
     if (item.group !== lastGroup) { get('adminNavigation').append(element('p', item.group)); lastGroup = item.group; }
     const link = element('a'); link.href = `/admin/${key}`;
     const icon = element('span', item.icon); icon.setAttribute('aria-hidden', 'true');
@@ -138,10 +146,6 @@ export function initAdmin(doc = document) {
     if (section === key) link.setAttribute('aria-current', 'page');
     get('adminNavigation').append(link);
   }
-  // Account Management is backed by MySQL, unlike the other preview catalogs.
-  const accountLink = element('a'); accountLink.href = '/admin/accounts';
-  accountLink.append(element('span', '♙'), element('span', 'Accounts (live)'));
-  get('adminNavigation').append(accountLink);
   get('adminMenuToggle').addEventListener('click', () => {
     const open = get('adminNavigation').classList.toggle('is-open'); get('adminMenuToggle').setAttribute('aria-expanded', String(open));
   });
@@ -711,82 +715,217 @@ export function initAdmin(doc = document) {
   get('adminNext').addEventListener('click', () => { page++; renderCatalog(); });
 
   function renderMetrics(target, summary) {
-    get(target).replaceChildren();
+    const container = get(target);
+    if (!container) return;
+    container.replaceChildren();
+    const activeCinemas = (state.cinemas || []).filter(c => c.status !== 'INACTIVE').length || (state.cinemas?.length || 0);
+    const totalRooms = state.rooms?.length || 0;
+    const nowShowing = (state.movies || []).filter(m => m.status === 'NOW_SHOWING').length || (state.movies?.length || 0);
     const metrics = [
       {
         label: 'Chain Network',
-        value: `${state.cinemas?.length || 0} Cinemas · ${state.rooms?.length || 0} Rooms`,
-        note: `${state.movies?.length || 0} Active Titles`
+        icon: '⌂',
+        accent: 'accent-blue',
+        value: `${activeCinemas} Cinemas`,
+        note: `${totalRooms} Auditoriums · ${nowShowing} Active Titles`
       },
       {
-        label: 'Ticket revenue',
+        label: 'Ticket Revenue',
+        icon: '₫',
+        accent: 'accent-red',
         value: shortMoney(summary.revenue),
-        note: 'VND · paid bookings'
+        note: `${formatMoney(summary.revenue)} paid total`
       },
       {
-        label: 'Tickets sold',
+        label: 'Tickets Sold',
+        icon: '🎟',
+        accent: 'accent-emerald',
         value: summary.tickets.toLocaleString('en'),
-        note: 'Total admissions'
+        note: 'Total confirmed admissions'
       },
       {
-        label: 'Paid sale records',
-        value: String(summary.orders),
-        note: 'Cancelled excluded'
+        label: 'Paid Orders',
+        icon: '🧾',
+        accent: 'accent-amber',
+        value: summary.orders.toLocaleString('en'),
+        note: 'Cancelled orders excluded'
       },
       {
-        label: 'Revenue per ticket',
+        label: 'Avg. Ticket Price',
+        icon: '↗',
+        accent: 'accent-purple',
         value: summary.tickets ? formatMoney(Math.round(summary.revenue / summary.tickets)) : '—',
-        note: 'Chain average'
+        note: 'Chain-wide average yield'
       }
     ];
     for (const m of metrics) {
-      const card = element('div', '', 'admin-metric');
-      card.append(element('p', m.label), element('strong', m.value), element('small', m.note));
-      get(target).append(card);
+      const card = element('div', '', `admin-metric ${m.accent}`);
+      const topRow = element('div', '', 'admin-metric-top');
+      topRow.append(element('p', m.label), element('span', m.icon, 'admin-metric-icon'));
+      card.append(topRow, element('strong', m.value), element('small', m.note));
+      container.append(card);
     }
   }
 
+  function formatChartDayLabel(dayStr) {
+    if (!dayStr || dayStr.length < 10) return dayStr || '';
+    const parts = dayStr.slice(0, 10).split('-');
+    if (parts.length !== 3) return dayStr;
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const mIdx = Math.max(0, Math.min(11, parseInt(parts[1], 10) - 1));
+    return `${parts[2]} ${months[mIdx]}`;
+  }
+
   function renderChart(target, summary) {
-    get(target).replaceChildren();
-    const days = Object.entries(summary.days).sort(([a], [b]) => a.localeCompare(b));
-    if (!days.length) { get(target).append(element('p', 'No paid sales for this period.', 'admin-muted')); return; }
+    const container = get(target);
+    if (!container) return;
+    container.replaceChildren();
+    const allDays = Object.entries(summary.days).sort(([a], [b]) => a.localeCompare(b));
+    const days = allDays.slice(-10);
+    if (!days.length) {
+      container.append(element('p', 'No paid sales recorded for this period.', 'admin-muted'));
+      return;
+    }
     const maximum = Math.max(...days.map(([, amount]) => amount), 1);
-    get(target).setAttribute('aria-label', days.map(([day, value]) => `${day}: ${formatMoney(value)}`).join('; '));
+    const peakEntry = days.reduce((best, curr) => (curr[1] > best[1] ? curr : best), days[0]);
+    container.setAttribute('aria-label', days.map(([day, value]) => `${day}: ${formatMoney(value)}`).join('; '));
+
+    const metaEl = get('adminRevenueMeta');
+    if (metaEl && target === 'adminRevenueChart') {
+      metaEl.replaceChildren();
+      const avgDaily = Math.round(days.reduce((s, [, v]) => s + v, 0) / days.length);
+      const pillPeak = element('span', `Peak: ${shortMoney(peakEntry[1])} (${formatChartDayLabel(peakEntry[0])})`, 'admin-meta-pill pill-peak');
+      const pillAvg = element('span', `Daily Avg: ${shortMoney(avgDaily)}`, 'admin-meta-pill');
+      metaEl.append(pillPeak, pillAvg);
+    }
+
     for (const [day, amount] of days) {
-      const column = element('div', '', 'admin-chart-column'); const bar = element('div', '', 'admin-chart-bar');
-      bar.style.height = `${Math.max(1, amount / maximum * 150)}px`; bar.title = `${day}: ${formatMoney(amount)}`;
-      column.append(element('span', shortMoney(amount)), bar, element('span', day.slice(8) + ' Nov')); get(target).append(column);
+      const isPeak = day === peakEntry[0] && amount > 0;
+      const column = element('div', '', `admin-chart-column${isPeak ? ' is-peak' : ''}`);
+      const valLabel = element('span', shortMoney(amount), 'admin-chart-val');
+      const barWrap = element('div', '', 'admin-chart-bar-track');
+      const bar = element('div', '', 'admin-chart-bar');
+      const heightPct = Math.max(6, Math.round((amount / maximum) * 100));
+      bar.style.height = `${heightPct}%`;
+      bar.title = `${day}: ${formatMoney(amount)}`;
+      barWrap.append(bar);
+      const dateLabel = element('span', formatChartDayLabel(day), 'admin-chart-date');
+      column.append(valLabel, barWrap, dateLabel);
+      container.append(column);
     }
   }
 
   function renderDashboard() {
-    const summary = summarizeSales(state.sales, '2026-11-01', '2026-11-30');
-    renderMetrics('adminMetrics', summary); renderChart('adminRevenueChart', summary);
-    get('adminTopMovies').replaceChildren();
-    summary.movies.slice(0, 3).forEach((movie, index) => {
-      const item = element('div', '', 'admin-ranking-item');
-      const badgeClass = index === 0 ? 'rank-gold' : index === 1 ? 'rank-silver' : 'rank-bronze';
-      const rankBadge = element('span', `0${index + 1}`, `admin-rank-badge ${badgeClass}`);
-      const title = element('div');
-      title.append(element('strong', recordLabel('movies', state.movies.find(row => row.id === movie.movieId), state)), element('small', `${movie.tickets} tickets sold`));
-      item.append(rankBadge, title, element('b', shortMoney(movie.revenue))); get('adminTopMovies').append(item);
-    });
-    get('adminUpcoming').replaceChildren();
+    let summary = summarizeSales(state.sales || [], '0000-01-01', '9999-12-31');
+    if (!summary.orders && state.sales?.length) {
+      summary = summarizeSales(state.sales, '2026-11-01', '2026-11-30');
+    }
+    renderMetrics('adminMetrics', summary);
+    renderChart('adminRevenueChart', summary);
+
+    // Top Performing Movies with share bar
+    const topMoviesEl = get('adminTopMovies');
+    topMoviesEl.replaceChildren();
+    const topList = summary.movies.slice(0, 5);
+    if (!topList.length) {
+      topMoviesEl.append(element('p', 'No ticket revenue recorded yet.', 'admin-muted'));
+    } else {
+      const totalRev = Math.max(summary.revenue, 1);
+      topList.forEach((movie, index) => {
+        const movieObj = (state.movies || []).find(row => row.id === movie.movieId);
+        const item = element('div', '', 'admin-ranking-item');
+        const badgeClass = index === 0 ? 'rank-gold' : index === 1 ? 'rank-silver' : index === 2 ? 'rank-bronze' : 'rank-default';
+        const rankBadge = element('span', `0${index + 1}`, `admin-rank-badge ${badgeClass}`);
+
+        const info = element('div', '', 'admin-ranking-info');
+        const sharePct = Math.min(100, Math.round((movie.revenue / totalRev) * 100));
+        const titleRow = element('div', '', 'admin-ranking-title-row');
+        titleRow.append(
+          element('strong', recordLabel('movies', movieObj, state)),
+          element('b', shortMoney(movie.revenue), 'admin-ranking-amount')
+        );
+        const subRow = element('div', '', 'admin-ranking-sub-row');
+        subRow.append(
+          element('small', `${movie.tickets.toLocaleString('en')} tickets sold`),
+          element('small', `${sharePct}% share`, 'admin-ranking-share')
+        );
+        const progressTrack = element('div', '', 'admin-ranking-progress');
+        const progressFill = element('div', '', `admin-ranking-progress-fill ${badgeClass}`);
+        progressFill.style.width = `${Math.max(4, sharePct)}%`;
+        progressTrack.append(progressFill);
+
+        info.append(titleRow, subRow, progressTrack);
+        item.append(rankBadge, info);
+        topMoviesEl.append(item);
+      });
+    }
+
+    // Upcoming Screenings
+    const upcomingEl = get('adminUpcoming');
+    upcomingEl.replaceChildren();
     const today = new Date().toISOString().slice(0, 10);
     let screenings = (state.showtimes || []).filter(item => item.status === 'ACTIVE' && item.startAt >= today).sort((a, b) => a.startAt.localeCompare(b.startAt));
     if (!screenings.length) {
       screenings = (state.showtimes || []).filter(item => item.status === 'ACTIVE').sort((a, b) => a.startAt.localeCompare(b.startAt));
     }
     screenings = screenings.slice(0, 5);
-    if (!screenings.length) get('adminUpcoming').append(element('p', 'No screenings found in schedule.', 'admin-muted'));
-    screenings.forEach(show => {
-      const row = element('div', '', 'admin-upcoming-item');
-      const timePill = element('span', show.startAt.slice(11, 16), 'admin-time-pill');
-      const details = element('div');
-      details.append(element('strong', recordLabel('movies', state.movies.find(item => item.id === show.movieId), state)), element('small', recordLabel('rooms', state.rooms.find(item => item.id === show.roomId), state)));
-      const link = element('a', 'Edit →', 'admin-text-button'); link.href = `/admin/showtimes?edit=${encodeURIComponent(show.id)}`;
-      row.append(timePill, details, link); get('adminUpcoming').append(row);
-    });
+    if (!screenings.length) {
+      upcomingEl.append(element('p', 'No screenings found in schedule.', 'admin-muted'));
+    } else {
+      screenings.forEach(show => {
+        const row = element('div', '', 'admin-upcoming-item');
+        const timeBox = element('div', '', 'admin-upcoming-timebox');
+        const timeStr = (show.startAt || '').slice(11, 16) || '00:00';
+        const dateStr = formatChartDayLabel((show.startAt || '').slice(0, 10));
+        timeBox.append(
+          element('span', timeStr, 'admin-time-pill'),
+          element('small', dateStr, 'admin-date-sub')
+        );
+
+        const details = element('div', '', 'admin-upcoming-details');
+        const movieObj = (state.movies || []).find(item => item.id === show.movieId);
+        const roomObj = (state.rooms || []).find(item => item.id === show.roomId);
+        details.append(
+          element('strong', recordLabel('movies', movieObj, state)),
+          element('small', `${recordLabel('rooms', roomObj, state)} · ${formatMoney(show.basePrice || 0)}`)
+        );
+
+        const link = element('a', 'Manage →', 'admin-upcoming-action');
+        link.href = `/admin/showtimes?edit=${encodeURIComponent(show.id)}`;
+        row.append(timeBox, details, link);
+        upcomingEl.append(row);
+      });
+    }
+
+    // Recent Ticket Orders (fills left column bottom nicely)
+    const recentBookingsEl = get('adminRecentBookings');
+    if (recentBookingsEl) {
+      recentBookingsEl.replaceChildren();
+      const recentList = (state.bookings || []).slice(0, 5);
+      if (!recentList.length) {
+        recentBookingsEl.append(element('p', 'No recent booking transactions available.', 'admin-muted'));
+      } else {
+        recentList.forEach(bk => {
+          const row = element('div', '', 'admin-recent-booking-row');
+          const left = element('div', '', 'admin-recent-booking-main');
+          const codeRow = element('div', '', 'd-flex align-items-center gap-2');
+          codeRow.append(
+            element('code', bk.bookingCode || `#${bk.id}`, 'admin-recent-booking-code'),
+            badge(bk.bookingStatus || 'CONFIRMED')
+          );
+          const metaText = `${bk.customerName || 'Guest'} · ${bk.movieTitle || 'Movie'} (${bk.cinemaName || 'BOX Cinema'})`;
+          left.append(codeRow, element('small', metaText, 'admin-recent-booking-meta'));
+
+          const right = element('div', '', 'admin-recent-booking-right');
+          right.append(
+            element('strong', formatMoney(bk.totalAmount || 0)),
+            element('small', `${bk.ticketCount || 1} ticket(s) · ${bk.bookedAt || ''}`)
+          );
+          row.append(left, right);
+          recentBookingsEl.append(row);
+        });
+      }
+    }
   }
 
   function renderReports() {

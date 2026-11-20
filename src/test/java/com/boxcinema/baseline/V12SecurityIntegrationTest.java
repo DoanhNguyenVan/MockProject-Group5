@@ -1,20 +1,20 @@
 package com.boxcinema.baseline;
 
-import com.boxcinema.dto.RegisterRequestDto;
-import com.boxcinema.dto.UserSummaryDto;
-import com.boxcinema.entity.OtpPurpose;
-import com.boxcinema.entity.PasswordReset;
-import com.boxcinema.entity.PasswordResetStatus;
-import com.boxcinema.entity.User;
-import com.boxcinema.repository.PasswordResetRepository;
-import com.boxcinema.repository.UserRepository;
-import com.boxcinema.service.AuthRateLimitService;
-import com.boxcinema.service.EmailService;
-import com.boxcinema.service.EmailVerificationService;
-import com.boxcinema.service.GoogleOidcService;
-import com.boxcinema.service.LoginAttemptService;
-import com.boxcinema.service.OtpService;
-import com.boxcinema.service.UserService;
+import com.boxcinema.auth.dto.request.RegisterRequestDto;
+import com.boxcinema.common.dto.UserSummaryDto;
+import com.boxcinema.common.enums.OtpPurpose;
+import com.boxcinema.common.entity.PasswordReset;
+import com.boxcinema.common.enums.PasswordResetStatus;
+import com.boxcinema.common.entity.User;
+import com.boxcinema.common.repository.PasswordResetRepository;
+import com.boxcinema.common.repository.UserRepository;
+import com.boxcinema.auth.service.AuthRateLimitService;
+import com.boxcinema.common.service.EmailService;
+import com.boxcinema.auth.service.EmailVerificationService;
+import com.boxcinema.auth.service.GoogleOidcService;
+import com.boxcinema.auth.service.LoginAttemptService;
+import com.boxcinema.auth.service.OtpService;
+import com.boxcinema.auth.service.UserService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpSession;
@@ -431,7 +431,7 @@ public class V12SecurityIntegrationTest {
                         UserSummaryDto dtoB = userService.authenticateSocial("GOOGLE", "v12_sub_b", emailB,
                                         "Account B");
                         MockHttpSession sessionB = new MockHttpSession();
-                        com.boxcinema.security.SecuritySessionHelper.authenticateUserSession(
+                        com.boxcinema.common.security.SecuritySessionHelper.authenticateUserSession(
                                         dtoB,
                                         new org.springframework.mock.web.MockHttpServletRequest(),
                                         new org.springframework.mock.web.MockHttpServletResponse(),
@@ -440,7 +440,7 @@ public class V12SecurityIntegrationTest {
                         mockMvc.perform(get("/oauth2/set-password/google/start")
                                         .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
                                                         .user(
-                                                                        new com.boxcinema.security.BoxCinemaUserDetails(
+                                                                        new com.boxcinema.common.security.BoxCinemaUserDetails(
                                                                                         dtoB)))
                                         .session(sessionB))
                                         .andExpect(status().is3xxRedirection());
@@ -455,7 +455,7 @@ public class V12SecurityIntegrationTest {
                         mockMvc.perform(get("/oauth2/set-password/google/callback")
                                         .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
                                                         .user(
-                                                                        new com.boxcinema.security.BoxCinemaUserDetails(
+                                                                        new com.boxcinema.common.security.BoxCinemaUserDetails(
                                                                                         dtoB)))
                                         .session(sessionB)
                                         .param("code", "code-wrong-sub")
@@ -467,7 +467,7 @@ public class V12SecurityIntegrationTest {
             // Account A can unlink via /api/account/google/unlink & still log in via password
             mockMvc.perform(post("/api/account/google/unlink")
                             .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(
-                                    new com.boxcinema.security.BoxCinemaUserDetails(dtoB)))
+                                    new com.boxcinema.common.security.BoxCinemaUserDetails(dtoB)))
                             .session(sessionB)
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)

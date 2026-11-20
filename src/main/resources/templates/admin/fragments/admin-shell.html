@@ -8,7 +8,7 @@
   <title th:text="${pageTitle} + ' | BOX Cinema Admin'">BOX Cinema Admin</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="/css/main.css" th:href="@{/css/main.css}">
-  <link rel="stylesheet" href="/css/admin.css?v=4.6" th:href="@{/css/admin.css(v='4.6')}">
+  <link rel="stylesheet" href="/css/admin.css?v=5.1" th:href="@{/css/admin.css(v='5.1')}">
   <style>
     html, body.admin-page {
       background: var(--box-bg-primary);
@@ -26,7 +26,8 @@
     .admin-top-actions {
       display: flex;
       align-items: center;
-      gap: 12px;
+      flex-wrap: wrap;
+      gap: 8px 10px;
     }
     .admin-user-badge {
       display: inline-flex;
@@ -200,9 +201,9 @@
         <span aria-hidden="true">🧾</span>
         <span>Ticket orders</span>
       </a>
-      <a href="/admin/staff" th:href="@{/admin/staff}" th:attr="aria-current=${activeSection == 'staff' ? 'page' : null}">
+      <a href="/admin/accounts" th:href="@{/admin/accounts}" th:attr="aria-current=${activeSection == 'accounts' ? 'page' : null}">
         <span aria-hidden="true">♙</span>
-        <span>Staff &amp; roles</span>
+        <span>Accounts &amp; roles</span>
       </a>
       <a href="/admin/reports" th:href="@{/admin/reports}" th:attr="aria-current=${activeSection == 'reports' ? 'page' : null}">
         <span aria-hidden="true">↗</span>

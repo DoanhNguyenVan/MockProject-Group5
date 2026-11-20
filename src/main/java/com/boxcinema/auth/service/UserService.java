@@ -1,0 +1,59 @@
+package com.boxcinema.auth.service;
+
+import com.boxcinema.auth.dto.response.AuthMethodsDto;
+import com.boxcinema.auth.dto.request.RegisterRequestDto;
+import com.boxcinema.common.dto.UserSummaryDto;
+
+public interface UserService {
+
+    UserSummaryDto registerCustomer(RegisterRequestDto request);
+
+    UserSummaryDto authenticate(String email, String rawPassword);
+
+    UserSummaryDto authenticateSocial(String provider, String providerId, String email, String fullName);
+
+    default UserSummaryDto authenticateSocial(
+            String provider,
+            String providerId,
+            String email,
+            String fullName,
+            boolean trustedGoogleEmail) {
+        return authenticateSocial(provider, providerId, email, fullName);
+    }
+
+    default UserSummaryDto verifyPasswordAndLinkPendingGoogle(
+            String pendingGoogleSub,
+            String boxEmail,
+            String rawPassword) {
+        throw new UnsupportedOperationException("Password verification for Google linking is not configured.");
+    }
+
+    default UserSummaryDto verifyOtpAndLinkPendingGoogle(
+            String pendingGoogleSub,
+            String boxEmail,
+            String challengeId,
+            String otp) {
+        throw new UnsupportedOperationException("OTP verification for Google linking is not configured.");
+    }
+
+    UserSummaryDto registerGoogleCustomer(String googleSub, String email, String fullName, String phone);
+
+    void linkGoogleAccount(Long userId, String googleSub, String googleEmail);
+
+    void unlinkGoogleAccount(Long userId);
+
+    void reauthenticatePassword(Long userId, String rawPassword);
+
+    void changePassword(Long userId, String currentPassword, String newPassword, String confirmPassword);
+
+    default void setPasswordForGoogleUser(Long userId, String newPassword, String confirmPassword) {
+        throw new UnsupportedOperationException("Set password is not configured.");
+    }
+
+    default void verifyGoogleSubOwnership(Long userId, String googleSub) {
+        throw new UnsupportedOperationException("Google identity verification is not configured.");
+    }
+
+    AuthMethodsDto getAuthMethods(Long userId);
+    UserSummaryDto updateCustomerProfile(Long userId, String fullName, String phone);
+}
