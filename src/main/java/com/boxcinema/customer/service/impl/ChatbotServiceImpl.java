@@ -126,7 +126,7 @@ public class ChatbotServiceImpl implements ChatbotService {
                 "Any discount vouchers available?",
                 "What snack combos do you have?",
                 "Cinema locations & hotlines",
-                "Phim nào đang chiếu hôm nay? (VN)"
+                "Ticket cancellation policy"
         ));
         return config;
     }
@@ -186,29 +186,41 @@ public class ChatbotServiceImpl implements ChatbotService {
     }
 
     private List<String> getDefaultFollowUpSuggestions(String userMessage) {
-        if (userMessage == null) {
+        if (userMessage == null || userMessage.isBlank()) {
             return List.of("Now showing movies", "Today's promotions", "Cinema locations");
         }
-        String lower = userMessage.toLowerCase();
+        String lower = " " + userMessage.toLowerCase().trim() + " ";
+
         boolean isVietnamese = lower.matches(".*[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ].*")
-                || lower.contains("phim") || lower.contains("chieu") || lower.contains("rap") || lower.contains("bap");
+                || lower.contains(" phim ") || lower.contains(" chieu ") || lower.contains(" chiếu ")
+                || lower.contains(" rap ") || lower.contains(" rạp ") || lower.contains(" bap ")
+                || lower.contains(" bắp ") || lower.contains(" ve ") || lower.contains(" vé ")
+                || lower.contains(" gia ") || lower.contains(" giá ") || lower.contains(" khuyen mai ")
+                || lower.contains(" hom nay ") || lower.contains(" không ") || lower.contains(" the nao ");
 
         if (isVietnamese) {
-            if (lower.contains("phim") || lower.contains("chiếu")) {
+            if (lower.contains("phim") || lower.contains("chiếu") || lower.contains("chieu")) {
                 return List.of("Giá vé bao nhiêu?", "Có mã giảm giá không?", "Combo bắp nước có gì?");
             }
-            if (lower.contains("vé") || lower.contains("giá")) {
-                return List.of("Xem lịch chiếu", "Cách đặt vé online", "Chính sách đổi trả vé");
+            if (lower.contains("vé") || lower.contains("ve") || lower.contains("giá") || lower.contains("gia")) {
+                return List.of("Xem lịch chiếu hôm nay", "Chính sách hủy vé", "Danh sách cụm rạp");
+            }
+            if (lower.contains("bắp") || lower.contains("bap") || lower.contains("nước") || lower.contains("combo")) {
+                return List.of("Phim đang chiếu", "Mã giảm giá hôm nay", "Xem lịch chiếu");
             }
             return List.of("Phim đang chiếu", "Khuyến mãi hôm nay", "Hotline rạp");
         } else {
-            if (lower.contains("movie") || lower.contains("film") || lower.contains("showtime")) {
-                return List.of("Ticket prices", "Any discount vouchers?", "Snack & drink combos");
+            // Default to English
+            if (lower.contains("movie") || lower.contains("film") || lower.contains("showtime") || lower.contains("showing")) {
+                return List.of("Ticket prices", "Any discount vouchers?", "Popcorn & drink combos");
             }
-            if (lower.contains("ticket") || lower.contains("price") || lower.contains("book")) {
-                return List.of("Today's showtimes", "Cancellation policy", "Contact hotline");
+            if (lower.contains("ticket") || lower.contains("price") || lower.contains("book") || lower.contains("cost")) {
+                return List.of("Today's showtimes", "Ticket cancellation policy", "Cinema hotlines");
             }
-            return List.of("Now showing movies", "Today's promotions", "Cinema locations");
+            if (lower.contains("combo") || lower.contains("popcorn") || lower.contains("drink") || lower.contains("food") || lower.contains("snack")) {
+                return List.of("Now showing movies", "Any discount vouchers?", "Cinema locations");
+            }
+            return List.of("Now showing movies", "Today's promotions", "Cinema locations & hotlines");
         }
     }
 }

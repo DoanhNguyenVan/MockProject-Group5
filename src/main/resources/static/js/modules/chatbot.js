@@ -109,10 +109,12 @@
           renderSuggestions(data.quickSuggestions);
         }
       } else {
-        appendMessage("Xin chào! Tôi là Trợ lý AI của BOX Cinema. Bạn cần hỗ trợ gì hôm nay?", "bot");
+        appendMessage("Hello! I am the BOX Cinema AI Assistant 🎬. How may I help you today?", "bot");
+        renderSuggestions(["What movies are showing today?", "Any discount vouchers available?", "Cinema locations & hotlines"]);
       }
     } catch (e) {
-      appendMessage("Xin chào! Tôi là Trợ lý AI của BOX Cinema. Bạn cần hỗ trợ gì hôm nay?", "bot");
+      appendMessage("Hello! I am the BOX Cinema AI Assistant 🎬. How may I help you today?", "bot");
+      renderSuggestions(["What movies are showing today?", "Any discount vouchers available?", "Cinema locations & hotlines"]);
     }
   }
 
@@ -167,11 +169,11 @@
           renderSuggestions(data.suggestions);
         }
       } else {
-        appendMessage("Rất tiếc, hệ thống đang bận. Bạn vui lòng thử lại sau giây lát!", "bot");
+        appendMessage("Sorry, the assistant service is temporarily busy. Please try again shortly!", "bot");
       }
     } catch (err) {
       setTyping(false);
-      appendMessage("Không thể kết nối đến máy chủ trợ lý ảo. Vui lòng kiểm tra lại kết nối mạng!", "bot");
+      appendMessage("Unable to reach the assistant server. Please check your connection and try again!", "bot");
     } finally {
       // 2.5 seconds debounce before enabling send button
       setTimeout(() => {
