@@ -196,9 +196,21 @@ public class ChatbotServiceImpl implements ChatbotService {
                 || lower.contains(" rap ") || lower.contains(" rạp ") || lower.contains(" bap ")
                 || lower.contains(" bắp ") || lower.contains(" ve ") || lower.contains(" vé ")
                 || lower.contains(" gia ") || lower.contains(" giá ") || lower.contains(" khuyen mai ")
-                || lower.contains(" hom nay ") || lower.contains(" không ") || lower.contains(" the nao ");
+                || lower.contains(" khieu nai ") || lower.contains(" khiếu nại ") || lower.contains(" mat khau ")
+                || lower.contains(" mật khẩu ") || lower.contains(" huy ") || lower.contains(" hủy ")
+                || lower.contains(" lien ket ") || lower.contains(" liên kết ") || lower.contains(" chinh sach ")
+                || lower.contains(" chính sách ") || lower.contains(" dieu khoan ") || lower.contains(" điều khoản ");
 
         if (isVietnamese) {
+            if (lower.contains("khiếu nại") || lower.contains("khieu nai") || lower.contains("liên hệ") || lower.contains("lien he") || lower.contains("hỗ trợ")) {
+                return List.of("Hotline rạp 1900 6868", "Gửi email hỗ trợ", "Chính sách hủy vé");
+            }
+            if (lower.contains("mật khẩu") || lower.contains("mat khau") || lower.contains("google") || lower.contains("liên kết") || lower.contains("lien ket") || lower.contains("tài khoản") || lower.contains("tai khoan")) {
+                return List.of("Cách đổi mật khẩu", "Cách hủy liên kết Google", "Cài đặt tài khoản");
+            }
+            if (lower.contains("chính sách") || lower.contains("chinh sach") || lower.contains("điều khoản") || lower.contains("dieu khoan") || lower.contains("độ tuổi") || lower.contains("do tuoi")) {
+                return List.of("Chính sách hủy vé", "Quy định độ tuổi", "Đồ ăn mang vào rạp");
+            }
             if (lower.contains("phim") || lower.contains("chiếu") || lower.contains("chieu")) {
                 return List.of("Giá vé bao nhiêu?", "Có mã giảm giá không?", "Combo bắp nước có gì?");
             }
@@ -211,6 +223,15 @@ public class ChatbotServiceImpl implements ChatbotService {
             return List.of("Phim đang chiếu", "Khuyến mãi hôm nay", "Hotline rạp");
         } else {
             // Default to English
+            if (lower.contains("complaint") || lower.contains("contact") || lower.contains("support") || lower.contains("help")) {
+                return List.of("Direct Hotline 1900 6868", "Submit inquiry form", "Cancellation policy");
+            }
+            if (lower.contains("password") || lower.contains("google") || lower.contains("unlink") || lower.contains("account")) {
+                return List.of("Change password guide", "Disconnect Google account", "Account settings");
+            }
+            if (lower.contains("policy") || lower.contains("term") || lower.contains("age") || lower.contains("rating") || lower.contains("refund")) {
+                return List.of("Ticket cancellation policy", "Age rating guidelines", "Outside food policy");
+            }
             if (lower.contains("movie") || lower.contains("film") || lower.contains("showtime") || lower.contains("showing")) {
                 return List.of("Ticket prices", "Any discount vouchers?", "Popcorn & drink combos");
             }
