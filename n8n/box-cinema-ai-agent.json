@@ -1,0 +1,246 @@
+{
+  "name": "BOX Cinema AI Agent (Gemini)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "box-cinema-chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ],
+      "webhookId": "box-cinema-chat"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.message }}",
+        "hasOutputParser": false,
+        "options": {
+          "systemMessage": "Bạn là trợ lý ảo AI độc quyền và tận tâm của hệ thống rạp chiếu phim BOX Cinema Việt Nam 🎬.\n\n🎯 PHẠM VI HỖ TRỢ DUY NHẤT:\nBạn CHỈ ĐƯỢC PHÉP hỗ trợ các thông tin liên quan trực tiếp đến rạp chiếu phim BOX Cinema:\n- Danh sách phim đang chiếu / sắp chiếu tại BOX Cinema.\n- Lịch chiếu, giá vé, phòng chiếu.\n- Thông tin các cụm rạp BOX Cinema (địa chỉ, số điện thoại, thành phố).\n- Các combo bắp nước, đồ ăn nhẹ F&B tại quầy của BOX Cinema.\n- Các chương trình khuyến mãi, voucher giảm giá của BOX Cinema.\n- Chính sách rạp: Quy định độ tuổi (P, K, T13, T16, T18), quy định hủy vé đổi voucher điểm thưởng (trước giờ chiếu tối thiểu 60 phút).\n\n⛔ NGUYÊN TẮC BẮT BUỘC VỀ CÂU HỎI NGOÀI LUỒNG (OUT-OF-SCOPE):\n- Khi khách hàng hỏi bất kỳ chủ đề nào KHÔNG LIÊN QUAN ĐẾN DỰ ÁN RẠP CHIẾU PHIM BOX CINEMA (ví dụ: sản phẩm tiêu dùng như kem đánh răng, y tế, thời tiết, lập trình, giải toán, bài tập, thương hiệu ngoài rạp, trò chuyện phiếm):\n  👉 BẠN TUYỆT ĐỐI KHÔNG ĐƯỢC TRẢ LỜI, KHÔNG TƯ VẤN, KHÔNG GỢI Ý THƯƠNG HIỆU BÊN NGOÀI DƯỚI BẤT KỲ HÌNH THỨC NÀO!\n  👉 Hãy từ chối một cách ngắn gọn, lịch sự và hướng người dùng quay trở lại các dịch vụ của BOX Cinema.\n  👉 Mẫu câu trả lời chuẩn:\n  \"Dạ, mình là trợ lý ảo chuyên trách hỗ trợ thông tin và dịch vụ của rạp BOX Cinema 🎬. Mình không thể hỗ trợ các thông tin ngoài phạm vi rạp chiếu phim ạ. Bạn có muốn mình giúp tra cứu lịch chiếu phim, giá vé, bắp nước hoặc voucher ưu đãi hôm nay của BOX Cinema không ạ?\"\n\n🛠️ QUY TẮC SỬ DỤNG TOOLS:\n- Khi khách hỏi về phim, cụm rạp, voucher hoặc combo bắp nước: BẮT BUỘC dùng công cụ (tools) được cung cấp để lấy dữ liệu mới nhất từ hệ thống trước khi trả lời. Tuyệt đối không tự bịa thông tin.\n\n💬 PHONG CÁCH GIAO TIẾP:\n- Lịch sự, thân thiện, xưng hô 'mình' hoặc 'em'.\n- Trình bày Markdown rõ ràng (in đậm, danh sách gạch đầu dòng).\n- Khuyến khích khách bấm 'Mua Vé' hoặc truy cập mục 'Lịch chiếu' trên thanh điều hướng để đặt vé nhanh chóng."
+        }
+      },
+      "id": "ai-agent-core",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        520,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "gemini-model",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        420,
+        520
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "gemini-api-cred",
+          "name": "Google Gemini API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').first().json.body.sessionId || 'default' }}",
+        "contextWindowLength": 5
+      },
+      "id": "window-memory",
+      "name": "Window Buffer Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        540,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Tra cứu danh sách các bộ phim đang chiếu tại rạp BOX Cinema kèm thời lượng, thể loại, độ tuổi và tóm tắt.",
+        "method": "GET",
+        "url": "http://localhost:8080/api/quick-booking/movies"
+      },
+      "id": "tool-movies",
+      "name": "get_now_showing_movies",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        680,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Lấy danh sách các cụm rạp BOX Cinema (địa chỉ, số điện thoại, thành phố Hà Nội, TP.HCM, Đà Nẵng).",
+        "method": "GET",
+        "url": "http://localhost:8080/api/quick-booking/cinemas"
+      },
+      "id": "tool-cinemas",
+      "name": "get_cinemas_list",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Lấy danh sách các voucher khuyến mãi và mã giảm giá đang áp dụng tại rạp BOX Cinema.",
+        "method": "GET",
+        "url": "http://localhost:8080/api/vouchers/available?amount=100000"
+      },
+      "id": "tool-vouchers",
+      "name": "get_active_vouchers",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        920,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Lấy danh sách các combo bắp rang bơ, nước ngọt và đồ ăn nhẹ tại quầy F&B của rạp.",
+        "method": "GET",
+        "url": "http://localhost:8080/api/food/combos"
+      },
+      "id": "tool-food",
+      "name": "get_food_combos",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1040,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"reply\": $json.output, \"success\": true } }}",
+        "options": {}
+      },
+      "id": "respond-to-webhook",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        820,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_now_showing_movies": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_cinemas_list": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_active_vouchers": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_food_combos": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

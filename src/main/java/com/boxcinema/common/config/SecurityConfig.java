@@ -124,6 +124,7 @@ public class SecurityConfig {
                         "/api/staff/**",
                         "/api/auth/**",
                         "/api/public/**",
+                        "/api/chat/**",
                         "/api/account/**"))
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .exceptionHandling(ex -> ex
@@ -164,6 +165,7 @@ public class SecurityConfig {
                                 "/scan",
                                 "/ticket-scanner",
                                 "/api/public/**",
+                                "/api/chat/**",
                                 "/api/food/**",
                                 "/api/vouchers/**",
                                 "/api/payments/**",

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>BOX Cinema Chatbot Widget Fragment</title>
+</head>
+<body>
+  <!-- Chatbot Floating Widget Fragment -->
+  <div th:fragment="chatbotWidget" id="boxChatbotRoot">
+    <!-- Floating Launcher Action Button -->
+    <button type="button" class="box-chat-launcher" id="boxChatLauncher" aria-label="Open BOX AI Assistant" title="Chat with BOX Cinema AI">
+      <span class="box-chat-badge" title="AI Online"></span>
+      <!-- Chat Bubble SVG Icon -->
+      <svg class="launcher-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+    </button>
+
+    <!-- Chat Popup Window -->
+    <div class="box-chat-container" id="boxChatContainer" role="dialog" aria-modal="true" aria-labelledby="boxChatTitle">
+      <!-- Header -->
+      <div class="box-chat-header">
+        <div class="box-chat-header-info">
+          <div class="box-chat-avatar">
+            <img src="/assets/img/box-cinema-icon.png" th:src="@{/assets/img/box-cinema-icon.png}" alt="BOX Cinema Logo" class="box-chat-avatar-logo">
+          </div>
+          <div>
+            <h4 class="box-chat-title" id="boxChatTitle">BOX AI Assistant</h4>
+            <div class="box-chat-status">Sẵn sàng hỗ trợ</div>
+          </div>
+        </div>
+        <div class="box-chat-header-actions">
+          <button type="button" id="boxChatCloseBtn" aria-label="Close chat window">✕</button>
+        </div>
+      </div>
+
+      <!-- Messages Area -->
+      <div class="box-chat-messages" id="boxChatMessages">
+        <!-- Typing Indicator (bouncing dots) -->
+        <div class="box-chat-typing" id="boxChatTyping">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+
+      <!-- Quick Suggestion Chips -->
+      <div class="box-chat-suggestions" id="boxChatSuggestions"></div>
+
+      <!-- Input Bar -->
+      <div class="box-chat-input-bar">
+        <input type="text" id="boxChatInput" class="box-chat-input" placeholder="Hỏi về phim, lịch chiếu, giá vé, bắp nước..." autocomplete="off">
+        <button type="button" id="boxChatSendBtn" class="box-chat-send-btn" aria-label="Send message" title="Gửi tin nhắn">
+          <!-- Paper Airplane Send SVG Icon -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

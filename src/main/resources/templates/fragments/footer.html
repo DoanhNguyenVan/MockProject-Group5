@@ -67,6 +67,13 @@
         </div>
       </div>
     </div>
+
+    <!-- AI Assistant Chatbot Widget Fragment -->
+    <div th:replace="~{fragments/chatbot-widget :: chatbotWidget}"></div>
+
+    <!-- Chatbot Styles & Scripts -->
+    <link rel="stylesheet" href="/css/chatbot.css?v=1.0" th:href="@{/css/chatbot.css(v='1.0')}">
+    <script src="/js/modules/chatbot.js?v=1.0" th:src="@{/js/modules/chatbot.js(v='1.0')}"></script>
   </footer>
 </body>
 </html>
