@@ -95,20 +95,20 @@ public class ChatbotServiceImpl implements ChatbotService {
                 return chatResponse;
             } else {
                 log.warn("n8n returned non-2xx status: {}", response.getStatusCode());
-                return getFallbackResponse("Hệ thống trợ lý AI đang bận xử lý. Bạn vui lòng thử lại sau ít giây nhé!");
+                return getFallbackResponse("The AI Assistant is currently busy. Please try again in a few moments!");
             }
 
         } catch (ResourceAccessException ex) {
             log.warn("Cannot reach n8n webhook at {}: {}", n8nWebhookUrl, ex.getMessage());
             return getFallbackResponse(
-                    "Trợ lý AI hiện chưa sẵn sàng kết nối (n8n offline hoặc đang khởi động). "
-                    + "Bạn có thể tra cứu nhanh lịch chiếu tại mục 'Lịch chiếu' hoặc liên hệ hotline 1900 6868 để được hỗ trợ nhé!");
+                    "The AI Assistant is currently offline or starting up. "
+                    + "You can browse showtimes in the 'Showtimes' section or contact hotline 1900 6868 for support!");
         } catch (RestClientResponseException ex) {
             log.error("n8n webhook error {}: {}", ex.getStatusCode(), ex.getResponseBodyAsString());
-            return getFallbackResponse("Có lỗi xảy ra trong quá trình xử lý câu hỏi. Vui lòng thử lại sau!");
+            return getFallbackResponse("An error occurred while processing your request. Please try again later!");
         } catch (Exception ex) {
             log.error("Unexpected error in chatbot processing: {}", ex.getMessage(), ex);
-            return getFallbackResponse("Hệ thống gặp sự cố ngoài ý muốn. Vui lòng thử lại sau!");
+            return getFallbackResponse("An unexpected issue occurred. Please try again later!");
         }
     }
 
@@ -117,15 +117,16 @@ public class ChatbotServiceImpl implements ChatbotService {
         Map<String, Object> config = new LinkedHashMap<>();
         config.put("enabled", enabled);
         config.put("welcomeMessage",
-                "Xin chào! Tôi là Trợ lý AI của BOX Cinema 🎬. "
-                + "Tôi có thể giúp bạn tra cứu lịch chiếu, giá vé, bắp nước và các chương trình khuyến mãi hôm nay. "
-                + "Bạn cần hỗ trợ gì?");
+                "Hello! I am the BOX Cinema AI Assistant 🎬.\n\n"
+                + "I can help you check now-showing movies, showtimes, ticket prices, popcorn & drink combos, and promotional vouchers. "
+                + "You can chat with me in English or Tiếng Việt!\n\n"
+                + "How may I help you today?");
         config.put("quickSuggestions", List.of(
-                "Hôm nay có những phim gì đang chiếu?",
-                "Chính sách hoàn / hủy vé như thế nào?",
-                "Có mã giảm giá voucher nào hôm nay?",
-                "Giá các combo bắp nước hiện tại?",
-                "Quy định độ tuổi xem phim (P, K, T13, T16, T18)"
+                "What movies are showing today?",
+                "Any discount vouchers available?",
+                "What snack combos do you have?",
+                "Cinema locations & hotlines",
+                "Phim nào đang chiếu hôm nay? (VN)"
         ));
         return config;
     }
@@ -143,7 +144,7 @@ public class ChatbotServiceImpl implements ChatbotService {
         if (body.containsKey("response") && body.get("response") != null) {
             return String.valueOf(body.get("response"));
         }
-        return "Cảm ơn bạn đã liên hệ với BOX Cinema. Bạn có thắc mắc gì thêm không?";
+        return "Thank you for contacting BOX Cinema. Is there anything else I can assist you with?";
     }
 
     private Map<String, Object> extractCurrentUserContext() {
@@ -176,22 +177,38 @@ public class ChatbotServiceImpl implements ChatbotService {
     private ChatMessageResponse getFallbackResponse(String friendlyMessage) {
         ChatMessageResponse res = ChatMessageResponse.success(friendlyMessage);
         res.setSuggestions(List.of(
-                "Xem lịch chiếu hôm nay",
-                "Xem danh sách phim",
-                "Chính sách hủy vé",
-                "Hotline hỗ trợ"
+                "Now showing movies",
+                "Today's showtimes",
+                "Cancellation policy",
+                "Support hotline"
         ));
         return res;
     }
 
     private List<String> getDefaultFollowUpSuggestions(String userMessage) {
+        if (userMessage == null) {
+            return List.of("Now showing movies", "Today's promotions", "Cinema locations");
+        }
         String lower = userMessage.toLowerCase();
-        if (lower.contains("phim") || lower.contains("chiếu")) {
-            return List.of("Giá vé bao nhiêu?", "Có mã giảm giá không?", "Combo bắp nước có gì?");
+        boolean isVietnamese = lower.matches(".*[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ].*")
+                || lower.contains("phim") || lower.contains("chieu") || lower.contains("rap") || lower.contains("bap");
+
+        if (isVietnamese) {
+            if (lower.contains("phim") || lower.contains("chiếu")) {
+                return List.of("Giá vé bao nhiêu?", "Có mã giảm giá không?", "Combo bắp nước có gì?");
+            }
+            if (lower.contains("vé") || lower.contains("giá")) {
+                return List.of("Xem lịch chiếu", "Cách đặt vé online", "Chính sách đổi trả vé");
+            }
+            return List.of("Phim đang chiếu", "Khuyến mãi hôm nay", "Hotline rạp");
+        } else {
+            if (lower.contains("movie") || lower.contains("film") || lower.contains("showtime")) {
+                return List.of("Ticket prices", "Any discount vouchers?", "Snack & drink combos");
+            }
+            if (lower.contains("ticket") || lower.contains("price") || lower.contains("book")) {
+                return List.of("Today's showtimes", "Cancellation policy", "Contact hotline");
+            }
+            return List.of("Now showing movies", "Today's promotions", "Cinema locations");
         }
-        if (lower.contains("vé") || lower.contains("giá")) {
-            return List.of("Xem lịch chiếu", "Cách đặt vé online", "Chính sách đổi trả vé");
-        }
-        return List.of("Phim đang chiếu", "Khuyến mãi hôm nay", "Hotline rạp");
     }
 }
