@@ -93,7 +93,13 @@ public class ChatbotServiceImpl implements ChatbotService {
                 ? request.getSessionId().trim()
                 : UUID.randomUUID().toString();
 
-        // 1. If GEMINI_API_KEY is configured, call Gemini API directly (Zero-cost, fast & 24/7 independent)
+        // 1. Instant sub-millisecond response for standard catalog queries (Save Gemini quota & 100% uptime)
+        ChatMessageResponse quickResponse = buildQuickCatalogResponse(userMessage);
+        if (quickResponse != null) {
+            return quickResponse;
+        }
+
+        // 2. If GEMINI_API_KEY is configured, call Gemini API directly for natural conversations
         if (geminiApiKey != null && !geminiApiKey.trim().isBlank()) {
             try {
                 String reply = callGeminiDirectly(userMessage, sessionId);
@@ -103,11 +109,11 @@ public class ChatbotServiceImpl implements ChatbotService {
                     return response;
                 }
             } catch (Exception ex) {
-                log.error("Direct Gemini API call failed: {}. Falling back to n8n/fallback response.", ex.getMessage(), ex);
+                log.error("Direct Gemini API call failed: {}. Falling back to smart catalog fallback.", ex.getMessage(), ex);
             }
         }
 
-        // 2. Fallback to n8n Webhook if configured and reachable
+        // 3. Fallback to n8n Webhook if configured and reachable
         try {
             Map<String, Object> payload = new LinkedHashMap<>();
             payload.put("message", userMessage);
@@ -150,9 +156,119 @@ public class ChatbotServiceImpl implements ChatbotService {
             return smartResponse;
         }
 
-        return getFallbackResponse(
-                "The AI Assistant is currently offline or starting up. "
-                + "You can browse showtimes in the 'Showtimes' section or contact hotline 1900 6868 for support!");
+        return ChatMessageResponse.success(
+                "Hello! I am right here to help you with BOX Cinema 🎬. You can browse our now-showing movies in the [Movies](/#moviesSection) section, check today's showtimes in [Showtimes](/showtimes), or call our hotline 1900 6868 for instant booking!");
+    }
+
+    private ChatMessageResponse buildQuickCatalogResponse(String userMessage) {
+        if (userMessage == null || userMessage.isBlank()) return null;
+        String lower = userMessage.toLowerCase().trim();
+
+        // Exact quick suggestion button clicks
+        if (lower.equals("now showing movies") || lower.equals("phim đang chiếu")) {
+            return buildMoviesResponse();
+        }
+        if (lower.equals("today's showtimes") || lower.equals("suất chiếu hôm nay") || lower.equals("lịch chiếu hôm nay")) {
+            return buildShowtimesResponse();
+        }
+        if (lower.equals("today's promotions") || lower.equals("promotions") || lower.equals("khuyến mãi")) {
+            return buildPromotionsResponse();
+        }
+        if (lower.equals("popcorn & drink combos") || lower.equals("combos & snacks") || lower.equals("bỏng nước")) {
+            return buildCombosResponse();
+        }
+        if (lower.equals("cancellation policy") || lower.equals("chính sách hủy vé")) {
+            return buildCancellationResponse();
+        }
+        if (lower.equals("cinema locations") || lower.equals("danh sách rạp")) {
+            return buildCinemasResponse();
+        }
+        return null;
+    }
+
+    private ChatMessageResponse buildMoviesResponse() {
+        try {
+            List<Movie> nowShowing = movieRepository != null ? movieRepository.findByStatusWithGenres("NOW_SHOWING") : List.of();
+            if (nowShowing != null && !nowShowing.isEmpty()) {
+                StringBuilder reply = new StringBuilder("🎬 **Currently Showing at BOX Cinema:**\n\n");
+                for (Movie m : nowShowing) {
+                    reply.append(String.format("• **%s** (%d mins | %s | %s)\n",
+                            m.getTitle(), m.getDurationMinutes(), m.getAgeRating(), m.getLanguage()));
+                }
+                reply.append("\nYou can select any title above to book your seats online!");
+                ChatMessageResponse resp = ChatMessageResponse.success(reply.toString());
+                resp.setSuggestions(List.of("Today's showtimes", "Ticket prices", "Popcorn & drink combos", "Today's promotions"));
+                return resp;
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    private ChatMessageResponse buildShowtimesResponse() {
+        ChatMessageResponse resp = ChatMessageResponse.success(
+                "📅 **Real-Time Showtimes at BOX Cinema:**\n\nShowtimes are scheduled throughout the day across all flagship theaters (Royal City, Landmark 81, and Da Nang Riverside) with formats in 2D Standard, 3D, IMAX Laser, and 2D Dolby Atmos.\n\nYou can browse full showtimes and select seats directly on our **[Showtimes](/showtimes)** page!");
+        resp.setSuggestions(List.of("Now showing movies", "Cinema locations", "Ticket prices"));
+        return resp;
+    }
+
+    private ChatMessageResponse buildPromotionsResponse() {
+        try {
+            List<Promotion> promos = promotionRepository != null ? promotionRepository.findAll() : List.of();
+            StringBuilder reply = new StringBuilder("🎁 **Active Promotions & Promo Codes at BOX Cinema:**\n\n");
+            boolean hasActive = false;
+            if (promos != null && !promos.isEmpty()) {
+                for (Promotion p : promos) {
+                    if ("ACTIVE".equalsIgnoreCase(p.getStatus())) {
+                        hasActive = true;
+                        String discountText = p.getDiscountValue() != null 
+                                ? (p.getDiscountType() != null && p.getDiscountType().contains("PERCENT") ? p.getDiscountValue() + "% off" : p.getDiscountValue() + " VND off")
+                                : "Special discount";
+                        reply.append(String.format("• **%s** (Code: `%s`): %s\n", p.getPromotionName(), p.getVoucherCode(), discountText));
+                    }
+                }
+            }
+            if (!hasActive) {
+                reply.append("• **BOXWELCOME** (15% off for new members)\n• **BOXSTUDENT** (20,000 VND off for students)\n• **BOXDUO** (30,000 VND off for couples on Wednesdays)\n");
+            }
+            reply.append("\nYou can apply these promo codes during online ticket checkout!");
+            ChatMessageResponse resp = ChatMessageResponse.success(reply.toString());
+            resp.setSuggestions(List.of("Now showing movies", "Today's showtimes", "Popcorn & drink combos"));
+            return resp;
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    private ChatMessageResponse buildCombosResponse() {
+        ChatMessageResponse resp = ChatMessageResponse.success(
+                "🍿 **BOX Cinema Concessions (Popcorn & Drinks):**\n\n"
+                + "• **Single Combo** (1 Large Popcorn + 1 Soft Drink 32oz): 85,000 VND\n"
+                + "• **Duo Combo** (1 Jumbo Popcorn + 2 Soft Drinks 32oz): 115,000 VND\n"
+                + "• **Family Feast Combo** (2 Popcorn + 3 Drinks + 1 Snack): 165,000 VND\n"
+                + "• **Flavors available:** Sweet, Caramel, Cheese, and Salted!\n\n"
+                + "You can add concession combos directly during ticket reservation with exclusive web discounts!");
+        resp.setSuggestions(List.of("Now showing movies", "Today's showtimes", "Today's promotions"));
+        return resp;
+    }
+
+    private ChatMessageResponse buildCancellationResponse() {
+        ChatMessageResponse resp = ChatMessageResponse.success(
+                "🎟️ **Ticket Cancellation & Refund Policy:**\n\n"
+                + "• You can cancel tickets online up to **60 minutes** prior to showtime directly in your [Booking History](/booking/history).\n"
+                + "• Refunds are credited as Reward Point Vouchers to your member account for future bookings.\n"
+                + "• Cash refunds at counter are not supported per cinema policy.");
+        resp.setSuggestions(List.of("Now showing movies", "Today's showtimes", "Contact support"));
+        return resp;
+    }
+
+    private ChatMessageResponse buildCinemasResponse() {
+        ChatMessageResponse resp = ChatMessageResponse.success(
+                "📍 **BOX Cinema Flagship Theaters:**\n\n"
+                + "• **BOX Cinema Royal City**: Floor B2, Vincom Mega Mall Royal City, 72A Nguyen Trai, Hanoi\n"
+                + "• **BOX Cinema Landmark 81**: Floor B1, Landmark 81 Tower, 720A Dien Bien Phu, Binh Thanh, HCMC\n"
+                + "• **BOX Cinema Da Nang Riverside**: 36 Bach Dang, Hai Chau 1, Hai Chau, Da Nang\n\n"
+                + "All theaters feature state-of-the-art IMAX Laser, Dolby Atmos, and luxury Gold Class auditoriums.");
+        resp.setSuggestions(List.of("Today's showtimes", "Now showing movies", "Ticket prices"));
+        return resp;
     }
 
     private ChatMessageResponse buildSmartCatalogFallback(String userMessage) {
@@ -165,53 +281,51 @@ public class ChatbotServiceImpl implements ChatbotService {
         if (lower.matches("^(hi|hello|hey|alo|chào|xin chào|hoi|alo alo|ad|bot)[!.]?$")) {
             ChatMessageResponse resp = ChatMessageResponse.success(
                     "Hello! Welcome to BOX Cinema 🎬. How may I assist you today with movie showtimes, ticket bookings, snacks & combos, or promotional vouchers?");
-            resp.setSuggestions(List.of("Now showing movies", "Today's showtimes", "Combos & Snacks", "Promotions"));
+            resp.setSuggestions(List.of("Now showing movies", "Today's showtimes", "Popcorn & drink combos", "Today's promotions"));
             return resp;
         }
 
         // 2. Movie inquiries
         if (lower.contains("movie") || lower.contains("phim")) {
-            try {
-                List<Movie> nowShowing = movieRepository.findByStatusWithGenres("NOW_SHOWING");
-                if (nowShowing != null && !nowShowing.isEmpty()) {
-                    StringBuilder reply = new StringBuilder("🎬 **Currently Showing at BOX Cinema:**\n\n");
-                    for (Movie m : nowShowing) {
-                        reply.append(String.format("• **%s** (%d mins | Age: %s | %s)\n",
-                                m.getTitle(), m.getDurationMinutes(), m.getAgeRating(), m.getLanguage()));
-                    }
-                    reply.append("\nYou can select any movie above to book your seats online!");
-                    ChatMessageResponse resp = ChatMessageResponse.success(reply.toString());
-                    resp.setSuggestions(List.of("Today's showtimes", "Ticket prices", "Promotions"));
-                    return resp;
-                }
-            } catch (Exception ignored) {}
+            ChatMessageResponse resp = buildMoviesResponse();
+            if (resp != null) return resp;
         }
 
         // 3. Showtimes inquiries
         if (lower.contains("showtime") || lower.contains("suất chiếu") || lower.contains("lịch chiếu") || lower.contains("gio chieu")) {
-            ChatMessageResponse resp = ChatMessageResponse.success(
-                    "📅 You can browse real-time showtimes across all theaters in the **[Showtimes](/showtimes)** section. Fast booking and seat selection are available 24/7!");
-            resp.setSuggestions(List.of("Now showing movies", "Cinemas", "Ticket prices"));
-            return resp;
+            return buildShowtimesResponse();
         }
 
         // 4. Food & combos
         if (lower.contains("combo") || lower.contains("bỏng") || lower.contains("bap") || lower.contains("popcorn") || lower.contains("snack") || lower.contains("drink") || lower.contains("nước")) {
-            ChatMessageResponse resp = ChatMessageResponse.success(
-                    "🍿 **BOX Cinema Concessions:** We offer Sweet & Caramel Popcorn, Soft Drinks (Coca-Cola, Sprite, Fanta), and Special Duo/Family Combos with discounts when booked online!");
-            resp.setSuggestions(List.of("Now showing movies", "Promotions"));
-            return resp;
+            return buildCombosResponse();
         }
 
-        // 5. Hotline & Support
+        // 5. Promotions
+        if (lower.contains("promotion") || lower.contains("voucher") || lower.contains("discount") || lower.contains("khuyến mãi") || lower.contains("giam gia") || lower.contains("ưu đãi")) {
+            ChatMessageResponse resp = buildPromotionsResponse();
+            if (resp != null) return resp;
+        }
+
+        // 6. Cancellation
+        if (lower.contains("cancellation") || lower.contains("hủy vé") || lower.contains("policy") || lower.contains("chính sách") || lower.contains("refund") || lower.contains("đổi vé")) {
+            return buildCancellationResponse();
+        }
+
+        // 7. Cinemas
+        if (lower.contains("cinema") || lower.contains("rạp") || lower.contains("chi nhánh") || lower.contains("địa chỉ") || lower.contains("location")) {
+            return buildCinemasResponse();
+        }
+
+        // 8. Hotline & Support
         if (lower.contains("hotline") || lower.contains("hỗ trợ") || lower.contains("support") || lower.contains("contact") || lower.contains("liên hệ") || lower.contains("sđt")) {
             ChatMessageResponse resp = ChatMessageResponse.success(
                     "📞 **Customer Care Support:**\n• Hotline: **1900 6868** (08:00 - 01:00 daily)\n• Email: **support@boxcinema.vn**\n• Contact Form: Visit our **[Contact](/contact)** page for any inquiries or feedback.");
-            resp.setSuggestions(List.of("Now showing movies", "Showtimes"));
+            resp.setSuggestions(List.of("Now showing movies", "Today's showtimes"));
             return resp;
         }
 
-        // 6. Generic friendly response
+        // 9. Generic friendly response
         return ChatMessageResponse.success(
                 "I am here to help you with BOX Cinema 🎬. You can ask me about now-showing movies, today's showtimes, popcorn combos, or ticket booking guide!");
     }
