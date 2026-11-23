@@ -155,6 +155,10 @@
         <span aria-hidden="true">◫</span>
         <span>Overview</span>
       </a>
+      <a href="/admin/activity-logs" th:href="@{/admin/activity-logs}" th:attr="aria-current=${activeSection == 'activity-logs' ? 'page' : null}">
+        <span aria-hidden="true">🛡️</span>
+        <span>User Activity Logs</span>
+      </a>
 
       <p>PROGRAMMING</p>
       <a href="/admin/movies" th:href="@{/admin/movies}" th:attr="aria-current=${activeSection == 'movies' ? 'page' : null}">

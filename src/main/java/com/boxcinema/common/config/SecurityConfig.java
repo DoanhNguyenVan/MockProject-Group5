@@ -2,6 +2,8 @@ package com.boxcinema.common.config;
 
 import com.boxcinema.common.constant.SessionConstants;
 import com.boxcinema.common.repository.UserRepository;
+import com.boxcinema.admin.service.UserActivityLogService;
+import com.boxcinema.common.security.ActivityLogInterceptor;
 import com.boxcinema.common.security.BoxCinemaAuthenticationProvider;
 import com.boxcinema.common.security.BoxCinemaUserDetails;
 import com.boxcinema.common.security.SecuritySessionHelper;
@@ -95,6 +97,7 @@ public class SecurityConfig {
             ObjectProvider<UserRepository> userRepositoryProvider,
             ObjectProvider<AuthAuditService> authAuditServiceProvider,
             ObjectProvider<AuthRateLimitService> authRateLimitServiceProvider,
+            ObjectProvider<UserActivityLogService> activityLogServiceProvider,
             CorsConfigurationSource corsConfigurationSource,
             SecurityContextRepository securityContextRepository) throws Exception {
 
@@ -199,14 +202,14 @@ public class SecurityConfig {
                         .loginProcessingUrl("/login")
                         .usernameParameter("username")
                         .passwordParameter("password")
-                        .successHandler(authenticationSuccessHandler(sessionManagementService))
+                        .successHandler(authenticationSuccessHandler(sessionManagementService, activityLogServiceProvider))
                         .failureHandler(authenticationFailureHandler())
                         .permitAll())
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
-                        .logoutSuccessHandler(logoutSuccessHandler(sessionManagementService, authAuditService))
+                        .logoutSuccessHandler(logoutSuccessHandler(sessionManagementService, authAuditService, activityLogServiceProvider))
                         .permitAll())
                 .addFilterAfter(
                         new SessionValidationFilter(sessionManagementService, userRepository),
@@ -219,11 +222,12 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationSuccessHandler authenticationSuccessHandler() {
-        return authenticationSuccessHandler(null);
+        return authenticationSuccessHandler(null, null);
     }
 
     private AuthenticationSuccessHandler authenticationSuccessHandler(
-            SessionManagementService sessionManagementService) {
+            SessionManagementService sessionManagementService,
+            ObjectProvider<UserActivityLogService> activityLogServiceProvider) {
         SavedRequestAwareAuthenticationSuccessHandler delegate = new SavedRequestAwareAuthenticationSuccessHandler();
         delegate.setDefaultTargetUrl("/");
 
@@ -239,6 +243,27 @@ public class SecurityConfig {
                             details.getUserSummary().getRole(),
                             session);
                 }
+
+                // Asynchronously record LOGIN activity log
+                try {
+                    UserActivityLogService logService = activityLogServiceProvider != null ? activityLogServiceProvider.getIfAvailable() : null;
+                    if (logService != null && details.getUserSummary() != null) {
+                        String ip = ActivityLogInterceptor.resolveClientIp(request);
+                        String location = ActivityLogInterceptor.resolveLocation(ip);
+                        String device = ActivityLogInterceptor.resolveDevice(request.getHeader("User-Agent"));
+                        logService.logActivityAsync(
+                                details.getUserSummary().getUserId(),
+                                details.getUserSummary().getEmail(),
+                                details.getUserSummary().getRole(),
+                                "LOGIN",
+                                "/login",
+                                "Sign In Successful",
+                                ip,
+                                location,
+                                device
+                        );
+                    }
+                } catch (Exception ignored) {}
 
                 String role = details.getUserSummary().getRole();
                 if ("ADMIN".equalsIgnoreCase(role)) {
@@ -293,12 +318,13 @@ public class SecurityConfig {
 
     @Bean
     public LogoutSuccessHandler logoutSuccessHandler() {
-        return logoutSuccessHandler(null, null);
+        return logoutSuccessHandler(null, null, null);
     }
 
     private LogoutSuccessHandler logoutSuccessHandler(
             SessionManagementService sessionManagementService,
-            AuthAuditService authAuditService) {
+            AuthAuditService authAuditService,
+            ObjectProvider<UserActivityLogService> activityLogServiceProvider) {
         return (request, response, authentication) -> {
             if (authentication != null && authentication.getPrincipal() instanceof BoxCinemaUserDetails details
                     && details.getUserSummary() != null) {
@@ -314,6 +340,27 @@ public class SecurityConfig {
                             "SUCCESS",
                             "User signed out");
                 }
+
+                // Asynchronously record LOGOUT activity log
+                try {
+                    UserActivityLogService logService = activityLogServiceProvider != null ? activityLogServiceProvider.getIfAvailable() : null;
+                    if (logService != null) {
+                        String ip = ActivityLogInterceptor.resolveClientIp(request);
+                        String location = ActivityLogInterceptor.resolveLocation(ip);
+                        String device = ActivityLogInterceptor.resolveDevice(request.getHeader("User-Agent"));
+                        logService.logActivityAsync(
+                                details.getUserSummary().getUserId(),
+                                details.getUserSummary().getEmail(),
+                                details.getUserSummary().getRole(),
+                                "LOGOUT",
+                                "/logout",
+                                "User Sign Out",
+                                ip,
+                                location,
+                                device
+                        );
+                    }
+                } catch (Exception ignored) {}
             }
             SecuritySessionHelper.saveFlashAttributes(
                     request,
