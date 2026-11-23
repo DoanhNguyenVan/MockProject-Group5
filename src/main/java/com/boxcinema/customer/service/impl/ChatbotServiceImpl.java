@@ -48,8 +48,12 @@ public class ChatbotServiceImpl implements ChatbotService {
     @Value("${app.chatbot.gemini.api-key:}")
     private String geminiApiKey;
 
-    @Value("${app.chatbot.gemini.model:gemini-3.5-flash-lite}")
+    @Value("${app.chatbot.gemini.model:gemini-3.1-flash-lite}")
     private String geminiModel;
+
+    private volatile String cachedSystemPrompt = null;
+    private volatile long lastSystemPromptCacheTime = 0;
+    private static final long PROMPT_CACHE_DURATION_MS = 5 * 60 * 1000; // 5-minute memory cache
 
     @Value("${app.chatbot.n8n.webhook-url:http://localhost:5678/webhook/box-cinema-chat}")
     private String n8nWebhookUrl;
@@ -146,7 +150,7 @@ public class ChatbotServiceImpl implements ChatbotService {
     }
 
     private String callGeminiDirectly(String userMessage, String sessionId) {
-        String systemInstruction = buildComprehensiveSystemPrompt();
+        String systemInstruction = getCachedSystemInstruction();
 
         Map<String, Object> requestBody = new LinkedHashMap<>();
 
@@ -160,8 +164,8 @@ public class ChatbotServiceImpl implements ChatbotService {
         requestBody.put("contents", List.of(userContent));
 
         Map<String, Object> generationConfig = new LinkedHashMap<>();
-        generationConfig.put("temperature", 0.3);
-        generationConfig.put("maxOutputTokens", 800);
+        generationConfig.put("temperature", 0.2);
+        generationConfig.put("maxOutputTokens", 500);
         requestBody.put("generationConfig", generationConfig);
 
         HttpHeaders headers = new HttpHeaders();
@@ -169,11 +173,11 @@ public class ChatbotServiceImpl implements ChatbotService {
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-        // Try primary model, with fallback models
+        // Try ultra-fast flash-lite models first
         List<String> modelsToTry = List.of(
-                (geminiModel != null && !geminiModel.isBlank()) ? geminiModel.trim() : "gemini-3.5-flash-lite",
-                "gemini-3.1-flash-lite",
-                "gemini-flash-lite-latest"
+                (geminiModel != null && !geminiModel.isBlank()) ? geminiModel.trim() : "gemini-3.1-flash-lite",
+                "gemini-flash-lite-latest",
+                "gemini-3.5-flash-lite"
         );
 
         for (String model : modelsToTry) {
@@ -214,6 +218,21 @@ public class ChatbotServiceImpl implements ChatbotService {
         }
 
         return null;
+    }
+
+    private String getCachedSystemInstruction() {
+        long now = System.currentTimeMillis();
+        if (cachedSystemPrompt != null && (now - lastSystemPromptCacheTime) < PROMPT_CACHE_DURATION_MS) {
+            return cachedSystemPrompt;
+        }
+        synchronized (this) {
+            if (cachedSystemPrompt != null && (now - lastSystemPromptCacheTime) < PROMPT_CACHE_DURATION_MS) {
+                return cachedSystemPrompt;
+            }
+            cachedSystemPrompt = buildComprehensiveSystemPrompt();
+            lastSystemPromptCacheTime = System.currentTimeMillis();
+            return cachedSystemPrompt;
+        }
     }
 
     private String buildComprehensiveSystemPrompt() {
