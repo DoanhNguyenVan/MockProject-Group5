@@ -1,12 +1,21 @@
 package com.boxcinema.customer.service.impl;
 
 import com.boxcinema.common.dto.UserSummaryDto;
+import com.boxcinema.common.entity.Cinema;
+import com.boxcinema.common.entity.FoodCombo;
+import com.boxcinema.common.entity.Movie;
+import com.boxcinema.common.entity.Promotion;
+import com.boxcinema.common.repository.CinemaRepository;
+import com.boxcinema.common.repository.FoodComboRepository;
+import com.boxcinema.common.repository.MovieRepository;
+import com.boxcinema.common.repository.PromotionRepository;
 import com.boxcinema.common.security.BoxCinemaUserDetails;
 import com.boxcinema.customer.dto.request.ChatMessageRequest;
 import com.boxcinema.customer.dto.response.ChatMessageResponse;
 import com.boxcinema.customer.service.ChatbotService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.core.ParameterizedTypeReference;
@@ -28,9 +37,19 @@ public class ChatbotServiceImpl implements ChatbotService {
     private static final Logger log = LoggerFactory.getLogger(ChatbotServiceImpl.class);
 
     private final RestTemplate restTemplate;
+    private final MovieRepository movieRepository;
+    private final CinemaRepository cinemaRepository;
+    private final PromotionRepository promotionRepository;
+    private final FoodComboRepository foodComboRepository;
 
     @Value("${app.chatbot.enabled:true}")
     private boolean enabled;
+
+    @Value("${app.chatbot.gemini.api-key:}")
+    private String geminiApiKey;
+
+    @Value("${app.chatbot.gemini.model:gemini-3.5-flash-lite}")
+    private String geminiModel;
 
     @Value("${app.chatbot.n8n.webhook-url:http://localhost:5678/webhook/box-cinema-chat}")
     private String n8nWebhookUrl;
@@ -38,11 +57,20 @@ public class ChatbotServiceImpl implements ChatbotService {
     @Value("${app.chatbot.n8n.timeout-seconds:25}")
     private int timeoutSeconds;
 
-    public ChatbotServiceImpl(RestTemplateBuilder restTemplateBuilder) {
+    @Autowired
+    public ChatbotServiceImpl(RestTemplateBuilder restTemplateBuilder,
+                              @Autowired(required = false) MovieRepository movieRepository,
+                              @Autowired(required = false) CinemaRepository cinemaRepository,
+                              @Autowired(required = false) PromotionRepository promotionRepository,
+                              @Autowired(required = false) FoodComboRepository foodComboRepository) {
         this.restTemplate = restTemplateBuilder
                 .setConnectTimeout(Duration.ofSeconds(10))
                 .setReadTimeout(Duration.ofSeconds(25))
                 .build();
+        this.movieRepository = movieRepository;
+        this.cinemaRepository = cinemaRepository;
+        this.promotionRepository = promotionRepository;
+        this.foodComboRepository = foodComboRepository;
     }
 
     @Override
@@ -56,21 +84,33 @@ public class ChatbotServiceImpl implements ChatbotService {
             return ChatMessageResponse.fail("INVALID_MESSAGE", "Nội dung câu hỏi không được để trống.");
         }
 
+        String userMessage = request.getMessage().trim();
         String sessionId = (request.getSessionId() != null && !request.getSessionId().isBlank())
                 ? request.getSessionId().trim()
                 : UUID.randomUUID().toString();
 
-        // 1. Build Payload and Context Enrichment
-        Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("message", request.getMessage().trim());
-        payload.put("sessionId", sessionId);
-        payload.put("timestamp", Instant.now().toString());
+        // 1. If GEMINI_API_KEY is configured, call Gemini API directly (Zero-cost, fast & 24/7 independent)
+        if (geminiApiKey != null && !geminiApiKey.trim().isBlank()) {
+            try {
+                String reply = callGeminiDirectly(userMessage, sessionId);
+                if (reply != null && !reply.isBlank()) {
+                    ChatMessageResponse response = ChatMessageResponse.success(reply);
+                    response.setSuggestions(getDefaultFollowUpSuggestions(userMessage));
+                    return response;
+                }
+            } catch (Exception ex) {
+                log.error("Direct Gemini API call failed: {}. Falling back to n8n/fallback response.", ex.getMessage(), ex);
+            }
+        }
 
-        Map<String, Object> userContext = extractCurrentUserContext();
-        payload.put("userContext", userContext);
-
-        // 2. Call n8n Webhook
+        // 2. Fallback to n8n Webhook if configured and reachable
         try {
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("message", userMessage);
+            payload.put("sessionId", sessionId);
+            payload.put("timestamp", Instant.now().toString());
+            payload.put("userContext", extractCurrentUserContext());
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setAccept(List.of(MediaType.APPLICATION_JSON));
@@ -91,25 +131,190 @@ public class ChatbotServiceImpl implements ChatbotService {
                 String reply = extractReplyText(body);
 
                 ChatMessageResponse chatResponse = ChatMessageResponse.success(reply);
-                chatResponse.setSuggestions(getDefaultFollowUpSuggestions(request.getMessage()));
+                chatResponse.setSuggestions(getDefaultFollowUpSuggestions(userMessage));
                 return chatResponse;
-            } else {
-                log.warn("n8n returned non-2xx status: {}", response.getStatusCode());
-                return getFallbackResponse("The AI Assistant is currently busy. Please try again in a few moments!");
             }
-
         } catch (ResourceAccessException ex) {
             log.warn("Cannot reach n8n webhook at {}: {}", n8nWebhookUrl, ex.getMessage());
-            return getFallbackResponse(
-                    "The AI Assistant is currently offline or starting up. "
-                    + "You can browse showtimes in the 'Showtimes' section or contact hotline 1900 6868 for support!");
-        } catch (RestClientResponseException ex) {
-            log.error("n8n webhook error {}: {}", ex.getStatusCode(), ex.getResponseBodyAsString());
-            return getFallbackResponse("An error occurred while processing your request. Please try again later!");
         } catch (Exception ex) {
-            log.error("Unexpected error in chatbot processing: {}", ex.getMessage(), ex);
-            return getFallbackResponse("An unexpected issue occurred. Please try again later!");
+            log.error("Error calling n8n fallback: {}", ex.getMessage());
         }
+
+        return getFallbackResponse(
+                "The AI Assistant is currently offline or starting up. "
+                + "You can browse showtimes in the 'Showtimes' section or contact hotline 1900 6868 for support!");
+    }
+
+    private String callGeminiDirectly(String userMessage, String sessionId) {
+        String systemInstruction = buildComprehensiveSystemPrompt();
+
+        Map<String, Object> requestBody = new LinkedHashMap<>();
+
+        Map<String, Object> systemPart = new LinkedHashMap<>();
+        systemPart.put("parts", List.of(Map.of("text", systemInstruction)));
+        requestBody.put("system_instruction", systemPart);
+
+        Map<String, Object> userContent = new LinkedHashMap<>();
+        userContent.put("role", "user");
+        userContent.put("parts", List.of(Map.of("text", userMessage)));
+        requestBody.put("contents", List.of(userContent));
+
+        Map<String, Object> generationConfig = new LinkedHashMap<>();
+        generationConfig.put("temperature", 0.3);
+        generationConfig.put("maxOutputTokens", 800);
+        requestBody.put("generationConfig", generationConfig);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
+        // Try primary model, with fallback models
+        List<String> modelsToTry = List.of(
+                (geminiModel != null && !geminiModel.isBlank()) ? geminiModel.trim() : "gemini-3.5-flash-lite",
+                "gemini-3.1-flash-lite",
+                "gemini-flash-lite-latest"
+        );
+
+        for (String model : modelsToTry) {
+            try {
+                String url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent?key=" + geminiApiKey.trim();
+                log.info("Calling direct Gemini model: {}", model);
+
+                ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                        url,
+                        HttpMethod.POST,
+                        entity,
+                        new ParameterizedTypeReference<>() {}
+                );
+
+                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                    Map<String, Object> body = response.getBody();
+                    if (body.containsKey("candidates") && body.get("candidates") instanceof List<?> candidates && !candidates.isEmpty()) {
+                        Object firstCandidate = candidates.get(0);
+                        if (firstCandidate instanceof Map<?, ?> candMap && candMap.containsKey("content")) {
+                            Object contentObj = candMap.get("content");
+                            if (contentObj instanceof Map<?, ?> contentMap && contentMap.containsKey("parts")) {
+                                Object partsObj = contentMap.get("parts");
+                                if (partsObj instanceof List<?> partsList && !partsList.isEmpty()) {
+                                    Object firstPart = partsList.get(0);
+                                    if (firstPart instanceof Map<?, ?> partMap && partMap.containsKey("text")) {
+                                        return String.valueOf(partMap.get("text")).trim();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (RestClientResponseException ex) {
+                log.warn("Gemini model {} returned {}: {}. Trying next model...", model, ex.getStatusCode(), ex.getResponseBodyAsString());
+            } catch (Exception ex) {
+                log.warn("Error calling Gemini model {}: {}. Trying next model...", model, ex.getMessage());
+            }
+        }
+
+        return null;
+    }
+
+    private String buildComprehensiveSystemPrompt() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("You are the intelligent, professional, and dedicated AI Assistant for BOX Cinema Vietnam 🎬.\n\n");
+        sb.append("🌐 BILINGUAL COMMUNICATION (ENGLISH DEFAULT & VIETNAMESE):\n");
+        sb.append("- Default language is ENGLISH. If the user writes in English, respond in fluent, professional, and friendly English.\n");
+        sb.append("- If the user writes in Vietnamese (tiếng Việt có dấu hoặc không dấu), respond in warm, polite, and natural Vietnamese (xưng hô 'mình' hoặc 'em').\n");
+        sb.append("- Dynamically match the language of the user's latest query.\n\n");
+
+        sb.append("🎯 SCOPE OF ASSISTANCE (BOX CINEMA & SERVICES):\n");
+        sb.append("1. Movie Information: Now-showing & upcoming movies, genres, durations, age ratings, and synopses.\n");
+        sb.append("2. Showtimes & Tickets: Schedules, room formats (2D, 3D, IMAX, Dolby Atmos), ticket prices, and booking guide.\n");
+        sb.append("3. Concessions (F&B): Popcorn flavors, soft drinks, combo packages, and counter prices.\n");
+        sb.append("4. Promotions: Active discount vouchers, coupon codes, and promo conditions.\n");
+        sb.append("5. Customer Support & Complaints (Khiếu nại & Hỗ trợ):\n");
+        sb.append("   - Direct Hotline: 1900 6868 (08:00 AM - 01:00 AM daily) for urgent ticket, refund, or service support.\n");
+        sb.append("   - Email: support@boxcinema.vn (general support) or events@boxcinema.vn (corporate).\n");
+        sb.append("   - Online Inquiry Form: Available on the [Contact page](/contact). Users can submit their full name, email, phone, topic, and message. The Guest Relations team responds within 2-24 business hours.\n");
+        sb.append("   - Head Office: Level 5, Vincom Center, District 1, HCMC / Hoa Lac Hi-Tech Park, Hanoi.\n");
+        sb.append("6. Account & Security Management:\n");
+        sb.append("   - Change Password: Log in, then navigate to [Change Password](/profile/change-password) (or via Account Settings). Enter your current password and new password (at least 8 characters with letters & numbers) and click save.\n");
+        sb.append("   - Set Password (for Google-only accounts): Visit [Account Settings](/account-settings) and click 'Set Password'.\n");
+        sb.append("   - Unlink Google Account (Hủy liên kết Google):\n");
+        sb.append("     * Step 1: Navigate to [Account Settings](/account-settings) -> find 'Google Account'.\n");
+        sb.append("     * Step 2: Click the 'Disconnect Google' button.\n");
+        sb.append("     * ⚠️ CRITICAL PREREQUISITE: The account MUST have a password set first! If Google is currently your only sign-in method, disconnecting is disabled to protect you from losing account access.\n");
+        sb.append("7. Policies & Terms (Điều khoản & Chính sách):\n");
+        sb.append("   - ⚠️ CRITICAL RULE: Answer SELECTIVELY and FOCUS DIRECTLY ON WHAT THE USER ASKED. Do NOT dump a wall-of-text listing every policy!\n");
+        sb.append("   - Ticket Cancellation: Cancel online >= 60 minutes prior to showtime to receive a Reward Point Voucher refund (cash refund at counter is not supported per SRS rules).\n");
+        sb.append("   - Age Classification: P (All ages), K (<13 with guardian), T13 (13+), T16 (16+), T18 (18+).\n");
+        sb.append("   - Outside Food Policy: Outside hot food or strong-smelling items are prohibited in auditoriums.\n");
+        sb.append("   - Data Privacy: Full terms are available on the [About Us](/about) page.\n\n");
+
+        sb.append("⛔ STRICT OUT-OF-SCOPE GUARDRAIL:\n");
+        sb.append("- If asked about topics completely unrelated to BOX Cinema (e.g., external products, weather, code, medical, homework, politics):\n");
+        sb.append("  👉 DO NOT answer external questions!\n");
+        sb.append("  👉 Politely refuse and guide the user back to BOX Cinema:\n");
+        sb.append("     EN: \"I am the dedicated AI Assistant for BOX Cinema 🎬. I can only assist with cinema services, account security, and movie bookings. How may I assist you with BOX Cinema today?\"\n");
+        sb.append("     VI: \"Dạ, mình là trợ lý ảo chuyên trách của rạp BOX Cinema 🎬. Mình chỉ hỗ trợ các dịch vụ của rạp, tài khoản và lịch chiếu phim. Mình có thể giúp gì cho bạn về BOX Cinema hôm nay ạ?\"\n\n");
+
+        sb.append("📊 LIVE DATABASE CATALOG (REAL-TIME CONTEXT):\n");
+
+        // Live Movies
+        if (movieRepository != null) {
+            try {
+                List<Movie> nowShowing = movieRepository.findByStatusWithGenres("NOW_SHOWING");
+                if (nowShowing != null && !nowShowing.isEmpty()) {
+                    sb.append("• Now-Showing Movies:\n");
+                    for (Movie m : nowShowing) {
+                        sb.append(String.format("  - %s (Duration: %d mins, Age Rating: %s, Lang: %s)\n",
+                                m.getTitle(), m.getDurationMinutes(), m.getAgeRating(), m.getLanguage()));
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // Live Cinemas
+        if (cinemaRepository != null) {
+            try {
+                List<Cinema> cinemas = cinemaRepository.findAll();
+                if (cinemas != null && !cinemas.isEmpty()) {
+                    sb.append("• Cinema Branches:\n");
+                    for (Cinema c : cinemas) {
+                        sb.append(String.format("  - %s (Address: %s, Hotline: %s)\n",
+                                c.getCinemaName(), c.getAddress(), c.getHotline()));
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // Live Combos
+        if (foodComboRepository != null) {
+            try {
+                List<FoodCombo> combos = foodComboRepository.findAll();
+                if (combos != null && !combos.isEmpty()) {
+                    sb.append("• Concessions (F&B Combos):\n");
+                    for (FoodCombo fc : combos) {
+                        sb.append(String.format("  - %s: %,.0f VND (%s)\n",
+                                fc.getName(), fc.getPrice(), fc.getDescription() != null ? fc.getDescription() : "Popular Combo"));
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // Live Promotions
+        if (promotionRepository != null) {
+            try {
+                List<Promotion> promotions = promotionRepository.findAll();
+                if (promotions != null && !promotions.isEmpty()) {
+                    sb.append("• Active Promotions & Vouchers:\n");
+                    for (Promotion p : promotions) {
+                        sb.append(String.format("  - Code '%s': %s (Discount: %s %s)\n",
+                                p.getVoucherCode(), p.getPromotionName(), p.getDiscountValue(), p.getDiscountType()));
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
+        sb.append("\n💬 STYLE: Use clean Markdown (bolding, lists, links like [Contact](/contact)). Concise, friendly, and helpful.");
+        return sb.toString();
     }
 
     @Override
