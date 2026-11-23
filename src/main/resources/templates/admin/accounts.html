@@ -32,7 +32,6 @@
           <div class="admin-metric accent-blue">
             <div class="admin-metric-top">
               <p>Total Accounts</p>
-              <span class="admin-metric-icon">♙</span>
             </div>
             <strong th:text="${accountMetrics['total']}">0</strong>
             <small>Registered in database</small>
@@ -40,7 +39,6 @@
           <div class="admin-metric accent-emerald">
             <div class="admin-metric-top">
               <p>Active Accounts</p>
-              <span class="admin-metric-icon">✓</span>
             </div>
             <strong th:text="${accountMetrics['active']}">0</strong>
             <small>Permitted to sign in</small>
@@ -48,7 +46,6 @@
           <div class="admin-metric accent-amber">
             <div class="admin-metric-top">
               <p>Staff &amp; Admins</p>
-              <span class="admin-metric-icon">★</span>
             </div>
             <strong th:text="${accountMetrics['staffAndAdmins']}">0</strong>
             <small>STAFF · MANAGER · ADMIN</small>
@@ -56,7 +53,6 @@
           <div class="admin-metric accent-red">
             <div class="admin-metric-top">
               <p>Locked Accounts</p>
-              <span class="admin-metric-icon">🔒</span>
             </div>
             <strong th:text="${accountMetrics['locked']}">0</strong>
             <small>Access suspended</small>

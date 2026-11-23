@@ -1926,49 +1926,82 @@ html[data-theme="light"] #btnPresetReset:hover {
   transform: translateY(-1px);
 }
 
+.admin-card {
+  background: var(--box-bg-card);
+  border: 1px solid var(--box-border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
 .admin-metric-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 
-.admin-metric-top > p {
-  color: var(--box-text-muted);
-  font-size: 12.5px;
-  font-weight: 600;
+.admin-metric-top > p,
+.admin-metric > p {
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
   margin: 0;
 }
 
 .admin-metric-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 15px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--box-text-primary);
-  flex-shrink: 0;
+  display: none !important; /* Completely eliminate sticker icons as instructed */
 }
 
-.admin-metric.accent-blue { border-top: 2.5px solid #3b82f6 !important; }
-.admin-metric.accent-blue .admin-metric-icon { background: rgba(59, 130, 246, 0.14); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3); }
+.admin-metric {
+  padding: 16px 20px;
+  border: 1px solid var(--box-border-color) !important;
+  border-left: 4px solid #3b82f6 !important;
+  border-radius: 10px;
+  background: var(--box-bg-card);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
 
-.admin-metric.accent-red { border-top: 2.5px solid #ef4444 !important; }
-.admin-metric.accent-red .admin-metric-icon { background: rgba(239, 68, 68, 0.14); color: #f87171; border-color: rgba(239, 68, 68, 0.3); }
+.admin-metric:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
 
-.admin-metric.accent-emerald { border-top: 2.5px solid #10b981 !important; }
-.admin-metric.accent-emerald .admin-metric-icon { background: rgba(16, 185, 129, 0.14); color: #34d399; border-color: rgba(16, 185, 129, 0.3); }
+.admin-metric > strong {
+  display: block;
+  font-size: 26px;
+  letter-spacing: -0.5px;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
 
-.admin-metric.accent-amber { border-top: 2.5px solid #f59e0b !important; }
-.admin-metric.accent-amber .admin-metric-icon { background: rgba(245, 158, 11, 0.14); color: #fbbf24; border-color: rgba(245, 158, 11, 0.3); }
+.admin-metric > small {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 500;
+}
 
-.admin-metric.accent-purple { border-top: 2.5px solid #8b5cf6 !important; }
-.admin-metric.accent-purple .admin-metric-icon { background: rgba(139, 92, 246, 0.14); color: #a78bfa; border-color: rgba(139, 92, 246, 0.3); }
+.admin-metric.accent-blue { border-left-color: #3b82f6 !important; }
+.admin-metric.accent-blue > strong { color: #60a5fa !important; }
+
+.admin-metric.accent-red { border-left-color: #ef4444 !important; }
+.admin-metric.accent-red > strong { color: #f87171 !important; }
+
+.admin-metric.accent-emerald { border-left-color: #10b981 !important; }
+.admin-metric.accent-emerald > strong { color: #34d399 !important; }
+
+.admin-metric.accent-amber { border-left-color: #f59e0b !important; }
+.admin-metric.accent-amber > strong { color: #fbbf24 !important; }
+
+.admin-metric.accent-purple { border-left-color: #8b5cf6 !important; }
+.admin-metric.accent-purple > strong { color: #a78bfa !important; }
+
+.admin-metric.accent-cyan { border-left-color: #06b6d4 !important; }
+.admin-metric.accent-cyan > strong { color: #22d3ee !important; }
 
 .admin-accounts-metrics {
   grid-template-columns: repeat(auto-fit, minmax(205px, 1fr)) !important;

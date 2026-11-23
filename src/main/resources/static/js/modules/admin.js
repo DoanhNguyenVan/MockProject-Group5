@@ -140,7 +140,7 @@ export function initAdmin(doc = document) {
       get('adminNavigation').append(link);
 
       const logLink = element('a'); logLink.href = '/admin/activity-logs';
-      const logIcon = element('span', '🛡️'); logIcon.setAttribute('aria-hidden', 'true');
+      const logIcon = element('span', '☷'); logIcon.setAttribute('aria-hidden', 'true');
       logLink.append(logIcon, element('span', 'User Activity Logs'));
       if (section === 'activity-logs') logLink.setAttribute('aria-current', 'page');
       get('adminNavigation').append(logLink);
