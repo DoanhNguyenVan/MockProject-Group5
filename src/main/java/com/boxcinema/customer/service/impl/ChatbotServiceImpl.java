@@ -278,8 +278,8 @@ public class ChatbotServiceImpl implements ChatbotService {
                 if (cinemas != null && !cinemas.isEmpty()) {
                     sb.append("• Cinema Branches:\n");
                     for (Cinema c : cinemas) {
-                        sb.append(String.format("  - %s (Address: %s, Hotline: %s)\n",
-                                c.getCinemaName(), c.getAddress(), c.getHotline()));
+                        sb.append(String.format("  - %s (Address: %s, Phone: %s)\n",
+                                c.getCinemaName(), c.getAddress(), c.getPhone()));
                     }
                 }
             } catch (Exception ignored) {}
