@@ -218,6 +218,40 @@
     </div>
   </aside>
 
+  <!-- Reusable Manager Sidebar Fragment -->
+  <aside th:fragment="managerSidebar(activeSection)" class="admin-sidebar">
+    <div class="admin-workspace-label">
+      <span class="admin-workspace-mark" aria-hidden="true" style="color: var(--box-gold);">★</span>
+      <div>
+        <span>Manager Suite</span>
+        <small th:text="${cinema != null ? cinema.cinemaName : 'BOX CINEMA'}">BOX CINEMA</small>
+      </div>
+    </div>
+
+    <button type="button" id="managerMenuToggle" class="admin-button d-md-none w-100 mb-3" aria-expanded="false" aria-controls="managerNavigation" onclick="
+      var nav = document.getElementById('managerNavigation');
+      var open = nav.classList.toggle('is-open');
+      this.setAttribute('aria-expanded', String(open));
+    ">
+      Menu Navigation
+    </button>
+
+    <nav id="managerNavigation" class="admin-navigation" aria-label="Manager navigation">
+      <p>REGIONAL OPERATIONS</p>
+      <a href="/manager/showtimes" th:href="@{/manager/showtimes}" th:attr="aria-current=${activeSection == 'showtimes' ? 'page' : null}">
+        <span aria-hidden="true">◷</span>
+        <span>Showtimes</span>
+      </a>
+
+    </nav>
+
+    <div class="admin-sidebar-bottom">
+      <p class="mb-2"><span class="admin-sample-dot" style="background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,0.6)"></span>Cinema Region Active</p>
+      <a href="/" th:href="@{/}" class="admin-text-button d-block mb-1 text-decoration-none">← Back to Website</a>
+      <button type="button" class="admin-text-button" onclick="location.reload()">Refresh data</button>
+    </div>
+  </aside>
+
   <!-- Reusable Topbar Fragment -->
   <header th:fragment="topbar(sectionName, subName, sectionUrl)" class="admin-topbar">
     <!-- Live Status Banner (Synchronized with Seat & Workspace pages) -->

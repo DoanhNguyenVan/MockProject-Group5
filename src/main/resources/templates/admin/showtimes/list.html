@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments/admin-shell :: head('Showtime Management')}"></head>
+<body class="admin-page">
+  <div class="admin-shell">
+    <!-- Sidebar Navigation -->
+    <aside th:replace="~{admin/fragments/admin-shell :: sidebar('showtimes')}"></aside>
+
+    <!-- Main Content Area -->
+    <section class="admin-content">
+      <!-- Standardized Docked Topbar -->
+      <header th:replace="~{admin/fragments/admin-shell :: topbar('Showtimes', null, '/admin/showtimes')}"></header>
+
+      <div class="admin-content-body">
+        <!-- Page Heading -->
+        <div class="admin-page-heading mb-4">
+          <div>
+            <p class="admin-eyebrow">PROGRAMMING</p>
+            <h1>Showtimes</h1>
+            <p>Schedule showtimes, manage screening rooms by cinema, and control time slots</p>
+          </div>
+          <div>
+            <button type="button" class="admin-button admin-button-primary" onclick="openAddShowtimeModal()">
+              + Add showtime
+            </button>
+          </div>
+        </div>
+
+        <!-- Server-side & Client Filter Toolbar -->
+        <form id="filterForm" method="GET" th:action="@{/admin/showtimes}" class="admin-toolbar mb-4">
+          <div class="admin-search-wrap" style="flex: 1; min-width: 220px;">
+            <input type="search" id="clientSearch" class="admin-input" placeholder="Search by movie title, room, cinema..." oninput="filterTableRows()">
+          </div>
+
+          <!-- Cinema Filter Dropdown (1 Cinema per Region/City) -->
+          <div style="min-width: 250px;">
+            <select name="cinemaId" class="admin-input w-100" onchange="this.form.submit()" aria-label="Filter by Cinema">
+              <option value="" th:selected="${selectedCinemaId == null}">-- All Cinemas (Nationwide) --</option>
+              <option th:each="c : ${cinemas}"
+                      th:value="${c.cinemaId}"
+                      th:text="${c.cinemaName + ' (' + c.city + ')'}"
+                      th:selected="${c.cinemaId == selectedCinemaId}">
+                BOX Cinema Hà Nội (Hà Nội)
+              </option>
+            </select>
+          </div>
+
+          <!-- Status Filter Dropdown -->
+          <div style="min-width: 170px;">
+            <select name="status" class="admin-input w-100" onchange="this.form.submit()" aria-label="Filter by Status">
+              <option value="ALL" th:selected="${selectedStatus == 'ALL'}">All statuses</option>
+              <option value="ACTIVE" th:selected="${selectedStatus == 'ACTIVE'}">ACTIVE (Open for booking)</option>
+              <option value="INACTIVE" th:selected="${selectedStatus == 'INACTIVE'}">INACTIVE (Suspended)</option>
+              <option value="CANCELLED" th:selected="${selectedStatus == 'CANCELLED'}">CANCELLED (Cancelled)</option>
+            </select>
+          </div>
+
+          <a th:href="@{/admin/showtimes}" class="admin-button text-decoration-none d-inline-flex align-items-center">Clear</a>
+        </form>
+
+        <!-- Showtime Table Panel -->
+        <div class="admin-table-panel">
+          <div class="d-flex justify-content-between align-items-center px-4 py-3" style="border-bottom: 1px solid var(--box-border-color); background: var(--box-bg-elevated);">
+            <div class="d-flex align-items-center gap-2">
+              <h2 style="font-size: 15px; font-weight: 700; margin: 0; color: var(--box-text-primary);">All Showtimes</h2>
+              <span th:if="${selectedCinemaId != null}" class="badge bg-primary" style="font-size: 11px;">Selected Cinema</span>
+            </div>
+            <span id="showtimeTotalCount" style="font-size: 12px; color: var(--box-text-muted);" th:text="'Total: ' + ${#lists.size(showtimes)}">Total: 0</span>
+          </div>
+
+          <div class="admin-table-scroll">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th style="width: 60px; text-align: center;">ID</th>
+                  <th style="min-width: 220px;">Movie</th>
+                  <th style="min-width: 180px;">Cinema &amp; Room</th>
+                  <th style="min-width: 140px; text-align: center;">Format</th>
+                  <th style="min-width: 170px;">Showtime Window</th>
+                  <th style="width: 120px; text-align: right;">Base Price</th>
+                  <th style="width: 120px; text-align: center;">Status</th>
+                  <th style="width: 140px; text-align: center;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="showtimeTableBody">
+                <tr th:if="${#lists.isEmpty(showtimes)}">
+                  <td colspan="8" style="text-align: center; padding: 48px 16px; color: var(--box-text-muted);">
+                    <div style="font-size: 32px; margin-bottom: 8px;">◷</div>
+                    <p style="margin: 0; font-size: 14px;">No showtimes found matching the filter criteria.</p>
+                  </td>
+                </tr>
+                <tr th:each="st : ${showtimes}" class="showtime-row"
+                    th:attr="data-id=${st.showtimeId},
+                             data-movie-id=${st.movie.movieId},
+                             data-movie-title=${#strings.toLowerCase(st.movie.title)},
+                             data-movie-duration=${st.movie.durationMinutes},
+                             data-cinema-id=${st.room.cinema.cinemaId},
+                             data-cinema-name=${#strings.toLowerCase(st.room.cinema.cinemaName)},
+                             data-room-id=${st.room.roomId},
+                             data-room-name=${#strings.toLowerCase(st.room.roomName)},
+                             data-room-type=${st.room.roomType},
+                             data-start-at=${st.startAt},
+                             data-end-at=${st.endAt},
+                             data-base-price=${st.basePrice},
+                             data-status=${st.status}">
+                  <td style="text-align: center; font-weight: 700; color: var(--box-text-muted);" th:text="'#' + ${st.showtimeId}">#1</td>
+                  <td>
+                    <div class="d-flex align-items-center gap-3">
+                      <img th:if="${st.movie.posterUrl != null and !#strings.isEmpty(st.movie.posterUrl)}"
+                           th:src="${st.movie.posterUrl}"
+                           style="width: 36px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid var(--box-border-color);"
+                           alt="Poster">
+                      <div th:unless="${st.movie.posterUrl != null and !#strings.isEmpty(st.movie.posterUrl)}"
+                           style="width: 36px; height: 50px; border-radius: 4px; background: var(--box-bg-elevated); border: 1px solid var(--box-border-color); display: flex; align-items: center; justify-content: center; font-size: 9px; color: var(--box-text-muted);">
+                        No img
+                      </div>
+                      <div>
+                        <div style="font-weight: 700; color: var(--box-text-primary);" th:text="${st.movie.title}">Movie Title</div>
+                        <div style="font-size: 12px; color: var(--box-text-muted);" th:text="${st.movie.durationMinutes} + ' min · ' + ${st.movie.ageRating}">120 min</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div style="font-weight: 600; color: var(--box-text-primary);" th:text="${st.room.cinema.cinemaName}">BOX Cinema Hà Nội</div>
+                    <div style="font-size: 12px; color: var(--box-text-secondary);" th:text="${st.room.roomName} + ' (' + ${st.room.cinema.city} + ')'">Screen 01</div>
+                  </td>
+                  <td style="text-align: center;">
+                    <span class="badge"
+                          th:classappend="${st.room.roomType == 'IMAX' ? 'bg-primary' : (st.room.roomType == '4DX' ? 'bg-danger' : (st.room.roomType == 'Atmos' ? 'bg-info text-dark' : 'bg-secondary'))}"
+                          style="font-size: 12px; padding: 5px 10px; font-weight: 600;"
+                          th:text="${st.room.roomType}">Standard</span>
+                  </td>
+                  <td>
+                    <div style="font-weight: 600; color: var(--box-text-primary);"
+                         th:text="${#temporals.format(st.startAt, 'HH:mm')} + ' - ' + ${#temporals.format(st.endAt, 'HH:mm')}">
+                      18:00 - 20:30
+                    </div>
+                    <div style="font-size: 12px; color: var(--box-text-muted);"
+                         th:text="${#temporals.format(st.startAt, 'dd/MM/yyyy')}">
+                      23/11/2026
+                    </div>
+                  </td>
+                  <td style="text-align: right; font-weight: 700; color: var(--box-gold);"
+                      th:text="${#numbers.formatDecimal(st.basePrice, 0, 'COMMA', 0, 'POINT')} + ' đ'">
+                    75,000 đ
+                  </td>
+                  <td style="text-align: center;">
+                    <span th:if="${st.status == 'ACTIVE'}" class="badge bg-success" style="font-weight: 600;">ACTIVE</span>
+                    <span th:if="${st.status == 'INACTIVE'}" class="badge bg-warning text-dark" style="font-weight: 600;">INACTIVE</span>
+                    <span th:if="${st.status == 'CANCELLED'}" class="badge bg-danger" style="font-weight: 600;">CANCELLED</span>
+                  </td>
+                  <td style="text-align: center;">
+                    <div class="d-inline-flex gap-1">
+                      <button type="button" class="admin-button" style="padding: 4px 8px; font-size: 12px;"
+                              th:attr="onclick='openEditShowtimeModal(this.closest(\'tr\'))'" title="Edit Showtime">
+                        Edit
+                      </button>
+                      <button type="button" class="admin-button text-danger" style="padding: 4px 8px; font-size: 12px;"
+                              th:attr="data-id=${st.showtimeId},
+                                       data-movie=${st.movie.title},
+                                       data-cinema=${st.room.cinema.cinemaName},
+                                       data-room=${st.room.roomName},
+                                       data-time=${#temporals.format(st.startAt, 'HH:mm dd/MM/yyyy')}"
+                              onclick="openDeleteShowtimeModal(this)"
+                              title="Delete Showtime">
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Showtime Add/Edit Dialog Modal -->
+  <dialog id="showtimeModal" class="admin-dialog">
+    <div class="admin-dialog-heading">
+      <div>
+        <h2 id="modalTitle" style="font-size: 18px; font-weight: 700; margin: 0; color: var(--box-text-primary);">Add New Showtime</h2>
+        <p id="modalSubtitle" style="font-size: 12.5px; color: var(--box-text-muted); margin: 4px 0 0;">Schedule a new screening for a movie at a cinema</p>
+      </div>
+      <button type="button" class="admin-button" onclick="document.getElementById('showtimeModal').close()" style="padding: 4px 10px;">✕</button>
+    </div>
+
+    <form id="showtimeForm" method="POST" th:action="@{/admin/showtimes/create}">
+      <input type="hidden" id="modalShowtimeId" name="showtimeId">
+
+      <div class="admin-form-grid" style="grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0;">
+        <!-- Movie selection -->
+        <div class="admin-field-wide">
+          <label for="modalMovieSelect" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
+            Movie *
+          </label>
+          <select id="modalMovieSelect" name="movieId" class="admin-input" required onchange="onMovieOrStartChange()">
+            <option value="">-- Select Movie --</option>
+            <option th:each="m : ${movies}"
+                    th:value="${m.movieId}"
+                    th:attr="data-duration=${m.durationMinutes}"
+                    th:text="${m.title + ' (' + m.durationMinutes + ' min - ' + m.ageRating + ')'}">
+              Inception (148 min)
+            </option>
+          </select>
+        </div>
+
+        <!-- Cinema selection (Cascading Step 1) -->
+        <div>
+          <label for="modalCinemaSelect" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
+            1. Select Cinema (Region) *
+          </label>
+          <select id="modalCinemaSelect" name="cinemaId" class="admin-input" required onchange="onCinemaChange(this.value)">
+            <option value="">-- Select Cinema --</option>
+            <option th:each="c : ${cinemas}"
+                    th:value="${c.cinemaId}"
+                    th:text="${c.cinemaName + ' (' + c.city + ')'}">
+              BOX Cinema Hà Nội (Hà Nội)
+            </option>
+          </select>
+        </div>
+
+        <!-- Room selection (Cascading Step 2) -->
+        <div>
+          <label for="modalRoomSelect" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
+            2. Select Room (by Cinema) *
+          </label>
+          <select id="modalRoomSelect" name="roomId" class="admin-input" required onchange="onRoomChange()">
+            <option value="">-- Please select cinema first --</option>
+            <option th:each="r : ${rooms}"
+                    th:value="${r.roomId}"
+                    th:attr="data-cinema-id=${r.cinema.cinemaId},data-room-type=${r.roomType}"
+                    th:text="${r.roomName + ' - Format: ' + r.roomType}">
+              Screen 01 - Format: IMAX
+            </option>
+          </select>
+        </div>
+
+        <!-- Start Time -->
+        <div>
+          <label for="modalStartAt" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
+            Start time *
+          </label>
+          <input type="datetime-local" id="modalStartAt" name="startAt" class="admin-input" required onchange="onMovieOrStartChange()">
+        </div>
+
+        <!-- End Time -->
+        <div>
+          <label for="modalEndAt" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
+            End time (Auto-calculated from movie duration) *
+          </label>
+          <input type="datetime-local" id="modalEndAt" name="endAt" class="admin-input" required>
+        </div>
+
+        <!-- Base Price -->
+        <div>
+          <label for="modalBasePrice" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
+            Base price (VND) *
+          </label>
+          <input type="number" id="modalBasePrice" name="basePrice" class="admin-input" min="10000" step="5000" value="75000" required>
+          <span style="font-size: 11px; color: var(--box-text-muted);">Standard: 75k, IMAX: 120k, 4DX: 130k, Atmos: 90k</span>
+        </div>
+
+        <!-- Status -->
+        <div>
+          <label for="modalStatus" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
+            Status *
+          </label>
+          <select id="modalStatus" name="status" class="admin-input" required>
+            <option value="ACTIVE">ACTIVE (Open for booking)</option>
+            <option value="INACTIVE">INACTIVE (Suspended)</option>
+            <option value="CANCELLED">CANCELLED (Cancelled)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-4 pt-3" style="border-top: 1px solid var(--box-border-color);">
+        <button type="button" class="admin-button" onclick="document.getElementById('showtimeModal').close()">Cancel</button>
+        <button type="submit" class="admin-button admin-button-primary">Save Showtime</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Showtime Delete Confirmation Modal -->
+  <dialog id="deleteModal" class="admin-dialog" style="max-width: 480px;">
+    <div class="admin-dialog-heading">
+      <div class="d-flex align-items-center gap-2">
+        <span style="font-size: 22px; color: #ef4444;" aria-hidden="true">⚠</span>
+        <h2 style="font-size: 18px; font-weight: 700; margin: 0; color: var(--box-text-primary);">Confirm Delete Showtime</h2>
+      </div>
+      <button type="button" class="admin-button" onclick="document.getElementById('deleteModal').close()" style="padding: 4px 10px;">✕</button>
+    </div>
+
+    <form id="deleteShowtimeForm" method="POST" th:action="@{/admin/showtimes/delete/0}">
+      <input type="hidden" name="cinemaId" id="deleteModalCinemaId" th:if="${selectedCinemaId != null}" th:value="${selectedCinemaId}">
+
+      <div style="margin: 18px 0; color: var(--box-text-primary); font-size: 14px; line-height: 1.6;">
+        <p class="mb-2">Are you sure you want to delete this showtime?</p>
+        <div style="background: var(--box-bg-secondary); border: 1px solid var(--box-border-color); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;">
+          <div class="mb-1"><strong>Showtime ID:</strong> <span id="deleteModalId" style="color: var(--box-gold); font-weight: 700;">#0</span></div>
+          <div class="mb-1"><strong>Movie:</strong> <span id="deleteModalMovie" style="font-weight: 600;">-</span></div>
+          <div class="mb-1"><strong>Cinema / Room:</strong> <span id="deleteModalCinemaRoom">-</span></div>
+          <div><strong>Time:</strong> <span id="deleteModalTime">-</span></div>
+        </div>
+        <p style="font-size: 12.5px; color: var(--box-text-muted); margin: 0;">
+          <span style="color: #ef4444; font-weight: 600;">Safety Notice:</span> If this showtime already has booked tickets, the system will <strong>prevent deletion</strong> to protect linked records.
+        </p>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 pt-3" style="border-top: 1px solid var(--box-border-color);">
+        <button type="button" class="admin-button" onclick="document.getElementById('deleteModal').close()">Cancel</button>
+        <button type="submit" class="admin-button" style="background: #dc2626; color: #fff; border-color: #dc2626; font-weight: 600;">Delete Showtime</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script th:inline="javascript">
+    const defaultCinemaId = /*[[${selectedCinemaId}]]*/ null;
+
+    function openAddShowtimeModal() {
+      const modal = document.getElementById('showtimeModal');
+      const form = document.getElementById('showtimeForm');
+      document.getElementById('modalTitle').textContent = 'Add New Showtime';
+      document.getElementById('modalSubtitle').textContent = 'Schedule a new screening for a movie at a cinema';
+      form.action = '/admin/showtimes/create';
+
+      document.getElementById('modalShowtimeId').value = '';
+      document.getElementById('modalMovieSelect').value = '';
+      document.getElementById('modalStatus').value = 'ACTIVE';
+      document.getElementById('modalBasePrice').value = '75000';
+
+      // Preselect cinema if filtered, else empty
+      const cinemaSelect = document.getElementById('modalCinemaSelect');
+      if (defaultCinemaId) {
+        cinemaSelect.value = defaultCinemaId;
+      } else {
+        cinemaSelect.value = '';
+      }
+      onCinemaChange(cinemaSelect.value);
+
+      // Default start time: today at next round hour
+      const now = new Date();
+      now.setHours(now.getHours() + 1, 0, 0, 0);
+      const tzOffset = now.getTimezoneOffset() * 60000;
+      const localISOTime = (new Date(now - tzOffset)).toISOString().slice(0, 16);
+      document.getElementById('modalStartAt').value = localISOTime;
+      document.getElementById('modalEndAt').value = '';
+
+      modal.showModal();
+    }
+
+    function openEditShowtimeModal(tr) {
+      const modal = document.getElementById('showtimeModal');
+      const form = document.getElementById('showtimeForm');
+      const id = tr.getAttribute('data-id');
+
+      document.getElementById('modalTitle').textContent = 'Edit Showtime #' + id;
+      document.getElementById('modalSubtitle').textContent = 'Update showtime information';
+      form.action = '/admin/showtimes/edit/' + id;
+
+      document.getElementById('modalShowtimeId').value = id;
+      document.getElementById('modalMovieSelect').value = tr.getAttribute('data-movie-id') || '';
+      document.getElementById('modalStatus').value = tr.getAttribute('data-status') || 'ACTIVE';
+      document.getElementById('modalBasePrice').value = tr.getAttribute('data-base-price') || '75000';
+
+      const cinemaId = tr.getAttribute('data-cinema-id');
+      const roomId = tr.getAttribute('data-room-id');
+      document.getElementById('modalCinemaSelect').value = cinemaId || '';
+      onCinemaChange(cinemaId, roomId);
+
+      // Format ISO LocalDateTime string for datetime-local (slice to yyyy-MM-ddTHH:mm)
+      const startAt = tr.getAttribute('data-start-at');
+      const endAt = tr.getAttribute('data-end-at');
+      if (startAt) {
+        document.getElementById('modalStartAt').value = startAt.slice(0, 16);
+      }
+      if (endAt) {
+        document.getElementById('modalEndAt').value = endAt.slice(0, 16);
+      }
+
+      modal.showModal();
+    }
+
+    // Cascading Room Dropdown based on Cinema Selection
+    function onCinemaChange(cinemaId, preselectedRoomId) {
+      const roomSelect = document.getElementById('modalRoomSelect');
+      const options = roomSelect.querySelectorAll('option[data-cinema-id]');
+      let matchedCount = 0;
+
+      options.forEach(opt => {
+        const optCinemaId = opt.getAttribute('data-cinema-id');
+        if (cinemaId && optCinemaId === String(cinemaId)) {
+          opt.hidden = false;
+          opt.disabled = false;
+          matchedCount++;
+        } else {
+          opt.hidden = true;
+          opt.disabled = true;
+          if (opt.selected) opt.selected = false;
+        }
+      });
+
+      if (!cinemaId) {
+        roomSelect.options[0].textContent = '-- Please select cinema first --';
+        roomSelect.value = '';
+      } else {
+        roomSelect.options[0].textContent = '-- Select room (' + matchedCount + ' rooms available) --';
+        if (preselectedRoomId) {
+          roomSelect.value = preselectedRoomId;
+        } else {
+          const firstAvailable = Array.from(options).find(o => !o.disabled && !o.hidden);
+          if (firstAvailable) {
+            roomSelect.value = firstAvailable.value;
+          } else {
+            roomSelect.value = '';
+          }
+        }
+      }
+      onRoomChange();
+    }
+
+    // Auto suggest base price based on room format
+    function onRoomChange() {
+      const roomSelect = document.getElementById('modalRoomSelect');
+      const selectedOption = roomSelect.options[roomSelect.selectedIndex];
+      if (!selectedOption || !selectedOption.hasAttribute('data-room-type')) return;
+
+      const roomType = selectedOption.getAttribute('data-room-type');
+      const priceInput = document.getElementById('modalBasePrice');
+      if (roomType === 'IMAX') {
+        priceInput.value = '120000';
+      } else if (roomType === '4DX') {
+        priceInput.value = '130000';
+      } else if (roomType === 'Atmos') {
+        priceInput.value = '90000';
+      } else {
+        priceInput.value = '75000';
+      }
+    }
+
+    // Automatically calculate End Time = Start Time + Duration (min) + 15 min buffer
+    function onMovieOrStartChange() {
+      const movieSelect = document.getElementById('modalMovieSelect');
+      const selectedMovie = movieSelect.options[movieSelect.selectedIndex];
+      const startAtVal = document.getElementById('modalStartAt').value;
+
+      if (!selectedMovie || !selectedMovie.hasAttribute('data-duration') || !startAtVal) {
+        return;
+      }
+
+      const durationMinutes = parseInt(selectedMovie.getAttribute('data-duration'), 10);
+      if (isNaN(durationMinutes) || durationMinutes <= 0) return;
+
+      const startDate = new Date(startAtVal);
+      if (isNaN(startDate.getTime())) return;
+
+      // Add movie duration + 15 min intermission/cleanup buffer
+      const totalMinutes = durationMinutes + 15;
+      const endDate = new Date(startDate.getTime() + totalMinutes * 60000);
+
+      const tzOffset = endDate.getTimezoneOffset() * 60000;
+      const localEndISO = (new Date(endDate - tzOffset)).toISOString().slice(0, 16);
+      document.getElementById('modalEndAt').value = localEndISO;
+    }
+
+    // Quick client-side search across visible rows
+    function filterTableRows() {
+      const query = (document.getElementById('clientSearch').value || '').trim().toLowerCase();
+      const rows = document.querySelectorAll('.showtime-row');
+      let visibleCount = 0;
+
+      rows.forEach(r => {
+        const movie = r.getAttribute('data-movie-title') || '';
+        const cinema = r.getAttribute('data-cinema-name') || '';
+        const room = r.getAttribute('data-room-name') || '';
+        const id = r.getAttribute('data-id') || '';
+
+        const matches = !query || movie.includes(query) || cinema.includes(query) || room.includes(query) || id.includes(query);
+        r.style.display = matches ? '' : 'none';
+        if (matches) visibleCount++;
+      });
+
+      const countEl = document.getElementById('showtimeTotalCount');
+      if (countEl) {
+        countEl.textContent = 'Showing ' + visibleCount + ' of ' + rows.length;
+      }
+    }
+
+    // Open Delete Confirmation Modal
+    function openDeleteShowtimeModal(btn) {
+      const id = btn.getAttribute('data-id');
+      const movie = btn.getAttribute('data-movie');
+      const cinema = btn.getAttribute('data-cinema');
+      const room = btn.getAttribute('data-room');
+      const time = btn.getAttribute('data-time');
+
+      document.getElementById('deleteModalId').textContent = '#' + id;
+      document.getElementById('deleteModalMovie').textContent = movie || '-';
+      document.getElementById('deleteModalCinemaRoom').textContent = (cinema || '') + ' - ' + (room || '');
+      document.getElementById('deleteModalTime').textContent = time || '-';
+
+      const form = document.getElementById('deleteShowtimeForm');
+      form.action = '/admin/showtimes/delete/' + id;
+
+      document.getElementById('deleteModal').showModal();
+    }
+
+    // Click outside dialog to close
+    const modalEl = document.getElementById('showtimeModal');
+    if (modalEl) {
+      modalEl.addEventListener('click', (e) => {
+        const rect = modalEl.getBoundingClientRect();
+        const isInDialog = (rect.top <= e.clientY && e.clientY <= rect.top + rect.height
+          && rect.left <= e.clientX && e.clientX <= rect.left + rect.width);
+        if (!isInDialog) modalEl.close();
+      });
+    }
+
+    const deleteModalEl = document.getElementById('deleteModal');
+    if (deleteModalEl) {
+      deleteModalEl.addEventListener('click', (e) => {
+        const rect = deleteModalEl.getBoundingClientRect();
+        const isInDialog = (rect.top <= e.clientY && e.clientY <= rect.top + rect.height
+          && rect.left <= e.clientX && e.clientX <= rect.left + rect.width);
+        if (!isInDialog) deleteModalEl.close();
+      });
+    }
+  </script>
+</body>
+</html>

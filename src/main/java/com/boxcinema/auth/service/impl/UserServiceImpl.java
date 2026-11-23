@@ -697,6 +697,7 @@ public class UserServiceImpl implements UserService {
                 user.getPhone(),
                 user.getRole()
         );
+        dto.setCinemaId(user.getCinemaId());
         dto.setAccountStatus(user.getAccountStatus());
         dto.setHasPassword(user.getPasswordHash() != null && !user.getPasswordHash().isBlank());
         dto.setGoogleLinked(user.getGoogleId() != null && !user.getGoogleId().isBlank());

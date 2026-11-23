@@ -10,6 +10,8 @@ public class UserSummaryDto implements Serializable {
     private String email;
     private String phone;
     private String role;
+    private Long cinemaId;
+    private String cinemaName;
     private String accountStatus;
     private boolean hasPassword;
     private boolean googleLinked;
@@ -63,6 +65,22 @@ public class UserSummaryDto implements Serializable {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public Long getCinemaId() {
+        return cinemaId;
+    }
+
+    public void setCinemaId(Long cinemaId) {
+        this.cinemaId = cinemaId;
+    }
+
+    public String getCinemaName() {
+        return cinemaName;
+    }
+
+    public void setCinemaName(String cinemaName) {
+        this.cinemaName = cinemaName;
     }
 
     public String getAccountStatus() {
