@@ -685,9 +685,9 @@ CREATE TABLE `password_reset` (
   UNIQUE KEY `uq_password_reset_token` (`reset_token_hash`),
   CONSTRAINT `fk_password_reset_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
   CONSTRAINT `chk_password_reset_attempts` CHECK ((`failed_attempts` >= 0)),
-  CONSTRAINT `chk_password_reset_purpose` CHECK ((`purpose` in (_cp850'PASSWORD_RESET',_cp850'EMAIL_VERIFICATION'))),
+  CONSTRAINT `chk_password_reset_purpose` CHECK ((`purpose` in ('PASSWORD_RESET','EMAIL_VERIFICATION'))),
   CONSTRAINT `chk_password_reset_resend` CHECK ((`resend_count` >= 0)),
-  CONSTRAINT `chk_password_reset_status` CHECK ((`status` in (_cp850'PENDING',_cp850'SENT',_cp850'VERIFIED',_cp850'COMPLETED',_cp850'EXPIRED',_cp850'LOCKED',_cp850'DELIVERY_FAILED',_cp850'REVOKED')))
+  CONSTRAINT `chk_password_reset_status` CHECK ((`status` in ('PENDING','SENT','VERIFIED','COMPLETED','EXPIRED','LOCKED','DELIVERY_FAILED','REVOKED')))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
