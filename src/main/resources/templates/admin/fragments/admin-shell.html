@@ -131,6 +131,12 @@
 </head>
 <body>
 
+  <!-- Reusable User Badge Fragment -->
+  <div th:fragment="userBadge" class="admin-user-badge">
+    <span class="admin-user-avatar">A</span>
+    <span th:text="${(currentUser != null ? currentUser.fullName : (session.currentUser != null ? session.currentUser.fullName : 'Administrator'))}">Administrator</span>
+  </div>
+
   <!-- Reusable Sidebar Fragment -->
   <aside th:fragment="sidebar(activeSection)" class="admin-sidebar">
     <div class="admin-workspace-label">

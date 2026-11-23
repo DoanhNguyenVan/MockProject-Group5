@@ -10,16 +10,12 @@
 
     <!-- Main Content Area -->
     <main class="admin-main">
-      <!-- Top Bar -->
-      <div class="admin-topbar">
-        <div>
-          <span class="admin-breadcrumb">AUDIT &amp; COMPLIANCE / ACTIVITY MONITOR</span>
-          <h1 class="admin-title">User Activity &amp; Navigation Logs</h1>
-          <p class="admin-subtitle text-muted mb-0">Track real-time login date &amp; time, geographic locations, and page navigation across all user roles (Admin, Manager, Staff, Customer).</p>
-        </div>
-        <div class="admin-top-actions">
-          <div th:replace="~{admin/fragments/admin-shell :: userBadge}"></div>
-        </div>
+      <!-- Standard Admin Topbar -->
+      <header th:replace="~{admin/fragments/admin-shell :: topbar('User Activity Logs', null, null)}"></header>
+
+      <div class="px-3 pt-3 pb-2">
+        <h1 class="admin-title h3 mb-1">User Activity &amp; Navigation Logs</h1>
+        <p class="admin-subtitle text-muted mb-0">Track real-time login date &amp; time, geographic locations, and page navigation across all user roles (Admin, Manager, Staff, Customer).</p>
       </div>
 
       <div id="adminStatus" class="admin-status" role="status" aria-live="polite"></div>
