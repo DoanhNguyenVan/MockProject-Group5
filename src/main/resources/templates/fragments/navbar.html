@@ -520,6 +520,16 @@
                     </a>
                   </li>
 
+                  <!-- Admin Quick Link to Audit Logs -->
+                  <li th:if="${(currentUser != null and currentUser.role == 'ADMIN') or (session.currentUser != null and session.currentUser.role == 'ADMIN')}">
+                    <a class="nav-account-dropdown-item" href="/admin/activity-logs" th:href="@{/admin/activity-logs}">
+                      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                      </svg>
+                      <span class="text-danger fw-semibold">User Activity Logs</span>
+                    </a>
+                  </li>
+
                   <!-- 2. Booking History -->
                   <li>
                     <a class="nav-account-dropdown-item" href="/booking/history" th:href="@{/booking/history}">

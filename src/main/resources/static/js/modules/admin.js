@@ -131,6 +131,21 @@ export function initAdmin(doc = document) {
   doc.title = `${config.title} | BOX Cinema Admin`;
   let lastGroup = '';
   for (const [key, item] of Object.entries(ADMIN_SECTIONS)) {
+    if (key === 'dashboard') {
+      if (item.group !== lastGroup) { get('adminNavigation').append(element('p', item.group)); lastGroup = item.group; }
+      const link = element('a'); link.href = `/admin/${key}`;
+      const icon = element('span', item.icon); icon.setAttribute('aria-hidden', 'true');
+      link.append(icon, element('span', item.title));
+      if (section === key) link.setAttribute('aria-current', 'page');
+      get('adminNavigation').append(link);
+
+      const logLink = element('a'); logLink.href = '/admin/activity-logs';
+      const logIcon = element('span', '🛡️'); logIcon.setAttribute('aria-hidden', 'true');
+      logLink.append(logIcon, element('span', 'User Activity Logs'));
+      if (section === 'activity-logs') logLink.setAttribute('aria-current', 'page');
+      get('adminNavigation').append(logLink);
+      continue;
+    }
     if (key === 'staff') {
       if (item.group !== lastGroup) { get('adminNavigation').append(element('p', item.group)); lastGroup = item.group; }
       const accountLink = element('a'); accountLink.href = '/admin/accounts';
