@@ -15,16 +15,13 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 
-# Set non-root user for security
-RUN groupadd -r spring && useradd -r -g spring spring
-USER spring:spring
-
 # Copy built JAR from builder stage
 COPY --from=builder /app/target/box-cinema-1.0.0-SNAPSHOT.jar app.jar
 
-# Render dynamic port binding
-ENV PORT=8080
-EXPOSE 8080
+# Render dynamic port binding (default 10000 or from $PORT)
+ENV PORT=10000
+EXPOSE 8080 10000
 
 # Memory-optimized flags for Render Free Tier (512MB RAM)
-ENTRYPOINT ["sh", "-c", "java -Xmx350m -Xms200m -XX:+UseSerialGC -Dserver.port=${PORT} -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "java -Xmx350m -Xms200m -XX:+UseSerialGC -Dserver.port=${PORT:-10000} -jar app.jar"]
+
