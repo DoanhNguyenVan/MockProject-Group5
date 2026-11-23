@@ -144,9 +144,76 @@ public class ChatbotServiceImpl implements ChatbotService {
             log.error("Error calling n8n fallback: {}", ex.getMessage());
         }
 
+        // 3. Smart Instant Rule-Based Fallback using real database catalog
+        ChatMessageResponse smartResponse = buildSmartCatalogFallback(userMessage);
+        if (smartResponse != null) {
+            return smartResponse;
+        }
+
         return getFallbackResponse(
                 "The AI Assistant is currently offline or starting up. "
                 + "You can browse showtimes in the 'Showtimes' section or contact hotline 1900 6868 for support!");
+    }
+
+    private ChatMessageResponse buildSmartCatalogFallback(String userMessage) {
+        if (userMessage == null || userMessage.isBlank()) {
+            return null;
+        }
+        String lower = userMessage.toLowerCase().trim();
+
+        // 1. Common Greetings
+        if (lower.matches("^(hi|hello|hey|alo|chào|xin chào|hoi|alo alo|ad|bot)[!.]?$")) {
+            ChatMessageResponse resp = ChatMessageResponse.success(
+                    "Hello! Welcome to BOX Cinema 🎬. How may I assist you today with movie showtimes, ticket bookings, snacks & combos, or promotional vouchers?");
+            resp.setSuggestions(List.of("Now showing movies", "Today's showtimes", "Combos & Snacks", "Promotions"));
+            return resp;
+        }
+
+        // 2. Movie inquiries
+        if (lower.contains("movie") || lower.contains("phim")) {
+            try {
+                List<Movie> nowShowing = movieRepository.findByStatusWithGenres("NOW_SHOWING");
+                if (nowShowing != null && !nowShowing.isEmpty()) {
+                    StringBuilder reply = new StringBuilder("🎬 **Currently Showing at BOX Cinema:**\n\n");
+                    for (Movie m : nowShowing) {
+                        reply.append(String.format("• **%s** (%d mins | Age: %s | %s)\n",
+                                m.getTitle(), m.getDurationMinutes(), m.getAgeRating(), m.getLanguage()));
+                    }
+                    reply.append("\nYou can select any movie above to book your seats online!");
+                    ChatMessageResponse resp = ChatMessageResponse.success(reply.toString());
+                    resp.setSuggestions(List.of("Today's showtimes", "Ticket prices", "Promotions"));
+                    return resp;
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // 3. Showtimes inquiries
+        if (lower.contains("showtime") || lower.contains("suất chiếu") || lower.contains("lịch chiếu") || lower.contains("gio chieu")) {
+            ChatMessageResponse resp = ChatMessageResponse.success(
+                    "📅 You can browse real-time showtimes across all theaters in the **[Showtimes](/showtimes)** section. Fast booking and seat selection are available 24/7!");
+            resp.setSuggestions(List.of("Now showing movies", "Cinemas", "Ticket prices"));
+            return resp;
+        }
+
+        // 4. Food & combos
+        if (lower.contains("combo") || lower.contains("bỏng") || lower.contains("bap") || lower.contains("popcorn") || lower.contains("snack") || lower.contains("drink") || lower.contains("nước")) {
+            ChatMessageResponse resp = ChatMessageResponse.success(
+                    "🍿 **BOX Cinema Concessions:** We offer Sweet & Caramel Popcorn, Soft Drinks (Coca-Cola, Sprite, Fanta), and Special Duo/Family Combos with discounts when booked online!");
+            resp.setSuggestions(List.of("Now showing movies", "Promotions"));
+            return resp;
+        }
+
+        // 5. Hotline & Support
+        if (lower.contains("hotline") || lower.contains("hỗ trợ") || lower.contains("support") || lower.contains("contact") || lower.contains("liên hệ") || lower.contains("sđt")) {
+            ChatMessageResponse resp = ChatMessageResponse.success(
+                    "📞 **Customer Care Support:**\n• Hotline: **1900 6868** (08:00 - 01:00 daily)\n• Email: **support@boxcinema.vn**\n• Contact Form: Visit our **[Contact](/contact)** page for any inquiries or feedback.");
+            resp.setSuggestions(List.of("Now showing movies", "Showtimes"));
+            return resp;
+        }
+
+        // 6. Generic friendly response
+        return ChatMessageResponse.success(
+                "I am here to help you with BOX Cinema 🎬. You can ask me about now-showing movies, today's showtimes, popcorn combos, or ticket booking guide!");
     }
 
     private String callGeminiDirectly(String userMessage, String sessionId) {
@@ -173,11 +240,13 @@ public class ChatbotServiceImpl implements ChatbotService {
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-        // Try ultra-fast flash-lite models first
+        // Try official ultra-fast Gemini models
         List<String> modelsToTry = List.of(
-                (geminiModel != null && !geminiModel.isBlank()) ? geminiModel.trim() : "gemini-3.1-flash-lite",
-                "gemini-flash-lite-latest",
-                "gemini-3.5-flash-lite"
+                (geminiModel != null && !geminiModel.isBlank()) ? geminiModel.trim() : "gemini-1.5-flash",
+                "gemini-1.5-flash",
+                "gemini-2.0-flash",
+                "gemini-1.5-flash-8b",
+                "gemini-2.5-flash"
         );
 
         for (String model : modelsToTry) {
