@@ -13,5 +13,8 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
     @Query("SELECT DISTINCT r.roomType FROM Room r WHERE r.status = 'ACTIVE' ORDER BY r.roomType ASC")
     List<String> findDistinctActiveRoomTypes();
+
+    @Query("SELECT r FROM Room r JOIN FETCH r.cinema c WHERE r.status = 'ACTIVE' ORDER BY c.cinemaId ASC, r.roomId ASC")
+    List<Room> findAllActiveWithCinema();
 }
 

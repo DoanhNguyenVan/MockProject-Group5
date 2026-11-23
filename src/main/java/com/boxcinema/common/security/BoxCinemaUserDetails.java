@@ -29,19 +29,22 @@ public class BoxCinemaUserDetails implements UserDetails {
     }
 
     public BoxCinemaUserDetails(User user) {
-        this(
-                new UserSummaryDto(
-                        user.getUserId(),
-                        user.getFullName(),
-                        user.getEmail(),
-                        user.getPhone(),
-                        user.getRole()
-                ),
-                user.getPasswordHash() != null ? user.getPasswordHash() : "",
-                "ACTIVE".equalsIgnoreCase(user.getAccountStatus()),
-                !"LOCKED".equalsIgnoreCase(user.getAccountStatus())
-                        && !"SUSPENDED".equalsIgnoreCase(user.getAccountStatus())
+        UserSummaryDto summary = new UserSummaryDto(
+                user.getUserId(),
+                user.getFullName(),
+                user.getEmail(),
+                user.getPhone(),
+                user.getRole()
         );
+        summary.setCinemaId(user.getCinemaId());
+        summary.setAccountStatus(user.getAccountStatus());
+        summary.setHasPassword(user.getPasswordHash() != null && !user.getPasswordHash().isBlank());
+        summary.setGoogleLinked(user.getGoogleId() != null && !user.getGoogleId().isBlank());
+        this.userSummary = summary;
+        this.passwordHash = user.getPasswordHash() != null ? user.getPasswordHash() : "";
+        this.enabled = "ACTIVE".equalsIgnoreCase(user.getAccountStatus());
+        this.accountNonLocked = !"LOCKED".equalsIgnoreCase(user.getAccountStatus())
+                && !"SUSPENDED".equalsIgnoreCase(user.getAccountStatus());
     }
 
     public BoxCinemaUserDetails(UserSummaryDto userSummary,
