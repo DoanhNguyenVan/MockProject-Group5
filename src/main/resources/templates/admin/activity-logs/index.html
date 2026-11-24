@@ -13,172 +13,191 @@
       <!-- Standard Admin Topbar -->
       <header th:replace="~{admin/fragments/admin-shell :: topbar('User Activity Logs', null, null)}"></header>
 
-      <div class="px-3 pt-3 pb-2">
-        <h1 class="admin-title h3 mb-1">User Activity &amp; Navigation Logs</h1>
-        <p class="admin-subtitle text-muted mb-0">Track real-time login date &amp; time, geographic locations, and page navigation across all user roles (Admin, Manager, Staff, Customer).</p>
-      </div>
-
-      <div id="adminStatus" class="admin-status" role="status" aria-live="polite"></div>
-
-      <!-- Quick KPI Stats Cards -->
-      <div class="row g-3 mb-4">
-        <div class="col-6 col-md-4 col-xl-2">
-          <div class="admin-card p-3 h-100 border-start border-4 border-primary">
-            <small class="text-secondary fw-semibold text-uppercase d-block mb-1" style="font-size: 11px;">Total Logs</small>
-            <div class="h4 mb-0 fw-bold" th:text="${stats.totalLogs}">0</div>
+      <div class="admin-content-body">
+        <!-- Page Heading -->
+        <div class="admin-page-heading mb-4">
+          <div>
+            <p class="admin-eyebrow">AUDIT &amp; SECURITY</p>
+            <h1>User Activity &amp; Navigation Logs</h1>
+            <p>Track real-time login date &amp; time, geographic locations, and page navigation across all user roles (Admin, Manager, Staff, Customer).</p>
           </div>
         </div>
-        <div class="col-6 col-md-4 col-xl-2">
-          <div class="admin-card p-3 h-100 border-start border-4 border-success">
-            <small class="text-secondary fw-semibold text-uppercase d-block mb-1" style="font-size: 11px;">Total Logins</small>
-            <div class="h4 mb-0 fw-bold text-success" th:text="${stats.totalLogins}">0</div>
+
+        <div id="adminStatus" class="admin-status" role="status" aria-live="polite"></div>
+
+        <!-- Quick KPI Stats Cards -->
+        <div class="admin-metrics mb-4">
+          <div class="admin-metric accent-blue">
+            <div class="admin-metric-top">
+              <p>Total Logs</p>
+            </div>
+            <strong th:text="${stats.totalLogs}">0</strong>
+            <small>All captured events</small>
+          </div>
+          <div class="admin-metric accent-emerald">
+            <div class="admin-metric-top">
+              <p>Total Logins</p>
+            </div>
+            <strong th:text="${stats.totalLogins}">0</strong>
+            <small>Authentication events</small>
+          </div>
+          <div class="admin-metric accent-red">
+            <div class="admin-metric-top">
+              <p>Admin Actions</p>
+            </div>
+            <strong th:text="${stats.adminActions}">0</strong>
+            <small>ADMIN role actions</small>
+          </div>
+          <div class="admin-metric accent-cyan">
+            <div class="admin-metric-top">
+              <p>Manager Actions</p>
+            </div>
+            <strong th:text="${stats.managerActions}">0</strong>
+            <small>MANAGER role actions</small>
+          </div>
+          <div class="admin-metric accent-amber">
+            <div class="admin-metric-top">
+              <p>Staff Actions</p>
+            </div>
+            <strong th:text="${stats.staffActions}">0</strong>
+            <small>STAFF role actions</small>
+          </div>
+          <div class="admin-metric accent-purple">
+            <div class="admin-metric-top">
+              <p>Customer Actions</p>
+            </div>
+            <strong th:text="${stats.customerActions}">0</strong>
+            <small>CUSTOMER role actions</small>
           </div>
         </div>
-        <div class="col-6 col-md-4 col-xl-2">
-          <div class="admin-card p-3 h-100 border-start border-4 border-danger">
-            <small class="text-secondary fw-semibold text-uppercase d-block mb-1" style="font-size: 11px;">Admin Actions</small>
-            <div class="h4 mb-0 fw-bold text-danger" th:text="${stats.adminActions}">0</div>
-          </div>
-        </div>
-        <div class="col-6 col-md-4 col-xl-2">
-          <div class="admin-card p-3 h-100 border-start border-4 border-info">
-            <small class="text-secondary fw-semibold text-uppercase d-block mb-1" style="font-size: 11px;">Manager Actions</small>
-            <div class="h4 mb-0 fw-bold text-info" th:text="${stats.managerActions}">0</div>
-          </div>
-        </div>
-        <div class="col-6 col-md-4 col-xl-2">
-          <div class="admin-card p-3 h-100 border-start border-4 border-warning">
-            <small class="text-secondary fw-semibold text-uppercase d-block mb-1" style="font-size: 11px;">Staff Actions</small>
-            <div class="h4 mb-0 fw-bold text-warning" th:text="${stats.staffActions}">0</div>
-          </div>
-        </div>
-        <div class="col-6 col-md-4 col-xl-2">
-          <div class="admin-card p-3 h-100 border-start border-4 border-secondary">
-            <small class="text-secondary fw-semibold text-uppercase d-block mb-1" style="font-size: 11px;">Customer Actions</small>
-            <div class="h4 mb-0 fw-bold" th:text="${stats.customerActions}">0</div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Filter & Search Toolbar -->
-      <div class="admin-card p-3 mb-4">
-        <form method="get" action="/admin/activity-logs" class="row g-2 align-items-end">
-          <div class="col-12 col-md-3">
-            <label class="form-label small text-secondary fw-semibold mb-1">Filter by Role</label>
-            <select name="role" class="form-select form-select-sm">
-              <option value="" th:selected="${selectedRole == ''}">All Roles (Admin, Manager, Staff, Customer)</option>
-              <option value="ADMIN" th:selected="${selectedRole == 'ADMIN'}">ADMIN (Quản trị viên)</option>
-              <option value="MANAGER" th:selected="${selectedRole == 'MANAGER'}">MANAGER (Quản lý rạp)</option>
-              <option value="STAFF" th:selected="${selectedRole == 'STAFF'}">STAFF (Nhân viên)</option>
-              <option value="CUSTOMER" th:selected="${selectedRole == 'CUSTOMER'}">CUSTOMER (Khách hàng)</option>
-              <option value="GUEST" th:selected="${selectedRole == 'GUEST'}">GUEST (Khách vãng lai)</option>
-            </select>
-          </div>
+        <!-- Filter & Search Toolbar -->
+        <div class="admin-toolbar mb-4">
+          <form method="get" action="/admin/activity-logs" class="row g-2 align-items-end w-100 m-0">
+            <div class="col-12 col-md-3 p-1">
+              <label class="form-label small text-secondary fw-semibold mb-1">Filter by Role</label>
+              <select name="role" class="admin-input form-select form-select-sm">
+                <option value="" th:selected="${selectedRole == ''}">All Roles (Admin, Manager, Staff, Customer)</option>
+                <option value="ADMIN" th:selected="${selectedRole == 'ADMIN'}">ADMIN (Quản trị viên)</option>
+                <option value="MANAGER" th:selected="${selectedRole == 'MANAGER'}">MANAGER (Quản lý rạp)</option>
+                <option value="STAFF" th:selected="${selectedRole == 'STAFF'}">STAFF (Nhân viên)</option>
+                <option value="CUSTOMER" th:selected="${selectedRole == 'CUSTOMER'}">CUSTOMER (Khách hàng)</option>
+                <option value="GUEST" th:selected="${selectedRole == 'GUEST'}">GUEST (Khách vãng lai)</option>
+              </select>
+            </div>
 
-          <div class="col-12 col-md-2">
-            <label class="form-label small text-secondary fw-semibold mb-1">Action Type</label>
-            <select name="actionType" class="form-select form-select-sm">
-              <option value="" th:selected="${selectedActionType == ''}">All Actions</option>
-              <option value="LOGIN" th:selected="${selectedActionType == 'LOGIN'}">LOGIN (Đăng nhập)</option>
-              <option value="LOGOUT" th:selected="${selectedActionType == 'LOGOUT'}">LOGOUT (Đăng xuất)</option>
-              <option value="PAGE_VIEW" th:selected="${selectedActionType == 'PAGE_VIEW'}">PAGE_VIEW (Xem trang)</option>
-            </select>
-          </div>
+            <div class="col-12 col-md-2 p-1">
+              <label class="form-label small text-secondary fw-semibold mb-1">Action Type</label>
+              <select name="actionType" class="admin-input form-select form-select-sm">
+                <option value="" th:selected="${selectedActionType == ''}">All Actions</option>
+                <option value="LOGIN" th:selected="${selectedActionType == 'LOGIN'}">LOGIN (Đăng nhập)</option>
+                <option value="LOGOUT" th:selected="${selectedActionType == 'LOGOUT'}">LOGOUT (Đăng xuất)</option>
+                <option value="PAGE_VIEW" th:selected="${selectedActionType == 'PAGE_VIEW'}">PAGE_VIEW (Xem trang)</option>
+              </select>
+            </div>
 
-          <div class="col-12 col-md-3">
-            <label class="form-label small text-secondary fw-semibold mb-1">Search Email / URL / Location</label>
-            <input type="text" name="search" class="form-control form-control-sm" placeholder="e.g. admin@, /showtimes, Hanoi" th:value="${searchQuery}">
-          </div>
+            <div class="col-12 col-md-3 p-1">
+              <label class="form-label small text-secondary fw-semibold mb-1">Search Email / URL / Location</label>
+              <input type="text" name="search" class="admin-input form-control form-control-sm" placeholder="e.g. admin@, /showtimes, Hanoi" th:value="${searchQuery}">
+            </div>
 
-          <div class="col-6 col-md-2">
-            <label class="form-label small text-secondary fw-semibold mb-1">From Date</label>
-            <input type="date" name="startDate" class="form-control form-control-sm" th:value="${startDate}">
-          </div>
+            <div class="col-6 col-md-2 p-1">
+              <label class="form-label small text-secondary fw-semibold mb-1">From Date</label>
+              <input type="date" name="startDate" class="admin-input form-control form-control-sm" th:value="${startDate}">
+            </div>
 
-          <div class="col-6 col-md-2 d-flex gap-2">
-            <button type="submit" class="admin-button flex-fill">Filter</button>
-            <a href="/admin/activity-logs" class="admin-button-secondary d-flex align-items-center justify-content-center px-2" title="Reset Filters">↺</a>
-          </div>
-        </form>
-      </div>
-
-      <!-- Logs Table -->
-      <div class="admin-card">
-        <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
-            <thead class="table-dark" style="background: var(--box-bg-elevated);">
-              <tr>
-                <th style="width: 140px;">Date &amp; Time</th>
-                <th>User / Email</th>
-                <th style="width: 110px;">Role</th>
-                <th style="width: 110px;">Action</th>
-                <th>Page / Navigation Target</th>
-                <th>Location</th>
-                <th>IP Address</th>
-                <th>Device &amp; Browser</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr th:if="${logs.content.isEmpty()}">
-                <td colspan="8" class="text-center py-4 text-muted">
-                  No activity logs matched your filter criteria.
-                </td>
-              </tr>
-              <tr th:each="log : ${logs.content}">
-                <td class="text-nowrap text-secondary">
-                  <span th:text="${#temporals.format(log.createdAt, 'yyyy-MM-dd HH:mm:ss')}">2026-11-23 20:00:00</span>
-                </td>
-                <td>
-                  <div class="fw-semibold" th:text="${log.email != null ? log.email : 'Anonymous Guest'}">user@boxcinema.vn</div>
-                  <small class="text-muted" th:if="${log.userId != null}" th:text="'User ID: #' + ${log.userId}">User ID: #1</small>
-                </td>
-                <td>
-                  <span th:if="${log.role == 'ADMIN'}" class="badge bg-danger">ADMIN</span>
-                  <span th:if="${log.role == 'MANAGER'}" class="badge bg-primary">MANAGER</span>
-                  <span th:if="${log.role == 'STAFF'}" class="badge bg-warning text-dark">STAFF</span>
-                  <span th:if="${log.role == 'CUSTOMER'}" class="badge bg-success">CUSTOMER</span>
-                  <span th:if="${log.role == 'GUEST' || log.role == 'ANONYMOUS'}" class="badge bg-secondary">GUEST</span>
-                </td>
-                <td>
-                  <span th:if="${log.actionType == 'LOGIN'}" class="badge bg-success-subtle text-success border border-success">LOGIN</span>
-                  <span th:if="${log.actionType == 'LOGOUT'}" class="badge bg-danger-subtle text-danger border border-danger">LOGOUT</span>
-                  <span th:if="${log.actionType == 'PAGE_VIEW'}" class="badge bg-info-subtle text-info border border-info">PAGE VIEW</span>
-                </td>
-                <td>
-                  <div class="fw-semibold text-truncate" style="max-width: 260px;" th:text="${log.pageTitle != null ? log.pageTitle : log.pageUrl}">Page Title</div>
-                  <small class="text-secondary font-monospace" style="font-size: 11px;" th:text="${log.pageUrl}">/admin/workspace</small>
-                </td>
-                <td>
-                  <span>
-                    <span th:text="${log.location != null ? log.location : 'Vietnam'}">Ho Chi Minh City, VN</span>
-                  </span>
-                </td>
-                <td>
-                  <code class="text-secondary" style="font-size: 12px;" th:text="${log.ipAddress}">118.69.182.45</code>
-                </td>
-                <td class="text-secondary">
-                  <span th:text="${log.deviceInfo != null ? log.deviceInfo : 'Standard Client'}">Chrome on Windows</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+            <div class="col-6 col-md-2 p-1 d-flex gap-2">
+              <button type="submit" class="admin-button flex-fill">Filter</button>
+              <a href="/admin/activity-logs" class="admin-button-secondary d-flex align-items-center justify-content-center px-3" title="Reset Filters">↺</a>
+            </div>
+          </form>
         </div>
 
-        <!-- Pagination Controls -->
-        <div th:if="${logs.totalPages > 1}" class="p-3 border-top border-secondary-subtle d-flex justify-content-between align-items-center flex-wrap gap-2">
-          <small class="text-secondary">
-            Showing Page <strong th:text="${logs.number + 1}">1</strong> of <strong th:text="${logs.totalPages}">10</strong> (<span th:text="${logs.totalElements}">100</span> total logs)
-          </small>
-          <div class="d-flex gap-1">
-            <a th:if="${logs.hasPrevious()}"
-               th:href="@{/admin/activity-logs(role=${selectedRole}, actionType=${selectedActionType}, search=${searchQuery}, startDate=${startDate}, endDate=${endDate}, page=${logs.number - 1})}"
-               class="admin-button-secondary py-1 px-3" style="font-size: 12px;">← Previous</a>
-            <a th:if="${logs.hasNext()}"
-               th:href="@{/admin/activity-logs(role=${selectedRole}, actionType=${selectedActionType}, search=${searchQuery}, startDate=${startDate}, endDate=${endDate}, page=${logs.number + 1})}"
-               class="admin-button py-1 px-3" style="font-size: 12px;">Next →</a>
+        <!-- Logs Table Panel -->
+        <div class="admin-table-panel">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 px-4 py-3"
+               style="border-bottom: 1px solid var(--box-border-color); background: var(--box-bg-elevated);">
+            <h2 style="font-size: 15px; font-weight: 700; margin: 0; color: var(--box-text-primary);">Audit &amp; Navigation History</h2>
+            <span style="font-size: 12px; color: var(--box-text-muted);"
+                  th:text="'Showing page ' + (${logs.number + 1}) + ' of ' + ${logs.totalPages} + ' (' + ${logs.totalElements} + ' total logs)'">0 logs</span>
+          </div>
+
+          <div class="admin-table-scroll">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th style="width: 150px;">Date &amp; Time</th>
+                  <th>User / Email</th>
+                  <th style="width: 110px;">Role</th>
+                  <th style="width: 110px;">Action</th>
+                  <th>Page / Navigation Target</th>
+                  <th>Location</th>
+                  <th>IP Address</th>
+                  <th>Device &amp; Browser</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:if="${logs.content.isEmpty()}">
+                  <td colspan="8" style="text-align: center; padding: 48px 16px; color: var(--box-text-muted);">
+                    No activity logs matched your filter criteria.
+                  </td>
+                </tr>
+                <tr th:each="log : ${logs.content}">
+                  <td class="text-nowrap" style="color: var(--box-text-muted);">
+                    <span th:text="${#temporals.format(log.createdAt, 'yyyy-MM-dd HH:mm:ss')}">2026-11-23 20:00:00</span>
+                  </td>
+                  <td>
+                    <div style="font-weight: 600; color: #f8fafc;" th:text="${log.email != null ? log.email : 'Anonymous Guest'}">user@boxcinema.vn</div>
+                    <small style="color: var(--box-text-muted); font-size: 11.5px;" th:if="${log.userId != null}" th:text="'User ID: #' + ${log.userId}">User ID: #1</small>
+                  </td>
+                  <td>
+                    <span th:if="${log.role == 'ADMIN'}" class="admin-role-badge role-admin">ADMIN</span>
+                    <span th:if="${log.role == 'MANAGER'}" class="admin-role-badge role-manager">MANAGER</span>
+                    <span th:if="${log.role == 'STAFF'}" class="admin-role-badge role-staff">STAFF</span>
+                    <span th:if="${log.role == 'CUSTOMER'}" class="admin-role-badge role-customer">CUSTOMER</span>
+                    <span th:if="${log.role == 'GUEST' || log.role == 'ANONYMOUS'}" class="admin-role-badge role-guest">GUEST</span>
+                  </td>
+                  <td>
+                    <span th:if="${log.actionType == 'LOGIN'}" class="admin-status-pill admin-status-confirmed">LOGIN</span>
+                    <span th:if="${log.actionType == 'LOGOUT'}" class="admin-status-pill admin-status-locked">LOGOUT</span>
+                    <span th:if="${log.actionType == 'PAGE_VIEW'}" class="admin-status-pill admin-status-active">PAGE VIEW</span>
+                  </td>
+                  <td>
+                    <div style="font-weight: 600; color: #f8fafc; max-width: 260px;" class="text-truncate" th:text="${log.pageTitle != null ? log.pageTitle : log.pageUrl}">Page Title</div>
+                    <small style="color: var(--box-text-muted); font-size: 11px; font-family: monospace;" th:text="${log.pageUrl}">/admin/workspace</small>
+                  </td>
+                  <td>
+                    <span style="color: #cbd5e1;" th:text="${log.location != null ? log.location : 'Vietnam'}">Ho Chi Minh City, VN</span>
+                  </td>
+                  <td>
+                    <code style="color: var(--box-text-muted); font-size: 12px;" th:text="${log.ipAddress}">118.69.182.45</code>
+                  </td>
+                  <td style="color: var(--box-text-muted);">
+                    <span th:text="${log.deviceInfo != null ? log.deviceInfo : 'Standard Client'}">Chrome on Windows</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Controls -->
+          <div th:if="${logs.totalPages > 1}" class="admin-pagination d-flex justify-content-between align-items-center flex-wrap gap-2 px-4 py-3"
+               style="border-top: 1px solid var(--box-border-color); background: var(--box-bg-elevated);">
+            <div style="font-size: 13px; color: var(--box-text-muted);">
+              Showing page <strong style="color: var(--box-text-primary);" th:text="${logs.number + 1}">1</strong> of <strong style="color: var(--box-text-primary);" th:text="${logs.totalPages}">10</strong>
+              (<span th:text="${logs.totalElements}">100</span> total logs)
+            </div>
+            <div class="d-flex gap-2">
+              <a th:if="${logs.hasPrevious()}"
+                 th:href="@{/admin/activity-logs(role=${selectedRole}, actionType=${selectedActionType}, search=${searchQuery}, startDate=${startDate}, endDate=${endDate}, page=${logs.number - 1})}"
+                 class="admin-button" style="font-size: 12px; padding: 4px 12px;">← Previous</a>
+              <a th:if="${logs.hasNext()}"
+                 th:href="@{/admin/activity-logs(role=${selectedRole}, actionType=${selectedActionType}, search=${searchQuery}, startDate=${startDate}, endDate=${endDate}, page=${logs.number + 1})}"
+                 class="admin-button" style="font-size: 12px; padding: 4px 12px;">Next →</a>
+            </div>
           </div>
         </div>
-      </div>
+      </div> <!-- /.admin-content-body -->
     </main>
   </div>
 </body>

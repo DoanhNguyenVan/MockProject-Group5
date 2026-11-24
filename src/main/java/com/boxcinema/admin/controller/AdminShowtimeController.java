@@ -2,10 +2,13 @@ package com.boxcinema.admin.controller;
 
 import com.boxcinema.admin.dto.AdminShowtimeRequestDto;
 import com.boxcinema.admin.service.AdminShowtimeService;
+import com.boxcinema.common.entity.Showtime;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.util.List;
 
 @Controller
 @RequestMapping("/admin/showtimes")
@@ -21,9 +24,29 @@ public class AdminShowtimeController {
     public String listShowtimes(
             @RequestParam(required = false) Long cinemaId,
             @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
             Model model) {
 
-        model.addAttribute("showtimes", showtimeService.getShowtimes(cinemaId, status));
+        List<Showtime> allShowtimes = showtimeService.getShowtimes(cinemaId, status);
+        int totalElements = allShowtimes != null ? allShowtimes.size() : 0;
+        int pageSize = Math.max(1, size);
+        int totalPages = totalElements == 0 ? 1 : (int) Math.ceil((double) totalElements / pageSize);
+        int currentPage = Math.max(0, Math.min(page, Math.max(0, totalPages - 1)));
+
+        int fromIndex = Math.min(currentPage * pageSize, totalElements);
+        int toIndex = Math.min(fromIndex + pageSize, totalElements);
+        List<Showtime> pagedShowtimes = (allShowtimes != null && totalElements > 0)
+                ? allShowtimes.subList(fromIndex, toIndex)
+                : java.util.Collections.emptyList();
+
+        model.addAttribute("showtimes", pagedShowtimes);
+        model.addAttribute("totalShowtimes", totalElements);
+        model.addAttribute("currentPage", currentPage);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("pageSize", pageSize);
+        model.addAttribute("hasNext", currentPage < totalPages - 1);
+        model.addAttribute("hasPrevious", currentPage > 0);
         model.addAttribute("cinemas", showtimeService.getAllCinemas());
         model.addAttribute("rooms", showtimeService.getAllActiveRooms());
         model.addAttribute("movies", showtimeService.getAllMovies());
