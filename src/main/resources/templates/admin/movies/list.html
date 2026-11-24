@@ -27,21 +27,32 @@
         </div>
 
         <!-- Toolbar: Search & Filters (Standard Admin Suite) -->
-        <div class="admin-toolbar">
-          <div class="admin-search-wrap">
-            <input type="search" id="movieSearch" class="admin-input" placeholder="Search movies by title, language...">
+        <div class="admin-toolbar mb-4">
+          <div class="row g-2 align-items-end w-100 m-0">
+            <div class="col-12 col-md-5 p-1">
+              <label class="form-label small text-secondary fw-semibold mb-1">Search Movies</label>
+              <input type="search" id="movieSearch" class="admin-input form-control form-control-sm" placeholder="Search movies by title, language...">
+            </div>
+            <div class="col-12 col-md-3 p-1">
+              <label class="form-label small text-secondary fw-semibold mb-1">Filter by Genre</label>
+              <select id="genreFilter" class="admin-input form-select form-select-sm" aria-label="Filter genre">
+                <option value="">All genres</option>
+                <option th:each="g : ${genres}" th:value="${g.genreName}" th:text="${g.genreName}">Action</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-3 p-1">
+              <label class="form-label small text-secondary fw-semibold mb-1">Movie Status</label>
+              <select id="statusFilter" class="admin-input form-select form-select-sm" aria-label="Filter status">
+                <option value="">All statuses</option>
+                <option value="NOW_SHOWING">NOW SHOWING</option>
+                <option value="COMING_SOON">COMING SOON</option>
+                <option value="ENDED">ENDED</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-1 p-1 d-flex">
+              <button type="button" id="clearMovieFilters" class="admin-button-secondary d-flex align-items-center justify-content-center w-100" style="height: 38px;" title="Reset Filters">↺</button>
+            </div>
           </div>
-          <select id="genreFilter" class="admin-input" style="width: 190px;" aria-label="Filter genre">
-            <option value="">All genres</option>
-            <option th:each="g : ${genres}" th:value="${g.genreName}" th:text="${g.genreName}">Action</option>
-          </select>
-          <select id="statusFilter" class="admin-input" style="width: 170px;" aria-label="Filter status">
-            <option value="">All statuses</option>
-            <option value="NOW_SHOWING">Now Showing</option>
-            <option value="COMING_SOON">Coming Soon</option>
-            <option value="ENDED">Ended</option>
-          </select>
-          <button type="button" id="clearMovieFilters" class="admin-button">Clear</button>
         </div>
 
         <!-- Movie Table Panel -->

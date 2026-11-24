@@ -60,29 +60,40 @@
         </div>
 
         <!-- Filter & Search Toolbar -->
-        <form class="admin-toolbar flex-wrap mb-4" method="get" th:action="@{/admin/accounts}">
-          <div class="admin-search-wrap">
-            <input type="search" name="q" class="admin-input" maxlength="120"
-                   placeholder="Search by full name, email, or phone number..." th:value="${q}">
-          </div>
-          <select name="role" class="admin-input">
-            <option value="">All Roles</option>
-            <option value="CUSTOMER" th:selected="${selectedRole == 'CUSTOMER'}">Customer</option>
-            <option value="STAFF" th:selected="${selectedRole == 'STAFF'}">Staff</option>
-            <option value="MANAGER" th:selected="${selectedRole == 'MANAGER'}">Manager</option>
-            <option value="ADMIN" th:selected="${selectedRole == 'ADMIN'}">Admin</option>
-          </select>
-          <select name="status" class="admin-input">
-            <option value="">All Statuses</option>
-            <option value="ACTIVE" th:selected="${selectedStatus == 'ACTIVE'}">Active</option>
-            <option value="LOCKED" th:selected="${selectedStatus == 'LOCKED'}">Locked</option>
-            <option value="PENDING_VERIFICATION" th:selected="${selectedStatus == 'PENDING_VERIFICATION'}">Pending Verification</option>
-            <option value="PENDING" th:selected="${selectedStatus == 'PENDING'}">Pending</option>
-            <option value="INACTIVE" th:selected="${selectedStatus == 'INACTIVE'}">Inactive</option>
-          </select>
-          <button type="submit" class="admin-button admin-button-primary">Filter</button>
-          <a href="/admin/accounts" th:href="@{/admin/accounts}" class="admin-button text-decoration-none">Clear</a>
-        </form>
+        <div class="admin-toolbar mb-4">
+          <form method="get" th:action="@{/admin/accounts}" class="row g-2 align-items-end w-100 m-0">
+            <div class="col-12 col-md-4 p-1">
+              <label class="form-label small text-secondary fw-semibold mb-1">Search Account</label>
+              <input type="search" name="q" class="admin-input form-control form-control-sm" maxlength="120"
+                     placeholder="Search by full name, email, or phone number..." th:value="${q}">
+            </div>
+            <div class="col-12 col-md-3 p-1">
+              <label class="form-label small text-secondary fw-semibold mb-1">Filter by Role</label>
+              <select name="role" class="admin-input form-select form-select-sm">
+                <option value="">All Roles (Admin, Manager, Staff, Customer)</option>
+                <option value="CUSTOMER" th:selected="${selectedRole == 'CUSTOMER'}">CUSTOMER (Customer)</option>
+                <option value="STAFF" th:selected="${selectedRole == 'STAFF'}">STAFF (Staff)</option>
+                <option value="MANAGER" th:selected="${selectedRole == 'MANAGER'}">MANAGER (Cinema Manager)</option>
+                <option value="ADMIN" th:selected="${selectedRole == 'ADMIN'}">ADMIN (Administrator)</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-3 p-1">
+              <label class="form-label small text-secondary fw-semibold mb-1">Account Status</label>
+              <select name="status" class="admin-input form-select form-select-sm">
+                <option value="">All Statuses</option>
+                <option value="ACTIVE" th:selected="${selectedStatus == 'ACTIVE'}">ACTIVE</option>
+                <option value="LOCKED" th:selected="${selectedStatus == 'LOCKED'}">LOCKED</option>
+                <option value="PENDING_VERIFICATION" th:selected="${selectedStatus == 'PENDING_VERIFICATION'}">PENDING VERIFICATION</option>
+                <option value="PENDING" th:selected="${selectedStatus == 'PENDING'}">PENDING</option>
+                <option value="INACTIVE" th:selected="${selectedStatus == 'INACTIVE'}">INACTIVE</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-2 p-1 d-flex gap-2">
+              <button type="submit" class="admin-button flex-fill">Filter</button>
+              <a href="/admin/accounts" th:href="@{/admin/accounts}" class="admin-button-secondary d-flex align-items-center justify-content-center px-3" title="Reset Filters">↺</a>
+            </div>
+          </form>
+        </div>
 
         <!-- Accounts Table Panel -->
         <div class="admin-table-panel">

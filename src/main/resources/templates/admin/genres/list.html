@@ -28,11 +28,16 @@
         </div>
 
         <!-- Toolbar: Search (Standard Admin Suite) -->
-        <div class="admin-toolbar">
-          <div class="admin-search-wrap">
-            <input type="search" id="genreSearch" class="admin-input" placeholder="Search genres by name, description...">
+        <div class="admin-toolbar mb-4">
+          <div class="row g-2 align-items-end w-100 m-0">
+            <div class="col-12 col-md-11 p-1">
+              <label class="form-label small text-secondary fw-semibold mb-1">Search Genre Name / Description</label>
+              <input type="search" id="genreSearch" class="admin-input form-control form-control-sm" placeholder="Search genres by name, description...">
+            </div>
+            <div class="col-12 col-md-1 p-1 d-flex">
+              <button type="button" id="clearGenreFilters" class="admin-button-secondary d-flex align-items-center justify-content-center w-100" style="height: 38px;" title="Reset Filters">↺</button>
+            </div>
           </div>
-          <button type="button" id="clearGenreFilters" class="admin-button">Clear</button>
         </div>
 
         <!-- Genre Table Panel -->

@@ -27,36 +27,43 @@
         </div>
 
         <!-- Server-side & Client Filter Toolbar -->
-        <form id="filterForm" method="GET" th:action="@{/admin/showtimes}" class="admin-toolbar mb-4">
-          <div class="admin-search-wrap" style="flex: 1; min-width: 220px;">
-            <input type="search" id="clientSearch" class="admin-input" placeholder="Search by movie title, room, cinema..." oninput="filterTableRows()">
-          </div>
+        <div class="admin-toolbar mb-4">
+          <form id="filterForm" method="GET" th:action="@{/admin/showtimes}" class="row g-2 align-items-end w-100 m-0">
+            <div class="col-12 col-md-5 p-1">
+              <label class="form-label small text-secondary fw-semibold mb-1">Search Movie / Room / Cinema</label>
+              <input type="search" id="clientSearch" class="admin-input form-control form-control-sm" placeholder="Search by movie title, room, cinema..." oninput="filterTableRows()">
+            </div>
 
-          <!-- Cinema Filter Dropdown (1 Cinema per Region/City) -->
-          <div style="min-width: 250px;">
-            <select name="cinemaId" class="admin-input w-100" onchange="this.form.submit()" aria-label="Filter by Cinema">
-              <option value="" th:selected="${selectedCinemaId == null}">-- All Cinemas (Nationwide) --</option>
-              <option th:each="c : ${cinemas}"
-                      th:value="${c.cinemaId}"
-                      th:text="${c.cinemaName + ' (' + c.city + ')'}"
-                      th:selected="${c.cinemaId == selectedCinemaId}">
-                BOX Cinema Hà Nội (Hà Nội)
-              </option>
-            </select>
-          </div>
+            <!-- Cinema Filter Dropdown (1 Cinema per Region/City) -->
+            <div class="col-12 col-md-4 p-1">
+              <label class="form-label small text-secondary fw-semibold mb-1">Filter by Cinema</label>
+              <select name="cinemaId" class="admin-input form-select form-select-sm" onchange="this.form.submit()" aria-label="Filter by Cinema">
+                <option value="" th:selected="${selectedCinemaId == null}">-- All Cinemas (Nationwide) --</option>
+                <option th:each="c : ${cinemas}"
+                        th:value="${c.cinemaId}"
+                        th:text="${c.cinemaName + ' (' + c.city + ')'}"
+                        th:selected="${c.cinemaId == selectedCinemaId}">
+                  BOX Cinema Hà Nội (Hà Nội)
+                </option>
+              </select>
+            </div>
 
-          <!-- Status Filter Dropdown -->
-          <div style="min-width: 170px;">
-            <select name="status" class="admin-input w-100" onchange="this.form.submit()" aria-label="Filter by Status">
-              <option value="ALL" th:selected="${selectedStatus == 'ALL'}">All statuses</option>
-              <option value="ACTIVE" th:selected="${selectedStatus == 'ACTIVE'}">ACTIVE (Open for booking)</option>
-              <option value="INACTIVE" th:selected="${selectedStatus == 'INACTIVE'}">INACTIVE (Suspended)</option>
-              <option value="CANCELLED" th:selected="${selectedStatus == 'CANCELLED'}">CANCELLED (Cancelled)</option>
-            </select>
-          </div>
+            <!-- Status Filter Dropdown -->
+            <div class="col-12 col-md-2 p-1">
+              <label class="form-label small text-secondary fw-semibold mb-1">Showtime Status</label>
+              <select name="status" class="admin-input form-select form-select-sm" onchange="this.form.submit()" aria-label="Filter by Status">
+                <option value="ALL" th:selected="${selectedStatus == 'ALL'}">All Statuses</option>
+                <option value="ACTIVE" th:selected="${selectedStatus == 'ACTIVE'}">ACTIVE</option>
+                <option value="INACTIVE" th:selected="${selectedStatus == 'INACTIVE'}">INACTIVE</option>
+                <option value="CANCELLED" th:selected="${selectedStatus == 'CANCELLED'}">CANCELLED</option>
+              </select>
+            </div>
 
-          <a th:href="@{/admin/showtimes}" class="admin-button text-decoration-none d-inline-flex align-items-center">Clear</a>
-        </form>
+            <div class="col-12 col-md-1 p-1 d-flex">
+              <a th:href="@{/admin/showtimes}" class="admin-button-secondary d-flex align-items-center justify-content-center w-100" style="height: 38px;" title="Reset Filters">↺</a>
+            </div>
+          </form>
+        </div>
 
         <!-- Showtime Table Panel -->
         <div class="admin-table-panel">
@@ -145,9 +152,9 @@
                     75,000 đ
                   </td>
                   <td style="text-align: center;">
-                    <span th:if="${st.status == 'ACTIVE'}" class="badge bg-success" style="font-weight: 600;">ACTIVE</span>
-                    <span th:if="${st.status == 'INACTIVE'}" class="badge bg-warning text-dark" style="font-weight: 600;">INACTIVE</span>
-                    <span th:if="${st.status == 'CANCELLED'}" class="badge bg-danger" style="font-weight: 600;">CANCELLED</span>
+                    <span th:if="${st.status == 'ACTIVE'}" class="admin-status-pill admin-status-active">ACTIVE</span>
+                    <span th:if="${st.status == 'INACTIVE'}" class="admin-status-pill admin-status-inactive">INACTIVE</span>
+                    <span th:if="${st.status == 'CANCELLED'}" class="admin-status-pill admin-status-cancelled">CANCELLED</span>
                   </td>
                   <td style="text-align: center;">
                     <div class="d-inline-flex gap-1">

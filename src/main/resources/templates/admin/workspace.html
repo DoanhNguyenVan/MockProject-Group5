@@ -176,7 +176,7 @@
                 <a href="/admin/movies" class="admin-quick-chip"><span>▣</span> Movies</a>
                 <a href="/admin/showtimes" class="admin-quick-chip"><span>◷</span> Showtimes</a>
                 <a href="/admin/seats" class="admin-quick-chip"><span>▦</span> Seat Designer</a>
-                <a href="/admin/bookings" class="admin-quick-chip"><span>🧾</span> Ticket Orders</a>
+                <a href="/admin/bookings" class="admin-quick-chip">Ticket Orders</a>
                 <a href="/admin/promotions" class="admin-quick-chip"><span>✧</span> Promotions</a>
                 <a href="/admin/activity-logs" class="admin-quick-chip"><span>☷</span> Activity &amp; Audit Logs</a>
                 <a href="/admin/accounts" class="admin-quick-chip"><span>♙</span> Accounts</a>
@@ -294,7 +294,7 @@
               </div>
 
               <div class="admin-seat-presets d-flex flex-wrap gap-2 align-items-center">
-                <button type="button" id="btnPresetStandardLayout" class="admin-button admin-button-sm" style="background:#2563eb;color:#ffffff;font-weight:600;border-color:#3b82f6;">⚡ Quick Generate</button>
+                <button type="button" id="btnPresetStandardLayout" class="admin-button admin-button-sm" style="background:#2563eb;color:#ffffff;font-weight:600;border-color:#3b82f6;">Quick Generate</button>
                 <button type="button" id="btnPresetReset" class="admin-button admin-button-sm text-danger-emphasis">Clear Matrix</button>
               </div>
             </div>
@@ -448,7 +448,7 @@
             </div>
 
             <div id="adminBookingEmpty" class="admin-empty" hidden>
-              <span>🧾</span>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-secondary"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
               <h2>No transactions found</h2>
               <p>Try different search keywords or clear filters to view all bookings.</p>
             </div>
@@ -471,7 +471,7 @@
       <div class="admin-dialog-heading">
         <div>
           <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #ef4444; background: rgba(239, 68, 68, 0.12); padding: 4px 10px; border-radius: 6px; margin-bottom: 6px; border: 1px solid rgba(239, 68, 68, 0.25);">
-            ⚠️ CUSTOMER BOOKING SAFETY ALERT
+            CUSTOMER BOOKING SAFETY ALERT
           </span>
           <h2 id="adminImpactModalTitle" style="margin: 0; font-size: 20px;">Deactivate Cinema Facility / Room</h2>
         </div>
@@ -531,7 +531,7 @@
           <input type="radio" name="adminDeactivateStrategy" value="REFUND_AND_CANCEL" checked>
           <div>
             <div style="font-weight: 600; color: #ef4444; font-size: 13px; display: flex; align-items: center; gap: 6px;">
-              🔄 Option 1: Emergency Cancel &amp; Auto Full Refund (Recommended for unplanned closure)
+              Option 1: Emergency Cancel &amp; Auto Full Refund (Recommended for unplanned closure)
             </div>
             <div style="font-size: 12px; color: var(--box-text-muted); margin-top: 4px;">
               Cancel all future showtimes, automatically refund 100% via payment gateway, notify customers via email, and deactivate facility immediately.
@@ -592,7 +592,7 @@
     <dialog id="adminInvoiceModal" class="admin-dialog" style="max-width: 680px; width: 95vw;">
       <div class="admin-dialog-heading">
         <div class="d-flex align-items-center gap-2">
-          <span style="font-size: 24px;">🧾</span>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-secondary"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
           <div>
             <h2 style="margin: 0; font-size: 18px; font-weight: 700;">ELECTRONIC RECEIPT</h2>
             <p id="adminInvoiceSub" style="margin: 0; font-size: 12px; color: var(--box-text-muted);">BOX Cinema E-Receipt</p>
@@ -606,7 +606,7 @@
       </div>
 
       <div class="d-flex justify-content-between align-items-center mt-4 pt-3" style="border-top: 1px solid var(--box-border-color);">
-        <button type="button" class="admin-button" onclick="window.print()">🖨️ Print Receipt</button>
+        <button type="button" class="admin-button" onclick="window.print()">Print Receipt</button>
         <button type="button" class="admin-button admin-button-primary" onclick="this.closest('dialog').close()">Close</button>
       </div>
     </dialog>
