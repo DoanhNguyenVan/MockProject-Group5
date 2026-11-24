@@ -52,16 +52,18 @@ html[data-theme="light"] .admin-page { --admin-green: #18704b; --admin-vip: #8c6
 .admin-sidebar-bottom a { display: block; margin-top: 14px; font-size: 12px; }
 .admin-sample-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--box-gold); display: inline-block; margin-right: 5px; }
 
-.admin-content {
+.admin-content,
+.admin-main {
   display: flex;
   flex-direction: column;
   min-width: 0;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
   padding: 0 !important;
+  position: relative;
 }
 
-/* Standardized Docked Topbar */
+/* Standardized Docked Sticky Topbar Across All Admin Pages */
 .admin-topbar {
   display: flex;
   align-items: center;
@@ -71,12 +73,12 @@ html[data-theme="light"] .admin-page { --admin-green: #18704b; --admin-vip: #8c6
   min-height: 60px;
   padding: 8px clamp(16px, 2.5vw, 40px);
   border-bottom: 1px solid var(--box-border-color);
-  background: rgba(18, 20, 29, 0.92);
+  background: rgba(18, 20, 29, 0.95);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1000 !important;
   flex-shrink: 0;
 }
 
