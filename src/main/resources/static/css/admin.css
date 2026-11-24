@@ -185,6 +185,10 @@ html[data-theme="light"] .admin-page { --admin-green: #18704b; --admin-vip: #8c6
   animation: adminToastDropIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.admin-status:empty {
+  display: none !important;
+}
+
 @keyframes adminToastDropIn {
   from {
     opacity: 0;
