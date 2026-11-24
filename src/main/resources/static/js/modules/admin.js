@@ -759,14 +759,14 @@ export function initAdmin(doc = document) {
       },
       {
         label: 'Tickets Sold',
-        icon: '🎟',
+        icon: '▥',
         accent: 'accent-emerald',
         value: summary.tickets.toLocaleString('en'),
         note: 'Total confirmed admissions'
       },
       {
         label: 'Paid Orders',
-        icon: '🧾',
+        icon: '▤',
         accent: 'accent-amber',
         value: summary.orders.toLocaleString('en'),
         note: 'Cancelled orders excluded'
