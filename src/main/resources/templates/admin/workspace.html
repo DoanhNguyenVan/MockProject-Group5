@@ -335,41 +335,41 @@
                 </div>
               </div>
 
-            <!-- Unified Row 2: Visual Palette & Contextual Presets -->
-            <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-3">
-              <div class="d-flex flex-wrap gap-2 align-items-center">
-                <span class="text-secondary small fw-semibold me-1">Seat Type:</span>
-                <div id="adminSeatPaintPalette" class="d-flex flex-wrap gap-2 align-items-center"></div>
+              <!-- Unified Row 2: Visual Palette & Contextual Presets -->
+              <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-3">
+                <div class="d-flex flex-wrap gap-2 align-items-center">
+                  <span class="text-secondary small fw-semibold me-1">Seat Type:</span>
+                  <div id="adminSeatPaintPalette" class="d-flex flex-wrap gap-2 align-items-center"></div>
+                </div>
+
+                <div class="admin-seat-presets d-flex flex-wrap gap-2 align-items-center">
+                  <button type="button" id="btnPresetStandardLayout" class="admin-button admin-button-sm"
+                    style="background:#2563eb;color:#ffffff;font-weight:600;border-color:#3b82f6;">Quick
+                    Generate</button>
+                  <button type="button" id="btnPresetReset"
+                    class="admin-button admin-button-sm text-danger-emphasis">Clear Matrix</button>
+                </div>
               </div>
 
-              <div class="admin-seat-presets d-flex flex-wrap gap-2 align-items-center">
-                <button type="button" id="btnPresetStandardLayout" class="admin-button admin-button-sm"
-                  style="background:#2563eb;color:#ffffff;font-weight:600;border-color:#3b82f6;">Quick
-                  Generate</button>
-                <button type="button" id="btnPresetReset"
-                  class="admin-button admin-button-sm text-danger-emphasis">Clear Matrix</button>
-              </div>
-            </div>
+              <!-- Seat Validation Alert Box -->
+              <div id="adminSeatValidationAlert" class="admin-seat-validation-box mb-3" hidden></div>
 
-            <!-- Seat Validation Alert Box -->
-            <div id="adminSeatValidationAlert" class="admin-seat-validation-box mb-3" hidden></div>
+              <!-- Screen Area & Seat Matrix Canvas -->
+              <div class="admin-matrix-canvas-wrapper">
+                <div class="admin-screen-banner">
+                  <div class="admin-screen-arc"></div>
+                  <div class="admin-screen-text">SCREEN THIS WAY</div>
+                </div>
 
-            <!-- Screen Area & Seat Matrix Canvas -->
-            <div class="admin-matrix-canvas-wrapper">
-              <div class="admin-screen-banner">
-                <div class="admin-screen-arc"></div>
-                <div class="admin-screen-text">SCREEN THIS WAY</div>
-              </div>
+                <!-- Top Dimension Ruler: Length in meters -->
+                <div class="admin-canvas-ruler-horizontal">
+                  <span class="ruler-line"></span>
+                  <span id="canvasRulerLength" class="ruler-text">Length: 10m (10 columns)</span>
+                  <span class="ruler-line"></span>
+                </div>
 
-              <!-- Top Dimension Ruler: Length in meters -->
-              <div class="admin-canvas-ruler-horizontal">
-                <span class="ruler-line"></span>
-                <span id="canvasRulerLength" class="ruler-text">Length: 10m (10 columns)</span>
-                <span class="ruler-line"></span>
-              </div>
-
-              <!-- Seat Matrix Rows -->
-              <div id="adminSeatRowsContainer" class="admin-seat-rows-container"></div>
+                <!-- Seat Matrix Rows -->
+                <div id="adminSeatRowsContainer" class="admin-seat-rows-container"></div>
 
                 <!-- Bottom Dimension Summary -->
                 <div class="admin-canvas-dimension-footer">
@@ -377,14 +377,15 @@
                     cell = 1m × 1m)</span>
                 </div>
 
-              <!-- Legend matching the user image -->
-              <div id="adminSeatLegendBox" class="admin-seat-legend-box mt-4">
-                <div class="legend-item"><span class="legend-dot dot-standard"></span> Standard</div>
-                <div class="legend-item"><span class="legend-dot dot-vip"></span> VIP</div>
-                <div class="legend-item"><span class="legend-dot dot-sweetbox"></span> Sweetbox</div>
-                <div class="legend-item"><span class="legend-dot dot-unavailable"></span> Unavailable / Aisle (×)</div>
+                <!-- Legend matching the user image -->
+                <div id="adminSeatLegendBox" class="admin-seat-legend-box mt-4">
+                  <div class="legend-item"><span class="legend-dot dot-standard"></span> Standard</div>
+                  <div class="legend-item"><span class="legend-dot dot-vip"></span> VIP</div>
+                  <div class="legend-item"><span class="legend-dot dot-sweetbox"></span> Sweetbox</div>
+                  <div class="legend-item"><span class="legend-dot dot-unavailable"></span> Unavailable / Aisle (×)
+                  </div>
+                </div>
               </div>
-            </div>
             </div>
           </div>
 
