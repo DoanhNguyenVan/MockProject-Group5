@@ -345,8 +345,8 @@ public class ChatbotServiceImpl implements ChatbotService {
         requestBody.put("contents", List.of(userContent));
 
         Map<String, Object> generationConfig = new LinkedHashMap<>();
-        generationConfig.put("temperature", 0.2);
-        generationConfig.put("maxOutputTokens", 500);
+        generationConfig.put("temperature", 0.3);
+        generationConfig.put("maxOutputTokens", 1500);
         requestBody.put("generationConfig", generationConfig);
 
         HttpHeaders headers = new HttpHeaders();
@@ -354,14 +354,13 @@ public class ChatbotServiceImpl implements ChatbotService {
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-        // Try official ultra-fast Gemini models supported by current API
+        // Try official ultra-fast Gemini models supported by current API (prioritizing fast conversational flash-lite)
         List<String> modelsToTry = List.of(
-                (geminiModel != null && !geminiModel.isBlank()) ? geminiModel.trim() : "gemini-3.5-flash",
-                "gemini-3.5-flash",
-                "gemini-3.8-flash",
+                (geminiModel != null && !geminiModel.isBlank()) ? geminiModel.trim() : "gemini-3.1-flash-lite",
                 "gemini-3.1-flash-lite",
                 "gemini-3.5-flash-lite",
-                "gemma-4-26b-a4b-it"
+                "gemini-3.5-flash",
+                "gemini-3.8-flash"
         );
 
         for (String model : modelsToTry) {
