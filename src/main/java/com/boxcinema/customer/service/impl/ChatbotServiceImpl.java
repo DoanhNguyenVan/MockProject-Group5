@@ -354,13 +354,14 @@ public class ChatbotServiceImpl implements ChatbotService {
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
-        // Try official ultra-fast Gemini models
+        // Try official ultra-fast Gemini models supported by current API
         List<String> modelsToTry = List.of(
-                (geminiModel != null && !geminiModel.isBlank()) ? geminiModel.trim() : "gemini-1.5-flash",
-                "gemini-1.5-flash",
-                "gemini-2.0-flash",
-                "gemini-1.5-flash-8b",
-                "gemini-2.5-flash"
+                (geminiModel != null && !geminiModel.isBlank()) ? geminiModel.trim() : "gemini-3.5-flash",
+                "gemini-3.5-flash",
+                "gemini-3.8-flash",
+                "gemini-3.1-flash-lite",
+                "gemini-3.5-flash-lite",
+                "gemma-4-26b-a4b-it"
         );
 
         for (String model : modelsToTry) {
