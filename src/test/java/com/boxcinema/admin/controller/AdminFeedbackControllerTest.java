@@ -92,6 +92,6 @@ class AdminFeedbackControllerTest {
                         .param("sendEmail", "true"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/feedbacks"))
-                .andExpect(flash().attributeExists("feedbackSuccessMessage"));
+                .andExpect(flash().attributeExists("successMessage"));
     }
 }

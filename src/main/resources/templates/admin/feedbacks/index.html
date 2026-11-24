@@ -23,17 +23,6 @@
           </div>
         </div>
 
-        <!-- Flash Success / Error Messages -->
-        <div th:if="${feedbackSuccessMessage}" class="alert alert-success d-flex align-items-center gap-2 mb-4" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; border-radius: 8px; padding: 12px 16px;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-          <span th:text="${feedbackSuccessMessage}">Action succeeded!</span>
-        </div>
-
-        <div th:if="${feedbackErrorMessage}" class="alert alert-danger d-flex align-items-center gap-2 mb-4" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; border-radius: 8px; padding: 12px 16px;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-          <span th:text="${feedbackErrorMessage}">An error occurred.</span>
-        </div>
-
         <!-- Quick KPI Stats Cards -->
         <div class="admin-metrics mb-4">
           <div class="admin-metric accent-blue">

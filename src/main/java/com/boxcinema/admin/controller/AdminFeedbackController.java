@@ -84,10 +84,13 @@ public class AdminFeedbackController {
         Long adminUserId = resolveAdminUserId(authentication, session);
         try {
             feedbackService.replyFeedback(id, adminResponse, newStatus, adminUserId, sendEmail);
-            redirectAttributes.addFlashAttribute("feedbackSuccessMessage",
-                    "Response successfully recorded and ticket marked as " + newStatus + (sendEmail ? " (Notification email sent to customer)." : "."));
+            String msg = "Response successfully recorded and ticket marked as " + newStatus + (sendEmail ? " (Notification email sent to customer)." : ".");
+            redirectAttributes.addFlashAttribute("successMessage", msg);
+            redirectAttributes.addFlashAttribute("feedbackSuccessMessage", msg);
         } catch (Exception ex) {
-            redirectAttributes.addFlashAttribute("feedbackErrorMessage", "Failed to update feedback: " + ex.getMessage());
+            String err = "Failed to update feedback: " + ex.getMessage();
+            redirectAttributes.addFlashAttribute("errorMessage", err);
+            redirectAttributes.addFlashAttribute("feedbackErrorMessage", err);
         }
         return "redirect:/admin/feedbacks";
     }
@@ -103,9 +106,13 @@ public class AdminFeedbackController {
         Long adminUserId = resolveAdminUserId(authentication, session);
         try {
             feedbackService.updateStatus(id, newStatus, adminUserId);
-            redirectAttributes.addFlashAttribute("feedbackSuccessMessage", "Ticket status changed to " + newStatus + ".");
+            String msg = "Ticket status changed to " + newStatus + ".";
+            redirectAttributes.addFlashAttribute("successMessage", msg);
+            redirectAttributes.addFlashAttribute("feedbackSuccessMessage", msg);
         } catch (Exception ex) {
-            redirectAttributes.addFlashAttribute("feedbackErrorMessage", "Failed to change status: " + ex.getMessage());
+            String err = "Failed to change status: " + ex.getMessage();
+            redirectAttributes.addFlashAttribute("errorMessage", err);
+            redirectAttributes.addFlashAttribute("feedbackErrorMessage", err);
         }
         return "redirect:/admin/feedbacks";
     }
@@ -117,9 +124,13 @@ public class AdminFeedbackController {
     ) {
         try {
             feedbackService.deleteFeedback(id);
-            redirectAttributes.addFlashAttribute("feedbackSuccessMessage", "Customer feedback ticket #" + id + " has been permanently deleted.");
+            String msg = "Customer feedback ticket #" + id + " has been permanently deleted.";
+            redirectAttributes.addFlashAttribute("successMessage", msg);
+            redirectAttributes.addFlashAttribute("feedbackSuccessMessage", msg);
         } catch (Exception ex) {
-            redirectAttributes.addFlashAttribute("feedbackErrorMessage", "Failed to delete feedback: " + ex.getMessage());
+            String err = "Failed to delete feedback: " + ex.getMessage();
+            redirectAttributes.addFlashAttribute("errorMessage", err);
+            redirectAttributes.addFlashAttribute("feedbackErrorMessage", err);
         }
         return "redirect:/admin/feedbacks";
     }
