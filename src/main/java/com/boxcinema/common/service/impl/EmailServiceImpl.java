@@ -107,6 +107,29 @@ public class EmailServiceImpl implements EmailService {
   }
 
   @Override
+  public boolean sendInquiryResponseEmail(String toEmail, String fullName, Long inquiryId, String topic,
+      String adminResponse) {
+    log.info("=================================================================");
+    log.info("[INQUIRY RESOLUTION RESPONSE] Recipient: {} ({}) | Ticket #BOX-REQ-{} | Topic: {}",
+        fullName, toEmail, inquiryId, topic);
+    log.info("=================================================================");
+
+    String subject = "BOX Cinema - Support Inquiry Response [#BOX-REQ-" + inquiryId + "]";
+    return sendHtmlEmail(
+        toEmail,
+        fullName,
+        subject,
+        buildInquiryResponseEmailHtml(fullName, inquiryId, topic, adminResponse));
+  }
+
+  @Async("emailTaskExecutor")
+  @Override
+  public void sendInquiryResponseEmailAsync(String toEmail, String fullName, Long inquiryId, String topic,
+      String adminResponse) {
+    sendInquiryResponseEmail(toEmail, fullName, inquiryId, topic, adminResponse);
+  }
+
+  @Override
   public boolean sendPasswordResetOtpEmail(String toEmail, String fullName, String otpCode) {
     log.info("[PASSWORD RESET OTP] Dispatching reset code email to {}",
         com.boxcinema.auth.service.AuthAuditService.maskEmail(toEmail));
@@ -300,6 +323,39 @@ public class EmailServiceImpl implements EmailService {
         </div>
         """
         .formatted(safeName, inquiryId, safeTopic, safeMessage);
+  }
+
+  private String buildInquiryResponseEmailHtml(String fullName, Long inquiryId, String topic, String adminResponse) {
+    String safeName = escapeHtml(fullName);
+    String safeTopic = escapeHtml(topic);
+    String safeResponse = escapeHtml(adminResponse).replace("\r\n", "<br>").replace("\n", "<br>");
+    return """
+        <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 580px; margin: 0 auto; background: #121318; color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #2a2b36;">
+          <div style="background: linear-gradient(135deg, #C91934 0%%, #7a0d1e 100%%); padding: 26px 30px; text-align: center;">
+            <h1 style="margin: 0; font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: 0.04em;">BOX CINEMA</h1>
+            <p style="margin: 6px 0 0; font-size: 13px; color: #ffd7de;">Support Inquiry Resolution</p>
+          </div>
+          <div style="padding: 30px;">
+            <p style="font-size: 15px; margin-top: 0; color: #e2e8f0;">Dear <strong>%s</strong>,</p>
+            <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">
+              Our Guest Relations team has reviewed and responded to your inquiry <strong>#BOX-REQ-%d</strong> (Topic: <em>%s</em>):
+            </p>
+            <div style="margin: 20px 0; padding: 18px; background: #161a24; border-left: 4px solid #10b981; border-radius: 8px;">
+              <p style="margin: 0 0 8px; font-size: 12px; font-weight: 700; color: #34d399; letter-spacing: 0.05em; text-transform: uppercase;">Response from Management</p>
+              <div style="font-size: 14px; line-height: 1.6; color: #f1f5f9;">
+                %s
+              </div>
+            </div>
+            <p style="font-size: 13px; color: #94a3b8; line-height: 1.5; margin-bottom: 0;">
+              If you have any further questions or require additional assistance, please feel free to reply to this email or call our hotline at <strong style="color: #ff4d6a;">1900 6868</strong>.
+            </p>
+          </div>
+          <div style="background: #0d0e14; padding: 16px 30px; text-align: center; border-top: 1px solid #22232e;">
+            <p style="margin: 0; font-size: 12px; color: #64748b;">BOX Cinema Vietnam · Customer Relations Department</p>
+          </div>
+        </div>
+        """
+        .formatted(safeName, inquiryId, safeTopic, safeResponse);
   }
 
   private String buildPasswordResetOtpEmailHtml(String fullName, String otpCode) {

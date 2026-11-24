@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,7 +12,8 @@
   <link rel="stylesheet" href="/css/admin.css?v=5.3" th:href="@{/css/admin.css(v='5.3')}">
   <style>
     /* Dedicated Admin Suite Topbar & Layout Enhancements */
-    html, body.admin-page {
+    html,
+    body.admin-page {
       background: var(--box-bg-primary);
       color: var(--box-text-primary);
       min-height: 100vh;
@@ -19,17 +21,20 @@
       padding: 0 !important;
       padding-top: 0 !important;
     }
+
     .admin-shell {
       margin: 0 !important;
       padding: 0 !important;
       padding-top: 0 !important;
     }
+
     .admin-top-actions {
       display: flex;
       align-items: center;
       flex-wrap: wrap;
       gap: 8px 10px;
     }
+
     .admin-user-badge {
       display: inline-flex;
       align-items: center;
@@ -42,6 +47,7 @@
       font-weight: 600;
       color: var(--box-text-primary);
     }
+
     .admin-user-avatar {
       width: 24px;
       height: 24px;
@@ -53,6 +59,7 @@
       justify-content: center;
       font-size: 12px;
     }
+
     .admin-logout-btn {
       background: transparent;
       border: 1px solid var(--box-border-color);
@@ -63,11 +70,13 @@
       cursor: pointer;
       transition: all 0.2s ease;
     }
+
     .admin-logout-btn:hover {
       background: #dc2626;
       border-color: #dc2626;
       color: #ffffff;
     }
+
     .admin-theme-btn {
       background: var(--box-bg-elevated);
       border: 1px solid var(--box-border-color);
@@ -87,13 +96,15 @@
       var _boxTheme = localStorage.getItem("box_cinema_theme") === "light" ? "light" : "dark";
       document.documentElement.setAttribute("data-theme", _boxTheme);
       document.documentElement.setAttribute("data-bs-theme", _boxTheme);
-    } catch (_) {}
+    } catch (_) { }
   </script>
 </head>
+
 <body class="admin-page">
   <!-- Admin Workspace Shell (No customer website header) -->
   <main data-admin-section="dashboard" th:attr="data-admin-section=${adminSection}">
-    <input type="hidden" th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}" th:value="${_csrf != null ? _csrf.token : ''}" />
+    <input type="hidden" th:name="${_csrf != null ? _csrf.parameterName : '_csrf'}"
+      th:value="${_csrf != null ? _csrf.token : ''}" />
 
     <!-- Live Status Banner -->
     <div id="adminStatus" class="admin-status" role="status" hidden></div>
@@ -109,14 +120,17 @@
           </div>
         </div>
 
-        <button type="button" id="adminMenuToggle" class="admin-button d-md-none w-100 mb-3" aria-expanded="false" aria-controls="adminNavigation">
+        <button type="button" id="adminMenuToggle" class="admin-button d-md-none w-100 mb-3" aria-expanded="false"
+          aria-controls="adminNavigation">
           Menu Navigation
         </button>
 
         <nav id="adminNavigation" class="admin-navigation" aria-label="Main navigation"></nav>
 
         <div class="admin-sidebar-bottom">
-          <p class="mb-2"><span class="admin-sample-dot" style="background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,0.6)"></span>Live Database Active<span class="d-none" aria-hidden="true">Sample workspace.</span></p>
+          <p class="mb-2"><span class="admin-sample-dot"
+              style="background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,0.6)"></span>Live Database Active<span
+              class="d-none" aria-hidden="true">Sample workspace.</span></p>
           <a href="/" class="admin-text-button d-block mb-1 text-decoration-none">← Back to Website</a>
           <button type="button" id="adminReset" class="admin-text-button">Refresh data</button>
         </div>
@@ -135,8 +149,9 @@
           <!-- Admin Quick Tools: View Website + Theme Toggle + User Pill + Logout -->
           <div class="admin-top-actions">
             <a href="/" class="admin-button" title="View customer website">← Back to Website</a>
-            
-            <button type="button" class="admin-theme-btn" id="adminThemeToggle" aria-label="Toggle theme" title="Toggle theme" onclick="
+
+            <button type="button" class="admin-theme-btn" id="adminThemeToggle" aria-label="Toggle theme"
+              title="Toggle theme" onclick="
               var curr = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
               document.documentElement.setAttribute('data-theme', curr);
               document.documentElement.setAttribute('data-bs-theme', curr);
@@ -145,7 +160,8 @@
 
             <div class="admin-user-badge">
               <span class="admin-user-avatar">A</span>
-              <span th:text="${(currentUser != null ? currentUser.fullName : (session.currentUser != null ? session.currentUser.fullName : 'Administrator'))}">Administrator</span>
+              <span
+                th:text="${(currentUser != null ? currentUser.fullName : (session.currentUser != null ? session.currentUser.fullName : 'Administrator'))}">Administrator</span>
             </div>
 
             <form action="/logout" th:action="@{/logout}" method="post" class="m-0 p-0 d-inline">
@@ -177,6 +193,7 @@
                 <a href="/admin/showtimes" class="admin-quick-chip"><span>◷</span> Showtimes</a>
                 <a href="/admin/seats" class="admin-quick-chip"><span>▦</span> Seat Designer</a>
                 <a href="/admin/bookings" class="admin-quick-chip">Ticket Orders</a>
+                <a href="/admin/feedbacks" class="admin-quick-chip"><span>✉</span> Customer Feedback</a>
                 <a href="/admin/promotions" class="admin-quick-chip"><span>✧</span> Promotions</a>
                 <a href="/admin/activity-logs" class="admin-quick-chip"><span>☷</span> Activity &amp; Audit Logs</a>
                 <a href="/admin/accounts" class="admin-quick-chip"><span>♙</span> Accounts</a>
@@ -241,76 +258,82 @@
             </div>
           </div>
 
-        <!-- 2. SEAT DESIGNER SECTION (Shown when section === 'seats') -->
-        <div id="adminSeats" class="admin-seats-container" hidden>
-          <div class="admin-panel mb-4">
-            <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-4">
-              <div>
-                <h2 id="adminSeatTitle" class="m-0">Room Layout Designer</h2>
-                <div class="d-flex flex-wrap gap-3 text-secondary small mt-1">
-                  <span id="adminSeatCount">0 available / 0 seats</span>
-                  <span id="adminSeatBreakdown" class="text-secondary"></span>
-                  <span id="adminSeatDirty" class="badge bg-secondary">No unsaved changes</span>
+          <!-- 2. SEAT DESIGNER SECTION (Shown when section === 'seats') -->
+          <div id="adminSeats" class="admin-seats-container" hidden>
+            <div class="admin-panel mb-4">
+              <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-4">
+                <div>
+                  <h2 id="adminSeatTitle" class="m-0">Room Layout Designer</h2>
+                  <div class="d-flex flex-wrap gap-3 text-secondary small mt-1">
+                    <span id="adminSeatCount">0 available / 0 seats</span>
+                    <span id="adminSeatBreakdown" class="text-secondary"></span>
+                    <span id="adminSeatDirty" class="badge bg-secondary">No unsaved changes</span>
+                  </div>
+                </div>
+                <div class="d-flex gap-2 align-items-center">
+                  <button type="button" id="adminUndoSeats" class="admin-button" title="Undo last action (Ctrl+Z)"
+                    disabled>
+                    <span aria-hidden="true" style="font-size: 1.1em;">↶</span> Undo
+                  </button>
+                  <button type="button" id="adminRedoSeats" class="admin-button" title="Redo action (Ctrl+Y)" disabled>
+                    <span aria-hidden="true" style="font-size: 1.1em;">↷</span> Redo
+                  </button>
+                  <button type="button" id="adminSaveSeats" class="admin-button admin-button-primary">Save Seat
+                    Matrix</button>
                 </div>
               </div>
-              <div class="d-flex gap-2 align-items-center">
-                <button type="button" id="adminUndoSeats" class="admin-button" title="Undo last action (Ctrl+Z)" disabled>
-                  <span aria-hidden="true" style="font-size: 1.1em;">↶</span> Undo
-                </button>
-                <button type="button" id="adminRedoSeats" class="admin-button" title="Redo action (Ctrl+Y)" disabled>
-                  <span aria-hidden="true" style="font-size: 1.1em;">↷</span> Redo
-                </button>
-                <button type="button" id="adminSaveSeats" class="admin-button admin-button-primary">Save Seat Matrix</button>
-              </div>
-            </div>
 
-            <!-- Unified Row 1: Cinema, Room & Grid Dimension -->
-            <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-3 pb-3" style="border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
-              <div class="d-flex flex-wrap gap-3 align-items-center">
-                <label class="d-flex align-items-center gap-2 m-0 text-secondary small fw-semibold">Cinema:
-                  <select id="adminSeatCinema" class="admin-input" style="min-width: 210px;"></select>
-                </label>
-                <label class="d-flex align-items-center gap-2 m-0 text-secondary small fw-semibold">Room:
-                  <select id="adminSeatRoom" class="admin-input" style="min-width: 210px;"></select>
-                </label>
-                <!-- Hidden sync select for script compatibility -->
-                <select id="adminSeatPaint" class="d-none" aria-hidden="true"></select>
+              <!-- Unified Row 1: Cinema, Room & Grid Dimension -->
+              <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-3 pb-3"
+                style="border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+                <div class="d-flex flex-wrap gap-3 align-items-center">
+                  <label class="d-flex align-items-center gap-2 m-0 text-secondary small fw-semibold">Cinema:
+                    <select id="adminSeatCinema" class="admin-input" style="min-width: 210px;"></select>
+                  </label>
+                  <label class="d-flex align-items-center gap-2 m-0 text-secondary small fw-semibold">Room:
+                    <select id="adminSeatRoom" class="admin-input" style="min-width: 210px;"></select>
+                  </label>
+                  <!-- Hidden sync select for script compatibility -->
+                  <select id="adminSeatPaint" class="d-none" aria-hidden="true"></select>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                  <span class="text-secondary small fw-semibold">Grid:</span>
+                  <input type="number" id="adminSeatRows" class="admin-input text-center" min="1" max="16" value="8"
+                    style="width: 52px; padding: 6px;" title="Rows">
+                  <span class="text-muted">×</span>
+                  <input type="number" id="adminSeatColumns" class="admin-input text-center" min="1" max="20" value="10"
+                    style="width: 52px; padding: 6px;" title="Columns">
+                  <button type="button" id="adminGenerateSeats" class="admin-button admin-button-sm">Generate
+                    Grid</button>
+                </div>
               </div>
 
-              <div class="d-flex align-items-center gap-2">
-                <span class="text-secondary small fw-semibold">Grid:</span>
-                <input type="number" id="adminSeatRows" class="admin-input text-center" min="1" max="16" value="8" style="width: 52px; padding: 6px;" title="Rows">
-                <span class="text-muted">×</span>
-                <input type="number" id="adminSeatColumns" class="admin-input text-center" min="1" max="20" value="10" style="width: 52px; padding: 6px;" title="Columns">
-                <button type="button" id="adminGenerateSeats" class="admin-button admin-button-sm">Generate Grid</button>
+              <!-- Room Physical Specifications Bar (1 cell = 1m x 1m) -->
+              <div id="adminRoomDimensionsBar" class="admin-room-dimensions-bar mb-3">
+                <div class="dim-item">
+                  <span class="dim-badge-tag">DIMENSIONS</span>
+                  <strong id="dimRoomSize" class="dim-highlight">10m × 6m</strong>
+                </div>
+                <div class="dim-divider"></div>
+                <div class="dim-item">
+                  <span class="dim-badge-tag">LENGTH</span>
+                  <strong id="dimRoomLength" class="dim-highlight">10 m</strong>
+                  <span id="dimRoomLengthCols" class="dim-sub">(10 cols × 1m)</span>
+                </div>
+                <div class="dim-divider"></div>
+                <div class="dim-item">
+                  <span class="dim-badge-tag">WIDTH</span>
+                  <strong id="dimRoomWidth" class="dim-highlight">6 m</strong>
+                  <span id="dimRoomWidthRows" class="dim-sub">(6 rows × 1m)</span>
+                </div>
+                <div class="dim-divider"></div>
+                <div class="dim-item">
+                  <span class="dim-badge-tag tag-area">FLOOR AREA</span>
+                  <strong id="dimRoomArea" class="dim-highlight-area">60 m²</strong>
+                  <span class="dim-sub">(1 cell = 1m²)</span>
+                </div>
               </div>
-            </div>
-
-            <!-- Room Physical Specifications Bar (1 cell = 1m x 1m) -->
-            <div id="adminRoomDimensionsBar" class="admin-room-dimensions-bar mb-3">
-              <div class="dim-item">
-                <span class="dim-badge-tag">DIMENSIONS</span>
-                <strong id="dimRoomSize" class="dim-highlight">10m × 6m</strong>
-              </div>
-              <div class="dim-divider"></div>
-              <div class="dim-item">
-                <span class="dim-badge-tag">LENGTH</span>
-                <strong id="dimRoomLength" class="dim-highlight">10 m</strong>
-                <span id="dimRoomLengthCols" class="dim-sub">(10 cols × 1m)</span>
-              </div>
-              <div class="dim-divider"></div>
-              <div class="dim-item">
-                <span class="dim-badge-tag">WIDTH</span>
-                <strong id="dimRoomWidth" class="dim-highlight">6 m</strong>
-                <span id="dimRoomWidthRows" class="dim-sub">(6 rows × 1m)</span>
-              </div>
-              <div class="dim-divider"></div>
-              <div class="dim-item">
-                <span class="dim-badge-tag tag-area">FLOOR AREA</span>
-                <strong id="dimRoomArea" class="dim-highlight-area">60 m²</strong>
-                <span class="dim-sub">(1 cell = 1m²)</span>
-              </div>
-            </div>
 
             <!-- Unified Row 2: Visual Palette & Contextual Presets -->
             <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-3">
@@ -320,8 +343,11 @@
               </div>
 
               <div class="admin-seat-presets d-flex flex-wrap gap-2 align-items-center">
-                <button type="button" id="btnPresetStandardLayout" class="admin-button admin-button-sm" style="background:#2563eb;color:#ffffff;font-weight:600;border-color:#3b82f6;">Quick Generate</button>
-                <button type="button" id="btnPresetReset" class="admin-button admin-button-sm text-danger-emphasis">Clear Matrix</button>
+                <button type="button" id="btnPresetStandardLayout" class="admin-button admin-button-sm"
+                  style="background:#2563eb;color:#ffffff;font-weight:600;border-color:#3b82f6;">Quick
+                  Generate</button>
+                <button type="button" id="btnPresetReset"
+                  class="admin-button admin-button-sm text-danger-emphasis">Clear Matrix</button>
               </div>
             </div>
 
@@ -335,19 +361,21 @@
                 <div class="admin-screen-text">SCREEN THIS WAY</div>
               </div>
 
-              <!-- Top Dimension Ruler: Length / Width in meters -->
+              <!-- Top Dimension Ruler: Length in meters -->
               <div class="admin-canvas-ruler-horizontal">
                 <span class="ruler-line"></span>
                 <span id="canvasRulerLength" class="ruler-text">Length: 10m (10 columns)</span>
                 <span class="ruler-line"></span>
               </div>
 
+              <!-- Seat Matrix Rows -->
               <div id="adminSeatRowsContainer" class="admin-seat-rows-container"></div>
 
-              <!-- Bottom Dimension Summary -->
-              <div class="admin-canvas-dimension-footer">
-                <span id="canvasFooterSummary">Dimensions: 10m × 6m · Length: 10m · Width: 6m · Floor Area: 60 m² (1 cell = 1m × 1m)</span>
-              </div>
+                <!-- Bottom Dimension Summary -->
+                <div class="admin-canvas-dimension-footer">
+                  <span id="canvasFooterSummary">Dimensions: 10m × 6m · Length: 10m · Width: 6m · Floor Area: 60 m² (1
+                    cell = 1m × 1m)</span>
+                </div>
 
               <!-- Legend matching the user image -->
               <div id="adminSeatLegendBox" class="admin-seat-legend-box mt-4">
@@ -357,149 +385,157 @@
                 <div class="legend-item"><span class="legend-dot dot-unavailable"></span> Unavailable / Aisle (×)</div>
               </div>
             </div>
+            </div>
           </div>
-        </div>
 
-        <!-- 3. REPORTS SECTION (Shown when section === 'reports') -->
-        <div id="adminReports" class="admin-reports-container" hidden>
-          <div class="admin-panel mb-4">
-            <form id="adminReportFilters" class="admin-report-filters d-flex flex-wrap gap-3 align-items-end mb-4">
-              <label>From:
-                <input type="date" id="adminReportFrom" class="admin-input" value="2026-11-09">
-              </label>
-              <label>To:
-                <input type="date" id="adminReportTo" class="admin-input" value="2026-11-15">
-              </label>
-              <label>Cinema:
-                <select id="adminReportCinema" class="admin-input"></select>
-              </label>
-              <button type="submit" class="admin-button admin-button-primary">Filter Report</button>
-              <button type="button" id="adminExportReport" class="admin-button">Export CSV</button>
-            </form>
+          <!-- 3. REPORTS SECTION (Shown when section === 'reports') -->
+          <div id="adminReports" class="admin-reports-container" hidden>
+            <div class="admin-panel mb-4">
+              <form id="adminReportFilters" class="admin-report-filters d-flex flex-wrap gap-3 align-items-end mb-4">
+                <label>From:
+                  <input type="date" id="adminReportFrom" class="admin-input" value="2026-11-09">
+                </label>
+                <label>To:
+                  <input type="date" id="adminReportTo" class="admin-input" value="2026-11-15">
+                </label>
+                <label>Cinema:
+                  <select id="adminReportCinema" class="admin-input"></select>
+                </label>
+                <button type="submit" class="admin-button admin-button-primary">Filter Report</button>
+                <button type="button" id="adminExportReport" class="admin-button">Export CSV</button>
+              </form>
 
-            <div id="adminReportMetrics" class="admin-metrics mb-4"></div>
-            <div id="adminReportChart" class="admin-chart mb-4"></div>
+              <div id="adminReportMetrics" class="admin-metrics mb-4"></div>
+              <div id="adminReportChart" class="admin-chart mb-4"></div>
 
-            <div class="admin-table-panel">
+              <div class="admin-table-panel">
+                <div class="admin-table-scroll">
+                  <table class="admin-table">
+                    <caption class="visually-hidden">Sales Reports</caption>
+                    <thead id="adminReportHead">
+                      <tr>
+                        <th scope="col">Movie</th>
+                        <th scope="col">Tickets</th>
+                        <th scope="col">Revenue</th>
+                        <th scope="col">Share</th>
+                      </tr>
+                    </thead>
+                    <tbody id="adminReportBody"></tbody>
+                  </table>
+                </div>
+                <div id="adminReportEmpty" class="admin-empty" hidden>
+                  <span>∅</span>
+                  <h2>No Report Data</h2>
+                  <p>No sales found for the selected filter period.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. GENERAL CATALOG SECTION (Movies, Genres, Cinemas, Rooms, Showtimes, Pricing, Promotions, Combos, Staff) -->
+          <div id="adminCatalog" class="admin-catalog-container" hidden>
+            <div class="admin-toolbar">
+              <div class="admin-search-wrap">
+                <input type="search" id="adminSearch" class="admin-input" placeholder="Search records…">
+              </div>
+              <select id="adminCinemaFilter" class="admin-input" style="width: 230px;" aria-label="Filter cinema"
+                hidden></select>
+              <select id="adminFilter" class="admin-input" aria-label="Filter status"></select>
+              <button type="button" id="adminClearFilters" class="admin-button">Clear</button>
+              <button type="button" id="adminCreate" class="admin-button admin-button-primary">+ Add Record</button>
+            </div>
+
+            <div class="admin-panel admin-table-panel">
               <div class="admin-table-scroll">
                 <table class="admin-table">
-                  <caption class="visually-hidden">Sales Reports</caption>
-                  <thead id="adminReportHead">
-                    <tr>
-                      <th scope="col">Movie</th>
-                      <th scope="col">Tickets</th>
-                      <th scope="col">Revenue</th>
-                      <th scope="col">Share</th>
-                    </tr>
-                  </thead>
-                  <tbody id="adminReportBody"></tbody>
+                  <caption id="adminTableCaption" class="visually-hidden">Catalog</caption>
+                  <thead id="adminTableHead"></thead>
+                  <tbody id="adminTableBody"></tbody>
                 </table>
               </div>
-              <div id="adminReportEmpty" class="admin-empty" hidden>
+
+              <div id="adminEmpty" class="admin-empty" hidden>
                 <span>∅</span>
-                <h2>No Report Data</h2>
-                <p>No sales found for the selected filter period.</p>
+                <h2>No Records Found</h2>
+                <p>Try clearing filters or create a new record.</p>
+              </div>
+
+              <div class="admin-pagination">
+                <p id="adminPageInfo">Showing records</p>
+                <div class="d-flex gap-2">
+                  <button type="button" id="adminPrevious" class="admin-button">Previous</button>
+                  <button type="button" id="adminNext" class="admin-button">Next</button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- 4. GENERAL CATALOG SECTION (Movies, Genres, Cinemas, Rooms, Showtimes, Pricing, Promotions, Combos, Staff) -->
-        <div id="adminCatalog" class="admin-catalog-container" hidden>
-          <div class="admin-toolbar">
-            <div class="admin-search-wrap">
-              <input type="search" id="adminSearch" class="admin-input" placeholder="Search records…">
-            </div>
-            <select id="adminCinemaFilter" class="admin-input" style="width: 230px;" aria-label="Filter cinema" hidden></select>
-            <select id="adminFilter" class="admin-input" aria-label="Filter status"></select>
-            <button type="button" id="adminClearFilters" class="admin-button">Clear</button>
-            <button type="button" id="adminCreate" class="admin-button admin-button-primary">+ Add Record</button>
-          </div>
+          <!-- 5. TICKET ORDERS & INVOICES SECTION (Shown when section === 'bookings') -->
+          <div id="adminBookings" class="admin-bookings-container" hidden>
+            <!-- KPI Metrics Cards (Standardized layout) -->
+            <div class="admin-metrics" id="adminBookingMetrics"></div>
 
-          <div class="admin-panel admin-table-panel">
-            <div class="admin-table-scroll">
-              <table class="admin-table">
-                <caption id="adminTableCaption" class="visually-hidden">Catalog</caption>
-                <thead id="adminTableHead"></thead>
-                <tbody id="adminTableBody"></tbody>
-              </table>
-            </div>
-
-            <div id="adminEmpty" class="admin-empty" hidden>
-              <span>∅</span>
-              <h2>No Records Found</h2>
-              <p>Try clearing filters or create a new record.</p>
+            <!-- Toolbar (Search, Cinema Filter, Status Filter) -->
+            <div class="admin-toolbar mb-4 flex-wrap">
+              <div class="admin-search-wrap" style="flex: 1; min-width: 250px;">
+                <input type="search" id="adminBookingSearch" class="admin-input w-100"
+                  placeholder="Search by Booking Code (BOX-...), Customer, Phone, Movie...">
+              </div>
+              <select id="adminBookingCinemaFilter" class="admin-input" style="min-width: 200px;">
+                <option value="">All Cinemas</option>
+              </select>
+              <select id="adminBookingStatusFilter" class="admin-input" style="min-width: 160px;">
+                <option value="">All Statuses</option>
+                <option value="CONFIRMED">CONFIRMED (Success)</option>
+                <option value="CANCELLED">CANCELLED</option>
+                <option value="REFUNDED">REFUNDED</option>
+                <option value="HOLDING">HOLDING</option>
+              </select>
+              <button type="button" id="adminBookingClearFilters" class="admin-button">Clear Filters</button>
             </div>
 
-            <div class="admin-pagination">
-              <p id="adminPageInfo">Showing records</p>
-              <div class="d-flex gap-2">
-                <button type="button" id="adminPrevious" class="admin-button">Previous</button>
-                <button type="button" id="adminNext" class="admin-button">Next</button>
+            <!-- Bookings Table Panel -->
+            <div class="admin-panel admin-table-panel">
+              <div class="admin-table-scroll">
+                <table class="admin-table">
+                  <caption class="visually-hidden">Booking Orders &amp; Invoices</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Booking Code &amp; Date</th>
+                      <th scope="col">Movie &amp; Showtime</th>
+                      <th scope="col">Cinema &amp; Room</th>
+                      <th scope="col">Customer</th>
+                      <th scope="col">Seats &amp; Combos</th>
+                      <th scope="col">Total Amount</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Invoice</th>
+                    </tr>
+                  </thead>
+                  <tbody id="adminBookingTableBody"></tbody>
+                </table>
+              </div>
+
+              <div id="adminBookingEmpty" class="admin-empty" hidden>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                  stroke-linecap="round" stroke-linejoin="round" class="text-secondary">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                <h2>No transactions found</h2>
+                <p>Try different search keywords or clear filters to view all bookings.</p>
+              </div>
+
+              <div class="admin-pagination">
+                <p id="adminBookingPageInfo">Showing bookings</p>
+                <div class="d-flex gap-2">
+                  <button type="button" id="adminBookingPrevious" class="admin-button">Previous</button>
+                  <button type="button" id="adminBookingNext" class="admin-button">Next</button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- 5. TICKET ORDERS & INVOICES SECTION (Shown when section === 'bookings') -->
-        <div id="adminBookings" class="admin-bookings-container" hidden>
-          <!-- KPI Metrics Cards (Standardized layout) -->
-          <div class="admin-metrics" id="adminBookingMetrics"></div>
-
-          <!-- Toolbar (Search, Cinema Filter, Status Filter) -->
-          <div class="admin-toolbar mb-4 flex-wrap">
-            <div class="admin-search-wrap" style="flex: 1; min-width: 250px;">
-              <input type="search" id="adminBookingSearch" class="admin-input w-100" placeholder="Search by Booking Code (BOX-...), Customer, Phone, Movie...">
-            </div>
-            <select id="adminBookingCinemaFilter" class="admin-input" style="min-width: 200px;">
-              <option value="">All Cinemas</option>
-            </select>
-            <select id="adminBookingStatusFilter" class="admin-input" style="min-width: 160px;">
-              <option value="">All Statuses</option>
-              <option value="CONFIRMED">CONFIRMED (Success)</option>
-              <option value="CANCELLED">CANCELLED</option>
-              <option value="REFUNDED">REFUNDED</option>
-              <option value="HOLDING">HOLDING</option>
-            </select>
-            <button type="button" id="adminBookingClearFilters" class="admin-button">Clear Filters</button>
-          </div>
-
-          <!-- Bookings Table Panel -->
-          <div class="admin-panel admin-table-panel">
-            <div class="admin-table-scroll">
-              <table class="admin-table">
-                <caption class="visually-hidden">Booking Orders &amp; Invoices</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Booking Code &amp; Date</th>
-                    <th scope="col">Movie &amp; Showtime</th>
-                    <th scope="col">Cinema &amp; Room</th>
-                    <th scope="col">Customer</th>
-                    <th scope="col">Seats &amp; Combos</th>
-                    <th scope="col">Total Amount</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Invoice</th>
-                  </tr>
-                </thead>
-                <tbody id="adminBookingTableBody"></tbody>
-              </table>
-            </div>
-
-            <div id="adminBookingEmpty" class="admin-empty" hidden>
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-secondary"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-              <h2>No transactions found</h2>
-              <p>Try different search keywords or clear filters to view all bookings.</p>
-            </div>
-
-            <div class="admin-pagination">
-              <p id="adminBookingPageInfo">Showing bookings</p>
-              <div class="d-flex gap-2">
-                <button type="button" id="adminBookingPrevious" class="admin-button">Previous</button>
-                <button type="button" id="adminBookingNext" class="admin-button">Next</button>
-              </div>
-            </div>
-          </div>
-        </div>
         </div> <!-- /.admin-content-body -->
       </section>
     </div>
@@ -508,12 +544,14 @@
     <dialog id="adminDeactivateSafetyModal" class="admin-dialog" style="max-width: 720px; width: 95vw;">
       <div class="admin-dialog-heading">
         <div>
-          <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #ef4444; background: rgba(239, 68, 68, 0.12); padding: 4px 10px; border-radius: 6px; margin-bottom: 6px; border: 1px solid rgba(239, 68, 68, 0.25);">
+          <span
+            style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #ef4444; background: rgba(239, 68, 68, 0.12); padding: 4px 10px; border-radius: 6px; margin-bottom: 6px; border: 1px solid rgba(239, 68, 68, 0.25);">
             CUSTOMER BOOKING SAFETY ALERT
           </span>
           <h2 id="adminImpactModalTitle" style="margin: 0; font-size: 20px;">Deactivate Cinema Facility / Room</h2>
         </div>
-        <button type="button" id="adminImpactClose" class="admin-icon-button" aria-label="Close dialog" onclick="this.closest('dialog').close('cancel')">×</button>
+        <button type="button" id="adminImpactClose" class="admin-icon-button" aria-label="Close dialog"
+          onclick="this.closest('dialog').close('cancel')">×</button>
       </div>
 
       <p style="color: var(--box-text-secondary); font-size: 13px; margin: 8px 0 16px;">
@@ -568,11 +606,13 @@
         <label class="admin-resolution-card selected" id="adminOptionRefundCard">
           <input type="radio" name="adminDeactivateStrategy" value="REFUND_AND_CANCEL" checked>
           <div>
-            <div style="font-weight: 600; color: #ef4444; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+            <div
+              style="font-weight: 600; color: #ef4444; font-size: 13px; display: flex; align-items: center; gap: 6px;">
               Option 1: Emergency Cancel &amp; Auto Full Refund (Recommended for unplanned closure)
             </div>
             <div style="font-size: 12px; color: var(--box-text-muted); margin-top: 4px;">
-              Cancel all future showtimes, automatically refund 100% via payment gateway, notify customers via email, and deactivate facility immediately.
+              Cancel all future showtimes, automatically refund 100% via payment gateway, notify customers via email,
+              and deactivate facility immediately.
             </div>
           </div>
         </label>
@@ -580,19 +620,23 @@
         <label class="admin-resolution-card" id="adminOptionGracefulCard">
           <input type="radio" name="adminDeactivateStrategy" value="GRACEFUL_DECOMMISSION">
           <div>
-            <div style="font-weight: 600; color: #f59e0b; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+            <div
+              style="font-weight: 600; color: #f59e0b; font-size: 13px; display: flex; align-items: center; gap: 6px;">
               ⏳ Option 2: Graceful Sunset / Stop New Bookings (Recommended for planned maintenance)
             </div>
             <div style="font-size: 12px; color: var(--box-text-muted); margin-top: 4px;">
-              Set cinema to STOP_BOOKING to block new reservations while honoring and completing existing booked showtimes.
+              Set cinema to STOP_BOOKING to block new reservations while honoring and completing existing booked
+              showtimes.
             </div>
           </div>
         </label>
       </div>
 
       <div class="d-flex justify-content-end gap-2 mt-4">
-        <button type="button" id="adminImpactCancel" class="admin-button" onclick="this.closest('dialog').close('cancel')">Cancel</button>
-        <button type="button" id="adminImpactSubmit" class="admin-button admin-button-primary" style="background: #ef4444; border-color: #ef4444;">
+        <button type="button" id="adminImpactCancel" class="admin-button"
+          onclick="this.closest('dialog').close('cancel')">Cancel</button>
+        <button type="button" id="adminImpactSubmit" class="admin-button admin-button-primary"
+          style="background: #ef4444; border-color: #ef4444;">
           Confirm Execution
         </button>
       </div>
@@ -605,8 +649,10 @@
       </div>
       <p id="adminConfirmMessage">Are you sure you want to proceed?</p>
       <div class="d-flex justify-content-end gap-2 mt-4">
-        <button type="button" id="adminConfirmCancel" class="admin-button" onclick="this.closest('dialog').close('cancel')">Cancel</button>
-        <button type="button" id="adminConfirmAccept" class="admin-button admin-button-primary" onclick="this.closest('dialog').close('confirm')">Confirm</button>
+        <button type="button" id="adminConfirmCancel" class="admin-button"
+          onclick="this.closest('dialog').close('cancel')">Cancel</button>
+        <button type="button" id="adminConfirmAccept" class="admin-button admin-button-primary"
+          onclick="this.closest('dialog').close('confirm')">Confirm</button>
       </div>
     </dialog>
 
@@ -614,13 +660,15 @@
     <dialog id="adminEditor" class="admin-dialog">
       <div class="admin-dialog-heading">
         <h2 id="adminEditorTitle">Edit Record</h2>
-        <button type="button" id="adminEditorClose" class="admin-icon-button" aria-label="Close dialog" onclick="this.closest('dialog').close()">×</button>
+        <button type="button" id="adminEditorClose" class="admin-icon-button" aria-label="Close dialog"
+          onclick="this.closest('dialog').close()">×</button>
       </div>
       <form id="adminEditorForm" method="dialog">
         <div id="adminFormError" class="admin-field-error mb-3" hidden></div>
         <div id="adminEditorFields" class="admin-form-grid"></div>
         <div class="d-flex justify-content-end gap-2 mt-4">
-          <button type="button" id="adminEditorCancel" class="admin-button" onclick="this.closest('dialog').close()">Cancel</button>
+          <button type="button" id="adminEditorCancel" class="admin-button"
+            onclick="this.closest('dialog').close()">Cancel</button>
           <button type="submit" id="adminEditorSave" class="admin-button admin-button-primary">Save Changes</button>
         </div>
       </form>
@@ -630,10 +678,17 @@
     <dialog id="adminInvoiceModal" class="admin-dialog" style="max-width: 680px; width: 95vw;">
       <div class="admin-dialog-heading">
         <div class="d-flex align-items-center gap-2">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-secondary"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" class="text-secondary">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
           <div>
             <h2 style="margin: 0; font-size: 18px; font-weight: 700;">ELECTRONIC RECEIPT</h2>
-            <p id="adminInvoiceSub" style="margin: 0; font-size: 12px; color: var(--box-text-muted);">BOX Cinema E-Receipt</p>
+            <p id="adminInvoiceSub" style="margin: 0; font-size: 12px; color: var(--box-text-muted);">BOX Cinema
+              E-Receipt</p>
           </div>
         </div>
         <button type="button" class="admin-icon-button" onclick="this.closest('dialog').close()">×</button>
@@ -643,13 +698,16 @@
         <!-- Rendered dynamically -->
       </div>
 
-      <div class="d-flex justify-content-between align-items-center mt-4 pt-3" style="border-top: 1px solid var(--box-border-color);">
+      <div class="d-flex justify-content-between align-items-center mt-4 pt-3"
+        style="border-top: 1px solid var(--box-border-color);">
         <button type="button" class="admin-button" onclick="window.print()">Print Receipt</button>
-        <button type="button" class="admin-button admin-button-primary" onclick="this.closest('dialog').close()">Close</button>
+        <button type="button" class="admin-button admin-button-primary"
+          onclick="this.closest('dialog').close()">Close</button>
       </div>
     </dialog>
   </main>
 
   <script type="module" src="/js/modules/admin.js?v=5.2" th:src="@{/js/modules/admin.js(v='5.2')}"></script>
 </body>
+
 </html>

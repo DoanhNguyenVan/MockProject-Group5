@@ -211,6 +211,10 @@
         <span aria-hidden="true">▤</span>
         <span>Ticket orders</span>
       </a>
+      <a href="/admin/feedbacks" th:href="@{/admin/feedbacks}" th:attr="aria-current=${activeSection == 'feedbacks' ? 'page' : null}">
+        <span aria-hidden="true">✉</span>
+        <span>Customer Feedback</span>
+      </a>
       <a href="/admin/accounts" th:href="@{/admin/accounts}" th:attr="aria-current=${activeSection == 'accounts' ? 'page' : null}">
         <span aria-hidden="true">♙</span>
         <span>Accounts &amp; roles</span>

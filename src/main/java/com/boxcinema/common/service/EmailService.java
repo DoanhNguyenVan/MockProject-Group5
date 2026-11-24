@@ -36,6 +36,19 @@ public interface EmailService {
     }
 
     /**
+     * Sends a response notification email to the customer when an admin replies to their inquiry.
+     */
+    default boolean sendInquiryResponseEmail(String toEmail, String fullName, Long inquiryId, String topic,
+            String adminResponse) {
+        return false;
+    }
+
+    default void sendInquiryResponseEmailAsync(String toEmail, String fullName, Long inquiryId, String topic,
+            String adminResponse) {
+        sendInquiryResponseEmail(toEmail, fullName, inquiryId, topic, adminResponse);
+    }
+
+    /**
      * Sends a 6-digit password reset OTP to the user's email.
      *
      * @param toEmail  recipient email

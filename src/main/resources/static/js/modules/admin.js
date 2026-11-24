@@ -43,7 +43,7 @@ export function initAdmin(doc = document) {
       setTimeout(() => { el.hidden = true; }, 200);
     }
   });
-  
+
   let state = createAdminPreview();
   let page = 1;
   let editingId = null;
@@ -148,6 +148,12 @@ export function initAdmin(doc = document) {
     }
     if (key === 'staff') {
       if (item.group !== lastGroup) { get('adminNavigation').append(element('p', item.group)); lastGroup = item.group; }
+      const feedbackLink = element('a'); feedbackLink.href = '/admin/feedbacks';
+      const fbIcon = element('span', '✉'); fbIcon.setAttribute('aria-hidden', 'true');
+      feedbackLink.append(fbIcon, element('span', 'Customer Feedback'));
+      if (section === 'feedbacks') feedbackLink.setAttribute('aria-current', 'page');
+      get('adminNavigation').append(feedbackLink);
+
       const accountLink = element('a'); accountLink.href = '/admin/accounts';
       const icon = element('span', '♙'); icon.setAttribute('aria-hidden', 'true');
       accountLink.append(icon, element('span', 'Accounts & roles'));
@@ -247,7 +253,7 @@ export function initAdmin(doc = document) {
     const s = String(shape || 'standard').toLowerCase();
     const wrap = element('span', '', `admin-shape-tag shape-tag-${s}`);
     const dot = element('span', '', 'admin-shape-tag-dot');
-    
+
     const shapeLabels = {
       standard: 'STANDARD',
       vip: 'VIP',
@@ -425,7 +431,7 @@ export function initAdmin(doc = document) {
       else if (field.type === 'color') {
         const currentColor = (record[field.key] || '#3b82f6').toLowerCase();
         const colorWrapper = element('div', '', 'admin-color-field-wrapper');
-        
+
         input = element('input');
         input.type = 'color';
         input.id = `adminField-${field.key}`;
@@ -544,7 +550,7 @@ export function initAdmin(doc = document) {
 
   function closeEditor() { get('adminEditor').close(); }
   get('adminEditorClose').addEventListener('click', closeEditor); get('adminEditorCancel').addEventListener('click', closeEditor);
-  
+
   get('adminEditorForm').addEventListener('submit', async event => {
     event.preventDefault();
     const isNewRoom = !editingId && section === 'rooms';
@@ -617,8 +623,8 @@ export function initAdmin(doc = document) {
     const modal = get('adminDeactivateSafetyModal');
     if (!modal) return;
 
-    get('adminImpactModalTitle').textContent = sec === 'cinemas' 
-      ? `Deactivate facility "${record.cinemaName || ''}"` 
+    get('adminImpactModalTitle').textContent = sec === 'cinemas'
+      ? `Deactivate facility "${record.cinemaName || ''}"`
       : `Deactivate room "${record.roomName || ''}"`;
 
     get('adminImpactBookingsCount').textContent = impactData.totalBookings;
@@ -719,12 +725,12 @@ export function initAdmin(doc = document) {
   if (get('adminCinemaFilter')) {
     get('adminCinemaFilter').addEventListener('change', () => { page = 1; renderCatalog(); });
   }
-  get('adminClearFilters').addEventListener('click', () => { 
-    get('adminSearch').value = ''; 
-    get('adminFilter').value = ''; 
+  get('adminClearFilters').addEventListener('click', () => {
+    get('adminSearch').value = '';
+    get('adminFilter').value = '';
     if (get('adminCinemaFilter')) get('adminCinemaFilter').value = '';
-    page = 1; 
-    renderCatalog(); 
+    page = 1;
+    renderCatalog();
   });
   get('adminPrevious').addEventListener('click', () => { page--; renderCatalog(); });
   get('adminNext').addEventListener('click', () => { page++; renderCatalog(); });
@@ -955,7 +961,7 @@ export function initAdmin(doc = document) {
     report = summarizeSales(state.sales, from, to, get('adminReportCinema').value);
     renderMetrics('adminReportMetrics', report); renderChart('adminReportChart', report); get('adminReportBody').replaceChildren();
     for (const item of report.movies) {
-      const row = element('tr'); [recordLabel('movies', state.movies.find(movie => movie.id === item.movieId), state), item.tickets, formatMoney(item.revenue), `${(item.revenue / (report.revenue || 1) * 100).toFixed(1)}%`].forEach(value => row.append(element('td', value)));
+      const row = element('tr');[recordLabel('movies', state.movies.find(movie => movie.id === item.movieId), state), item.tickets, formatMoney(item.revenue), `${(item.revenue / (report.revenue || 1) * 100).toFixed(1)}%`].forEach(value => row.append(element('td', value)));
       get('adminReportBody').append(row);
     }
     get('adminReportEmpty').hidden = report.orders > 0; get('adminExportReport').disabled = !report.orders;
@@ -1580,7 +1586,7 @@ export function initAdmin(doc = document) {
     const cinema = state.cinemas?.find(c => c.id === room?.cinemaId);
     updateSeatPaintPalette(room?.roomType || '');
     seatDraft = room ? structuredClone(state.layouts[id] || createSeatLayout(8, 10, state.pricing[0]?.id)) : [];
-      seatDraft.forEach((s, idx) => { if (s.col === undefined || s.col === null) s.col = s.number || (idx + 1); });
+    seatDraft.forEach((s, idx) => { if (s.col === undefined || s.col === null) s.col = s.number || (idx + 1); });
     get('adminSeatTitle').textContent = room ? `${cleanRoomLabel(room)} · ${cinema ? cinema.cinemaName : ''} — Seat Matrix` : 'Select a room';
     get('adminSeatRows').value = new Set(seatDraft.map(seat => seat.row)).size || 8;
     get('adminSeatColumns').value = seatDraft.length ? Math.max(...seatDraft.map(seat => seat.number)) : 10;
