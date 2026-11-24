@@ -286,6 +286,32 @@
               </div>
             </div>
 
+            <!-- Room Physical Specifications Bar (1 cell = 1m x 1m) -->
+            <div id="adminRoomDimensionsBar" class="admin-room-dimensions-bar mb-3">
+              <div class="dim-item">
+                <span class="dim-badge-tag">DIMENSIONS</span>
+                <strong id="dimRoomSize" class="dim-highlight">10m × 6m</strong>
+              </div>
+              <div class="dim-divider"></div>
+              <div class="dim-item">
+                <span class="dim-badge-tag">LENGTH</span>
+                <strong id="dimRoomLength" class="dim-highlight">10 m</strong>
+                <span id="dimRoomLengthCols" class="dim-sub">(10 cols × 1m)</span>
+              </div>
+              <div class="dim-divider"></div>
+              <div class="dim-item">
+                <span class="dim-badge-tag">WIDTH</span>
+                <strong id="dimRoomWidth" class="dim-highlight">6 m</strong>
+                <span id="dimRoomWidthRows" class="dim-sub">(6 rows × 1m)</span>
+              </div>
+              <div class="dim-divider"></div>
+              <div class="dim-item">
+                <span class="dim-badge-tag tag-area">FLOOR AREA</span>
+                <strong id="dimRoomArea" class="dim-highlight-area">60 m²</strong>
+                <span class="dim-sub">(1 cell = 1m²)</span>
+              </div>
+            </div>
+
             <!-- Unified Row 2: Visual Palette & Contextual Presets -->
             <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between mb-3">
               <div class="d-flex flex-wrap gap-2 align-items-center">
@@ -309,7 +335,19 @@
                 <div class="admin-screen-text">SCREEN THIS WAY</div>
               </div>
 
+              <!-- Top Dimension Ruler: Length / Width in meters -->
+              <div class="admin-canvas-ruler-horizontal">
+                <span class="ruler-line"></span>
+                <span id="canvasRulerLength" class="ruler-text">Length: 10m (10 columns)</span>
+                <span class="ruler-line"></span>
+              </div>
+
               <div id="adminSeatRowsContainer" class="admin-seat-rows-container"></div>
+
+              <!-- Bottom Dimension Summary -->
+              <div class="admin-canvas-dimension-footer">
+                <span id="canvasFooterSummary">Dimensions: 10m × 6m · Length: 10m · Width: 6m · Floor Area: 60 m² (1 cell = 1m × 1m)</span>
+              </div>
 
               <!-- Legend matching the user image -->
               <div id="adminSeatLegendBox" class="admin-seat-legend-box mt-4">

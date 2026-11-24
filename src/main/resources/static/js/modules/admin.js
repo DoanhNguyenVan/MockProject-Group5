@@ -1169,6 +1169,38 @@ export function initAdmin(doc = document) {
     return { valid: uniqueErrors.length === 0, errors: uniqueErrors, invalidSeatKeys };
   }
 
+  function updateRoomDimensions(rows, cols) {
+    const r = Math.max(1, Number(rows) || 1);
+    const c = Math.max(1, Number(cols) || 1);
+    const area = r * c;
+
+    const dimRoomSize = get('dimRoomSize');
+    if (dimRoomSize) dimRoomSize.textContent = `${c}m × ${r}m`;
+
+    const dimRoomLength = get('dimRoomLength');
+    if (dimRoomLength) dimRoomLength.textContent = `${c} m`;
+
+    const dimRoomLengthCols = get('dimRoomLengthCols');
+    if (dimRoomLengthCols) dimRoomLengthCols.textContent = `(${c} cols × 1m)`;
+
+    const dimRoomWidth = get('dimRoomWidth');
+    if (dimRoomWidth) dimRoomWidth.textContent = `${r} m`;
+
+    const dimRoomWidthRows = get('dimRoomWidthRows');
+    if (dimRoomWidthRows) dimRoomWidthRows.textContent = `(${r} rows × 1m)`;
+
+    const dimRoomArea = get('dimRoomArea');
+    if (dimRoomArea) dimRoomArea.textContent = `${area} m²`;
+
+    const canvasRulerLength = get('canvasRulerLength');
+    if (canvasRulerLength) canvasRulerLength.textContent = `Length: ${c}m (${c} columns)`;
+
+    const canvasFooterSummary = get('canvasFooterSummary');
+    if (canvasFooterSummary) {
+      canvasFooterSummary.textContent = `Dimensions: ${c}m × ${r}m · Length: ${c}m · Width: ${r}m · Floor Area: ${area} m² (1 cell = 1m × 1m)`;
+    }
+  }
+
   function renderSeatGrid() {
     const container = get('adminSeatRowsContainer');
     if (!container) return;
@@ -1383,6 +1415,15 @@ export function initAdmin(doc = document) {
     }
 
     renderAdminSeatLegend();
+
+    let maxCols = 0;
+    for (const s of seatDraft) {
+      const c = Number(s.col || s.number || 0);
+      if (c > maxCols) maxCols = c;
+    }
+    if (!maxCols) maxCols = Number(get('adminSeatColumns')?.value) || 10;
+    const rowCount = sortedRows.length || Number(get('adminSeatRows')?.value) || 6;
+    updateRoomDimensions(rowCount, maxCols);
   }
 
   const CUSTOM_PALETTE = [
@@ -1606,6 +1647,13 @@ export function initAdmin(doc = document) {
       renderSeatGrid();
       notify(`Generated ${rows}×${cols} grid with all positions set to Unavailable.`);
     });
+  });
+
+  get('adminSeatRows')?.addEventListener('input', () => {
+    updateRoomDimensions(get('adminSeatRows')?.value, get('adminSeatColumns')?.value);
+  });
+  get('adminSeatColumns')?.addEventListener('input', () => {
+    updateRoomDimensions(get('adminSeatRows')?.value, get('adminSeatColumns')?.value);
   });
 
   // Preset: Apply Room Standard Layout
