@@ -18,18 +18,14 @@ import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
 @Service
 public class EmailServiceImpl implements EmailService {
@@ -37,7 +33,7 @@ public class EmailServiceImpl implements EmailService {
   private static final Logger log = LoggerFactory.getLogger(EmailServiceImpl.class);
 
   private final JavaMailSender mailSender;
-  private final RestTemplate restTemplate;
+  private final RestClient restClient;
 
   @Value("${spring.mail.host:smtp.gmail.com}")
   private String smtpHost;
@@ -51,11 +47,11 @@ public class EmailServiceImpl implements EmailService {
   @Value("${app.mail.from-name:BOX Cinema}")
   private String fromName;
 
-  @Value("${app.mail.brevo.api-key:${BREVO_API_KEY:}}")
-  private String brevoApiKey;
-
-  @Value("${app.mail.resend.api-key:${RESEND_API_KEY:}}")
+  @Value("${resend.api.key:${RESEND_API_KEY:}}")
   private String resendApiKey;
+
+  @Value("${resend.from.email:${RESEND_FROM_EMAIL:BOX Cinema <onboarding@resend.dev>}}")
+  private String resendFromEmail;
 
   public EmailServiceImpl(JavaMailSender mailSender) {
     this(mailSender, null);
@@ -63,11 +59,9 @@ public class EmailServiceImpl implements EmailService {
 
   @Autowired
   public EmailServiceImpl(@Autowired(required = false) JavaMailSender mailSender,
-                          @Autowired(required = false) RestTemplateBuilder restTemplateBuilder) {
+                          @Autowired(required = false) RestClient.Builder restClientBuilder) {
     this.mailSender = mailSender;
-    this.restTemplate = (restTemplateBuilder != null)
-        ? restTemplateBuilder.setConnectTimeout(Duration.ofSeconds(10)).setReadTimeout(Duration.ofSeconds(15)).build()
-        : new RestTemplate();
+    this.restClient = (restClientBuilder != null) ? restClientBuilder.build() : RestClient.create();
   }
 
   @PostConstruct
@@ -226,31 +220,49 @@ public class EmailServiceImpl implements EmailService {
       return false;
     }
 
-    // 1. Try Brevo HTTPS REST API (Port 443 - Bypasses Render outbound SMTP blocking)
-    if (brevoApiKey != null && !brevoApiKey.isBlank()) {
+    // 1. Send via Resend HTTP REST API (Port 443 - Bypasses Render cloud SMTP blocking)
+    if (resendApiKey != null && !resendApiKey.trim().isBlank()) {
       try {
-        if (sendViaBrevoApi(toEmail, toName, subject, htmlBody)) {
+        String fromAddress = (resendFromEmail != null && !resendFromEmail.isBlank())
+            ? resendFromEmail.trim()
+            : "BOX Cinema <onboarding@resend.dev>";
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("from", fromAddress);
+        body.put("to", List.of(toEmail.trim()));
+        body.put("subject", subject);
+        body.put("html", htmlBody);
+
+        ResponseEntity<String> response = restClient.post()
+            .uri("https://api.resend.com/emails")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + resendApiKey.trim())
+            .header(HttpHeaders.USER_AGENT, "BoxCinemaApp/1.0")
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(body)
+            .retrieve()
+            .toEntity(String.class);
+
+        if (response.getStatusCode().is2xxSuccessful()) {
+          log.info("Successfully dispatched email '{}' to {} via Resend HTTP API.", subject, toEmail);
           return true;
+        } else {
+          log.error("Failed to dispatch email '{}' to {} via Resend. HTTP Status: {}, Response: {}",
+              subject, toEmail, response.getStatusCode(), response.getBody());
+          return false;
         }
+      } catch (RestClientResponseException ex) {
+        log.error("Failed to dispatch email '{}' to {} via Resend. HTTP Status: {}, Response: {}",
+            subject, toEmail, ex.getStatusCode(), ex.getResponseBodyAsString(), ex);
+        return false;
       } catch (Exception ex) {
-        log.warn("Brevo HTTP API dispatch failed: {}. Falling back to next method...", ex.getMessage());
+        log.error("Failed to dispatch email '{}' to {} via Resend: {}", subject, toEmail, ex.getMessage(), ex);
+        return false;
       }
     }
 
-    // 2. Try Resend HTTPS REST API (Port 443 - Bypasses Render outbound SMTP blocking)
-    if (resendApiKey != null && !resendApiKey.isBlank()) {
-      try {
-        if (sendViaResendApi(toEmail, toName, subject, htmlBody)) {
-          return true;
-        }
-      } catch (Exception ex) {
-        log.warn("Resend HTTP API dispatch failed: {}. Falling back to next method...", ex.getMessage());
-      }
-    }
-
-    // 3. Fallback to JavaMailSender (SMTP on Port 465 / 587)
+    // 2. Fallback to JavaMailSender (SMTP on Port 465 / 587)
     if (!isSmtpConfigured()) {
-      log.info("SMTP credentials or JavaMailSender are not configured. Skipping live email dispatch to {}.", toEmail);
+      log.info("SMTP credentials and Resend API key are not configured. Skipping live email dispatch to {}.", toEmail);
       return false;
     }
 
@@ -289,58 +301,6 @@ public class EmailServiceImpl implements EmailService {
           subject, toEmail, smtpHost, ex.getMessage(), ex);
       return false;
     }
-  }
-
-  private boolean sendViaBrevoApi(String toEmail, String toName, String subject, String htmlBody) {
-    String url = "https://api.brevo.com/v3/smtp/email";
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    headers.set("api-key", brevoApiKey.trim());
-    headers.setAccept(List.of(MediaType.APPLICATION_JSON));
-
-    String senderEmail = (smtpUsername != null && !smtpUsername.isBlank()) ? smtpUsername.trim() : "candydark05@gmail.com";
-    String senderName = (fromName != null && !fromName.isBlank()) ? fromName.trim() : "BOX Cinema";
-
-    Map<String, Object> payload = new LinkedHashMap<>();
-    payload.put("sender", Map.of("name", senderName, "email", senderEmail));
-    payload.put("to", List.of(Map.of("email", toEmail.trim(), "name", (toName != null && !toName.isBlank()) ? toName.trim() : "Customer")));
-    payload.put("subject", subject);
-    payload.put("htmlContent", htmlBody);
-
-    HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, headers);
-    ResponseEntity<Map<String, Object>> response = restTemplate.exchange(url, HttpMethod.POST, entity, new ParameterizedTypeReference<>() {});
-
-    if (response.getStatusCode().is2xxSuccessful()) {
-      log.info("Successfully dispatched email '{}' to {} via Brevo HTTP API (Port 443).", subject, toEmail);
-      return true;
-    }
-    return false;
-  }
-
-  private boolean sendViaResendApi(String toEmail, String toName, String subject, String htmlBody) {
-    String url = "https://api.resend.com/emails";
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    headers.setBearerAuth(resendApiKey.trim());
-    headers.setAccept(List.of(MediaType.APPLICATION_JSON));
-
-    String senderName = (fromName != null && !fromName.isBlank()) ? fromName.trim() : "BOX Cinema";
-    String fromField = senderName + " <onboarding@resend.dev>";
-
-    Map<String, Object> payload = new LinkedHashMap<>();
-    payload.put("from", fromField);
-    payload.put("to", List.of(toEmail.trim()));
-    payload.put("subject", subject);
-    payload.put("html", htmlBody);
-
-    HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, headers);
-    ResponseEntity<Map<String, Object>> response = restTemplate.exchange(url, HttpMethod.POST, entity, new ParameterizedTypeReference<>() {});
-
-    if (response.getStatusCode().is2xxSuccessful()) {
-      log.info("Successfully dispatched email '{}' to {} via Resend HTTP API (Port 443).", subject, toEmail);
-      return true;
-    }
-    return false;
   }
 
   private boolean isSmtpConfigured() {
