@@ -40,7 +40,26 @@ html[data-theme="light"] .admin-page { --admin-green: #18704b; --admin-vip: #8c6
   margin-bottom: 16px;
   flex-shrink: 0;
 }
-.admin-workspace-mark { display: grid; place-items: center; width: 36px; height: 38px; background: var(--box-accent); color: var(--box-text-on-accent); border-radius: 9px; font-size: 20px; }
+.admin-workspace-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 38px;
+  background: #181920;
+  border: 1px solid rgba(236, 28, 36, 0.4);
+  border-radius: 9px;
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(236, 28, 36, 0.2);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.admin-workspace-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
 .admin-workspace-label small { display: block; color: var(--box-text-muted); font-size: 9px; letter-spacing: 1.6px; margin-top: 3px; }
 .admin-navigation > p { font-size: 9px; letter-spacing: 1.5px; color: var(--box-text-muted); margin: 22px 12px 9px; font-weight: 700; }
 .admin-navigation > p:first-child { margin-top: 0; }
