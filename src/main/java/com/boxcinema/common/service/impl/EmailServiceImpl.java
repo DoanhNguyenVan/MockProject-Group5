@@ -235,8 +235,8 @@ public class EmailServiceImpl implements EmailService {
       log.info("Successfully dispatched email '{}' to {} via {} (JavaMailSender).", subject, toEmail, smtpHost);
       return true;
     } catch (MailException | MessagingException | UnsupportedEncodingException ex) {
-      log.warn("Failed to dispatch email '{}' to {} via {} (JavaMailSender): {}",
-          subject, toEmail, smtpHost, ex.getMessage());
+      log.error("Failed to dispatch email '{}' to {} via {} (JavaMailSender): {}",
+          subject, toEmail, smtpHost, ex.getMessage(), ex);
       return false;
     }
   }
