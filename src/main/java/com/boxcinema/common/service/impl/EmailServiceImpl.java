@@ -47,6 +47,18 @@ public class EmailServiceImpl implements EmailService {
   @Value("${app.mail.from-name:BOX Cinema}")
   private String fromName;
 
+  @Value("${mailjet.api.key:${MAILJET_API_KEY:}}")
+  private String mailjetApiKey;
+
+  @Value("${mailjet.secret.key:${MAILJET_SECRET_KEY:}}")
+  private String mailjetSecretKey;
+
+  @Value("${mailjet.sender.email:${MAILJET_SENDER_EMAIL:}}")
+  private String mailjetSenderEmail;
+
+  @Value("${mailjet.sender.name:BOX Cinema}")
+  private String mailjetSenderName;
+
   @Value("${resend.api.key:${RESEND_API_KEY:}}")
   private String resendApiKey;
 
@@ -220,7 +232,59 @@ public class EmailServiceImpl implements EmailService {
       return false;
     }
 
-    // 1. Send via Resend HTTP REST API (Port 443 - Bypasses Render cloud SMTP blocking)
+    // 1. Send via Mailjet Send API v3.1 (Port 443 - Bypasses Render cloud SMTP blocking)
+    if (mailjetApiKey != null && !mailjetApiKey.trim().isBlank()
+        && mailjetSecretKey != null && !mailjetSecretKey.trim().isBlank()) {
+      try {
+        String senderEmail = (mailjetSenderEmail != null && !mailjetSenderEmail.isBlank())
+            ? mailjetSenderEmail.trim()
+            : ((smtpUsername != null && !smtpUsername.isBlank()) ? smtpUsername.trim() : "candydark05@gmail.com");
+        String senderName = (mailjetSenderName != null && !mailjetSenderName.isBlank())
+            ? mailjetSenderName.trim()
+            : ((fromName != null && !fromName.isBlank()) ? fromName.trim() : "BOX Cinema");
+
+        Map<String, Object> fromMap = new LinkedHashMap<>();
+        fromMap.put("Email", senderEmail);
+        fromMap.put("Name", senderName);
+
+        Map<String, Object> toMap = new LinkedHashMap<>();
+        toMap.put("Email", toEmail.trim());
+
+        Map<String, Object> message = new LinkedHashMap<>();
+        message.put("From", fromMap);
+        message.put("To", List.of(toMap));
+        message.put("Subject", subject);
+        message.put("HTMLPart", htmlBody);
+
+        Map<String, Object> body = Map.of("Messages", List.of(message));
+
+        ResponseEntity<String> response = restClient.post()
+            .uri("https://api.mailjet.com/v3.1/send")
+            .headers(headers -> headers.setBasicAuth(mailjetApiKey.trim(), mailjetSecretKey.trim()))
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(body)
+            .retrieve()
+            .toEntity(String.class);
+
+        if (response.getStatusCode().is2xxSuccessful()) {
+          log.info("Successfully dispatched email '{}' to {} via Mailjet HTTP API.", subject, toEmail);
+          return true;
+        } else {
+          log.error("Failed to dispatch email '{}' to {} via Mailjet. HTTP Status: {}, Response: {}",
+              subject, toEmail, response.getStatusCode(), response.getBody());
+          return false;
+        }
+      } catch (RestClientResponseException ex) {
+        log.error("Failed to dispatch email '{}' to {} via Mailjet. HTTP Status: {}, Response: {}",
+            subject, toEmail, ex.getStatusCode(), ex.getResponseBodyAsString(), ex);
+        return false;
+      } catch (Exception ex) {
+        log.error("Failed to dispatch email '{}' to {} via Mailjet: {}", subject, toEmail, ex.getMessage(), ex);
+        return false;
+      }
+    }
+
+    // 2. Send via Resend HTTP REST API (Port 443 - Bypasses Render cloud SMTP blocking)
     if (resendApiKey != null && !resendApiKey.trim().isBlank()) {
       try {
         String fromAddress = (resendFromEmail != null && !resendFromEmail.isBlank())
