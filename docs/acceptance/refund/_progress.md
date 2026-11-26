@@ -380,3 +380,42 @@ SCRATCH_DB_DROPPED=true
   - `src/main/java/com/boxcinema/refund/service/RefundAppealService.java`
   - `src/test/java/com/boxcinema/refund/Stage2GovernanceLimitsAppealsSecurityTest.java`
   - `docs/acceptance/refund/_progress.md`
+- **Stage 2 Commit Hash:** `b0bdab9` (`b0bdab99118d8380b4a0ac5c9af7112a6513c1c6`) on branch `feat/refund-payos-payout`
+  - Commit message: `feat(refund): complete Stage 2 governance limits, atomic reservations, appeals, upload security, and rate limits`
+  - Staged & committed ONLY the 30 newly created Stage 2 files + `docs/acceptance/refund/_progress.md` (`31` files total); pre-existing dirty tracked files (`91` modified `M` entries carrying pre-Stage-0 user diffs) remain preserved in the working tree.
+
+---
+
+## Stage 3 Gate Closure — `PASS` (`2026-11-27T06:50:56+07:00`)
+
+- **Gate Decision:** `PASS` (Coordinator `#49`, following Independent QA `#48`)
+- **Stage 3 Resolved Defect Summary (caught by `@qa-verifier` `#45` & fixed by `@payos-researcher` `#46`):**
+  - **`RECIPIENT_SNAPSHOT_TAMPERED` Audit Durability (`PayOsPayoutService.java`, `RefundAuditLogService`):** On recipient snapshot tamper detection (`409 RECIPIENT_SNAPSHOT_TAMPERED`), the outer `409` exception rolled back the transaction-bound audit write; fixed by persisting the `PAYOUT_BLOCKED_TAMPER` audit entry via `PROPAGATION_REQUIRES_NEW` so the tamper audit survives the rollback.
+- **Stage 3 Test & Regression Summary (`Tests run: 70, Failures: 0, Errors: 0, Skipped: 0 — BUILD SUCCESS`, ~`77 s`, `LIVE_PAYOUT_ENABLED=false`, `PAYOS_PAYOUT_MODE=MOCK`):**
+  - `Stage3PayOsPayoutAdapterAndFeePolicyTest`: **6/6 PASS** (original-payment fallback, `LIVE_PAYOUT_ENABLED=false` kill-switch, all 8 fee assessment scenarios & `PAYOUT_BLOCKED` reservation retention, response `x-signature` fail-closed verification, `UNKNOWN`/timeout reconciliation & `ON_HOLD`/`PARTIAL_COMPLETED` & `RECIPIENT_SNAPSHOT_TAMPERED`, webhook constant-time HMAC + replay idempotency, one-click & independent per-item bulk payout preview/execution)
+  - `Stage2GovernanceLimitsAppealsSecurityTest`: **6/6 PASS**
+  - `Stage1VoucherCalculationAndDeadlineTest`: **10/10 PASS**
+  - `PurchaseSnapshotServiceTest`: **3/3 PASS**
+  - `PayOsPayoutSignatureAndBankSecurityTest`: **6/6 PASS**
+  - `PromotionServiceTest`: **5/5 PASS**
+  - `PayOsCollectionAndBookingIntegrationTest`: **3/3 PASS**
+  - `RefundAndIncidentIntegrationTest`: **8/8 PASS**
+  - `RefundPayoutBatchWorkflowIntegrationTest`: **5/5 PASS**
+  - `PayOsPayoutWebhookResilienceIntegrationTest`: **2/2 PASS**
+  - `PayOsPayoutAndRefundFullAuditIntegrationTest`: **5/5 PASS**
+  - `CustomerBankAccountAndPayoutIntegrationTest`: **6/6 PASS**
+  - `Wave8RefundAndSecurityIntegrationTest`: **5/5 PASS**
+- **Selective Commit Scope (12 newly created Stage 3 files + `docs/acceptance/refund/_progress.md`):**
+  - `src/main/java/com/boxcinema/common/enums/PayoutFeeClassification.java`
+  - `src/main/java/com/boxcinema/common/entity/PayoutFeeAssessmentEntity.java`
+  - `src/main/java/com/boxcinema/common/repository/PayoutFeeAssessmentRepository.java`
+  - `src/main/java/com/boxcinema/common/entity/PayoutReconciliationLog.java`
+  - `src/main/java/com/boxcinema/common/repository/PayoutReconciliationLogRepository.java`
+  - `src/main/java/com/boxcinema/refund/provider/PayoutProviderAdapter.java`
+  - `src/main/java/com/boxcinema/refund/provider/PayoutFeeAssessment.java`
+  - `src/main/java/com/boxcinema/refund/provider/PayoutExecutionCommand.java`
+  - `src/main/java/com/boxcinema/refund/provider/PayoutExecutionResult.java`
+  - `src/main/java/com/boxcinema/refund/provider/PayoutReconciliationResult.java`
+  - `src/main/java/com/boxcinema/refund/provider/PayOsPayoutProviderAdapter.java`
+  - `src/test/java/com/boxcinema/refund/Stage3PayOsPayoutAdapterAndFeePolicyTest.java`
+  - `docs/acceptance/refund/_progress.md`
