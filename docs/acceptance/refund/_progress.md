@@ -331,3 +331,52 @@ SCRATCH_DB_DROPPED=true
   - `src/test/java/com/boxcinema/refund/Stage1VoucherCalculationAndDeadlineTest.java`
   - `docs/acceptance/refund/_progress.md`
   - `docs/acceptance/refund/RESUME_SWARM.md`
+- **Stage 1 Commit Hash:** `03efb5b` (`03efb5bbb82ae88278e756a7bd6ea1b9fe807466`) on branch `feat/refund-payos-payout`
+  - Commit message: `feat(refund): complete Stage 1 migration v7, voucher invariant, calculations, and deadlines`
+  - Staged & committed ONLY the 13 newly created Stage 1 files + docs listed above.
+  - **Dirty-Tree Preservation Note:** Edits to pre-existing dirty tracked files (`91` modified `M` entries containing pre-Stage-0 user diffs alongside Stage 1 updates) and pre-existing untracked/deleted entries remain preserved in the working tree to avoid mixing pre-Stage-0 user diffs.
+
+---
+
+## Stage 2 Gate Closure — `PASS` (`2026-11-27T06:23:02+07:00`)
+
+- **Gate Decision:** `PASS` (Coordinator `#40`, following Independent QA `#39`)
+- **Stage 2 Resolved Defects Summary (caught by `@qa-verifier` `#35`, `#37` & fixed by `@backend-core` `#36`, `#38`):**
+  1. **InnoDB `REPEATABLE READ` Quota Bypass (`RefundLimitService.java`, `RefundLimitReservationRepository.java`):** Plain `SELECT SUM(...)` queries read frozen pre-lock MVCC snapshots; fixed using InnoDB `FOR SHARE` current reads and `findByActiveLockKeyForUpdate` while holding deterministic `TreeMap`-sorted `FOR UPDATE` locks on `refund_limit_buckets`.
+  2. **Rate-Limit Placement & Guest Duplicate-Submit Race (`RefundService.java`):** `checkRefundCreateLimit` previously ran before stateless payload/bank validation and throttled unauthenticated guest `purchaseEmail`; fixed by moving 2-arg `checkRefundCreateLimit(loggedInUserId, clientIp)` after stateless payload/bank/evidence validation.
+  3. **AB-BA InnoDB Deadlock on Concurrent Admin Batch Payouts (`RefundLimitService.java`):** `commitReservationsOnPayoutSuccess` locked `refund_limit_reservations` before `refund_limit_buckets`, deadlocking against `revalidateAndRolloverBeforePayout`; fixed by enforcing canonical lock order (`refund_limit_buckets` `FOR UPDATE` in `TreeMap` order FIRST -> `refund_limit_reservations` `FOR UPDATE`/`FOR SHARE` SECOND).
+- **Stage 2 Test & Regression Summary (`64/64 PASS`, `0` Failures, `0` Errors, `LIVE_PAYOUT_ENABLED=false`, `PAYOS_PAYOUT_MODE=MOCK`):**
+  - `mvn test "-Dtest=Stage2GovernanceLimitsAppealsSecurityTest"` -> **6/6 PASS** (`BUILD SUCCESS`, `38.35 s`)
+  - `mvn test "-Dtest=Stage1VoucherCalculationAndDeadlineTest,PurchaseSnapshotServiceTest,PayOsPayoutSignatureAndBankSecurityTest,PromotionServiceTest,PayOsCollectionAndBookingIntegrationTest,RefundAndIncidentIntegrationTest,RefundPayoutBatchWorkflowIntegrationTest,PayOsPayoutWebhookResilienceIntegrationTest,PayOsPayoutAndRefundFullAuditIntegrationTest,CustomerBankAccountAndPayoutIntegrationTest,Wave8RefundAndSecurityIntegrationTest"` -> **58/58 PASS** (`BUILD SUCCESS`, `59.40 s`)
+- **Selective Commit Scope (30 newly created Stage 2 files + `docs/acceptance/refund/_progress.md`):**
+  - `src/main/java/com/boxcinema/common/entity/RefundEvidenceFile.java`
+  - `src/main/java/com/boxcinema/common/repository/RefundEvidenceFileRepository.java`
+  - `src/main/java/com/boxcinema/refund/service/EvidenceMalwareScanner.java`
+  - `src/main/java/com/boxcinema/refund/service/RefundRateLimitService.java`
+  - `src/main/java/com/boxcinema/refund/controller/RefundEvidenceApiController.java`
+  - `src/main/java/com/boxcinema/common/enums/RefundAppealStatus.java`
+  - `src/main/java/com/boxcinema/common/entity/RefundLimitConfig.java`
+  - `src/main/java/com/boxcinema/common/repository/RefundLimitConfigRepository.java`
+  - `src/main/java/com/boxcinema/common/entity/RefundLimitConfigHistory.java`
+  - `src/main/java/com/boxcinema/common/repository/RefundLimitConfigHistoryRepository.java`
+  - `src/main/java/com/boxcinema/common/entity/RefundLimitBucket.java`
+  - `src/main/java/com/boxcinema/common/repository/RefundLimitBucketRepository.java`
+  - `src/main/java/com/boxcinema/common/entity/RefundLimitReservation.java`
+  - `src/main/java/com/boxcinema/common/repository/RefundLimitReservationRepository.java`
+  - `src/main/java/com/boxcinema/common/entity/RefundLimitOverride.java`
+  - `src/main/java/com/boxcinema/common/repository/RefundLimitOverrideRepository.java`
+  - `src/main/java/com/boxcinema/common/entity/RefundAppeal.java`
+  - `src/main/java/com/boxcinema/common/repository/RefundAppealRepository.java`
+  - `src/main/java/com/boxcinema/common/entity/RefundAppealHistory.java`
+  - `src/main/java/com/boxcinema/common/repository/RefundAppealHistoryRepository.java`
+  - `src/main/java/com/boxcinema/refund/dto/RefundLimitConfigDto.java`
+  - `src/main/java/com/boxcinema/refund/dto/RefundLimitUpdateRequestDto.java`
+  - `src/main/java/com/boxcinema/refund/dto/RefundLimitSummaryDto.java`
+  - `src/main/java/com/boxcinema/refund/dto/RefundAppealSubmitRequestDto.java`
+  - `src/main/java/com/boxcinema/refund/dto/RefundAppealDecisionRequestDto.java`
+  - `src/main/java/com/boxcinema/refund/dto/RefundAppealResponseDto.java`
+  - `src/main/java/com/boxcinema/refund/dto/IncidentUpdateRequestDto.java`
+  - `src/main/java/com/boxcinema/refund/service/RefundLimitService.java`
+  - `src/main/java/com/boxcinema/refund/service/RefundAppealService.java`
+  - `src/test/java/com/boxcinema/refund/Stage2GovernanceLimitsAppealsSecurityTest.java`
+  - `docs/acceptance/refund/_progress.md`
