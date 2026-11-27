@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -226,11 +228,43 @@ public class EmailServiceImpl implements EmailService {
             "Google sign-in has been removed from your BOX Cinema account. You can continue signing in using your email and password."));
   }
 
+  @Override
+  public boolean sendTicketConfirmationEmail(
+      String toEmail,
+      String subject,
+      String htmlBody,
+      byte[] qrPngBytes) {
+    return sendHtmlEmail(toEmail, null, subject, htmlBody, "bookingQrCode", qrPngBytes, "ticket-qr.png");
+  }
+
+  @Override
+  public boolean isMailTransportConfigured() {
+    boolean hasMailjet = mailjetApiKey != null && !mailjetApiKey.trim().isBlank()
+        && mailjetSecretKey != null && !mailjetSecretKey.trim().isBlank();
+    boolean hasResend = resendApiKey != null && !resendApiKey.trim().isBlank();
+    return hasMailjet || hasResend || isSmtpConfigured();
+  }
+
   private boolean sendHtmlEmail(String toEmail, String toName, String subject, String htmlBody) {
+    return sendHtmlEmail(toEmail, toName, subject, htmlBody, null, null, null);
+  }
+
+  private boolean sendHtmlEmail(
+      String toEmail,
+      String toName,
+      String subject,
+      String htmlBody,
+      String inlineContentId,
+      byte[] inlinePngBytes,
+      String inlineFilename) {
     if (toEmail == null || toEmail.isBlank()) {
       log.warn("Cannot send email: recipient address is blank.");
       return false;
     }
+
+    boolean hasInlineImage = inlineContentId != null && !inlineContentId.isBlank()
+        && inlinePngBytes != null && inlinePngBytes.length > 0;
+    String safeInlineFilename = (inlineFilename != null && !inlineFilename.isBlank()) ? inlineFilename : "inline.png";
 
     // 1. Send via Mailjet Send API v3.1 (Port 443 - Bypasses Render cloud SMTP blocking)
     if (mailjetApiKey != null && !mailjetApiKey.trim().isBlank()
@@ -255,6 +289,14 @@ public class EmailServiceImpl implements EmailService {
         message.put("To", List.of(toMap));
         message.put("Subject", subject);
         message.put("HTMLPart", htmlBody);
+        if (hasInlineImage) {
+          message.put("InlinedAttachments", List.of(Map.of(
+              "ContentType", "image/png",
+              "Filename", safeInlineFilename,
+              "ContentID", inlineContentId,
+              "Base64Content", Base64.getEncoder().encodeToString(inlinePngBytes)
+          )));
+        }
 
         Map<String, Object> body = Map.of("Messages", List.of(message));
 
@@ -296,6 +338,13 @@ public class EmailServiceImpl implements EmailService {
         body.put("to", List.of(toEmail.trim()));
         body.put("subject", subject);
         body.put("html", htmlBody);
+        if (hasInlineImage) {
+          body.put("attachments", List.of(Map.of(
+              "filename", safeInlineFilename,
+              "content", Base64.getEncoder().encodeToString(inlinePngBytes),
+              "content_id", inlineContentId
+          )));
+        }
 
         ResponseEntity<String> response = restClient.post()
             .uri("https://api.resend.com/emails")
@@ -324,7 +373,7 @@ public class EmailServiceImpl implements EmailService {
       }
     }
 
-    // 2. Fallback to JavaMailSender (SMTP on Port 465 / 587)
+    // 3. Fallback to JavaMailSender (SMTP on Port 465 / 587)
     if (!isSmtpConfigured()) {
       log.info("SMTP credentials and Resend API key are not configured. Skipping live email dispatch to {}.", toEmail);
       return false;
@@ -349,6 +398,9 @@ public class EmailServiceImpl implements EmailService {
       // Multipart plain-text + HTML: Clean deliverability score for Gmail outbound queue
       String plainText = htmlBody.replaceAll("<[^>]*>", " ").replaceAll("\\s+", " ").trim();
       helper.setText(plainText, htmlBody);
+      if (hasInlineImage) {
+        helper.addInline(inlineContentId, new ByteArrayResource(inlinePngBytes), "image/png");
+      }
 
       // Standard RFC headers (avoid spam-flagged X-Priority / Urgent headers)
       mimeMessage.setHeader("X-Auto-Response-Suppress", "All");

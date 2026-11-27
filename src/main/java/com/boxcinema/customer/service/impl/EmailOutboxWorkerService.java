@@ -4,25 +4,19 @@ import com.boxcinema.common.dto.BookingTicketViewDto;
 import com.boxcinema.common.entity.EmailOutbox;
 import com.boxcinema.common.repository.EmailOutboxRepository;
 import com.boxcinema.common.service.BookingQrService;
+import com.boxcinema.common.service.EmailService;
 import com.boxcinema.customer.service.TicketService;
-import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
-
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class EmailOutboxWorkerService {
@@ -32,24 +26,19 @@ public class EmailOutboxWorkerService {
     private final EmailOutboxRepository emailOutboxRepository;
     private final TicketService ticketService;
     private final BookingQrService bookingQrService;
-    private final JavaMailSender mailSender;
+    private final EmailService emailService;
 
-    @Value("${spring.mail.username:}")
-    private String fromEmail;
-
-    @Value("${app.mail.from-name:BOX Cinema}")
-    private String fromName;
-
+    @Autowired
     public EmailOutboxWorkerService(
             EmailOutboxRepository emailOutboxRepository,
             TicketService ticketService,
             BookingQrService bookingQrService,
-            @Autowired(required = false) JavaMailSender mailSender
+            EmailService emailService
     ) {
         this.emailOutboxRepository = emailOutboxRepository;
         this.ticketService = ticketService;
         this.bookingQrService = bookingQrService;
-        this.mailSender = mailSender;
+        this.emailService = emailService;
     }
 
     @Scheduled(fixedDelay = 5000)
@@ -77,30 +66,21 @@ public class EmailOutboxWorkerService {
             byte[] qrPng = bookingQrService.getBookingQrPngBytes(bookingId);
             String ticketUrl = bookingQrService.getBookingTicketUrl(bookingId);
 
-            if (mailSender == null) {
-                log.warn("JavaMailSender is not configured. Simulating email dispatch to {}", outbox.getRecipientEmail());
+            String subject = "BOX Cinema - Booking Confirmation #" + ticketView.getBookingCode();
+            String html = buildEmailHtml(ticketView, ticketUrl);
+
+            if (!emailService.isMailTransportConfigured()) {
+                log.warn("No email transport (Mailjet, Resend, or SMTP) configured. Simulating email dispatch to {}", outbox.getRecipientEmail());
                 outbox.setStatus("SENT");
                 outbox.setSentAt(LocalDateTime.now());
                 emailOutboxRepository.save(outbox);
                 return;
             }
 
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
-
-            helper.setFrom(fromEmail.isBlank() ? "no-reply@boxcinema.vn" : fromEmail, fromName);
-            helper.setTo(outbox.getRecipientEmail());
-            helper.setSubject("BOX Cinema - Booking Confirmation #" + ticketView.getBookingCode());
-
-            String html = buildEmailHtml(ticketView, ticketUrl);
-            helper.setText(html, true);
-
-            // Attach ZXing QR Code inline as CID (never leak token to 3rd-party services)
-            if (qrPng != null && qrPng.length > 0) {
-                helper.addInline("bookingQrCode", new ByteArrayResource(qrPng), "image/png");
+            boolean sent = emailService.sendTicketConfirmationEmail(outbox.getRecipientEmail(), subject, html, qrPng);
+            if (!sent) {
+                throw new IllegalStateException("Email transport failed to dispatch ticket confirmation email.");
             }
-
-            mailSender.send(message);
 
             outbox.setStatus("SENT");
             outbox.setSentAt(LocalDateTime.now());

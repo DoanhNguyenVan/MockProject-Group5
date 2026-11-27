@@ -116,4 +116,24 @@ public interface EmailService {
     default void sendGoogleUnlinkedNotificationEmailAsync(String toEmail, String fullName) {
         // Optional security notification
     }
+
+    /**
+     * Sends a booking confirmation HTML email with an inline PNG QR attachment (cid) via the active mail transport
+     * (Mailjet HTTP API, Resend HTTP API, or SMTP fallback).
+     */
+    default boolean sendTicketConfirmationEmail(
+            String toEmail,
+            String subject,
+            String htmlBody,
+            byte[] qrPngBytes
+    ) {
+        return false;
+    }
+
+    /**
+     * Returns true when at least one outbound mail transport (Mailjet, Resend, or SMTP) is configured.
+     */
+    default boolean isMailTransportConfigured() {
+        return false;
+    }
 }
