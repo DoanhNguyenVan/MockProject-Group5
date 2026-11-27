@@ -51,6 +51,7 @@ class BookingQrServiceImplTest {
         assertFalse(created.getTicketUrl().toLowerCase().contains("localhost"));
         assertNotNull(created.getTokenHash());
         assertEquals(64, created.getTokenHash().length());
+        assertEquals(booking.getShowtime().getEndAt().plusMinutes(30), created.getExpiresAt());
         assertTrue(Files.exists(Path.of(created.getQrImagePath())));
     }
 

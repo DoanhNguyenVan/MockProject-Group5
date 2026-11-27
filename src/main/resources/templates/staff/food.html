@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}" content="">
+  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}" content="X-CSRF-TOKEN">
   <title>Kitchen Fulfillment (KDS) | BOX Cinema Staff</title>
   <link rel="icon" type="image/png" href="/assets/img/box-cinema-favicon.png" th:href="@{/assets/img/box-cinema-favicon.png}">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -119,7 +121,7 @@
         <p class="text-white-50 mb-0">Real-time concession preparation and fulfillment management (BR-11, BR-14)</p>
       </div>
       <div>
-        <a href="/staff/checkin" class="btn btn-box-outline me-2">← Ticket Check-in</a>
+        <a href="/scan" class="btn btn-box-outline me-2">← QR Scanner</a>
         <button class="btn btn-box-primary" onclick="loadOrders()">⟳ Refresh Now</button>
       </div>
     </div>
@@ -224,9 +226,14 @@
 
     async function updateOrderStatus(orderId, newStatus) {
       try {
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content') || '';
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content') || 'X-CSRF-TOKEN';
+        const headers = { 'Content-Type': 'application/json' };
+        if (csrfToken) headers[csrfHeader] = csrfToken;
+
         const res = await fetch(`/api/staff/food-fulfillments/${orderId}/status`, {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
+          headers: headers,
           body: JSON.stringify({ status: newStatus })
         });
         if (res.ok) {

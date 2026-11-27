@@ -376,9 +376,24 @@
       width: 100%;
       padding: 24px;
     }
+    #posPrintSlipsArea { display: none; }
     @media print {
       header, footer, .no-print { display: none !important; }
       body { background: #fff !important; color: #000 !important; }
+      #posPrintSlipsArea { display: block !important; color: #000 !important; }
+      .pos-print-slip {
+        max-width: 340px;
+        margin: 0 auto 24px;
+        padding: 16px;
+        border: 1px solid #111;
+        border-top: 5px solid #111;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        page-break-after: always;
+        break-after: page;
+        background: #fff;
+        color: #111;
+      }
+      .pos-print-slip:last-child { page-break-after: auto; break-after: auto; }
     }
   </style>
 </head>
@@ -866,7 +881,7 @@
   </div>
 
   <!-- QR TICKET ISSUED MODAL -->
-  <div id="qrModal" class="modal-backdrop-custom">
+  <div id="qrModal" class="modal-backdrop-custom no-print">
     <div class="modal-box-custom">
       <div class="d-flex justify-content-between align-items-center pb-2 mb-3 border-bottom border-secondary border-opacity-25">
         <h5 class="fw-bold text-success mb-0">✓ Ticket Issued Successfully!</h5>
@@ -875,12 +890,12 @@
       <div class="text-center p-3 rounded border border-secondary border-opacity-25 mb-3" style="background: var(--box-bg-secondary);">
         <img id="modalQrImg" src="" alt="Ticket QR" class="bg-white p-2 rounded mb-2" style="width: 170px; height: 170px;">
         <div id="modalBookingCode" class="fw-bold font-monospace">BOX-...</div>
-        <div class="small text-secondary">Scan this code at the theater gate (/staff/checkin)</div>
+        <div class="small text-secondary">Separated physical slips ready (Movie Ticket &amp; Food Voucher)</div>
       </div>
       <div id="modalDetails" class="small text-secondary mb-3 d-flex flex-column gap-1"></div>
       <div class="row g-2 no-print">
         <div class="col-6">
-          <button type="button" class="btn btn-outline-secondary w-100 btn-sm" onclick="window.print()">🖨️ Print Ticket / Receipt</button>
+          <button type="button" id="btnPrintPosSlips" class="btn btn-outline-secondary w-100 btn-sm" onclick="printPosPhysicalSlips()">🖨️ Print Ticket / Receipt</button>
         </div>
         <div class="col-6">
           <button type="button" id="btnCloseQrModal" class="btn btn-box-primary w-100 btn-sm">New Transaction</button>
@@ -888,6 +903,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Physical 2-Slip Print Container (@media print only) -->
+  <div id="posPrintSlipsArea" aria-hidden="true"></div>
 
   <footer th:replace="~{fragments/footer :: footer}"></footer>
 
@@ -1933,7 +1951,7 @@
       const { subtotal } = getRawTotals();
       try {
         const res = await fetch('/api/vouchers/validate', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          method: 'POST', headers: csrfHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({ voucherCode: code, orderAmount: subtotal })
         });
         const data = await res.json();
@@ -2039,7 +2057,7 @@
       btn.disabled = true;
       try {
         const res = await fetch('/api/staff/pos/bookings', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          method: 'POST', headers: csrfHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify(payload)
         });
         const data = await res.json();
@@ -2100,15 +2118,29 @@
       }, 2000);
     }
 
+    function csrfHeaders(extra = {}) {
+      const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content') || '';
+      const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content') || 'X-CSRF-TOKEN';
+      const h = { ...extra };
+      if (token) h[header] = token;
+      return h;
+    }
+
     async function simulatePayOsReceived() {
       if (!pendingPayOs?.orderCode) return;
-      await fetch(`/api/payments/payos/simulate-payment/${pendingPayOs.orderCode}`, { method: 'POST' });
+      await fetch(`/api/payments/payos/simulate-payment/${pendingPayOs.orderCode}`, {
+        method: 'POST',
+        headers: csrfHeaders()
+      });
     }
 
     async function cancelPendingPayOs() {
       clearInterval(pollTimer); clearInterval(countdownTimer);
       if (pendingPayOs?.bookingId) {
-        await fetch(`/api/staff/pos/bookings/${pendingPayOs.bookingId}/cancel`, { method: 'POST' });
+        await fetch(`/api/staff/pos/bookings/${pendingPayOs.bookingId}/cancel`, {
+          method: 'POST',
+          headers: csrfHeaders()
+        });
       }
       pendingPayOs = null;
       el('payOsModal').classList.remove('show');
@@ -2117,7 +2149,12 @@
       if (activeShowtime) refreshLiveSeatMapSilently();
     }
 
+    let lastPrintedPosData = null;
+
     function openQrModal(data) {
+      lastPrintedPosData = data;
+      const hasSeats = Array.isArray(data.seatLabels) && data.seatLabels.length > 0;
+      const hasFood = Array.isArray(data.foodItems) && data.foodItems.length > 0;
       el('modalPayBadge').textContent = `${data.paymentMethod || 'CASH'} · PAID`;
       el('modalBookingCode').textContent = data.bookingCode;
       el('modalQrImg').src = `/api/staff/pos/bookings/${data.bookingId}/qr?t=${Date.now()}`;
@@ -2125,12 +2162,85 @@
         <div class="d-flex justify-content-between"><span>Customer:</span><strong class="text-light">${data.guestName || ''} (${data.guestPhone || ''})</strong></div>
         <div class="d-flex justify-content-between"><span>Service:</span><strong class="text-light">${data.movieTitle || ''}</strong></div>
         <div class="d-flex justify-content-between"><span>Showtime:</span><strong class="text-light">${data.showtimeStart || ''}</strong></div>
-        <div class="d-flex justify-content-between"><span>Seats:</span><strong class="text-light">${(data.seatLabels && data.seatLabels.length) ? data.seatLabels.join(', ') : 'None (Concessions Only)'}</strong></div>
+        <div class="d-flex justify-content-between"><span>Seats:</span><strong class="text-light">${hasSeats ? data.seatLabels.join(', ') : 'None (Concessions Only)'}</strong></div>
+        ${hasFood ? `<div class="d-flex justify-content-between"><span>Food &amp; Combos:</span><strong class="text-light text-end">${data.foodItems.map(f => `${f.quantity}× ${f.productName}${f.variantName ? ' (' + f.variantName + ')' : ''}`).join(', ')}</strong></div>` : ''}
         <div class="d-flex justify-content-between"><span>Total Paid:</span><strong class="text-danger">${fmt(data.totalAmount)}</strong></div>
         ${data.emailSent ? `<div class="text-success pt-1">✓ E-Ticket QR email queued for ${data.guestEmail}</div>` : ''}
       `;
+      const printBtn = el('btnPrintPosSlips');
+      if (printBtn) {
+        if (hasSeats && hasFood) printBtn.textContent = '🖨️ Print 2 Slips (Ticket + Food)';
+        else if (hasSeats) printBtn.textContent = '🖨️ Print Movie Ticket';
+        else printBtn.textContent = '🖨️ Print Food Voucher';
+      }
+      renderPosPrintSlips(data);
       el('qrModal').classList.add('show');
     }
+
+    function renderPosPrintSlips(data) {
+      const area = el('posPrintSlipsArea');
+      if (!area || !data) return;
+      area.replaceChildren();
+      const hasSeats = Array.isArray(data.seatLabels) && data.seatLabels.length > 0;
+      const hasFood = Array.isArray(data.foodItems) && data.foodItems.length > 0;
+
+      if (hasSeats) {
+        const slip1 = document.createElement('div');
+        slip1.className = 'pos-print-slip';
+        const qrHolderId = 'posSlipQr_' + data.bookingId;
+        slip1.innerHTML = `
+          <div style="text-align:center; border-bottom:1.5px dashed #777; padding-bottom:8px; margin-bottom:8px;">
+            <div style="font-size:11px; font-weight:800; border:1px solid #111; display:inline-block; padding:2px 6px; margin-bottom:4px;">SLIP 1 · MOVIE ADMISSION TICKET</div>
+            <div style="font-weight:800; font-size:14px;">${data.cinemaName || 'BOX CINEMA'}</div>
+            <div style="font-size:12px;">${data.roomName || ''}</div>
+          </div>
+          <div style="font-weight:800; font-size:16px; margin-bottom:6px;">${data.movieTitle || ''}</div>
+          <div style="font-size:12px;">Showtime: <strong>${data.showtimeStart || ''}</strong></div>
+          <div style="font-size:12px;">Booking: <strong>${data.bookingCode || ''}</strong></div>
+          <div style="margin:8px 0; padding:6px; background:#f3f4f6; border:1px solid #d1d5db; text-align:center; font-weight:800; font-size:15px;">
+            SEATS: ${data.seatLabels.join(', ')}
+          </div>
+          <div style="text-align:center; border-top:1.5px dashed #777; padding-top:8px; margin-top:8px;">
+            <div id="${qrHolderId}" style="display:inline-block;"></div>
+            <div style="font-size:11px; margin-top:4px;">Present at theater gate for check-in</div>
+          </div>
+        `;
+        area.append(slip1);
+        const holder = document.getElementById(qrHolderId);
+        if (holder && typeof QRCode !== 'undefined') {
+          new QRCode(holder, { text: data.qrToken || data.bookingCode, width: 100, height: 100 });
+        }
+      }
+
+      if (hasFood) {
+        const slip2 = document.createElement('div');
+        slip2.className = 'pos-print-slip';
+        slip2.style.borderTopColor = '#dc2626';
+        slip2.innerHTML = `
+          <div style="text-align:center; border-bottom:1.5px dashed #777; padding-bottom:8px; margin-bottom:8px;">
+            <div style="font-size:11px; font-weight:800; border:1px solid #dc2626; color:#b91c1c; display:inline-block; padding:2px 6px; margin-bottom:4px;">${hasSeats ? 'SLIP 2 · FOOD & COMBO VOUCHER' : 'SLIP 1 · FOOD & COMBO VOUCHER'}</div>
+            <div style="font-weight:800; font-size:14px;">${data.cinemaName || 'BOX CINEMA'}</div>
+            <div style="font-size:12px;">${data.pickupLocation || 'Concession Counter'}</div>
+          </div>
+          <div style="font-size:12px; margin-bottom:6px;">Order Ref: <strong>${data.bookingCode || ''}</strong></div>
+          <div style="border-top:1px dashed #999; padding-top:6px;">
+            ${data.foodItems.map(f => `<div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; padding:3px 0;"><span>${f.quantity}× ${f.productName}${f.variantName ? ' (' + f.variantName + ')' : ''}</span><span>PAID</span></div>`).join('')}
+          </div>
+          <div style="margin-top:10px; padding:6px; text-align:center; border:1px solid #fecaca; background:#fef2f2; color:#991b1b; font-size:11px; font-weight:700;">
+            EXCHANGE THIS VOUCHER AT CONCESSION COUNTER
+          </div>
+        `;
+        area.append(slip2);
+      }
+    }
+
+    function printPosPhysicalSlips() {
+      if (lastPrintedPosData) {
+        renderPosPrintSlips(lastPrintedPosData);
+      }
+      window.print();
+    }
+    window.printPosPhysicalSlips = printPosPhysicalSlips;
 
     async function closeQrModal() {
       el('qrModal').classList.remove('show');

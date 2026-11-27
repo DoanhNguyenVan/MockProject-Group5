@@ -11,6 +11,7 @@ import com.boxcinema.customer.service.FoodService;
 import com.boxcinema.customer.service.PayOsService;
 import com.boxcinema.customer.service.PromotionService;
 import com.boxcinema.customer.service.SeatRealtimePushService;
+import com.boxcinema.publicsite.dto.response.PublicFoodItemDto;
 import com.boxcinema.staff.dto.request.StaffPosCreateBookingRequest;
 import com.boxcinema.staff.dto.response.*;
 import com.boxcinema.staff.service.StaffPosService;
@@ -619,12 +620,40 @@ public class StaffPosServiceImpl implements StaffPosService {
         dto.setGuestEmail(b.getGuestEmail());
         dto.setSeatLabels(seatLabels);
         dto.setEmailSent(b.getGuestEmail() != null && !b.getGuestEmail().isBlank());
+
+        List<PublicFoodItemDto> foodDtos = new ArrayList<>();
+        if (b.getBookingFoodItems() != null) {
+            for (BookingFoodItem bfi : b.getBookingFoodItems()) {
+                PublicFoodItemDto fDto = new PublicFoodItemDto();
+                fDto.setProductName(bfi.getProductNameSnapshot());
+                fDto.setVariantName(bfi.getVariantNameSnapshot());
+                fDto.setQuantity(bfi.getQuantity());
+                fDto.setStatus("Ordered");
+                foodDtos.add(fDto);
+            }
+        }
+        dto.setFoodItems(foodDtos);
+
         if (b.getShowtime() != null) {
             dto.setMovieTitle(b.getBookingSeats() == null || b.getBookingSeats().isEmpty()
                     ? "Concessions Only"
                     : (b.getShowtime().getMovie() != null ? b.getShowtime().getMovie().getTitle() : ""));
             if (b.getShowtime().getStartAt() != null) {
                 dto.setShowtimeStart(b.getShowtime().getStartAt().format(DateTimeFormatter.ofPattern("HH:mm · dd/MM/yyyy")));
+            }
+            if (b.getShowtime().getRoom() != null) {
+                dto.setRoomName(b.getShowtime().getRoom().getRoomName());
+                if (b.getShowtime().getRoom().getCinema() != null) {
+                    String cName = b.getShowtime().getRoom().getCinema().getCinemaName();
+                    dto.setCinemaName(cName);
+                    dto.setPickupLocation(cName + " - Concession Counter");
+                }
+            }
+        }
+        if ("CONFIRMED".equalsIgnoreCase(b.getBookingStatus())) {
+            try {
+                dto.setQrToken(bookingQrService.getBookingTicketUrl(b.getBookingId()));
+            } catch (Exception ignored) {
             }
         }
         if (payOsResp != null) {

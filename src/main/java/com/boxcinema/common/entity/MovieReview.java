@@ -35,6 +35,16 @@ public class MovieReview {
     @Column(name = "status", length = 20, nullable = false)
     private String status = "VISIBLE";
 
+    @Column(name = "admin_reply", columnDefinition = "TEXT")
+    private String adminReply;
+
+    @Column(name = "admin_replied_at")
+    private LocalDateTime adminRepliedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "admin_replied_by")
+    private User repliedByAdmin;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -128,5 +138,29 @@ public class MovieReview {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getAdminReply() {
+        return adminReply;
+    }
+
+    public void setAdminReply(String adminReply) {
+        this.adminReply = adminReply;
+    }
+
+    public LocalDateTime getAdminRepliedAt() {
+        return adminRepliedAt;
+    }
+
+    public void setAdminRepliedAt(LocalDateTime adminRepliedAt) {
+        this.adminRepliedAt = adminRepliedAt;
+    }
+
+    public User getRepliedByAdmin() {
+        return repliedByAdmin;
+    }
+
+    public void setRepliedByAdmin(User repliedByAdmin) {
+        this.repliedByAdmin = repliedByAdmin;
     }
 }

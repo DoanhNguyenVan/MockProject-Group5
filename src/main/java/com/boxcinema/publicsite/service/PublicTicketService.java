@@ -5,5 +5,5 @@ import com.boxcinema.publicsite.dto.response.PublicTicketDto;
 import java.util.Optional;
 
 public interface PublicTicketService {
-    Optional<PublicTicketDto> getPublicTicketByToken(String token);
+    Optional<PublicTicketDto> getTicketByTokenForViewer(String token, Long viewerUserId, String viewerRole);
 }

@@ -173,8 +173,6 @@ public class MovieReviewServiceImpl implements MovieReviewService {
         String initial = authorName.substring(0, 1).toUpperCase(Locale.ENGLISH);
 
         boolean owner = currentUserId != null && currentUserId.equals(authorId);
-        boolean edited = r.getCreatedAt() != null && r.getUpdatedAt() != null
-                && r.getUpdatedAt().isAfter(r.getCreatedAt().plusSeconds(2));
 
         MovieReviewItemDto dto = new MovieReviewItemDto();
         dto.setReviewId(r.getReviewId());
@@ -187,9 +185,13 @@ public class MovieReviewServiceImpl implements MovieReviewService {
         dto.setVerifiedViewer(r.isVerifiedViewer());
         dto.setOwner(owner);
         dto.setCanDelete(owner || isAdmin);
-        dto.setEdited(edited);
+        dto.setEdited(false);
         dto.setCreatedAt(r.getCreatedAt());
         dto.setFormattedDate(r.getCreatedAt() != null ? r.getCreatedAt().format(DATE_FORMATTER) : "");
+        if (r.getAdminReply() != null && !r.getAdminReply().isBlank()) {
+            dto.setAdminReply(r.getAdminReply().trim());
+            dto.setFormattedAdminRepliedAt(r.getAdminRepliedAt() != null ? r.getAdminRepliedAt().format(DATE_FORMATTER) : "");
+        }
         return dto;
     }
 }

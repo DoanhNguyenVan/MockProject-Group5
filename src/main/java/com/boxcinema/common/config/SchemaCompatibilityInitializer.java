@@ -56,6 +56,9 @@ public class SchemaCompatibilityInitializer implements ApplicationRunner {
                                 "comment TEXT NULL, " +
                                 "is_verified_viewer TINYINT(1) NOT NULL DEFAULT 0, " +
                                 "status VARCHAR(20) NOT NULL DEFAULT 'VISIBLE', " +
+                                "admin_reply TEXT NULL, " +
+                                "admin_replied_at DATETIME NULL, " +
+                                "admin_replied_by BIGINT NULL, " +
                                 "created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, " +
                                 "updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, " +
                                 "PRIMARY KEY (review_id), " +
@@ -65,6 +68,12 @@ public class SchemaCompatibilityInitializer implements ApplicationRunner {
                                 "CONSTRAINT fk_movie_reviews_user FOREIGN KEY (user_id) REFERENCES " + usersTable + " (user_id) ON DELETE CASCADE" +
                                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
                 );
+                String reviewsTable = resolveExactTableName("movie_reviews");
+                if (reviewsTable != null) {
+                    ensureColumnExists(reviewsTable, "movie_reviews", "admin_reply", "TEXT NULL");
+                    ensureColumnExists(reviewsTable, "movie_reviews", "admin_replied_at", "DATETIME NULL");
+                    ensureColumnExists(reviewsTable, "movie_reviews", "admin_replied_by", "BIGINT NULL");
+                }
             }
         } catch (Exception ex) {
             log.warn("Schema compatibility check skipped or encountered an error: {}", ex.getMessage());

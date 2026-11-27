@@ -224,19 +224,26 @@ export function initCinemaSelector(doc = document) {
   const select = doc.getElementById("navCinemaSelect");
   if (!select) return;
 
-  // 1. Restore saved selection from localStorage
+  // 1. Restore saved selection from localStorage (fallback to "all" if saved cinema no longer exists)
   try {
     const savedId = localStorage.getItem("box_cinema_selected_branch_id");
     if (savedId) {
-      select.value = String(savedId);
-      if (savedId !== "all") {
-        const selectedOpt = select.options[select.selectedIndex];
-        const savedName = selectedOpt ? selectedOpt.text : localStorage.getItem("box_cinema_selected_branch_name");
-        setTimeout(() => {
-          doc.dispatchEvent(new CustomEvent("box:cinema-selected", {
-            detail: { cinemaId: savedId, cinemaName: savedName, initial: true }
-          }));
-        }, 50);
+      const hasMatchingOption = Array.from(select.options).some(opt => opt.value === String(savedId));
+      if (hasMatchingOption) {
+        select.value = String(savedId);
+        if (savedId !== "all") {
+          const selectedOpt = select.options[select.selectedIndex];
+          const savedName = selectedOpt ? selectedOpt.text : localStorage.getItem("box_cinema_selected_branch_name");
+          setTimeout(() => {
+            doc.dispatchEvent(new CustomEvent("box:cinema-selected", {
+              detail: { cinemaId: savedId, cinemaName: savedName, initial: true }
+            }));
+          }, 50);
+        }
+      } else {
+        select.value = "all";
+        localStorage.removeItem("box_cinema_selected_branch_id");
+        localStorage.removeItem("box_cinema_selected_branch_name");
       }
     }
   } catch (_) {}
@@ -267,8 +274,12 @@ export function initCinemaSelector(doc = document) {
   // 3. Sync when cinema is selected externally (e.g. from welcome popup modal or showtimes page)
   doc.addEventListener("box:cinema-selected", (e) => {
     const cId = e.detail?.cinemaId;
-    if (cId && select.value !== String(cId)) {
+    if (!cId) return;
+    const hasOption = Array.from(select.options).some(opt => opt.value === String(cId));
+    if (hasOption && select.value !== String(cId)) {
       select.value = String(cId);
+    } else if (!hasOption) {
+      select.value = "all";
     }
   });
 }

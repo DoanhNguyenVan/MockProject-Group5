@@ -154,6 +154,12 @@ export function initAdmin(doc = document) {
       if (section === 'feedbacks') feedbackLink.setAttribute('aria-current', 'page');
       get('adminNavigation').append(feedbackLink);
 
+      const reviewsLink = element('a'); reviewsLink.href = '/admin/reviews';
+      const revIcon = element('span', '★'); revIcon.setAttribute('aria-hidden', 'true');
+      reviewsLink.append(revIcon, element('span', 'Movie Comments'));
+      if (section === 'reviews') reviewsLink.setAttribute('aria-current', 'page');
+      get('adminNavigation').append(reviewsLink);
+
       const accountLink = element('a'); accountLink.href = '/admin/accounts';
       const icon = element('span', '♙'); icon.setAttribute('aria-hidden', 'true');
       accountLink.append(icon, element('span', 'Accounts & roles'));

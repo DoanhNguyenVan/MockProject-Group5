@@ -71,7 +71,8 @@ class StaffCheckinApiControllerTest {
         refunded.setCode("BOOKING_REFUNDED");
         when(service.checkinByQrToken("BOX1.Refunded", 15L)).thenReturn(refunded);
 
-        when(service.checkinByQrToken("BOX1.Denied", 15L)).thenThrow(new AccessDeniedException("Forbidden"));
+        when(service.checkinByQrToken("BOX1.Denied", 15L))
+                .thenThrow(new AccessDeniedException("WRONG_CINEMA_BRANCH|Wrong branch."));
 
         mvc.perform(post("/api/staff/bookings/check-in")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -101,6 +102,13 @@ class StaffCheckinApiControllerTest {
         mvc.perform(post("/api/staff/bookings/check-in")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"qrPayload\":\"BOX1.Denied\"}"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("WRONG_CINEMA_BRANCH"));
+
+        when(service.recordTicketPrint(10L, 15L)).thenReturn(java.util.Map.of("success", true, "printCount", 1L));
+        mvc.perform(post("/api/staff/bookings/10/print-log"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.printCount").value(1));
     }
 }

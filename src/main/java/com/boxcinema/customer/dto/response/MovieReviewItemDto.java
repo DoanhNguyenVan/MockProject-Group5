@@ -16,6 +16,8 @@ public class MovieReviewItemDto {
     private boolean edited;
     private LocalDateTime createdAt;
     private String formattedDate;
+    private String adminReply;
+    private String formattedAdminRepliedAt;
 
     public MovieReviewItemDto() {
     }
@@ -122,5 +124,21 @@ public class MovieReviewItemDto {
 
     public void setFormattedDate(String formattedDate) {
         this.formattedDate = formattedDate;
+    }
+
+    public String getAdminReply() {
+        return adminReply;
+    }
+
+    public void setAdminReply(String adminReply) {
+        this.adminReply = adminReply;
+    }
+
+    public String getFormattedAdminRepliedAt() {
+        return formattedAdminRepliedAt;
+    }
+
+    public void setFormattedAdminRepliedAt(String formattedAdminRepliedAt) {
+        this.formattedAdminRepliedAt = formattedAdminRepliedAt;
     }
 }

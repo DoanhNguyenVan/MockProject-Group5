@@ -359,7 +359,7 @@
             <a href="/admin" th:href="@{/admin}" th:if="${navUser != null and navUser.role == 'ADMIN'}" th:classappend="${activePage == 'admin' ? 'active' : ''}">Admin</a>
             <a href="/manager" th:href="@{/manager}" th:if="${navUser != null and navUser.role == 'MANAGER'}" th:classappend="${activePage == 'manager' ? 'active' : ''}">Management</a>
             <a href="/staff/pos" th:href="@{/staff/pos}" th:if="${navUser != null and (navUser.role == 'MANAGER' or navUser.role == 'ADMIN')}" th:classappend="${activePage == 'staff-pos' ? 'active' : ''}">Counter POS</a>
-            <a href="/staff/checkin" th:href="@{/staff/checkin}" th:if="${navUser != null and (navUser.role == 'MANAGER' or navUser.role == 'ADMIN')}" th:classappend="${activePage == 'staff-checkin' ? 'active' : ''}">Ticket Scanner</a>
+            <a href="/scan" th:href="@{/scan}" th:if="${navUser != null and (navUser.role == 'MANAGER' or navUser.role == 'ADMIN')}" th:classappend="${activePage == 'staff-scan' ? 'active' : ''}">QR Scanner</a>
             <a href="/staff/food" th:href="@{/staff/food}" th:if="${navUser != null and (navUser.role == 'MANAGER' or navUser.role == 'ADMIN')}" th:classappend="${activePage == 'staff-food' ? 'active' : ''}">Concessions</a>
           </div>
 
@@ -371,8 +371,8 @@
                th:classappend="${activePage == 'staff-pos' and staffTab == 'lookup' ? 'active' : ''}">Order Lookup</a>
             <a href="/staff/pos?tab=shift" th:href="@{/staff/pos(tab='shift')}" data-staff-tab="shift"
                th:classappend="${activePage == 'staff-pos' and staffTab == 'shift' ? 'active' : ''}">Shift Summary</a>
-            <a href="/staff/checkin" th:href="@{/staff/checkin}"
-               th:classappend="${activePage == 'staff-checkin' ? 'active' : ''}">Ticket Check-in</a>
+            <a href="/scan" th:href="@{/scan}"
+               th:classappend="${activePage == 'staff-scan' ? 'active' : ''}">QR Scanner</a>
             <a href="/staff/food" th:href="@{/staff/food}"
                th:classappend="${activePage == 'staff-food' ? 'active' : ''}">Kitchen KDS</a>
           </div>

@@ -281,6 +281,29 @@ export function initMovieReviews(doc = document) {
         card.append(body);
       }
 
+      if (r.adminReply && r.adminReply.trim()) {
+        const replyBox = doc.createElement("div");
+        replyBox.className = "review-admin-reply";
+
+        const replyHead = doc.createElement("div");
+        replyHead.className = "review-admin-reply-head";
+        const brandLabel = doc.createElement("strong");
+        brandLabel.textContent = "Response from BOX Cinema";
+        replyHead.append(brandLabel);
+        if (r.formattedAdminRepliedAt) {
+          const dateSpan = doc.createElement("span");
+          dateSpan.textContent = r.formattedAdminRepliedAt;
+          replyHead.append(dateSpan);
+        }
+
+        const replyText = doc.createElement("p");
+        replyText.className = "review-admin-reply-body";
+        replyText.textContent = r.adminReply;
+
+        replyBox.append(replyHead, replyText);
+        card.append(replyBox);
+      }
+
       if (r.canDelete) {
         const actions = doc.createElement("div");
         actions.className = "review-actions";

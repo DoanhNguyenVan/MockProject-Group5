@@ -32,4 +32,8 @@ public interface UserActivityLogRepository extends JpaRepository<UserActivityLog
     long countByRole(String role);
 
     long countByActionType(String actionType);
+
+    long countByActionTypeAndPageUrl(String actionType, String pageUrl);
+
+    java.util.Optional<UserActivityLog> findTopByActionTypeAndPageUrlOrderByCreatedAtDesc(String actionType, String pageUrl);
 }

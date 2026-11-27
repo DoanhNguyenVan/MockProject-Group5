@@ -6,8 +6,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}" content="">
-  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}" content="">
-  <title th:text="${found ? (ticket.movieTitle + ' | E-Ticket | BOX Cinema') : 'Ticket Not Found | BOX Cinema'}">E-Ticket | BOX Cinema</title>
+  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}" content="X-CSRF-TOKEN">
+  <title th:text="${found ? (ticket.movieTitle + ' | E-Ticket | BOX Cinema') : ((accessDenied != null and accessDenied) ? 'Access Denied | BOX Cinema' : 'Ticket Not Found | BOX Cinema')}">E-Ticket | BOX Cinema</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -214,6 +214,66 @@
       background: #f8fafc;
       border-color: rgba(15, 23, 42, 0.08);
     }
+
+    .counter-pay-option { cursor: pointer; display: block; }
+    .counter-pay-box {
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 10px;
+      padding: 10px 12px;
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #cbd5e1;
+      transition: all 0.15s ease;
+    }
+    .counter-pay-option input:checked + .counter-pay-box {
+      border-color: #e50914;
+      background: rgba(229, 9, 20, 0.16);
+      color: #fff;
+      box-shadow: 0 0 0 1px #e50914;
+    }
+    .counter-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.78);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 1060;
+    }
+    .counter-modal-backdrop.show { display: flex; }
+    .counter-modal-box {
+      background: #12141f;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      max-width: 520px;
+      width: 100%;
+      padding: 20px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    #counterPrintSlipsArea { display: none; }
+    @media print {
+      nav, footer, .no-print, main { display: none !important; }
+      body { background: #fff !important; color: #000 !important; }
+      #counterPrintSlipsArea { display: block !important; color: #000 !important; }
+      .counter-print-slip {
+        max-width: 340px;
+        margin: 0 auto 24px;
+        padding: 16px;
+        border: 1px solid #111;
+        border-top: 5px solid #111;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        page-break-after: always;
+        break-after: page;
+        background: #fff;
+        color: #111;
+      }
+      .counter-print-slip:last-child { page-break-after: auto; break-after: auto; }
+    }
   </style>
 </head>
 
@@ -237,7 +297,7 @@
       </a>
 
       <div class="d-flex align-items-center gap-2">
-        <a href="/scan" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1.5 px-2.5 py-1 text-decoration-none">
+        <a th:if="${isStaff}" href="/scan" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1.5 px-2.5 py-1 text-decoration-none">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
             <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
@@ -245,6 +305,9 @@
             <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
           </svg>
           <span class="small">Scan QR</span>
+        </a>
+        <a th:unless="${isStaff}" href="/booking/history" class="btn btn-outline-secondary btn-sm px-2.5 py-1 text-decoration-none small">
+          My Tickets
         </a>
       </div>
     </div>
@@ -348,6 +411,34 @@
           <span class="ticket-label">Checked-in At:</span>
           <span class="ticket-value text-warning" id="ticketCheckedInAt" th:text="${ticket.checkedInAt}">18:45 - 17/11/2026</span>
         </div>
+
+        <div class="ticket-row" th:if="${isStaff and ticket.buyerName != null}">
+          <span class="ticket-label">Buyer:</span>
+          <span class="ticket-value" th:text="${ticket.buyerName}">Buyer</span>
+        </div>
+
+        <div class="ticket-row" th:if="${isStaff and ticket.buyerEmail != null}">
+          <span class="ticket-label">Buyer Email:</span>
+          <span class="ticket-value small" th:text="${ticket.buyerEmail}">buyer@boxcinema.vn</span>
+        </div>
+
+        <div class="ticket-row" th:if="${isStaff and ticket.buyerPhone != null}">
+          <span class="ticket-label">Buyer Phone:</span>
+          <span class="ticket-value small" th:text="${ticket.buyerPhone}">0901234567</span>
+        </div>
+      </div>
+
+      <!-- Verified Customer Owner QR Code Card (Hidden on Staff View) -->
+      <div th:if="${!isStaff and ticket.canDisplayQrImage and ticket.bookingId != null}"
+           class="mt-4 p-3 rounded border border-secondary border-opacity-25 text-center"
+           style="background: rgba(255,255,255,0.03);">
+        <div class="bg-white d-inline-block p-2 rounded mb-2">
+          <img th:src="@{/api/customer/bookings/{id}/ticket/qr(id=${ticket.bookingId})}"
+               alt="Ticket QR Code"
+               style="width: 170px; height: 170px; display: block;">
+        </div>
+        <div class="font-monospace fw-bold text-white small" th:text="${ticket.bookingCode}">BOX-20261116-3484</div>
+        <div class="text-secondary small mt-1">Present this QR code at the ticket counter to print your physical ticket(s).</div>
       </div>
 
       <!-- Food & Concessions Section -->
@@ -362,7 +453,7 @@
         </div>
 
         <!-- Food List -->
-        <div th:if="${ticket.foodItems != null and !ticket.foodItems.isEmpty()}">
+        <div id="ticketFoodListWrap" th:if="${ticket.foodItems != null and !ticket.foodItems.isEmpty()}">
           <div th:each="f : ${ticket.foodItems}" class="food-card-box d-flex justify-content-between align-items-center">
             <div>
               <div class="fw-semibold text-white small" th:text="${f.productName}">Popcorn Cheese</div>
@@ -375,37 +466,51 @@
         </div>
 
         <!-- No Food Notice -->
-        <div th:if="${ticket.foodItems == null or ticket.foodItems.isEmpty()}" class="text-secondary small py-1">
+        <div id="noFoodNoticeWrap" th:if="${ticket.foodItems == null or ticket.foodItems.isEmpty()}" class="text-secondary small py-1">
           No snacks or drinks added to this booking.
         </div>
       </div>
 
-      <!-- Staff Confirmation Section (Visible & Authorized for Authenticated Staff Only) -->
+      <!-- Staff Counter & Gate Controls (Visible & Authorized for Authenticated Staff/Manager/Admin Only) -->
       <div th:if="${isStaff}" class="staff-confirm-box mt-4" id="staffConfirmPanel">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-          <div class="fw-bold text-white small text-uppercase" style="letter-spacing: 0.06em;">Staff Gate Verification</div>
-          <span class="small text-secondary" th:text="${ticket.bookingCode}">BOX-20261116-3484</span>
+          <div class="fw-bold text-white small text-uppercase" style="letter-spacing: 0.06em;">Counter Print &amp; Gate Verification</div>
+          <div class="d-flex align-items-center gap-2">
+            <span id="counterPrintBadge" class="badge bg-dark border border-secondary text-secondary">Counter Tools</span>
+            <span class="small text-secondary font-monospace" th:text="${ticket.bookingCode}">BOX-20261116-3484</span>
+          </div>
         </div>
 
         <div id="staffConfirmResult" class="d-none mb-2" role="alert"></div>
 
-        <button th:if="${ticket.confirmable}"
-                type="button"
-                id="btnConfirmTicketUsed"
-                class="btn btn-danger fw-bold w-100 py-2">
-          CONFIRM TICKET USED
-        </button>
+        <div class="d-flex flex-column gap-2">
+          <button th:if="${ticket.ticketStatus == 'VALID' or ticket.ticketStatus == 'USED'}"
+                  type="button"
+                  id="btnPrintCounterSlips"
+                  class="btn btn-outline-light fw-bold w-100 py-2"
+                  th:text="${ticket.hasFoodItems ? 'Print 2 Physical Slips (Movie + Food)' : 'Print 1 Physical Slip (Movie Only)'}">
+            Print Physical Slips
+          </button>
 
-        <div th:unless="${ticket.confirmable}" class="small text-secondary mb-0">
-          Confirmation unavailable because this ticket is <strong th:text="${ticket.ticketStatus}">USED</strong>.
+          <button th:if="${ticket.confirmable}"
+                  type="button"
+                  id="btnOpenAddonFood"
+                  th:class="${ticket.hasFoodItems ? 'btn btn-outline-warning fw-bold w-100 py-2' : 'btn btn-warning fw-bold w-100 py-2'}"
+                  th:text="${ticket.hasFoodItems ? '+ Add Extra Food / Combo' : '+ Add Food / Combo'}">
+            + Add Food / Combo
+          </button>
+
+          <button th:if="${ticket.confirmable}"
+                  type="button"
+                  id="btnConfirmTicketUsed"
+                  class="btn btn-danger fw-bold w-100 py-2">
+            CONFIRM TICKET USED
+          </button>
         </div>
-      </div>
 
-      <!-- Unauthenticated Staff Helper -->
-      <div th:if="${!isStaff and ticket.confirmable}" class="mt-3 text-center">
-        <a href="/login" class="small text-secondary text-decoration-underline">
-          Cinema staff? Sign in to confirm this ticket as used
-        </a>
+        <div th:unless="${ticket.confirmable}" class="small text-secondary mt-2 mb-0">
+          Gate confirmation unavailable because this ticket is <strong th:text="${ticket.ticketStatus}">USED</strong>.
+        </div>
       </div>
 
       <!-- Privacy & Verification Notice -->
@@ -416,19 +521,22 @@
         </svg>
         <div>
           <div class="fw-semibold" style="color: #38bdf8;">Official E-Ticket from BOX Cinema</div>
-          <div>This QR code is used to look up public ticket details. Sensitive customer data (email, phone, banking details) are strictly protected.</div>
+          <div>Protected by account verification. Only the ticket owner and authorized BOX Cinema staff can view this page.</div>
         </div>
       </div>
 
       <!-- Actions -->
       <div class="mt-4 pt-2 text-center">
-        <a href="/scan" class="btn btn-outline-light btn-sm px-4 py-2 text-decoration-none">
+        <a th:if="${isStaff}" href="/scan" class="btn btn-outline-light btn-sm px-4 py-2 text-decoration-none">
           Scan Another Ticket
+        </a>
+        <a th:unless="${isStaff}" href="/booking/history" class="btn btn-outline-light btn-sm px-4 py-2 text-decoration-none">
+          &larr; Back to My Tickets
         </a>
       </div>
     </div>
 
-    <!-- Case 2: Not Found or Invalid Token -->
+    <!-- Case 2: Access Denied (403) or Not Found / Invalid Token -->
     <div th:unless="${found}" class="ticket-card text-center py-5">
       <div class="ticket-top-accent"></div>
       
@@ -440,15 +548,21 @@
             <line x1="9" y1="9" x2="15" y2="15"></line>
           </svg>
         </div>
-        <h2 class="h4 fw-bold text-white">Ticket Not Found</h2>
+        <h2 class="h4 fw-bold text-white"
+            th:text="${accessDenied ? (ticket.errorCode == 'WRONG_CINEMA_BRANCH' ? '403 Wrong Cinema Branch' : '403 Access Denied') : 'Ticket Not Found'}">
+          Ticket Not Found
+        </h2>
         <p class="text-secondary small mt-2" th:text="${ticket.message != null ? ticket.message : 'The ticket access token is invalid or has expired.'}">
           The ticket access token is invalid or has expired.
         </p>
       </div>
 
       <div class="mt-4">
-        <a href="/scan" class="btn btn-danger px-4 py-2 text-decoration-none">
+        <a th:if="${isStaff}" href="/scan" class="btn btn-danger px-4 py-2 text-decoration-none">
           Open QR Scanner
+        </a>
+        <a th:unless="${isStaff}" href="/booking/history" class="btn btn-danger px-4 py-2 text-decoration-none">
+          My Tickets
         </a>
         <a href="/" class="btn btn-outline-secondary px-4 py-2 text-decoration-none ms-2">
           Home
@@ -458,14 +572,430 @@
 
   </main>
 
+  <!-- Staff Counter Add-Food Modal & VietQR Modal & Physical Print Container -->
+  <th:block th:if="${isStaff and found}">
+    <div id="counterAddFoodModal" class="counter-modal-backdrop no-print">
+      <div class="counter-modal-box">
+        <div class="d-flex justify-content-between align-items-center pb-2 mb-3 border-bottom border-secondary border-opacity-25">
+          <div>
+            <h5 class="fw-bold text-white mb-0">Add Food / Combo at Counter</h5>
+            <small class="text-secondary font-monospace" th:text="${ticket.bookingCode}">BOX-...</small>
+          </div>
+          <button type="button" id="btnCloseAddonModal" class="btn btn-sm btn-outline-secondary">✕</button>
+        </div>
+        <div id="counterFoodCatalog" class="d-flex flex-column gap-2 mb-3"></div>
+        <div class="mb-3">
+          <div class="small text-uppercase fw-bold text-secondary mb-2">Payment Method</div>
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="counter-pay-option w-100">
+                <input type="radio" name="counterAddonPay" value="CASH" checked class="d-none">
+                <div class="counter-pay-box">Cash</div>
+              </label>
+            </div>
+            <div class="col-6">
+              <label class="counter-pay-option w-100">
+                <input type="radio" name="counterAddonPay" value="PAYOS_QR" class="d-none">
+                <div class="counter-pay-box">Bank Transfer</div>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="small text-secondary">Add-on Total</div>
+            <div id="counterAddonTotal" class="fs-5 fw-bold text-danger">0 ₫</div>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="button" id="btnCancelAddonModal" class="btn btn-outline-secondary btn-sm">Cancel</button>
+            <button type="button" id="btnSubmitAddonModal" class="btn btn-danger btn-sm fw-bold px-3" disabled>Charge &amp; Print 2 Slips</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="counterPayOsModal" class="counter-modal-backdrop no-print">
+      <div class="counter-modal-box" style="max-width: 440px;">
+        <div class="d-flex justify-content-between align-items-center pb-2 mb-3 border-bottom border-secondary border-opacity-25">
+          <div>
+            <h5 class="fw-bold text-white mb-0">Awaiting Bank Transfer</h5>
+            <span class="small text-warning">PENDING_PAYMENT · Counter Food Add-On</span>
+          </div>
+          <span id="counterPayOsCountdown" class="badge bg-danger bg-opacity-25 text-danger fs-6 font-monospace">10:00</span>
+        </div>
+        <div class="text-center p-3 rounded border border-secondary border-opacity-25 mb-3" style="background: rgba(255,255,255,0.03);">
+          <div class="small text-secondary mb-2">Customer scans VietQR using banking app</div>
+          <div id="counterPayOsQrBox" class="bg-white d-inline-block p-2 rounded mb-2"></div>
+          <div id="counterPayOsAmount" class="fs-5 fw-bold text-danger">0 ₫</div>
+          <div class="small text-secondary mt-1">Transfer Memo: <strong id="counterPayOsMemo" class="text-white font-monospace">—</strong></div>
+          <div class="small text-warning mt-2">Auto-checking payment status every 2 seconds...</div>
+        </div>
+        <button type="button" id="btnSimulateAddonPayOs" class="btn btn-success w-100 fw-bold btn-sm mb-2">Confirm Transfer Received</button>
+        <button type="button" id="btnCancelAddonPayOs" class="btn btn-outline-danger w-100 btn-sm">Cancel &amp; Switch Payment Method</button>
+      </div>
+    </div>
+
+    <div id="counterPrintSlipsArea" aria-hidden="true"></div>
+  </th:block>
+
   <!-- Footer -->
   <footer class="py-3 text-center text-secondary small border-top border-secondary border-opacity-10">
     <div>&copy; 2026 BOX Cinema. All rights reserved.</div>
   </footer>
 
+  <script th:if="${isStaff and found}" src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script th:if="${isStaff and found}" th:inline="javascript">
+    (function () {
+      const printBtn = document.getElementById('btnPrintCounterSlips');
+      const openAddonBtn = document.getElementById('btnOpenAddonFood');
+      const resultEl = document.getElementById('staffConfirmResult');
+      const printBadge = document.getElementById('counterPrintBadge');
+
+      const ticketToken = /*[[${ticketToken}]]*/ '';
+      const bookingId = /*[[${ticket.bookingId}]]*/ null;
+      const showtimeId = /*[[${ticket.showtimeId}]]*/ null;
+      const bookingCode = /*[[${ticket.bookingCode}]]*/ '';
+      const movieTitle = /*[[${ticket.movieTitle}]]*/ '';
+      const cinemaName = /*[[${ticket.cinemaName}]]*/ '';
+      const roomName = /*[[${ticket.roomName}]]*/ '';
+      const showDate = /*[[${ticket.showDate}]]*/ '';
+      const showTime = /*[[${ticket.showTime}]]*/ '';
+      const buyerName = /*[[${ticket.buyerName}]]*/ 'Counter Guest';
+      const buyerPhone = /*[[${ticket.buyerPhone}]]*/ '0000000000';
+      const buyerEmail = /*[[${ticket.buyerEmail}]]*/ '';
+      const seatsList = /*[[${ticket.seats}]]*/ [];
+      const ticketCodesList = /*[[${ticket.ticketCodes}]]*/ [];
+      const baseFoodItems = /*[[${ticket.foodItems}]]*/ [];
+
+      const extraFoodItems = [];
+      let addedOrderCode = null;
+      let combos = [];
+      let foodItems = [];
+      const comboQty = {};
+      const itemQty = {};
+      let pendingAddonPayOs = null;
+      let addonPollTimer = null;
+      let addonCountdownTimer = null;
+
+      function csrfHeaders(extra = {}) {
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content') || '';
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content') || 'X-CSRF-TOKEN';
+        const headers = { ...extra };
+        if (csrfToken) headers[csrfHeader] = csrfToken;
+        return headers;
+      }
+
+      function showStaffNotice(msg, type = 'info') {
+        if (!resultEl) return;
+        resultEl.className = `alert alert-${type} py-2 px-3 small mb-2`;
+        resultEl.textContent = msg;
+      }
+
+      function allCurrentFood() {
+        return [...(Array.isArray(baseFoodItems) ? baseFoodItems : []), ...extraFoodItems];
+      }
+
+      function renderPrintSlipsArea() {
+        const area = document.getElementById('counterPrintSlipsArea');
+        if (!area) return;
+        area.replaceChildren();
+        const combinedFood = allCurrentFood();
+        const hasSeats = Array.isArray(seatsList) && seatsList.length > 0;
+        const hasFood = combinedFood.length > 0;
+
+        if (hasSeats) {
+          const slip1 = document.createElement('div');
+          slip1.className = 'counter-print-slip';
+          slip1.innerHTML = `
+            <div style="text-align:center; border-bottom:1.5px dashed #777; padding-bottom:8px; margin-bottom:8px;">
+              <div style="font-size:11px; font-weight:800; border:1px solid #111; display:inline-block; padding:2px 6px; margin-bottom:4px;">SLIP 1 · MOVIE ADMISSION TICKET</div>
+              <div style="font-weight:800; font-size:14px;">${cinemaName || 'BOX CINEMA'}</div>
+              <div style="font-size:12px;">${roomName || ''}</div>
+            </div>
+            <div style="font-weight:800; font-size:16px; margin-bottom:6px;">${movieTitle || ''}</div>
+            <div style="font-size:12px;">Showtime: <strong>${showDate || ''} · ${showTime || ''}</strong></div>
+            <div style="font-size:12px;">Booking: <strong>${bookingCode || ''}</strong></div>
+            <div style="font-size:11px;">Tickets: ${(ticketCodesList || []).join(', ')}</div>
+            <div style="margin:8px 0; padding:6px; background:#f3f4f6; border:1px solid #d1d5db; text-align:center; font-weight:800; font-size:15px;">
+              SEATS: ${seatsList.join(', ')}
+            </div>
+            <div style="text-align:center; border-top:1.5px dashed #777; padding-top:8px; margin-top:8px;">
+              <div id="counterPrintQrHolder" style="display:inline-block;"></div>
+              <div style="font-size:11px; margin-top:4px;">Present at theater gate for check-in</div>
+            </div>
+          `;
+          area.append(slip1);
+          const qrHolder = document.getElementById('counterPrintQrHolder');
+          if (qrHolder && typeof QRCode !== 'undefined') {
+            new QRCode(qrHolder, {
+              text: window.location.origin + '/t/' + encodeURIComponent(ticketToken),
+              width: 100,
+              height: 100
+            });
+          }
+        }
+
+        if (hasFood) {
+          const slip2 = document.createElement('div');
+          slip2.className = 'counter-print-slip';
+          slip2.style.borderTopColor = '#dc2626';
+          slip2.innerHTML = `
+            <div style="text-align:center; border-bottom:1.5px dashed #777; padding-bottom:8px; margin-bottom:8px;">
+              <div style="font-size:11px; font-weight:800; border:1px solid #dc2626; color:#b91c1c; display:inline-block; padding:2px 6px; margin-bottom:4px;">${hasSeats ? 'SLIP 2 · FOOD & COMBO VOUCHER' : 'SLIP 1 · FOOD & COMBO VOUCHER'}</div>
+              <div style="font-weight:800; font-size:14px;">${cinemaName || 'BOX CINEMA'}</div>
+              <div style="font-size:12px;">Concession Counter Pickup</div>
+            </div>
+            <div style="font-size:12px; margin-bottom:6px;">Order Ref: <strong>${addedOrderCode ? addedOrderCode + ' (Ticket ' + bookingCode + ')' : bookingCode}</strong></div>
+            <div style="border-top:1px dashed #999; padding-top:6px;">
+              ${combinedFood.map(f => `<div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; padding:3px 0;"><span>${f.quantity}× ${f.productName}${f.variantName ? ' (' + f.variantName + ')' : ''}</span><span>PAID</span></div>`).join('')}
+            </div>
+            <div style="margin-top:10px; padding:6px; text-align:center; border:1px solid #fecaca; background:#fef2f2; color:#991b1b; font-size:11px; font-weight:700;">
+              EXCHANGE THIS VOUCHER AT CONCESSION COUNTER
+            </div>
+          `;
+          area.append(slip2);
+        }
+      }
+
+      async function handlePhysicalPrint() {
+        if (!bookingId) return;
+        try {
+          const res = await fetch(`/api/staff/bookings/${bookingId}/print-log`, {
+            method: 'POST',
+            headers: csrfHeaders()
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            showStaffNotice(data.message || 'Unable to log physical print.', 'danger');
+            return;
+          }
+          if (printBadge && data.printCount) {
+            printBadge.className = 'badge bg-info text-dark';
+            printBadge.textContent = `Printed ${data.printCount}x`;
+          }
+        } catch (err) {
+          showStaffNotice('Network error logging print action.', 'danger');
+          return;
+        }
+        renderPrintSlipsArea();
+        window.print();
+      }
+
+      if (printBtn) {
+        printBtn.addEventListener('click', handlePhysicalPrint);
+      }
+
+      // Counter Food / Combo Upsell Flow
+      const addonModal = document.getElementById('counterAddFoodModal');
+      const payOsModal = document.getElementById('counterPayOsModal');
+
+      function fmtMoney(v) {
+        return Number(v || 0).toLocaleString('en-US') + ' ₫';
+      }
+
+      function syncAddonSubmitLabel() {
+        const method = document.querySelector('input[name="counterAddonPay"]:checked')?.value || 'CASH';
+        const submitBtn = document.getElementById('btnSubmitAddonModal');
+        if (submitBtn) {
+          submitBtn.textContent = method === 'PAYOS_QR' ? 'Generate Bank Transfer QR' : 'Charge & Print 2 Slips';
+        }
+      }
+
+      document.querySelectorAll('input[name="counterAddonPay"]').forEach(r => {
+        r.addEventListener('change', syncAddonSubmitLabel);
+      });
+
+      function renderCounterFoodCatalog() {
+        const container = document.getElementById('counterFoodCatalog');
+        if (!container) return;
+        container.replaceChildren();
+        let total = 0;
+
+        combos.forEach(c => {
+          const q = comboQty[c.id] || 0;
+          total += q * Number(c.price || 0);
+          const row = document.createElement('div');
+          row.className = 'd-flex justify-content-between align-items-center p-2 rounded border border-secondary border-opacity-25';
+          row.style.background = 'rgba(255,255,255,0.03)';
+          row.innerHTML = `
+            <div>
+              <div class="small fw-semibold text-white">${c.name} <span class="badge bg-danger bg-opacity-25 text-danger ms-1">COMBO</span></div>
+              <div class="small text-danger fw-bold">${fmtMoney(c.price)}</div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 btn-minus">-</button>
+              <span class="small fw-bold text-white" style="min-width:18px;text-align:center;">${q}</span>
+              <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 btn-plus">+</button>
+            </div>
+          `;
+          row.querySelector('.btn-minus').addEventListener('click', () => { comboQty[c.id] = Math.max(0, q - 1); renderCounterFoodCatalog(); });
+          row.querySelector('.btn-plus').addEventListener('click', () => { comboQty[c.id] = q + 1; renderCounterFoodCatalog(); });
+          container.append(row);
+        });
+
+        foodItems.forEach(item => {
+          const q = itemQty[item.id] || 0;
+          total += q * Number(item.price || 0);
+          const row = document.createElement('div');
+          row.className = 'd-flex justify-content-between align-items-center p-2 rounded border border-secondary border-opacity-25';
+          row.style.background = 'rgba(255,255,255,0.03)';
+          row.innerHTML = `
+            <div>
+              <div class="small fw-semibold text-white">${item.name}</div>
+              <div class="small text-danger fw-bold">${fmtMoney(item.price)}</div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 btn-minus">-</button>
+              <span class="small fw-bold text-white" style="min-width:18px;text-align:center;">${q}</span>
+              <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 btn-plus">+</button>
+            </div>
+          `;
+          row.querySelector('.btn-minus').addEventListener('click', () => { itemQty[item.id] = Math.max(0, q - 1); renderCounterFoodCatalog(); });
+          row.querySelector('.btn-plus').addEventListener('click', () => { itemQty[item.id] = q + 1; renderCounterFoodCatalog(); });
+          container.append(row);
+        });
+
+        const totalEl = document.getElementById('counterAddonTotal');
+        const submitBtn = document.getElementById('btnSubmitAddonModal');
+        if (totalEl) totalEl.textContent = fmtMoney(total);
+        if (submitBtn) submitBtn.disabled = total === 0;
+      }
+
+      if (openAddonBtn) {
+        openAddonBtn.addEventListener('click', async () => {
+          if (!combos.length && !foodItems.length) {
+            const [cRes, fRes] = await Promise.all([fetch('/api/food/combos'), fetch('/api/food/items')]);
+            combos = cRes.ok ? await cRes.json() : [];
+            foodItems = fRes.ok ? await fRes.json() : [];
+          }
+          combos.forEach(c => { comboQty[c.id] = 0; });
+          foodItems.forEach(f => { itemQty[f.id] = 0; });
+          renderCounterFoodCatalog();
+          syncAddonSubmitLabel();
+          addonModal?.classList.add('show');
+        });
+      }
+
+      document.getElementById('btnCloseAddonModal')?.addEventListener('click', () => addonModal?.classList.remove('show'));
+      document.getElementById('btnCancelAddonModal')?.addEventListener('click', () => addonModal?.classList.remove('show'));
+
+      function finalizeAddonSuccess(resData) {
+        addedOrderCode = resData.bookingCode;
+        if (Array.isArray(resData.foodItems)) {
+          resData.foodItems.forEach(fi => extraFoodItems.push(fi));
+        }
+        const noFoodEl = document.getElementById('noFoodNoticeWrap');
+        if (noFoodEl) noFoodEl.classList.add('d-none');
+        if (printBtn) printBtn.textContent = 'Print 2 Physical Slips (Movie + Food)';
+        if (openAddonBtn) {
+          openAddonBtn.className = 'btn btn-outline-warning fw-bold w-100 py-2';
+          openAddonBtn.textContent = '+ Add Extra Food / Combo';
+        }
+        showStaffNotice(`Added concessions order ${resData.bookingCode} & queued to kitchen KDS.`, 'success');
+        handlePhysicalPrint();
+      }
+
+      document.getElementById('btnSubmitAddonModal')?.addEventListener('click', async () => {
+        const payMethod = document.querySelector('input[name="counterAddonPay"]:checked')?.value || 'CASH';
+        const pickedCombos = combos.filter(c => (comboQty[c.id] || 0) > 0).map(c => ({ comboId: c.id, quantity: comboQty[c.id] }));
+        const pickedItems = foodItems.filter(f => (itemQty[f.id] || 0) > 0).map(f => ({
+          foodItemId: f.id,
+          variantId: (Array.isArray(f.variants) && f.variants.length) ? f.variants[0].id : null,
+          quantity: itemQty[f.id]
+        }));
+        if (!pickedCombos.length && !pickedItems.length) return;
+
+        const payload = {
+          showtimeId: showtimeId,
+          seatIds: [],
+          guestName: buyerName || 'Counter Guest',
+          guestPhone: buyerPhone || '0000000000',
+          guestEmail: buyerEmail || null,
+          paymentMethod: payMethod,
+          foodItems: pickedItems,
+          combos: pickedCombos
+        };
+
+        const submitBtn = document.getElementById('btnSubmitAddonModal');
+        submitBtn.disabled = true;
+        try {
+          const res = await fetch('/api/staff/pos/bookings', {
+            method: 'POST',
+            headers: csrfHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            showStaffNotice(data.message || 'Unable to process concession add-on.', 'danger');
+            return;
+          }
+          addonModal?.classList.remove('show');
+          if (data.bookingStatus === 'PENDING_PAYMENT') {
+            pendingAddonPayOs = { bookingId: data.bookingId, paymentId: data.paymentId, orderCode: data.orderCode };
+            document.getElementById('counterPayOsAmount').textContent = fmtMoney(data.totalAmount);
+            document.getElementById('counterPayOsMemo').textContent = data.orderCode || '';
+            const qrBox = document.getElementById('counterPayOsQrBox');
+            qrBox.innerHTML = '';
+            if (data.payOsQrPayload && typeof QRCode !== 'undefined') {
+              new QRCode(qrBox, { text: data.payOsQrPayload, width: 150, height: 150 });
+            }
+            payOsModal?.classList.add('show');
+            clearInterval(addonCountdownTimer);
+            let secs = 600;
+            addonCountdownTimer = setInterval(() => {
+              const m = String(Math.floor(secs / 60)).padStart(2, '0');
+              const s = String(secs % 60).padStart(2, '0');
+              document.getElementById('counterPayOsCountdown').textContent = `${m}:${s}`;
+              if (secs > 0) secs--;
+            }, 1000);
+            clearInterval(addonPollTimer);
+            addonPollTimer = setInterval(async () => {
+              if (!pendingAddonPayOs?.paymentId) return;
+              const sRes = await fetch(`/api/payments/${pendingAddonPayOs.paymentId}/status`);
+              const st = await sRes.json().catch(() => ({}));
+              if (st.paid || st.status === 'PAID') {
+                clearInterval(addonPollTimer); clearInterval(addonCountdownTimer);
+                payOsModal?.classList.remove('show');
+                const detailRes = await fetch(`/api/staff/pos/bookings/${pendingAddonPayOs.bookingId}/result`);
+                const detail = await detailRes.json();
+                pendingAddonPayOs = null;
+                finalizeAddonSuccess(detail);
+              }
+            }, 2000);
+          } else {
+            finalizeAddonSuccess(data);
+          }
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+
+      document.getElementById('btnSimulateAddonPayOs')?.addEventListener('click', async () => {
+        if (!pendingAddonPayOs?.orderCode) return;
+        await fetch(`/api/payments/payos/simulate-payment/${pendingAddonPayOs.orderCode}`, {
+          method: 'POST',
+          headers: csrfHeaders()
+        });
+      });
+
+      document.getElementById('btnCancelAddonPayOs')?.addEventListener('click', async () => {
+        clearInterval(addonPollTimer); clearInterval(addonCountdownTimer);
+        if (pendingAddonPayOs?.bookingId) {
+          await fetch(`/api/staff/pos/bookings/${pendingAddonPayOs.bookingId}/cancel`, {
+            method: 'POST',
+            headers: csrfHeaders()
+          });
+        }
+        pendingAddonPayOs = null;
+        payOsModal?.classList.remove('show');
+        addonModal?.classList.add('show');
+      });
+    })();
+  </script>
   <script th:if="${isStaff and found and ticket.confirmable}" th:inline="javascript">
     (function () {
       const btn = document.getElementById('btnConfirmTicketUsed');
+      const openAddonBtn = document.getElementById('btnOpenAddonFood');
       const resultEl = document.getElementById('staffConfirmResult');
       const statusBadge = document.getElementById('ticketStatusBadge');
       const statusText = document.getElementById('ticketStatusText');
@@ -497,8 +1027,9 @@
             if (statusBadge) statusBadge.className = 'badge-status-used d-inline-flex align-items-center gap-1';
             if (statusText) statusText.textContent = 'USED';
             btn.className = 'btn btn-outline-success fw-bold w-100 py-2';
-            btn.textContent = 'TICKET CONFIRMED AS USED';
+            btn.textContent = 'TICKET USED';
             btn.disabled = true;
+            if (openAddonBtn) openAddonBtn.disabled = true;
 
             if (resultEl) {
               resultEl.className = 'alert alert-success py-2 px-3 small mb-2';
@@ -510,7 +1041,7 @@
               resultEl.className = 'alert alert-danger py-2 px-3 small mb-2';
               resultEl.textContent = data.message || 'Unable to confirm this ticket.';
             }
-            if (data.code === 'BOOKING_ALREADY_CHECKED_IN' || data.code === 'BOOKING_REFUNDED' || data.code === 'BOOKING_CANCELLED') {
+            if (data.code === 'BOOKING_ALREADY_CHECKED_IN' || data.code === 'BOOKING_REFUNDED' || data.code === 'BOOKING_CANCELLED' || data.code === 'TICKET_EXPIRED') {
               btn.disabled = true;
               btn.textContent = 'CANNOT CONFIRM';
             } else {

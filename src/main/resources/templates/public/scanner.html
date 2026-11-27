@@ -74,7 +74,10 @@
         </svg>
         <span class="fw-extrabold fs-5 tracking-tight text-white font-space">BOX <span class="text-danger">CINEMA</span></span>
       </a>
-      <a href="/" class="btn btn-outline-secondary btn-sm">Home</a>
+      <div class="d-flex align-items-center gap-2">
+        <a href="/staff/pos" class="btn btn-outline-secondary btn-sm">Counter POS</a>
+        <a href="/staff/food" class="btn btn-outline-secondary btn-sm">Kitchen KDS</a>
+      </div>
     </div>
   </nav>
 
@@ -98,7 +101,7 @@
           <line x1="12" y1="8" x2="12.01" y2="8"></line>
         </svg>
         <div>
-          Supports <strong>smartphone rear cameras</strong> and <strong>computer webcams</strong>. No account login required.
+          Supports <strong>smartphone rear cameras</strong> and <strong>computer webcams</strong>. Restricted to authorized Cinema Staff, Managers, and Administrators.
         </div>
       </div>
 
@@ -106,9 +109,34 @@
       <div class="border-top border-secondary border-opacity-25 pt-3">
         <label for="manualTokenInput" class="form-label text-secondary small fw-semibold">Or enter Ticket Token / URL manually:</label>
         <div class="input-group">
-          <input type="text" id="manualTokenInput" class="form-control bg-dark text-white border-secondary" placeholder="Enter token code (e.g. BOX1.xyz... or booking code)">
+          <input type="text" id="manualTokenInput" class="form-control bg-dark text-white border-secondary" placeholder="Enter token code (e.g. BOX1.xyz...)">
           <button class="btn btn-danger" type="button" id="btnManualSubmit">Look Up</button>
         </div>
+      </div>
+    </div>
+
+    <!-- Staff Recent Check-in History (shown for authenticated staff/manager/admin) -->
+    <div id="recentCheckinCard" class="scanner-card mt-4 d-none">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h6 fw-bold text-white mb-0">Recent Check-in History</h2>
+        <button type="button" id="btnRefreshHistory" class="btn btn-outline-secondary btn-sm">Refresh</button>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-dark table-hover table-sm mb-0 align-middle">
+          <thead>
+            <tr class="text-secondary small">
+              <th>Time</th>
+              <th>Booking Code</th>
+              <th>Seats</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="scannerHistoryBody" class="small">
+            <tr>
+              <td colspan="4" class="text-center text-secondary py-3">Loading history...</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </main>
@@ -220,6 +248,67 @@
         statusBox.classList.add('alert-warning');
         statusBox.textContent = 'Please grant camera access permission to scan QR codes directly.';
       });
+
+      const historyCard = document.getElementById('recentCheckinCard');
+      const historyBody = document.getElementById('scannerHistoryBody');
+      const refreshHistoryBtn = document.getElementById('btnRefreshHistory');
+
+      async function loadRecentCheckins() {
+        try {
+          const res = await fetch('/api/staff/check-ins', { credentials: 'same-origin' });
+          if (!res.ok) return;
+          const list = await res.json();
+          if (!Array.isArray(list)) return;
+
+          historyCard.classList.remove('d-none');
+          historyBody.replaceChildren();
+
+          if (list.length === 0) {
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = 4;
+            td.className = 'text-center text-secondary py-3';
+            td.textContent = 'No check-ins recorded today.';
+            tr.append(td);
+            historyBody.append(tr);
+            return;
+          }
+
+          list.slice(0, 15).forEach(item => {
+            const tr = document.createElement('tr');
+
+            const tdTime = document.createElement('td');
+            tdTime.textContent = item.checkedInAt ? new Date(item.checkedInAt).toLocaleTimeString('en-US') : '-';
+
+            const tdCode = document.createElement('td');
+            const strong = document.createElement('strong');
+            strong.textContent = '#' + (item.booking && item.booking.bookingCode ? item.booking.bookingCode : item.id);
+            tdCode.append(strong);
+
+            const tdSeats = document.createElement('td');
+            const seatBadge = document.createElement('span');
+            seatBadge.className = 'badge bg-success';
+            seatBadge.textContent = (item.seatsCount || 1) + ' seats';
+            tdSeats.append(seatBadge);
+
+            const tdStatus = document.createElement('td');
+            const statusBadge = document.createElement('span');
+            statusBadge.className = 'badge bg-primary';
+            statusBadge.textContent = item.status || 'CHECKED_IN';
+            tdStatus.append(statusBadge);
+
+            tr.append(tdTime, tdCode, tdSeats, tdStatus);
+            historyBody.append(tr);
+          });
+        } catch (_) {
+          // Silently ignore when unauthenticated or offline
+        }
+      }
+
+      if (refreshHistoryBtn) {
+        refreshHistoryBtn.addEventListener('click', loadRecentCheckins);
+      }
+      loadRecentCheckins();
     })();
   </script>
 </body>

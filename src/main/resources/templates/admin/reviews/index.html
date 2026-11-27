@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments/admin-shell :: head('Movie Comments & Reviews')}">
+  <link rel="icon" type="image/png" href="/assets/img/box-cinema-favicon.png" th:href="@{/assets/img/box-cinema-favicon.png}">
+</head>
+<body class="admin-page">
+  <div class="admin-shell">
+    <aside th:replace="~{admin/fragments/admin-shell :: sidebar('reviews')}"></aside>
+
+    <section class="admin-content">
+      <header th:replace="~{admin/fragments/admin-shell :: topbar('Movie Comments', null, '/admin/reviews')}"></header>
+
+      <div class="admin-content-body">
+        <!-- Page Heading -->
+        <div class="admin-page-heading mb-4">
+          <div>
+            <p class="admin-eyebrow">MODERATION &amp; COMMUNITY QUALITY</p>
+            <h1>Movie Comments &amp; Reviews</h1>
+            <p>Monitor audience ratings, hide spoiler or abusive comments, post official cinema responses, or permanently remove spam.</p>
+          </div>
+        </div>
+
+        <!-- KPI Summary Strip -->
+        <div class="admin-metrics mb-4">
+          <div class="admin-metric accent-blue">
+            <div class="admin-metric-top"><p>Total Comments</p></div>
+            <strong th:text="${stats.totalReviews}">0</strong>
+            <small>All submitted movie reviews</small>
+          </div>
+          <div class="admin-metric accent-amber">
+            <div class="admin-metric-top"><p>Average Rating</p></div>
+            <strong class="admin-review-kpi-gold" th:text="'★ ' + ${#numbers.formatDecimal(stats.averageRating, 1, 1)}">★ 0.0</strong>
+            <small>Calculated from VISIBLE reviews</small>
+          </div>
+          <div class="admin-metric accent-emerald">
+            <div class="admin-metric-top"><p>Visible / Published</p></div>
+            <strong th:text="${stats.visibleReviews}" style="color: #34d399;">0</strong>
+            <small th:text="${stats.hiddenReviews} + ' hidden by moderation'">0 hidden by moderation</small>
+          </div>
+          <div class="admin-metric accent-cyan">
+            <div class="admin-metric-top"><p>Verified Viewers</p></div>
+            <strong th:text="${stats.verifiedViewers}" style="color: #38bdf8;">0</strong>
+            <small>Confirmed ticket buyers</small>
+          </div>
+        </div>
+
+        <!-- Top 5 Highest-Rated Movies Showcase (Rotating Horizontal Banner Backdrop) -->
+        <section class="admin-top5-panel mb-4" id="top5Panel"
+                 th:if="${topRatedMovies != null and !#lists.isEmpty(topRatedMovies)}"
+                 aria-labelledby="adminTop5Title">
+          <div class="top5-banner-track" id="top5BannerTrack" aria-hidden="true">
+            <div th:each="top, iter : ${topRatedMovies}"
+                 class="top5-banner-slide"
+                 th:classappend="${(selectedMovieId != null and selectedMovieId == top.movieId) or (selectedMovieId == null and iter.index == 0) ? 'is-active' : ''}"
+                 th:style="'background-image: url(\'' + ${top.bannerUrl} + '\');'"></div>
+          </div>
+          <div class="top5-banner-scrim" aria-hidden="true"></div>
+
+          <div class="admin-top5-header">
+            <div>
+              <div class="admin-top5-eyebrow">★ TOP RATED BY AUDIENCE REVIEWS (VISIBLE ONLY)</div>
+              <h2 class="admin-top5-title" id="adminTop5Title">
+                Top 5 Highest-Rated Movies
+                <span class="admin-top5-chip">Click a poster to filter comments</span>
+              </h2>
+            </div>
+          </div>
+
+          <div class="top5-row">
+            <div th:each="top, iter : ${topRatedMovies}"
+                 class="top5-card"
+                 th:classappend="'rank-' + ${top.rank} + (${selectedMovieId != null and selectedMovieId == top.movieId} ? ' is-selected' : (${selectedMovieId == null and iter.index == 0} ? ' is-banner-active' : ''))"
+                 th:attr="data-slide=${iter.index}, data-movie-id=${top.movieId}"
+                 onmouseenter="previewTop5Banner(Number(this.dataset.slide))"
+                 onclick="filterCommentsByTopMovie(this.dataset.movieId)">
+              <div class="top5-stage">
+                <span class="top5-rank-num" aria-hidden="true" th:text="${top.rank}">1</span>
+                <div class="top5-poster-box">
+                  <span class="top5-brand-mark">BOX</span>
+                  <span class="top5-star-pill" th:text="'★ ' + ${#numbers.formatDecimal(top.averageRating, 1, 1)}">★ 4.9</span>
+                  <img th:src="${top.posterUrl}" th:alt="${top.title}"
+                       onerror="this.onerror=null;this.src='/assets/img/crimson-horizon.webp';" />
+                  <span class="top5-hover-comment-pill" th:title="${top.reviewCount} + ' comments'">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span th:text="${top.reviewCount}">0</span>
+                  </span>
+                </div>
+              </div>
+              <div class="top5-card-title-wrap">
+                <h3 class="top5-card-title" th:text="${top.title}">Movie Title</h3>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Multi-Facet Filter Toolbar -->
+        <div class="admin-toolbar mb-3">
+          <form id="reviewFilterForm" method="get" th:action="@{/admin/reviews}" class="row g-2 align-items-end w-100 m-0">
+            <div class="col-12 col-lg-3 p-1">
+              <label for="reviewSearch" class="form-label small text-secondary fw-semibold mb-1">Search</label>
+              <input type="search" id="reviewSearch" name="search" class="admin-input"
+                     placeholder="Comment, user, email, movie..." th:value="${searchQuery}">
+            </div>
+
+            <div class="col-6 col-md-3 col-lg-3 p-1">
+              <label for="movieFilter" class="form-label small text-secondary fw-semibold mb-1">Movie</label>
+              <select id="movieFilter" name="movieId" class="admin-input">
+                <option value="">All Movies</option>
+                <option th:each="m : ${movieOptions}"
+                        th:value="${m.movieId}"
+                        th:text="${m.title}"
+                        th:selected="${selectedMovieId != null and selectedMovieId == m.movieId}">Movie</option>
+              </select>
+            </div>
+
+            <div class="col-6 col-md-2 col-lg-1 p-1">
+              <label for="ratingFilter" class="form-label small text-secondary fw-semibold mb-1">Stars</label>
+              <select id="ratingFilter" name="rating" class="admin-input">
+                <option value="">All</option>
+                <option value="5" th:selected="${selectedRating != null and selectedRating == 5}">5 ★</option>
+                <option value="4" th:selected="${selectedRating != null and selectedRating == 4}">4 ★</option>
+                <option value="3" th:selected="${selectedRating != null and selectedRating == 3}">3 ★</option>
+                <option value="2" th:selected="${selectedRating != null and selectedRating == 2}">2 ★</option>
+                <option value="1" th:selected="${selectedRating != null and selectedRating == 1}">1 ★</option>
+              </select>
+            </div>
+
+            <div class="col-6 col-md-2 col-lg-2 p-1">
+              <label for="statusFilter" class="form-label small text-secondary fw-semibold mb-1">Status</label>
+              <select id="statusFilter" name="status" class="admin-input">
+                <option value="" th:selected="${selectedStatus == ''}">All Statuses</option>
+                <option value="VISIBLE" th:selected="${selectedStatus == 'VISIBLE'}">VISIBLE</option>
+                <option value="HIDDEN" th:selected="${selectedStatus == 'HIDDEN'}">HIDDEN</option>
+              </select>
+            </div>
+
+            <div class="col-6 col-md-2 col-lg-2 p-1">
+              <label for="verifiedFilter" class="form-label small text-secondary fw-semibold mb-1">Viewer</label>
+              <select id="verifiedFilter" name="verified" class="admin-input">
+                <option value="" th:selected="${selectedVerified == ''}">All Viewers</option>
+                <option value="true" th:selected="${selectedVerified == 'true'}">Verified Only</option>
+                <option value="false" th:selected="${selectedVerified == 'false'}">Unverified</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-md-3 col-lg-1 p-1 d-flex gap-1">
+              <button type="submit" class="admin-button admin-button-primary flex-fill">Filter</button>
+              <a th:href="@{/admin/reviews}" class="admin-button-secondary d-flex align-items-center justify-content-center px-2 text-decoration-none" title="Reset Filters">↺</a>
+            </div>
+          </form>
+        </div>
+
+        <!-- Bulk Action Bar -->
+        <form id="bulkReviewForm" method="post" th:action="@{/admin/reviews/bulk}" class="admin-review-bulk-bar">
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+          <input type="hidden" name="action" id="bulkActionInput" value="">
+          <div id="bulkHiddenInputs"></div>
+          <div><strong id="bulkSelectedCount">0</strong> comment(s) selected</div>
+          <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="admin-btn-action admin-btn-hide" onclick="submitBulk('HIDE')">Hide Selected</button>
+            <button type="button" class="admin-btn-action admin-btn-action-unlock" onclick="submitBulk('RESTORE')">Restore Selected</button>
+            <button type="button" class="admin-btn-action admin-btn-action-delete" onclick="submitBulk('DELETE')">Delete Selected</button>
+          </div>
+        </form>
+
+        <!-- Moderation Table -->
+        <div class="admin-table-panel">
+          <div class="d-flex justify-content-between align-items-center px-4 py-3"
+               style="border-bottom: 1px solid var(--box-border-color); background: var(--box-bg-elevated);">
+            <h2 style="font-size: 15px; font-weight: 700; margin: 0; color: var(--box-text-primary);">Audience Reviews &amp; Comments</h2>
+            <span style="font-size: 12px; color: var(--box-text-muted);"
+                  th:text="'Total matching: ' + ${reviews.totalElements}">Total matching: 0</span>
+          </div>
+
+          <div class="admin-table-scroll">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th style="width: 36px; text-align: center;">
+                    <input type="checkbox" class="form-check-input" id="selectAllReviews" aria-label="Select all reviews">
+                  </th>
+                  <th style="min-width: 195px;">Customer</th>
+                  <th style="min-width: 160px;">Movie</th>
+                  <th style="min-width: 95px;">Rating</th>
+                  <th style="min-width: 280px;">Comment &amp; Official Reply</th>
+                  <th style="min-width: 100px; text-align: center;">Status</th>
+                  <th style="min-width: 130px;">Posted</th>
+                  <th style="min-width: 220px; text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:each="r : ${reviews.content}"
+                    th:classappend="${r.status == 'HIDDEN' ? 'admin-review-row-hidden' : ''}">
+                  <td style="text-align: center;">
+                    <input type="checkbox" class="form-check-input review-row-checkbox"
+                           th:value="${r.reviewId}" aria-label="Select review">
+                  </td>
+
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="admin-user-avatar" style="width: 34px; height: 34px; font-size: 13px;">
+                        <img th:if="${r.reviewerAvatarUrl != null and !#strings.isEmpty(r.reviewerAvatarUrl)}"
+                             th:src="${r.reviewerAvatarUrl}" alt="Reviewer Avatar"
+                             onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='';">
+                        <span th:style="${r.reviewerAvatarUrl != null and !#strings.isEmpty(r.reviewerAvatarUrl)} ? 'display:none' : ''"
+                              th:text="${r.reviewerInitial}">C</span>
+                      </span>
+                      <div>
+                        <div style="font-weight: 650; color: var(--box-text-primary); font-size: 13px;" th:text="${r.reviewerName}">Customer</div>
+                        <div style="font-size: 11px; color: var(--box-text-muted);" th:text="${r.reviewerEmail}">user@example.com</div>
+                        <span th:if="${r.verifiedViewer}" class="admin-review-verified-chip">✓ Verified Viewer</span>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td>
+                    <a th:href="@{/movies/{id}(id=${r.movieId})}" target="_blank"
+                       style="font-weight: 650; color: var(--box-text-primary); text-decoration: none;"
+                       th:text="${r.movieTitle}">Movie Title</a>
+                  </td>
+
+                  <td>
+                    <div class="admin-review-stars" aria-label="Rating">
+                      <span th:each="star : ${#numbers.sequence(1, 5)}"
+                            th:classappend="${star > r.rating ? 'dim' : ''}">★</span>
+                    </div>
+                    <div style="font-size: 11px; color: var(--box-text-muted);" th:text="${r.rating} + ' / 5'">5 / 5</div>
+                  </td>
+
+                  <td>
+                    <div class="admin-review-snippet"
+                         th:text="${r.comment != null and !#strings.isEmpty(r.comment) ? r.comment : '(Rating only, no written comment)'}">
+                      Review comment
+                    </div>
+                    <div th:if="${r.adminReply != null and !#strings.isEmpty(r.adminReply)}" class="admin-review-reply-tag">
+                      <strong>BOX Cinema:</strong>
+                      <span th:text="${r.adminReply}">Reply</span>
+                    </div>
+                  </td>
+
+                  <td style="text-align: center;">
+                    <span class="admin-status-pill"
+                          th:classappend="${r.status == 'HIDDEN' ? 'admin-status-hidden' : 'admin-status-visible'}">
+                      <span class="admin-status-dot"></span>
+                      <span th:text="${r.status}">VISIBLE</span>
+                    </span>
+                  </td>
+
+                  <td style="font-size: 12px; color: var(--box-text-secondary);"
+                      th:text="${r.createdAt != null ? #temporals.format(r.createdAt, 'yyyy-MM-dd HH:mm') : '-'}">
+                    2026-11-27 14:00
+                  </td>
+
+                  <td>
+                    <div class="d-flex align-items-center justify-content-end gap-1 flex-wrap">
+                      <button type="button" class="admin-btn-action admin-btn-action-edit"
+                              th:attr="data-id=${r.reviewId},
+                                       data-movie=${r.movieTitle},
+                                       data-author=${r.reviewerName},
+                                       data-email=${r.reviewerEmail},
+                                       data-rating=${r.rating},
+                                       data-status=${r.status},
+                                       data-comment=${r.comment != null ? r.comment : ''},
+                                       data-reply=${r.adminReply != null ? r.adminReply : ''}"
+                              onclick="openReviewDetailModal(this)">
+                        <span>View / Reply</span>
+                      </button>
+
+                      <form th:action="@{/admin/reviews/{id}/status(id=${r.reviewId})}" method="post" class="m-0 p-0 d-inline">
+                        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                        <input type="hidden" name="targetStatus" th:value="${r.status == 'HIDDEN' ? 'VISIBLE' : 'HIDDEN'}">
+                        <button type="submit"
+                                th:class="${r.status == 'HIDDEN' ? 'admin-btn-action admin-btn-action-unlock' : 'admin-btn-action admin-btn-hide'}"
+                                th:text="${r.status == 'HIDDEN' ? 'Restore' : 'Hide'}">Hide</button>
+                      </form>
+
+                      <form th:action="@{/admin/reviews/{id}/delete(id=${r.reviewId})}" method="post" class="m-0 p-0 d-inline"
+                            onsubmit="return confirm('Permanently delete this comment?');">
+                        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                        <button type="submit" class="admin-btn-action admin-btn-action-delete">Delete</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(reviews.content)}">
+                  <td colspan="8" class="text-center py-5" style="color: var(--box-text-muted);">
+                    No comments or reviews match the selected criteria.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="admin-pagination">
+            <p th:text="'Showing page ' + (${reviews.number} + 1) + ' of ' + (${reviews.totalPages > 0 ? reviews.totalPages : 1}) + ' · ' + ${reviews.totalElements} + ' review(s)'">
+              Showing page 1 of 1
+            </p>
+            <div class="d-flex gap-2">
+              <a th:if="${reviews.hasPrevious()}"
+                 th:href="@{/admin/reviews(page=${reviews.number - 1}, size=${reviews.size}, movieId=${selectedMovieId}, rating=${selectedRating}, status=${selectedStatus}, verified=${selectedVerified}, search=${searchQuery})}"
+                 class="admin-button text-decoration-none">Previous</a>
+              <button th:unless="${reviews.hasPrevious()}" type="button" class="admin-button" disabled>Previous</button>
+
+              <a th:if="${reviews.hasNext()}"
+                 th:href="@{/admin/reviews(page=${reviews.number + 1}, size=${reviews.size}, movieId=${selectedMovieId}, rating=${selectedRating}, status=${selectedStatus}, verified=${selectedVerified}, search=${searchQuery})}"
+                 class="admin-button text-decoration-none">Next</a>
+              <button th:unless="${reviews.hasNext()}" type="button" class="admin-button" disabled>Next</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Inspect & Official Reply Dialog -->
+  <dialog id="reviewDetailModal" class="admin-dialog" style="max-width: 600px; width: min(600px, calc(100% - 28px));">
+    <div class="admin-dialog-heading">
+      <h2 id="modalReviewHeader">Inspect Comment</h2>
+      <button type="button" class="admin-icon-button" aria-label="Close dialog" onclick="this.closest('dialog').close()">×</button>
+    </div>
+
+    <div id="modalReviewMeta" style="font-size: 13px; color: var(--box-text-secondary); margin-bottom: 10px;"></div>
+    <div id="modalReviewFullComment"
+         style="background: var(--box-bg-secondary); border: 1px solid var(--box-border-color); border-radius: 10px; padding: 12px 14px; font-size: 13.5px; line-height: 1.55; white-space: pre-line; margin-bottom: 16px;"></div>
+
+    <form id="modalReplyForm" method="post" action="/admin/reviews/0/reply">
+      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+      <label for="modalAdminReplyInput" style="font-size: 12.5px; font-weight: 600; color: var(--box-text-primary); display: block; margin-bottom: 6px;">
+        Official BOX Cinema Reply (shown publicly below customer comment)
+      </label>
+      <textarea id="modalAdminReplyInput" name="adminReply" maxlength="1000" rows="3" class="admin-input"
+                style="min-height: 88px; resize: vertical;"
+                placeholder="Write a polite official cinema reply (leave blank to remove reply)..."></textarea>
+
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-4 pt-3"
+           style="border-top: 1px solid var(--box-border-color);">
+        <button type="button" class="admin-btn-action" id="modalToggleStatusBtn" onclick="submitModalStatusToggle()">Hide</button>
+        <div class="d-flex gap-2">
+          <button type="button" class="admin-button" onclick="this.closest('dialog').close()">Cancel</button>
+          <button type="submit" class="admin-button admin-button-primary">Save Reply</button>
+        </div>
+      </div>
+    </form>
+
+    <form id="modalStatusToggleForm" method="post" action="/admin/reviews/0/status" class="d-none">
+      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+      <input type="hidden" name="targetStatus" id="modalToggleTargetStatus" value="HIDDEN">
+    </form>
+  </dialog>
+
+  <script>
+    const reviewModal = document.getElementById('reviewDetailModal');
+    if (reviewModal) {
+      reviewModal.addEventListener('click', (e) => {
+        const rect = reviewModal.getBoundingClientRect();
+        const inDialog = rect.top <= e.clientY && e.clientY <= rect.top + rect.height
+          && rect.left <= e.clientX && e.clientX <= rect.left + rect.width;
+        if (!inDialog) reviewModal.close();
+      });
+    }
+
+    function openReviewDetailModal(btn) {
+      const id = btn.getAttribute('data-id');
+      const movie = btn.getAttribute('data-movie') || 'Movie';
+      const author = btn.getAttribute('data-author') || 'Customer';
+      const email = btn.getAttribute('data-email') || '';
+      const rating = Number(btn.getAttribute('data-rating') || 5);
+      const status = btn.getAttribute('data-status') || 'VISIBLE';
+      const comment = btn.getAttribute('data-comment') || '(Rating only, no written comment)';
+      const reply = btn.getAttribute('data-reply') || '';
+
+      document.getElementById('modalReviewHeader').textContent = `${movie} — Comment #${id}`;
+      document.getElementById('modalReviewMeta').textContent =
+        `${author}${email ? ' (' + email + ')' : ''} · ${rating} / 5 ★ · Status: ${status}`;
+      document.getElementById('modalReviewFullComment').textContent = comment;
+      document.getElementById('modalAdminReplyInput').value = reply;
+
+      document.getElementById('modalReplyForm').action = `/admin/reviews/${id}/reply`;
+      document.getElementById('modalStatusToggleForm').action = `/admin/reviews/${id}/status`;
+
+      const nextStatus = status === 'HIDDEN' ? 'VISIBLE' : 'HIDDEN';
+      document.getElementById('modalToggleTargetStatus').value = nextStatus;
+      const toggleBtn = document.getElementById('modalToggleStatusBtn');
+      toggleBtn.textContent = status === 'HIDDEN' ? 'Restore to VISIBLE' : 'Hide Comment';
+      toggleBtn.className = status === 'HIDDEN'
+        ? 'admin-btn-action admin-btn-action-unlock'
+        : 'admin-btn-action admin-btn-hide';
+
+      reviewModal.showModal();
+    }
+
+    function submitModalStatusToggle() {
+      document.getElementById('modalStatusToggleForm')?.submit();
+    }
+
+    const selectAllChk = document.getElementById('selectAllReviews');
+    const bulkBar = document.getElementById('bulkReviewForm');
+    const selectedCountEl = document.getElementById('bulkSelectedCount');
+
+    function syncBulkSelection() {
+      const checked = Array.from(document.querySelectorAll('.review-row-checkbox:checked'));
+      if (selectedCountEl) selectedCountEl.textContent = String(checked.length);
+      if (bulkBar) bulkBar.classList.toggle('is-visible', checked.length > 0);
+    }
+
+    if (selectAllChk) {
+      selectAllChk.addEventListener('change', () => {
+        document.querySelectorAll('.review-row-checkbox').forEach(cb => {
+          cb.checked = selectAllChk.checked;
+        });
+        syncBulkSelection();
+      });
+    }
+
+    document.querySelectorAll('.review-row-checkbox').forEach(cb => {
+      cb.addEventListener('change', syncBulkSelection);
+    });
+
+    function submitBulk(action) {
+      const checked = Array.from(document.querySelectorAll('.review-row-checkbox:checked')).map(cb => cb.value);
+      if (!checked.length) return;
+      if (action === 'DELETE' && !confirm(`Permanently delete ${checked.length} selected comment(s)?`)) {
+        return;
+      }
+      const hiddenBox = document.getElementById('bulkHiddenInputs');
+      hiddenBox.innerHTML = '';
+      checked.forEach(id => {
+        const inp = document.createElement('input');
+        inp.type = 'hidden';
+        inp.name = 'reviewIds';
+        inp.value = id;
+        hiddenBox.appendChild(inp);
+      });
+      document.getElementById('bulkActionInput').value = action;
+      document.getElementById('bulkReviewForm').submit();
+    }
+
+    (function initTop5BannerCarousel() {
+      const panel = document.getElementById('top5Panel');
+      const track = document.getElementById('top5BannerTrack');
+      if (!panel || !track) return;
+
+      const slides = Array.from(track.querySelectorAll('.top5-banner-slide'));
+      const cards = Array.from(panel.querySelectorAll('.top5-card'));
+      if (!slides.length || !cards.length) return;
+
+      let activeIdx = slides.findIndex(s => s.classList.contains('is-active'));
+      if (activeIdx < 0) activeIdx = 0;
+      let timer = null;
+
+      window.previewTop5Banner = function (idx) {
+        if (isNaN(idx) || idx < 0 || idx >= slides.length) return;
+        activeIdx = idx;
+        slides.forEach((s, i) => s.classList.toggle('is-active', i === idx));
+        cards.forEach((c, i) => c.classList.toggle('is-banner-active', i === idx));
+      };
+
+      window.filterCommentsByTopMovie = function (movieId) {
+        const select = document.getElementById('movieFilter');
+        const form = document.getElementById('reviewFilterForm');
+        if (!select || !form || !movieId) return;
+        select.value = String(select.value) === String(movieId) ? '' : String(movieId);
+        form.submit();
+      };
+
+      function startRotation() {
+        clearInterval(timer);
+        if (slides.length <= 1) return;
+        timer = setInterval(() => {
+          window.previewTop5Banner((activeIdx + 1) % slides.length);
+        }, 4200);
+      }
+
+      panel.addEventListener('mouseenter', () => clearInterval(timer));
+      panel.addEventListener('mouseleave', () => startRotation());
+      startRotation();
+    })();
+  </script>
+</body>
+</html>

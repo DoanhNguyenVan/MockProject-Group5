@@ -3,6 +3,7 @@ package com.boxcinema.customer.controller;
 import com.boxcinema.common.dto.BookingTicketViewDto;
 import com.boxcinema.customer.service.TicketService;
 import com.boxcinema.common.util.SecurityContextUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -11,6 +12,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping({"/api/customer/bookings", "/api/bookings"})
@@ -23,45 +25,49 @@ public class TicketApiController {
     }
 
     @GetMapping("/{id}/ticket")
-    public ResponseEntity<?> getTicketView(@PathVariable Long id) {
-        Long userId = SecurityContextUtils.resolveCurrentUserId();
+    public ResponseEntity<?> getTicketView(@PathVariable Long id, HttpServletRequest request) {
+        Long userId = SecurityContextUtils.resolveCurrentUserId(request);
+        Set<Long> guestIds = SecurityContextUtils.extractGuestSessionBookingIds(request);
         try {
-            BookingTicketViewDto ticketView = ticketService.getTicketView(id, userId);
+            BookingTicketViewDto ticketView = ticketService.getTicketView(id, userId, guestIds);
             return ResponseEntity.ok(ticketView);
         } catch (AccessDeniedException ex) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
+            return ResponseEntity.status(userId == null ? HttpStatus.UNAUTHORIZED : HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", ex.getMessage()));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
         }
     }
 
     @GetMapping("/{id}/ticket/qr")
-    public ResponseEntity<byte[]> getBookingQrImage(@PathVariable Long id) {
-        Long userId = SecurityContextUtils.resolveCurrentUserId();
+    public ResponseEntity<byte[]> getBookingQrImage(@PathVariable Long id, HttpServletRequest request) {
+        Long userId = SecurityContextUtils.resolveCurrentUserId(request);
+        Set<Long> guestIds = SecurityContextUtils.extractGuestSessionBookingIds(request);
         try {
-            byte[] imageBytes = ticketService.getBookingQrImage(id, userId);
+            byte[] imageBytes = ticketService.getBookingQrImage(id, userId, guestIds);
             return ResponseEntity.ok()
                     .contentType(MediaType.IMAGE_PNG)
                     .header(HttpHeaders.CACHE_CONTROL, "private, no-store, max-age=0, must-revalidate")
                     .body(imageBytes);
         } catch (AccessDeniedException ex) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            return ResponseEntity.status(userId == null ? HttpStatus.UNAUTHORIZED : HttpStatus.FORBIDDEN).build();
         } catch (IllegalArgumentException | IllegalStateException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
 
     @PostMapping("/{id}/email/resend")
-    public ResponseEntity<Map<String, Object>> resendEmail(@PathVariable Long id) {
-        Long userId = SecurityContextUtils.resolveCurrentUserId();
+    public ResponseEntity<Map<String, Object>> resendEmail(@PathVariable Long id, HttpServletRequest request) {
+        Long userId = SecurityContextUtils.resolveCurrentUserId(request);
+        Set<Long> guestIds = SecurityContextUtils.extractGuestSessionBookingIds(request);
         try {
-            ticketService.resendEmail(id, userId);
+            ticketService.resendEmail(id, userId, guestIds);
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "message", "Request to resend ticket via email has been accepted."
             ));
         } catch (AccessDeniedException ex) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+            return ResponseEntity.status(userId == null ? HttpStatus.UNAUTHORIZED : HttpStatus.FORBIDDEN).body(Map.of(
                     "success", false,
                     "message", ex.getMessage()
             ));

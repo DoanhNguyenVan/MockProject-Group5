@@ -32,12 +32,6 @@ public class StaffPageController {
         return "staff/pos";
     }
 
-    @GetMapping("/checkin")
-    public String checkinPage(Model model) {
-        model.addAttribute("activePage", "staff-checkin");
-        return "staff/checkin";
-    }
-
     @GetMapping("/food")
     public String foodKitchenPage(Model model) {
         model.addAttribute("activePage", "staff-food");

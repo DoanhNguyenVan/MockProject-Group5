@@ -1,5 +1,7 @@
 package com.boxcinema.staff.dto.response;
 
+import com.boxcinema.publicsite.dto.response.PublicFoodItemDto;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,8 +16,13 @@ public class StaffPosBookingResultDto {
     private String guestPhone;
     private String guestEmail;
     private String movieTitle;
+    private String cinemaName;
+    private String roomName;
+    private String pickupLocation;
+    private String qrToken;
     private String showtimeStart;
     private List<String> seatLabels = new ArrayList<>();
+    private List<PublicFoodItemDto> foodItems = new ArrayList<>();
     private Long paymentId;
     private Long orderCode;
     private String payOsQrPayload;
@@ -83,4 +90,19 @@ public class StaffPosBookingResultDto {
 
     public boolean isEmailSent() { return emailSent; }
     public void setEmailSent(boolean emailSent) { this.emailSent = emailSent; }
+
+    public String getCinemaName() { return cinemaName; }
+    public void setCinemaName(String cinemaName) { this.cinemaName = cinemaName; }
+
+    public String getRoomName() { return roomName; }
+    public void setRoomName(String roomName) { this.roomName = roomName; }
+
+    public String getPickupLocation() { return pickupLocation; }
+    public void setPickupLocation(String pickupLocation) { this.pickupLocation = pickupLocation; }
+
+    public String getQrToken() { return qrToken; }
+    public void setQrToken(String qrToken) { this.qrToken = qrToken; }
+
+    public List<PublicFoodItemDto> getFoodItems() { return foodItems; }
+    public void setFoodItems(List<PublicFoodItemDto> foodItems) { this.foodItems = foodItems; }
 }

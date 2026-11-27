@@ -136,12 +136,28 @@ class StaffCheckinServiceImplTest {
         assertFalse(cancelled.isSuccess());
         assertEquals("BOOKING_CANCELLED", cancelled.getCode());
 
-        // Expired
+        // Expired (> endAt + 30m grace)
         booking.setBookingStatus("CONFIRMED");
-        qr.setExpiresAt(LocalDateTime.now().minusMinutes(10));
+        booking.getShowtime().setEndAt(LocalDateTime.now().minusMinutes(35));
+        qr.setExpiresAt(LocalDateTime.now().plusHours(3));
         StaffCheckinResponseDto expired = service.checkinByQrToken(rawToken, 5L);
         assertFalse(expired.isSuccess());
         assertEquals("TICKET_EXPIRED", expired.getCode());
+        assertEquals("This ticket QR code has expired for the scheduled showtime.", expired.getMessage());
+
+        // Rejects wrong cinema branch
+        staff.setRole("STAFF");
+        staff.setCinemaId(2L);
+        Cinema ticketCinema = new Cinema();
+        ticketCinema.setCinemaId(1L);
+        ticketCinema.setCinemaName("BOX Cinema Royal City");
+        Room room = new Room();
+        room.setCinema(ticketCinema);
+        booking.getShowtime().setRoom(room);
+        booking.getShowtime().setEndAt(LocalDateTime.now().plusHours(2));
+        AccessDeniedException branchEx = assertThrows(AccessDeniedException.class,
+                () -> service.checkinByQrToken(rawToken, 5L));
+        assertTrue(branchEx.getMessage().startsWith("WRONG_CINEMA_BRANCH|"));
     }
 
     @Test

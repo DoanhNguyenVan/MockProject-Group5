@@ -18,9 +18,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 @Transactional
@@ -64,11 +66,10 @@ public class TicketServiceImpl implements TicketService {
         this.paymentRepository = paymentRepository;
     }
 
-    private void validateBookingAccess(Booking booking, Long currentUserId) {
+    private void validateBookingAccess(Booking booking, Long currentUserId, Set<Long> guestSessionBookingIds) {
         if (booking == null) {
             throw new IllegalArgumentException("Booking does not exist.");
         }
-        // If booking belongs to a registered member
         if (booking.getUser() != null) {
             if (currentUserId == null) {
                 throw new AccessDeniedException("Please sign in to access ticket details for this order.");
@@ -83,18 +84,46 @@ public class TicketServiceImpl implements TicketService {
                             "You do not have permission to access QR code or ticket details for this order.");
                 }
             }
+            return;
         }
+
+        // Guest online / Counter walk-in order (user == null):
+        // allow only the originating browser session or authenticated cinema personnel
+        if (guestSessionBookingIds != null && guestSessionBookingIds.contains(booking.getBookingId())) {
+            return;
+        }
+        if (currentUserId != null) {
+            User user = userRepository.findById(currentUserId).orElse(null);
+            if (user != null && ("ADMIN".equalsIgnoreCase(user.getRole())
+                    || "STAFF".equalsIgnoreCase(user.getRole())
+                    || "MANAGER".equalsIgnoreCase(user.getRole()))) {
+                return;
+            }
+        }
+        throw new AccessDeniedException("You do not have permission to access ticket details for this order.");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void assertCanAccessBooking(Long bookingId, Long currentUserId, Set<Long> guestSessionBookingIds) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
+        validateBookingAccess(booking, currentUserId, guestSessionBookingIds);
     }
 
     @Override
     @Transactional(readOnly = true)
     public BookingTicketViewDto getTicketView(Long bookingId, Long currentUserId) {
+        return getTicketView(bookingId, currentUserId, Collections.emptySet());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BookingTicketViewDto getTicketView(Long bookingId, Long currentUserId, Set<Long> guestSessionBookingIds) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
 
-        if (currentUserId != null) {
-            validateBookingAccess(booking, currentUserId);
-        }
+        validateBookingAccess(booking, currentUserId, guestSessionBookingIds);
 
         BookingTicketViewDto dto = new BookingTicketViewDto();
         dto.setBookingId(booking.getBookingId());
@@ -185,28 +214,31 @@ public class TicketServiceImpl implements TicketService {
     @Override
     @Transactional
     public byte[] getBookingQrImage(Long bookingId, Long currentUserId) {
+        return getBookingQrImage(bookingId, currentUserId, Collections.emptySet());
+    }
+
+    @Override
+    @Transactional
+    public byte[] getBookingQrImage(Long bookingId, Long currentUserId, Set<Long> guestSessionBookingIds) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
 
-        if (currentUserId != null) {
-            if (currentUserId != null) {
-            validateBookingAccess(booking, currentUserId);
-        }
-        }
+        validateBookingAccess(booking, currentUserId, guestSessionBookingIds);
 
         return bookingQrService.getBookingQrPngBytes(bookingId);
     }
 
     @Override
     public void resendEmail(Long bookingId, Long currentUserId) {
+        resendEmail(bookingId, currentUserId, Collections.emptySet());
+    }
+
+    @Override
+    public void resendEmail(Long bookingId, Long currentUserId, Set<Long> guestSessionBookingIds) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found: " + bookingId));
 
-        if (currentUserId != null) {
-            if (currentUserId != null) {
-            validateBookingAccess(booking, currentUserId);
-        }
-        }
+        validateBookingAccess(booking, currentUserId, guestSessionBookingIds);
 
         if (!"CONFIRMED".equalsIgnoreCase(booking.getBookingStatus())) {
             throw new IllegalStateException("Emails can only be resent for successfully confirmed bookings.");
@@ -299,14 +331,16 @@ public class TicketServiceImpl implements TicketService {
     @Override
     @Transactional(readOnly = true)
     public BookingHistoryDetailDto getBookingDetail(Long bookingId, Long currentUserId) {
+        return getBookingDetail(bookingId, currentUserId, Collections.emptySet());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BookingHistoryDetailDto getBookingDetail(Long bookingId, Long currentUserId, Set<Long> guestSessionBookingIds) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
 
-        if (currentUserId != null) {
-            if (currentUserId != null) {
-            validateBookingAccess(booking, currentUserId);
-        }
-        }
+        validateBookingAccess(booking, currentUserId, guestSessionBookingIds);
 
         BookingHistoryDetailDto dto = new BookingHistoryDetailDto();
         dto.setBookingId(booking.getBookingId());

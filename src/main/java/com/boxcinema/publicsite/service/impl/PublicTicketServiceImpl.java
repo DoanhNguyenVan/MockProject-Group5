@@ -6,6 +6,8 @@ import com.boxcinema.common.util.CryptoUtils;
 import com.boxcinema.publicsite.dto.response.PublicFoodItemDto;
 import com.boxcinema.publicsite.dto.response.PublicTicketDto;
 import com.boxcinema.publicsite.service.PublicTicketService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +31,8 @@ public class PublicTicketServiceImpl implements PublicTicketService {
     private final BookingCheckinRepository checkinRepository;
     private final FoodFulfillmentRepository foodFulfillmentRepository;
     private final PaymentRepository paymentRepository;
+    private final UserRepository userRepository;
+    private final CinemaRepository cinemaRepository;
 
     public PublicTicketServiceImpl(
             BookingQrRepository bookingQrRepository,
@@ -37,15 +41,34 @@ public class PublicTicketServiceImpl implements PublicTicketService {
             FoodFulfillmentRepository foodFulfillmentRepository,
             PaymentRepository paymentRepository
     ) {
+        this(bookingQrRepository, ticketRepository, checkinRepository, foodFulfillmentRepository,
+                paymentRepository, null, null);
+    }
+
+    @Autowired
+    public PublicTicketServiceImpl(
+            BookingQrRepository bookingQrRepository,
+            TicketRepository ticketRepository,
+            BookingCheckinRepository checkinRepository,
+            FoodFulfillmentRepository foodFulfillmentRepository,
+            PaymentRepository paymentRepository,
+            UserRepository userRepository,
+            CinemaRepository cinemaRepository
+    ) {
         this.bookingQrRepository = bookingQrRepository;
         this.ticketRepository = ticketRepository;
         this.checkinRepository = checkinRepository;
         this.foodFulfillmentRepository = foodFulfillmentRepository;
         this.paymentRepository = paymentRepository;
+        this.userRepository = userRepository;
+        this.cinemaRepository = cinemaRepository;
     }
 
     @Override
-    public Optional<PublicTicketDto> getPublicTicketByToken(String token) {
+    public Optional<PublicTicketDto> getTicketByTokenForViewer(String token, Long viewerUserId, String viewerRole) {
+        if (viewerUserId == null) {
+            throw new AccessDeniedException("Authentication required to view ticket details.");
+        }
         if (token == null || token.trim().isBlank()) {
             return Optional.empty();
         }
@@ -68,9 +91,61 @@ public class PublicTicketServiceImpl implements PublicTicketService {
             return Optional.empty();
         }
 
+        User viewerUser = userRepository != null ? userRepository.findById(viewerUserId).orElse(null) : null;
+        String resolvedRole = viewerUser != null && viewerUser.getRole() != null
+                ? viewerUser.getRole().trim().toUpperCase()
+                : (viewerRole != null ? viewerRole.replace("ROLE_", "").trim().toUpperCase() : "");
+        boolean isStaff = "STAFF".equals(resolvedRole)
+                || "MANAGER".equals(resolvedRole)
+                || "ADMIN".equals(resolvedRole);
+
+        Showtime showtime = booking.getShowtime();
+        Cinema targetCinema = (showtime != null && showtime.getRoom() != null)
+                ? showtime.getRoom().getCinema()
+                : null;
+
+        if (!isStaff) {
+            Long ownerUserId = booking.getUser() != null ? booking.getUser().getUserId() : null;
+            if (ownerUserId == null || !ownerUserId.equals(viewerUserId)) {
+                throw new AccessDeniedException("You do not have permission to view this ticket.");
+            }
+        } else if (!"ADMIN".equals(resolvedRole) && viewerUser != null && viewerUser.getCinemaId() != null) {
+            Long targetCinemaId = targetCinema != null ? targetCinema.getCinemaId() : null;
+            if (targetCinemaId != null && !viewerUser.getCinemaId().equals(targetCinemaId)) {
+                String assignedName = cinemaRepository != null
+                        ? cinemaRepository.findById(viewerUser.getCinemaId())
+                                .map(Cinema::getCinemaName)
+                                .orElse("your assigned cinema branch")
+                        : "your assigned cinema branch";
+                String targetName = targetCinema.getCinemaName() != null
+                        ? targetCinema.getCinemaName()
+                        : "another cinema branch";
+                throw new AccessDeniedException(
+                        "WRONG_CINEMA_BRANCH|This ticket belongs to " + targetName
+                                + " and cannot be viewed, printed, or checked in from " + assignedName + ".");
+            }
+        }
+
         PublicTicketDto dto = new PublicTicketDto();
+        dto.setBookingId(booking.getBookingId());
         dto.setBookingCode(booking.getBookingCode());
         dto.setBookingStatus(booking.getBookingStatus());
+        dto.setViewerIsStaff(isStaff);
+        // Staff counter/gate UI never renders a duplicate QR image; only verified ticket owner gets QR PNG
+        dto.setCanDisplayQrImage(!isStaff);
+
+        if (isStaff) {
+            User buyer = booking.getUser();
+            dto.setBuyerName(buyer != null && buyer.getFullName() != null && !buyer.getFullName().isBlank()
+                    ? buyer.getFullName()
+                    : booking.getGuestName());
+            dto.setBuyerEmail(buyer != null && buyer.getEmail() != null && !buyer.getEmail().isBlank()
+                    ? buyer.getEmail()
+                    : booking.getGuestEmail());
+            dto.setBuyerPhone(buyer != null && buyer.getPhone() != null && !buyer.getPhone().isBlank()
+                    ? buyer.getPhone()
+                    : booking.getGuestPhone());
+        }
 
         Optional<Payment> paymentOpt = paymentRepository.findByBooking_BookingId(booking.getBookingId());
         String paymentStatus = paymentOpt.map(Payment::getPaymentStatus)
@@ -78,19 +153,19 @@ public class PublicTicketServiceImpl implements PublicTicketService {
                 .orElse("CONFIRMED".equalsIgnoreCase(booking.getBookingStatus()) ? "COMPLETED" : "PENDING");
         dto.setPaymentStatus(paymentStatus);
 
-        Showtime showtime = booking.getShowtime();
         if (showtime != null) {
+            dto.setShowtimeId(showtime.getShowtimeId());
             if (showtime.getMovie() != null) {
                 dto.setMovieTitle(showtime.getMovie().getTitle());
                 dto.setMoviePosterUrl(showtime.getMovie().getPosterUrl());
             }
             if (showtime.getRoom() != null) {
                 dto.setRoomName(showtime.getRoom().getRoomName());
-                Cinema cinema = showtime.getRoom().getCinema();
-                if (cinema != null) {
-                    dto.setCinemaName(cinema.getCinemaName());
-                    String address = cinema.getAddress() != null ? cinema.getAddress().trim() : "";
-                    String city = cinema.getCity() != null ? cinema.getCity().trim() : "";
+                if (targetCinema != null) {
+                    dto.setCinemaId(targetCinema.getCinemaId());
+                    dto.setCinemaName(targetCinema.getCinemaName());
+                    String address = targetCinema.getAddress() != null ? targetCinema.getAddress().trim() : "";
+                    String city = targetCinema.getCity() != null ? targetCinema.getCity().trim() : "";
                     if (!address.isEmpty() && !city.isEmpty() && !address.toLowerCase().contains(city.toLowerCase())) {
                         dto.setCinemaAddress(address + ", " + city);
                     } else if (!address.isEmpty()) {
@@ -222,14 +297,19 @@ public class PublicTicketServiceImpl implements PublicTicketService {
         }
 
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime effectiveExpiry = bookingQr.getExpiresAt() != null
-                ? bookingQr.getExpiresAt()
-                : (showtime != null && showtime.getEndAt() != null ? showtime.getEndAt().plusHours(4) : null);
+        LocalDateTime thirtyMinGrace = (showtime != null && showtime.getEndAt() != null)
+                ? showtime.getEndAt().plusMinutes(30)
+                : null;
+        LocalDateTime qrExpiry = bookingQr.getExpiresAt();
+        LocalDateTime effectiveExpiry = (qrExpiry != null && thirtyMinGrace != null)
+                ? (qrExpiry.isBefore(thirtyMinGrace) ? qrExpiry : thirtyMinGrace)
+                : (thirtyMinGrace != null ? thirtyMinGrace : qrExpiry);
         if ("EXPIRED".equalsIgnoreCase(booking.getBookingStatus())
                 || (effectiveExpiry != null && now.isAfter(effectiveExpiry))) {
             dto.setTicketStatus("EXPIRED");
             dto.setValid(false);
             dto.setConfirmable(false);
+            dto.setErrorCode("TICKET_EXPIRED");
             dto.setStatusReason("This ticket QR code has expired for the scheduled showtime.");
             dto.setMessage(dto.getStatusReason());
             return;
@@ -248,8 +328,10 @@ public class PublicTicketServiceImpl implements PublicTicketService {
 
         dto.setTicketStatus("VALID");
         dto.setValid(true);
-        dto.setConfirmable(true);
-        dto.setMessage("Valid e-ticket ready for gate verification.");
+        dto.setConfirmable(dto.isViewerIsStaff());
+        dto.setMessage(dto.isViewerIsStaff()
+                ? "Valid e-ticket ready for gate verification."
+                : "Valid e-ticket ready for counter presentation.");
     }
 
     private String mapFulfillmentStatus(String status) {

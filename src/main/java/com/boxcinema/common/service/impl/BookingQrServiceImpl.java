@@ -106,7 +106,7 @@ public class BookingQrServiceImpl implements BookingQrService {
         bQr.setQrImagePath(filePath.toAbsolutePath().normalize().toString());
         bQr.setCreatedAt(LocalDateTime.now());
         if (booking.getShowtime() != null && booking.getShowtime().getEndAt() != null) {
-            bQr.setExpiresAt(booking.getShowtime().getEndAt().plusHours(4));
+            bQr.setExpiresAt(booking.getShowtime().getEndAt().plusMinutes(30));
         }
 
         return bookingQrRepository.save(bQr);

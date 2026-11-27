@@ -25,6 +25,15 @@ public class PublicTicketDto {
     private int ticketCount;
     private List<PublicFoodItemDto> foodItems = new ArrayList<>();
     private String foodFulfillmentStatus;
+    private Long bookingId;
+    private Long showtimeId;
+    private Long cinemaId;
+    private boolean viewerIsStaff;
+    private boolean canDisplayQrImage;
+    private String buyerName;
+    private String buyerEmail;
+    private String buyerPhone;
+    private String errorCode;
 
     public PublicTicketDto() {
     }
@@ -195,6 +204,86 @@ public class PublicTicketDto {
 
     public void setFoodFulfillmentStatus(String foodFulfillmentStatus) {
         this.foodFulfillmentStatus = foodFulfillmentStatus;
+    }
+
+    public Long getBookingId() {
+        return bookingId;
+    }
+
+    public void setBookingId(Long bookingId) {
+        this.bookingId = bookingId;
+    }
+
+    public Long getShowtimeId() {
+        return showtimeId;
+    }
+
+    public void setShowtimeId(Long showtimeId) {
+        this.showtimeId = showtimeId;
+    }
+
+    public Long getCinemaId() {
+        return cinemaId;
+    }
+
+    public void setCinemaId(Long cinemaId) {
+        this.cinemaId = cinemaId;
+    }
+
+    public boolean isViewerIsStaff() {
+        return viewerIsStaff;
+    }
+
+    public void setViewerIsStaff(boolean viewerIsStaff) {
+        this.viewerIsStaff = viewerIsStaff;
+    }
+
+    public boolean isCanDisplayQrImage() {
+        return canDisplayQrImage;
+    }
+
+    public void setCanDisplayQrImage(boolean canDisplayQrImage) {
+        this.canDisplayQrImage = canDisplayQrImage;
+    }
+
+    public String getBuyerName() {
+        return buyerName;
+    }
+
+    public void setBuyerName(String buyerName) {
+        this.buyerName = buyerName;
+    }
+
+    public String getBuyerEmail() {
+        return buyerEmail;
+    }
+
+    public void setBuyerEmail(String buyerEmail) {
+        this.buyerEmail = buyerEmail;
+    }
+
+    public String getBuyerPhone() {
+        return buyerPhone;
+    }
+
+    public void setBuyerPhone(String buyerPhone) {
+        this.buyerPhone = buyerPhone;
+    }
+
+    public String getErrorCode() {
+        return errorCode;
+    }
+
+    public void setErrorCode(String errorCode) {
+        this.errorCode = errorCode;
+    }
+
+    public boolean isHasMovieTickets() {
+        return seats != null && !seats.isEmpty();
+    }
+
+    public boolean isHasFoodItems() {
+        return foodItems != null && !foodItems.isEmpty();
     }
 
     public String getSeatsFormatted() {

@@ -1,5 +1,6 @@
 package com.boxcinema.staff.service.impl;
 
+import com.boxcinema.admin.service.UserActivityLogService;
 import com.boxcinema.common.dto.BookingResponseDto;
 import com.boxcinema.common.entity.*;
 import com.boxcinema.common.repository.*;
@@ -7,6 +8,7 @@ import com.boxcinema.common.service.BookingService;
 import com.boxcinema.common.util.CryptoUtils;
 import com.boxcinema.staff.dto.response.StaffCheckinResponseDto;
 import com.boxcinema.staff.service.StaffCheckinService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -15,7 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,6 +30,7 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
 
     private static final Pattern BOX_TOKEN_PATTERN = Pattern.compile("BOX1\\.[a-zA-Z0-9_-]{16,}");
     private static final Pattern BOOKING_CODE_PATTERN = Pattern.compile("BOX-\\d{8}-\\d{4}");
+    private static final String ACTION_PRINT_TICKET = "PRINT_PHYSICAL_TICKET";
 
     private final BookingQrRepository bookingQrRepository;
     private final BookingRepository bookingRepository;
@@ -34,6 +39,9 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
     private final UserRepository userRepository;
     private final BookingService bookingService;
     private final PaymentRepository paymentRepository;
+    private final CinemaRepository cinemaRepository;
+    private final UserActivityLogService userActivityLogService;
+    private final UserActivityLogRepository userActivityLogRepository;
 
     public StaffCheckinServiceImpl(
             BookingQrRepository bookingQrRepository,
@@ -43,6 +51,22 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
             UserRepository userRepository,
             BookingService bookingService,
             PaymentRepository paymentRepository) {
+        this(bookingQrRepository, bookingRepository, ticketRepository, checkinRepository,
+                userRepository, bookingService, paymentRepository, null, null, null);
+    }
+
+    @Autowired
+    public StaffCheckinServiceImpl(
+            BookingQrRepository bookingQrRepository,
+            BookingRepository bookingRepository,
+            TicketRepository ticketRepository,
+            BookingCheckinRepository checkinRepository,
+            UserRepository userRepository,
+            BookingService bookingService,
+            PaymentRepository paymentRepository,
+            CinemaRepository cinemaRepository,
+            UserActivityLogService userActivityLogService,
+            UserActivityLogRepository userActivityLogRepository) {
         this.bookingQrRepository = bookingQrRepository;
         this.bookingRepository = bookingRepository;
         this.ticketRepository = ticketRepository;
@@ -50,6 +74,9 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
         this.userRepository = userRepository;
         this.bookingService = bookingService;
         this.paymentRepository = paymentRepository;
+        this.cinemaRepository = cinemaRepository;
+        this.userActivityLogService = userActivityLogService;
+        this.userActivityLogRepository = userActivityLogRepository;
     }
 
     @Override
@@ -78,8 +105,12 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
         Booking booking = bookingRepository.findByIdForUpdate(bookingQr.getBooking().getBookingId())
                 .orElseThrow(() -> new IllegalStateException("No booking found associated with this QR code."));
 
+        verifyStaffCinemaBranch(staff, role, booking, "TICKET_CHECKIN_DENIED_BRANCH");
+
         if ("USED".equalsIgnoreCase(bookingQr.getStatus())
                 || checkinRepository.findByBooking_BookingId(booking.getBookingId()).isPresent()) {
+            logStaffAudit(staff, "TICKET_CHECKIN_DUPLICATE", "/api/staff/bookings/check-in",
+                    "Duplicate check-in attempt for " + booking.getBookingCode());
             return buildFailure("BOOKING_ALREADY_CHECKED_IN", "Ticket has already been used / checked in.", booking);
         }
 
@@ -98,12 +129,18 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
             return buildFailure("SHOWTIME_CANCELLED", "Showtime has been cancelled.", booking);
         }
 
-        LocalDateTime effectiveExpiry = bookingQr.getExpiresAt() != null
-                ? bookingQr.getExpiresAt()
-                : (showtime != null && showtime.getEndAt() != null ? showtime.getEndAt().plusHours(4) : null);
+        LocalDateTime thirtyMinGrace = (showtime != null && showtime.getEndAt() != null)
+                ? showtime.getEndAt().plusMinutes(30)
+                : null;
+        LocalDateTime qrExpiry = bookingQr.getExpiresAt();
+        LocalDateTime effectiveExpiry = (qrExpiry != null && thirtyMinGrace != null)
+                ? (qrExpiry.isBefore(thirtyMinGrace) ? qrExpiry : thirtyMinGrace)
+                : (thirtyMinGrace != null ? thirtyMinGrace : qrExpiry);
         if ("EXPIRED".equalsIgnoreCase(booking.getBookingStatus())
                 || (effectiveExpiry != null && now.isAfter(effectiveExpiry))) {
-            return buildFailure("TICKET_EXPIRED", "Ticket QR has expired for this showtime.", booking);
+            logStaffAudit(staff, "TICKET_CHECKIN_EXPIRED", "/api/staff/bookings/check-in",
+                    "Expired ticket check-in blocked for " + booking.getBookingCode());
+            return buildFailure("TICKET_EXPIRED", "This ticket QR code has expired for the scheduled showtime.", booking);
         }
 
         if ("REVOKED".equalsIgnoreCase(bookingQr.getStatus())
@@ -196,6 +233,9 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
         res.setStaffName(staff.getFullName() != null ? staff.getFullName() : "Ticket Staff");
         res.setCheckedInAt(now);
         res.setResult("USED");
+
+        logStaffAudit(staff, "TICKET_CHECKIN_USED", "/api/staff/bookings/check-in",
+                "Checked in " + booking.getBookingCode() + " (" + String.join(", ", seatLabels) + ")");
         return res;
     }
 
@@ -249,5 +289,115 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
     @Transactional(readOnly = true)
     public List<BookingCheckin> getCheckinHistory() {
         return checkinRepository.findAllByOrderByCheckedInAtDesc();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BookingCheckin> getCheckinHistoryForStaff(Long staffUserId) {
+        List<BookingCheckin> all = checkinRepository.findAllByOrderByCheckedInAtDesc();
+        if (staffUserId == null) {
+            return all;
+        }
+        User staff = userRepository.findById(staffUserId).orElse(null);
+        if (staff == null || "ADMIN".equalsIgnoreCase(staff.getRole()) || staff.getCinemaId() == null) {
+            return all;
+        }
+        Long assignedCinemaId = staff.getCinemaId();
+        return all.stream()
+                .filter(c -> c.getBooking() != null
+                        && c.getBooking().getShowtime() != null
+                        && c.getBooking().getShowtime().getRoom() != null
+                        && c.getBooking().getShowtime().getRoom().getCinema() != null
+                        && assignedCinemaId.equals(c.getBooking().getShowtime().getRoom().getCinema().getCinemaId()))
+                .toList();
+    }
+
+    @Override
+    public Map<String, Object> recordTicketPrint(Long bookingId, Long staffUserId) {
+        if (staffUserId == null) {
+            throw new AccessDeniedException("Staff authentication is required.");
+        }
+        User staff = userRepository.findById(staffUserId)
+                .orElseThrow(() -> new AccessDeniedException("Authenticated staff account not found."));
+        String role = staff.getRole() != null ? staff.getRole().trim().toUpperCase() : "";
+        if (!"STAFF".equals(role) && !"MANAGER".equals(role) && !"ADMIN".equals(role)) {
+            throw new AccessDeniedException("Only authorized cinema staff can print tickets.");
+        }
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found: " + bookingId));
+        verifyStaffCinemaBranch(staff, role, booking, "PRINT_TICKET_DENIED_BRANCH");
+
+        String logUrl = "/t/booking/" + booking.getBookingId();
+        long priorPrints = userActivityLogRepository != null
+                ? userActivityLogRepository.countByActionTypeAndPageUrl(ACTION_PRINT_TICKET, logUrl)
+                : 0L;
+        if (userActivityLogRepository != null) {
+            UserActivityLog entry = new UserActivityLog(
+                    staff.getUserId(),
+                    staff.getEmail(),
+                    role,
+                    ACTION_PRINT_TICKET,
+                    logUrl,
+                    "Printed physical slips for " + booking.getBookingCode(),
+                    "counter",
+                    null,
+                    "POS/Counter"
+            );
+            userActivityLogRepository.save(entry);
+        }
+
+        LocalDateTime printedAt = LocalDateTime.now();
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("success", true);
+        out.put("bookingId", booking.getBookingId());
+        out.put("bookingCode", booking.getBookingCode());
+        out.put("printCount", priorPrints + 1);
+        out.put("printedAt", printedAt.format(DateTimeFormatter.ofPattern("HH:mm:ss - dd/MM/yyyy")));
+        return out;
+    }
+
+    private void verifyStaffCinemaBranch(User staff, String role, Booking booking, String auditAction) {
+        if ("ADMIN".equals(role) || staff.getCinemaId() == null || booking == null) {
+            return;
+        }
+        Showtime st = booking.getShowtime();
+        Cinema targetCinema = (st != null && st.getRoom() != null) ? st.getRoom().getCinema() : null;
+        Long targetCinemaId = targetCinema != null ? targetCinema.getCinemaId() : null;
+        if (targetCinemaId != null && !staff.getCinemaId().equals(targetCinemaId)) {
+            String assignedName = cinemaRepository != null
+                    ? cinemaRepository.findById(staff.getCinemaId())
+                            .map(Cinema::getCinemaName)
+                            .orElse("your assigned cinema branch")
+                    : "your assigned cinema branch";
+            String targetName = targetCinema.getCinemaName() != null
+                    ? targetCinema.getCinemaName()
+                    : "another cinema branch";
+            logStaffAudit(staff, auditAction, "/api/staff/bookings",
+                    "Blocked cross-branch access to " + booking.getBookingCode() + " (" + targetName + ")");
+            throw new AccessDeniedException(
+                    "WRONG_CINEMA_BRANCH|This ticket belongs to " + targetName
+                            + " and cannot be processed from " + assignedName + ".");
+        }
+    }
+
+    private void logStaffAudit(User staff, String action, String url, String title) {
+        if (userActivityLogService == null || staff == null) {
+            return;
+        }
+        try {
+            userActivityLogService.logActivityAsync(
+                    staff.getUserId(),
+                    staff.getEmail(),
+                    staff.getRole(),
+                    action,
+                    url,
+                    title,
+                    "counter",
+                    null,
+                    "Staff Portal"
+            );
+        } catch (Exception ignored) {
+        }
     }
 }

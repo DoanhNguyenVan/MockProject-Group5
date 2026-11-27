@@ -164,4 +164,42 @@ class MovieReviewServiceImplTest {
         assertThrows(AccessDeniedException.class,
                 () -> service.deleteReview(7L, 55L, 20L, false));
     }
+
+    @Test
+    void mapsAdminReplyAndDoesNotMarkModerationUpdateAsEdited() {
+        Movie movie = new Movie();
+        movie.setMovieId(7L);
+
+        User author = new User();
+        author.setUserId(10L);
+        author.setFullName("Minh Thu");
+
+        LocalDateTime createdAt = LocalDateTime.of(2026, 11, 20, 14, 30);
+        LocalDateTime repliedAt = LocalDateTime.of(2026, 11, 21, 9, 15);
+
+        MovieReview review = new MovieReview();
+        review.setReviewId(88L);
+        review.setMovie(movie);
+        review.setUser(author);
+        review.setRating(5);
+        review.setComment("Am thanh rat song dong!");
+        review.setVerifiedViewer(true);
+        review.setStatus("VISIBLE");
+        review.setCreatedAt(createdAt);
+        review.setUpdatedAt(repliedAt);
+        review.setAdminReply("Cam on ban da ghe rap BOX Cinema!");
+        review.setAdminRepliedAt(repliedAt);
+
+        when(movieRepo.existsById(7L)).thenReturn(true);
+        when(reviewRepo.findVisibleByMovieIdOrderByCreatedAtDesc(7L)).thenReturn(List.of(review));
+
+        MovieReviewSummaryDto summary = service.getReviewsForMovie(7L, null, false, "newest");
+
+        assertEquals(1, summary.getReviews().size());
+        var item = summary.getReviews().get(0);
+        assertEquals("Cam on ban da ghe rap BOX Cinema!", item.getAdminReply());
+        assertNotNull(item.getFormattedAdminRepliedAt());
+        assertFalse(item.getFormattedAdminRepliedAt().isBlank());
+        assertFalse(item.isEdited());
+    }
 }

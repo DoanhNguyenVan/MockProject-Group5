@@ -45,6 +45,8 @@ import org.springframework.security.web.authentication.SavedRequestAwareAuthenti
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.AnyRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
@@ -53,6 +55,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -145,9 +148,7 @@ public class SecurityConfig {
                         "/api/customer/bookings/**",
                         "/api/food/**",
                         "/api/vouchers/**",
-                        "/api/staff/**",
                         "/api/auth/**",
-                        "/api/public/**",
                         "/api/chat/**",
                         "/api/account/**"))
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
@@ -194,10 +195,6 @@ public class SecurityConfig {
                                 "/api/auth/password-reset/**",
                                 "/api/quick-booking/**",
                                 "/api/booking/showtimes/**",
-                                "/t/**",
-                                "/scan",
-                                "/ticket-scanner",
-                                "/api/public/**",
                                 "/api/chat/**",
                                 "/api/food/**",
                                 "/api/vouchers/**",
@@ -207,6 +204,8 @@ public class SecurityConfig {
                                 "/uploads/movies/**",
                                 "/css/**", "/js/**", "/assets/**", "/images/**", "/favicon.ico", "/error")
                         .permitAll()
+                        .requestMatchers("/scan", "/ticket-scanner").hasAnyRole("STAFF", "MANAGER", "ADMIN")
+                        .requestMatchers("/t/**", "/api/public/**").authenticated()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/manager/**").hasAnyRole("MANAGER", "ADMIN")
                         .requestMatchers("/staff/**", "/api/staff/**").hasAnyRole("STAFF", "MANAGER", "ADMIN")
@@ -297,6 +296,12 @@ public class SecurityConfig {
                 } catch (Exception ignored) {}
 
                 String role = details.getUserSummary().getRole();
+                String savedRedirect = resolveSavedRedirectForRole(request, response, role);
+                if (savedRedirect != null) {
+                    response.sendRedirect(savedRedirect);
+                    return;
+                }
+
                 if ("ADMIN".equalsIgnoreCase(role)) {
                     response.sendRedirect("/admin");
                     return;
@@ -318,6 +323,40 @@ public class SecurityConfig {
             }
             delegate.onAuthenticationSuccess(request, response, authentication);
         };
+    }
+
+    private String resolveSavedRedirectForRole(HttpServletRequest request, HttpServletResponse response, String role) {
+        HttpSessionRequestCache requestCache = new HttpSessionRequestCache();
+        SavedRequest savedRequest = requestCache.getRequest(request, response);
+        if (savedRequest == null || savedRequest.getRedirectUrl() == null || savedRequest.getRedirectUrl().isBlank()) {
+            return null;
+        }
+        try {
+            URI uri = URI.create(savedRequest.getRedirectUrl());
+            String path = uri.getRawPath();
+            if (path == null || !path.startsWith("/") || path.startsWith("//")) {
+                return null;
+            }
+            String roleUpper = role != null ? role.trim().toUpperCase() : "";
+            boolean isAdmin = "ADMIN".equals(roleUpper);
+            boolean isManager = "MANAGER".equals(roleUpper);
+            boolean isStaff = "STAFF".equals(roleUpper);
+            boolean isGatePersonnel = isAdmin || isManager || isStaff;
+
+            boolean allowedTarget = path.startsWith("/t/")
+                    || ((path.equals("/scan") || path.equals("/ticket-scanner") || path.startsWith("/staff")) && isGatePersonnel)
+                    || (path.startsWith("/manager") && (isAdmin || isManager))
+                    || (path.startsWith("/admin") && isAdmin)
+                    || (path.startsWith("/booking/") && !isStaff);
+            if (!allowedTarget) {
+                return null;
+            }
+            requestCache.removeRequest(request, response);
+            String query = uri.getRawQuery();
+            return query != null && !query.isBlank() ? path + "?" + query : path;
+        } catch (IllegalArgumentException ex) {
+            return null;
+        }
     }
 
     @Bean

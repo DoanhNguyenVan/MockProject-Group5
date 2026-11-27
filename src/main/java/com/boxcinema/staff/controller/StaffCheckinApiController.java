@@ -13,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/staff")
@@ -55,10 +56,12 @@ public class StaffCheckinApiController {
             };
             return ResponseEntity.status(status).body(response);
         } catch (AccessDeniedException ex) {
+            String rawMsg = ex.getMessage() != null ? ex.getMessage() : "Access denied.";
+            boolean isWrongBranch = rawMsg.startsWith("WRONG_CINEMA_BRANCH|");
             StaffCheckinResponseDto denied = new StaffCheckinResponseDto();
             denied.setSuccess(false);
-            denied.setCode("FORBIDDEN");
-            denied.setMessage(ex.getMessage());
+            denied.setCode(isWrongBranch ? "WRONG_CINEMA_BRANCH" : "FORBIDDEN");
+            denied.setMessage(isWrongBranch ? rawMsg.substring("WRONG_CINEMA_BRANCH|".length()) : rawMsg);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(denied);
         } catch (IllegalArgumentException ex) {
             StaffCheckinResponseDto invalid = new StaffCheckinResponseDto();
@@ -76,6 +79,33 @@ public class StaffCheckinApiController {
 
     @GetMapping("/check-ins")
     public ResponseEntity<List<BookingCheckin>> getCheckinHistory() {
-        return ResponseEntity.ok(staffCheckinService.getCheckinHistory());
+        Long staffUserId = SecurityContextUtils.resolveCurrentUserId();
+        return ResponseEntity.ok(staffCheckinService.getCheckinHistoryForStaff(staffUserId));
+    }
+
+    @PostMapping("/bookings/{id}/print-log")
+    public ResponseEntity<?> logPhysicalPrint(@PathVariable Long id) {
+        Long staffUserId = SecurityContextUtils.resolveCurrentUserId();
+        if (staffUserId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "code", "UNAUTHENTICATED", "message", "Staff authentication is required."));
+        }
+        try {
+            return ResponseEntity.ok(staffCheckinService.recordTicketPrint(id, staffUserId));
+        } catch (AccessDeniedException ex) {
+            String rawMsg = ex.getMessage() != null ? ex.getMessage() : "Access denied.";
+            boolean isWrongBranch = rawMsg.startsWith("WRONG_CINEMA_BRANCH|");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                    "success", false,
+                    "code", isWrongBranch ? "WRONG_CINEMA_BRANCH" : "FORBIDDEN",
+                    "message", isWrongBranch ? rawMsg.substring("WRONG_CINEMA_BRANCH|".length()) : rawMsg
+            ));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                    "success", false,
+                    "code", "BOOKING_NOT_FOUND",
+                    "message", ex.getMessage()
+            ));
+        }
     }
 }
