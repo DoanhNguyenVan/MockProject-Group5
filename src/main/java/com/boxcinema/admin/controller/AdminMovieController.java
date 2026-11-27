@@ -1,15 +1,21 @@
 
 package com.boxcinema.admin.controller;
 
-import com.boxcinema.common.entity.Movie;
 import com.boxcinema.admin.service.AdminMovieManagementService;
-
+import com.boxcinema.admin.service.MovieMediaUploadService;
+import com.boxcinema.common.entity.Movie;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 
 @Controller
@@ -18,8 +24,40 @@ public class AdminMovieController {
 
     private final AdminMovieManagementService movieService;
 
+    @Autowired(required = false)
+    private MovieMediaUploadService movieMediaUploadService;
+
     public AdminMovieController(AdminMovieManagementService movieService) {
         this.movieService = movieService;
+    }
+
+    @PostMapping("/upload-media")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> uploadMovieMedia(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(name = "mediaType", defaultValue = "poster") String mediaType
+    ) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        if (movieMediaUploadService == null) {
+            body.put("success", false);
+            body.put("message", "Movie media upload service is unavailable.");
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(body);
+        }
+        try {
+            String url = movieMediaUploadService.uploadMovieMedia(file, mediaType);
+            body.put("success", true);
+            body.put("url", url);
+            body.put("mediaType", mediaType != null ? mediaType.trim().toLowerCase() : "poster");
+            return ResponseEntity.ok(body);
+        } catch (IllegalArgumentException ex) {
+            body.put("success", false);
+            body.put("message", ex.getMessage());
+            return ResponseEntity.badRequest().body(body);
+        } catch (Exception ex) {
+            body.put("success", false);
+            body.put("message", "Unable to upload movie image right now. Please try again.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+        }
     }
 
     @GetMapping

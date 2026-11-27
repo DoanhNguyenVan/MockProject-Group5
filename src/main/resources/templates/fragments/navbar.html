@@ -222,7 +222,21 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        overflow: hidden;
         box-shadow: 0 2px 6px rgba(201, 25, 52, 0.4);
+      }
+      .nav-user-avatar-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .nav-dropdown-avatar {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
       }
       .nav-user-avatar svg {
         width: 14px;
@@ -314,15 +328,16 @@
       }
     </style>
     <a class="skip-link" href="#main-content">Skip to content</a>
-    <nav class="cinema-nav" aria-label="Main navigation">
+    <nav class="cinema-nav" aria-label="Main navigation"
+         th:with="navUser=${currentUser != null ? currentUser : session.currentUser}, isStaffOnly=${navUser != null and navUser.role == 'STAFF'}, staffTab=${param.tab != null and !#arrays.isEmpty(param.tab) ? param.tab[0] : 'pos'}">
       <div class="cinema-nav-inner">
         <!-- Logo -->
-        <a class="box-brand" href="/" th:href="@{/}" aria-label="BOX Cinema home">
+        <a class="box-brand" href="/" th:href="@{${isStaffOnly} ? '/staff/pos' : '/'}" aria-label="BOX Cinema home">
           <img src="/assets/img/box-cinema-logo.png" th:src="@{/assets/img/box-cinema-logo.png}" alt="BOX Cinema" width="145" height="48">
         </a>
 
-        <!-- Cinema Branch Selector (Select dropdown matching Showtimes style) -->
-        <div class="nav-cinema-switch-wrap" id="cinemaSelectorWrap">
+        <!-- Cinema Branch Selector (Hidden for dedicated Staff role) -->
+        <div class="nav-cinema-switch-wrap" id="cinemaSelectorWrap" th:if="${!isStaffOnly}">
           <select id="navCinemaSelect" class="nav-cinema-select" aria-label="Select Cinema Branch">
             <option value="all">All Cinemas</option>
             <optgroup th:each="entry : ${cinemasByCity}" th:label="${entry.key}">
@@ -335,15 +350,31 @@
         
         <!-- Center Navigation Menu (Links) -->
         <div class="cinema-nav-menu" id="boxNavbarCollapse">
-          <div class="cinema-nav-links">
+          <!-- Customer / Manager / Admin Links -->
+          <div class="cinema-nav-links" th:if="${!isStaffOnly}">
             <a href="/#moviesSection" th:href="@{/#moviesSection}" data-nav-route="home">Movies</a>
             <a href="/showtimes" th:href="@{/showtimes}" data-nav-route="showtimes">Showtimes</a>
             <a href="/about" th:href="@{/about}" data-nav-route="about">About</a>
             <a href="/contact" th:href="@{/contact}" data-nav-route="contact">Contact</a>
-            <a href="/admin" th:href="@{/admin}" th:if="${(currentUser != null and currentUser.role == 'ADMIN') or (session.currentUser != null and session.currentUser.role == 'ADMIN')}" th:classappend="${activePage == 'admin' ? 'active' : ''}">Admin</a>
-            <a href="/manager" th:href="@{/manager}" th:if="${(currentUser != null and currentUser.role == 'MANAGER') or (session.currentUser != null and session.currentUser.role == 'MANAGER')}" th:classappend="${activePage == 'manager' ? 'active' : ''}">Management</a>
-            <a href="/staff/checkin" th:href="@{/staff/checkin}" th:if="${(currentUser != null and (currentUser.role == 'STAFF' or currentUser.role == 'MANAGER' or currentUser.role == 'ADMIN')) or (session.currentUser != null and (session.currentUser.role == 'STAFF' or session.currentUser.role == 'MANAGER' or session.currentUser.role == 'ADMIN'))}" th:classappend="${activePage == 'staff-checkin' ? 'active' : ''}">Ticket Scanner</a>
-            <a href="/staff/food" th:href="@{/staff/food}" th:if="${(currentUser != null and (currentUser.role == 'STAFF' or currentUser.role == 'MANAGER' or currentUser.role == 'ADMIN')) or (session.currentUser != null and (session.currentUser.role == 'STAFF' or session.currentUser.role == 'MANAGER' or session.currentUser.role == 'ADMIN'))}" th:classappend="${activePage == 'staff-food' ? 'active' : ''}">Concessions</a>
+            <a href="/admin" th:href="@{/admin}" th:if="${navUser != null and navUser.role == 'ADMIN'}" th:classappend="${activePage == 'admin' ? 'active' : ''}">Admin</a>
+            <a href="/manager" th:href="@{/manager}" th:if="${navUser != null and navUser.role == 'MANAGER'}" th:classappend="${activePage == 'manager' ? 'active' : ''}">Management</a>
+            <a href="/staff/pos" th:href="@{/staff/pos}" th:if="${navUser != null and (navUser.role == 'MANAGER' or navUser.role == 'ADMIN')}" th:classappend="${activePage == 'staff-pos' ? 'active' : ''}">Counter POS</a>
+            <a href="/staff/checkin" th:href="@{/staff/checkin}" th:if="${navUser != null and (navUser.role == 'MANAGER' or navUser.role == 'ADMIN')}" th:classappend="${activePage == 'staff-checkin' ? 'active' : ''}">Ticket Scanner</a>
+            <a href="/staff/food" th:href="@{/staff/food}" th:if="${navUser != null and (navUser.role == 'MANAGER' or navUser.role == 'ADMIN')}" th:classappend="${activePage == 'staff-food' ? 'active' : ''}">Concessions</a>
+          </div>
+
+          <!-- Dedicated Staff-Only Links (Hide customer pages, show only Staff operations) -->
+          <div class="cinema-nav-links" th:if="${isStaffOnly}">
+            <a href="/staff/pos?tab=pos" th:href="@{/staff/pos(tab='pos')}" data-staff-tab="pos"
+               th:classappend="${activePage == 'staff-pos' and staffTab == 'pos' ? 'active' : ''}">POS &amp; Concessions</a>
+            <a href="/staff/pos?tab=lookup" th:href="@{/staff/pos(tab='lookup')}" data-staff-tab="lookup"
+               th:classappend="${activePage == 'staff-pos' and staffTab == 'lookup' ? 'active' : ''}">Order Lookup</a>
+            <a href="/staff/pos?tab=shift" th:href="@{/staff/pos(tab='shift')}" data-staff-tab="shift"
+               th:classappend="${activePage == 'staff-pos' and staffTab == 'shift' ? 'active' : ''}">Shift Summary</a>
+            <a href="/staff/checkin" th:href="@{/staff/checkin}"
+               th:classappend="${activePage == 'staff-checkin' ? 'active' : ''}">Ticket Check-in</a>
+            <a href="/staff/food" th:href="@{/staff/food}"
+               th:classappend="${activePage == 'staff-food' ? 'active' : ''}">Kitchen KDS</a>
           </div>
 
           <!-- Mobile Only: Account Links & Theme Toggle inside dropdown menu -->
@@ -356,9 +387,14 @@
             </th:block>
             <th:block th:if="${currentUser != null or session.currentUser != null}">
               <div class="pt-2 border-top border-secondary border-opacity-25 mt-2">
-                <div class="d-flex align-items-center gap-2 mb-2 px-1 text-muted small">
+                <div class="d-flex align-items-center gap-2 mb-2 px-1 text-muted small"
+                     th:with="navAvatar=${currentUser != null ? currentUser.avatarUrl : (session.currentUser != null ? session.currentUser.avatarUrl : null)}">
                   <span class="nav-user-avatar" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <img th:if="${navAvatar != null and !#strings.isEmpty(navAvatar)}"
+                         th:src="${navAvatar}" alt="Avatar" class="nav-user-avatar-img"
+                         onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='';">
+                    <svg th:style="${navAvatar != null and !#strings.isEmpty(navAvatar)} ? 'display:none' : ''"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                       <circle cx="12" cy="7" r="4"></circle>
                     </svg>
@@ -373,7 +409,7 @@
                     </svg>
                     <span>Account Details</span>
                   </a>
-                  <a href="/booking/history" th:href="@{/booking/history}" class="nav-account-dropdown-item">
+                  <a href="/booking/history" th:href="@{/booking/history}" th:if="${!isStaffOnly}" class="nav-account-dropdown-item">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                       <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path>
                       <path d="M9 12h.01"></path>
@@ -381,7 +417,7 @@
                     </svg>
                     <span>Booking History</span>
                   </a>
-                  <a href="javascript:void(0)" onclick="alert('My Vouchers feature is coming soon.');" class="nav-account-dropdown-item">
+                  <a href="javascript:void(0)" th:if="${!isStaffOnly}" onclick="alert('My Vouchers feature is coming soon.');" class="nav-account-dropdown-item">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                       <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
                       <circle cx="9" cy="9" r="1"></circle>
@@ -444,8 +480,8 @@
 
         <!-- Right Side: Search Icon + Theme Toggle + Account (Desktop) + Hamburger (Mobile) -->
         <div class="cinema-nav-right-tools">
-          <!-- Expanding Search Bar (To the LEFT of Theme Toggle & Sign In / Sign Up) -->
-          <div class="nav-search-wrap" id="navSearchWrap">
+          <!-- Expanding Search Bar (Hidden for Staff) -->
+          <div class="nav-search-wrap" id="navSearchWrap" th:if="${!isStaffOnly}">
             <form class="nav-search-form" id="navSearchForm" role="search" onsubmit="return false;">
               <input type="text" class="nav-search-input" id="navSearchInput" placeholder="Search movies, genres..." autocomplete="off" aria-label="Search movies">
               <button type="button" class="nav-search-btn" id="navSearchBtn" aria-label="Search">
@@ -483,11 +519,16 @@
               <a href="/login" th:href="@{/login}" data-nav-route="login" class="nav-auth-pill" th:classappend="${activePage == 'login' ? 'active' : ''}">Sign In</a>
               <a href="/register" th:href="@{/register}" data-nav-route="register" class="nav-auth-pill" th:classappend="${activePage == 'register' ? 'active' : ''}">Sign Up</a>
             </th:block>
-            <th:block th:if="${currentUser != null or session.currentUser != null}">
+            <th:block th:if="${currentUser != null or session.currentUser != null}"
+                      th:with="navAvatar=${currentUser != null ? currentUser.avatarUrl : (session.currentUser != null ? session.currentUser.avatarUrl : null)}">
               <div class="nav-user-dropdown dropdown" id="navUserDropdownWrapper">
                 <button type="button" class="nav-user-btn nav-user-pill" id="navUserAccountDropdown" onclick="window.toggleAccountDropdown(event)" aria-expanded="false" title="Account Menu">
                   <span class="nav-user-avatar" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <img th:if="${navAvatar != null and !#strings.isEmpty(navAvatar)}"
+                         th:src="${navAvatar}" alt="Avatar" class="nav-user-avatar-img"
+                         onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='';">
+                    <svg th:style="${navAvatar != null and !#strings.isEmpty(navAvatar)} ? 'display:none' : ''"
+                         viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                       <circle cx="12" cy="7" r="4"></circle>
                     </svg>
@@ -498,9 +539,13 @@
                   </svg>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end nav-account-dropdown-menu" id="navUserAccountMenu" aria-labelledby="navUserAccountDropdown">
-                  <!-- Header: User's name with Circle User Icon matching Image 2 -->
+                  <!-- Header: User's name with Avatar / Circle User Icon -->
                   <li class="nav-account-header">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <img th:if="${navAvatar != null and !#strings.isEmpty(navAvatar)}"
+                         th:src="${navAvatar}" alt="Avatar" class="nav-dropdown-avatar"
+                         onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='';">
+                    <svg th:style="${navAvatar != null and !#strings.isEmpty(navAvatar)} ? 'display:none' : ''"
+                         width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                       <circle cx="12" cy="12" r="10"></circle>
                       <circle cx="12" cy="10" r="3"></circle>
                       <path d="M7 18.5a6 6 0 0 1 10 0"></path>
@@ -531,7 +576,7 @@
                   </li>
 
                   <!-- 2. Booking History -->
-                  <li>
+                  <li th:if="${!isStaffOnly}">
                     <a class="nav-account-dropdown-item" href="/booking/history" th:href="@{/booking/history}">
                       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path>
@@ -543,7 +588,7 @@
                   </li>
 
                   <!-- 3. My Vouchers -->
-                  <li>
+                  <li th:if="${!isStaffOnly}">
                     <a class="nav-account-dropdown-item" href="javascript:void(0)" onclick="alert('My Vouchers feature is coming soon.');">
                       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>

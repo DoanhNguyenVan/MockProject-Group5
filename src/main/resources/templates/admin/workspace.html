@@ -59,6 +59,14 @@
       align-items: center;
       justify-content: center;
       font-size: 12px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .admin-user-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
 
     .admin-logout-btn {
@@ -161,10 +169,16 @@
               localStorage.setItem('box_cinema_theme', curr);
             ">◐</button>
 
-            <div class="admin-user-badge">
-              <span class="admin-user-avatar">A</span>
-              <span
-                th:text="${(currentUser != null ? currentUser.fullName : (session.currentUser != null ? session.currentUser.fullName : 'Administrator'))}">Administrator</span>
+            <div class="admin-user-badge"
+                 th:with="admAvatar=${currentUser != null ? currentUser.avatarUrl : (session.currentUser != null ? session.currentUser.avatarUrl : null)},
+                          admName=${currentUser != null ? currentUser.fullName : (session.currentUser != null ? session.currentUser.fullName : 'Administrator')}">
+              <span class="admin-user-avatar">
+                <img th:if="${admAvatar != null and !#strings.isEmpty(admAvatar)}" th:src="${admAvatar}" alt="Avatar"
+                     onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='';">
+                <span th:style="${admAvatar != null and !#strings.isEmpty(admAvatar)} ? 'display:none' : ''"
+                      th:text="${admName != null and !#strings.isEmpty(admName) ? #strings.toUpperCase(#strings.substring(admName, 0, 1)) : 'A'}">A</span>
+              </span>
+              <span th:text="${admName}">Administrator</span>
             </div>
 
             <form action="/logout" th:action="@{/logout}" method="post" class="m-0 p-0 d-inline">

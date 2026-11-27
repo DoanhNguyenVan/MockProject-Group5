@@ -701,6 +701,7 @@ public class UserServiceImpl implements UserService {
         dto.setAccountStatus(user.getAccountStatus());
         dto.setHasPassword(user.getPasswordHash() != null && !user.getPasswordHash().isBlank());
         dto.setGoogleLinked(user.getGoogleId() != null && !user.getGoogleId().isBlank());
+        dto.setAvatarUrl(user.getAvatarUrl());
         return dto;
     }
 

@@ -1,0 +1,2233 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}" content="">
+  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}" content="X-CSRF-TOKEN">
+  <title>Counter POS | BOX Cinema Staff</title>
+  <link rel="icon" type="image/png" href="/assets/img/box-cinema-favicon.png" th:href="@{/assets/img/box-cinema-favicon.png}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/main.css?v=20261113c" th:href="@{/css/main.css(v='20261113c')}">
+  <link rel="stylesheet" href="/css/booking.css?v=4.6" th:href="@{/css/booking.css(v='4.6')}">
+  <style>
+    body { background-color: var(--box-bg-primary); color: var(--box-text-primary); }
+    .pos-container { max-width: 1360px; margin: 18px auto; padding: 0 16px; }
+    .pos-card {
+      background: var(--box-bg-card);
+      border: 1px solid var(--box-border-color);
+      border-radius: var(--box-radius-md);
+      padding: 14px 18px;
+      margin-bottom: 14px;
+    }
+    .pos-compact-legend {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px 14px;
+      padding: 8px 12px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      background: var(--box-bg-secondary);
+      border: 1px solid var(--box-border-color);
+      font-size: 0.74rem;
+    }
+    .pos-legend-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+    .pos-legend-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--box-text-secondary);
+      white-space: nowrap;
+    }
+    .pos-legend-chip .legend-seat-icon {
+      width: 20px;
+      height: 18px;
+      padding: 1px;
+    }
+    .pos-legend-chip .legend-seat-icon.legend-icon-sweetbox {
+      width: 34px;
+      height: 18px;
+    }
+    .pos-legend-price {
+      color: #f87171;
+      font-weight: 700;
+    }
+    .pos-seat-card .booking-screen {
+      margin: 10px auto 12px;
+    }
+    .pos-seat-card .booking-seat-hover-bar {
+      margin-bottom: 8px;
+      padding: 6px 12px;
+      font-size: 0.78rem;
+    }
+    .pos-tab-btn {
+      border: 1px solid var(--box-border-color);
+      background: var(--box-bg-card);
+      color: var(--box-text-secondary);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .pos-tab-btn.active, .pos-tab-btn:hover {
+      border-color: var(--box-accent);
+      color: #fff;
+      background: var(--box-accent);
+    }
+    .showtime-pill {
+      text-align: left;
+      border: 1px solid var(--box-border-color);
+      background: var(--box-bg-secondary);
+      color: var(--box-text-primary);
+      border-radius: 10px;
+      padding: 12px;
+      width: 100%;
+      transition: all 0.15s;
+    }
+    .showtime-pill.active, .showtime-pill:hover {
+      border-color: var(--box-accent);
+      background: var(--box-red-subtle);
+    }
+    .pos-wizard-steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .pos-wizard-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--box-border-color);
+      background: var(--box-bg-card);
+      color: var(--box-text-secondary);
+      text-align: left;
+      font-size: 0.82rem;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    .pos-wizard-step-num {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: var(--box-bg-secondary);
+      border: 1px solid var(--box-border-color);
+      color: var(--box-text-secondary);
+      flex-shrink: 0;
+    }
+    .pos-wizard-step.active {
+      border-color: var(--box-accent);
+      background: var(--box-red-subtle);
+      color: var(--box-text-primary);
+    }
+    .pos-wizard-step.active .pos-wizard-step-num {
+      background: var(--box-accent);
+      border-color: var(--box-accent);
+      color: #fff;
+    }
+    .pos-wizard-step.done {
+      border-color: rgba(34, 197, 94, 0.45);
+      color: var(--box-text-primary);
+    }
+    .pos-wizard-step.done .pos-wizard-step-num {
+      background: rgba(34, 197, 94, 0.2);
+      border-color: rgba(34, 197, 94, 0.6);
+      color: #4ade80;
+    }
+    .pos-wizard-step:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .showtime-poster-card {
+      display: flex;
+      gap: 12px;
+      align-items: stretch;
+      text-align: left;
+      border: 1px solid var(--box-border-color);
+      background: var(--box-bg-secondary);
+      color: var(--box-text-primary);
+      border-radius: 12px;
+      padding: 10px;
+      width: 100%;
+      transition: all 0.15s;
+    }
+    .showtime-poster-card:hover, .showtime-poster-card.active {
+      border-color: var(--box-accent);
+      background: var(--box-red-subtle);
+    }
+    .showtime-poster-img {
+      width: 58px;
+      height: 84px;
+      object-fit: cover;
+      border-radius: 8px;
+      flex-shrink: 0;
+      background: #14171f;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .pos-movie-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px 14px;
+    }
+    @media (max-width: 1024px) {
+      .pos-movie-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 640px) {
+      .pos-movie-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; }
+    }
+    .pos-catalog-card {
+      background: transparent;
+      border: none;
+      padding: 0;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      transition: transform 0.22s ease;
+    }
+    .pos-catalog-card:hover {
+      transform: translateY(-4px);
+    }
+    .pos-catalog-poster {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 2 / 3;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #14171f;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
+    }
+    .pos-catalog-card:hover .pos-catalog-poster,
+    .pos-catalog-card.active .pos-catalog-poster {
+      border-color: var(--box-accent);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.75), 0 0 0 1px var(--box-accent);
+    }
+    .pos-catalog-poster img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+    .pos-catalog-card:hover .pos-catalog-poster img {
+      transform: scale(1.04);
+    }
+    .pos-badge-age {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #fff;
+      background: #dc2626;
+      z-index: 2;
+    }
+    .pos-badge-age.badge-age-p { background: #16a34a; }
+    .pos-badge-age.badge-age-t13 { background: #ca8a04; }
+    .pos-badge-age.badge-age-t16 { background: #ea580c; }
+    .pos-badge-age.badge-age-t18 { background: #dc2626; }
+    .pos-badge-duration {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.78);
+      color: #e2e8f0;
+      z-index: 2;
+    }
+    .pos-catalog-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--box-text-primary);
+      margin-top: 8px;
+      margin-bottom: 4px;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .pos-format-badge {
+      display: inline-block;
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #94a3b8;
+      text-transform: uppercase;
+    }
+    .pos-catalog-card:hover .pos-format-badge {
+      background: rgba(236, 28, 36, 0.15);
+      border-color: rgba(236, 28, 36, 0.4);
+      color: #f87171;
+    }
+    .showtime-slot-btn {
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--box-border-color);
+      background: var(--box-bg-secondary);
+      color: var(--box-text-primary);
+      border-radius: 10px;
+      padding: 10px 12px;
+      transition: all 0.15s;
+    }
+    .showtime-slot-btn:hover, .showtime-slot-btn.active {
+      border-color: var(--box-accent);
+      background: var(--box-red-subtle);
+    }
+    .selected-movie-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: var(--box-bg-card);
+      border: 1px solid var(--box-border-color);
+      margin-bottom: 12px;
+    }
+    .selected-movie-mini-poster {
+      width: 38px;
+      height: 54px;
+      object-fit: cover;
+      border-radius: 6px;
+      flex-shrink: 0;
+      background: #14171f;
+    }
+    @media (max-width: 640px) {
+      .pos-wizard-steps { grid-template-columns: 1fr; }
+    }
+    @media (min-width: 992px) {
+      .pos-summary-col {
+        position: sticky;
+        top: 86px;
+        align-self: flex-start;
+        max-height: calc(100vh - 102px);
+        overflow-y: auto;
+      }
+    }
+    .pay-option input:checked + .pay-box {
+      border-color: var(--box-accent);
+      background: var(--box-red-subtle);
+      color: var(--box-text-primary);
+    }
+    .pay-box {
+      border: 1px solid var(--box-border-color);
+      background: var(--box-bg-secondary);
+      border-radius: 8px;
+      padding: 10px 8px;
+      text-align: center;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .pos-input {
+      background: var(--box-bg-secondary);
+      border: 1px solid var(--box-border-color);
+      color: var(--box-text-primary);
+    }
+    .pos-input:focus {
+      background: var(--box-bg-secondary);
+      color: var(--box-text-primary);
+      border-color: var(--box-accent);
+      box-shadow: 0 0 0 0.2rem var(--box-red-glow);
+    }
+    .modal-backdrop-custom {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(4px);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-backdrop-custom.show { display: flex; }
+    .modal-box-custom {
+      background: var(--box-bg-card);
+      border: 1px solid var(--box-border-color);
+      border-radius: 16px;
+      max-width: 440px;
+      width: 100%;
+      padding: 24px;
+    }
+    @media print {
+      header, footer, .no-print { display: none !important; }
+      body { background: #fff !important; color: #000 !important; }
+    }
+  </style>
+</head>
+<body>
+  <header th:replace="~{fragments/navbar :: navbar}"></header>
+
+  <main class="pos-container" id="bookingApp"
+        th:data-user-id="${currentUser != null ? currentUser.userId : (session.currentUser != null ? session.currentUser.userId : 'GUEST')}"
+        th:data-assigned-cinema="${assignedCinemaName != null ? assignedCinemaName : ''}">
+    <!-- Top Workspace Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4 pb-3 border-bottom border-secondary border-opacity-25 no-print">
+      <div>
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+          <h2 class="h4 fw-bold mb-0">Staff Counter Workspace</h2>
+          <span th:if="${assignedCinemaName != null}"
+                class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25"
+                th:text="'Branch: ' + ${assignedCinemaName}">Branch</span>
+        </div>
+        <p class="small text-secondary mb-0">Counter ticket sales, standalone concessions, order lookup &amp; cashier shift reconciliation (real-time 10-min seat hold synced with online)</p>
+      </div>
+      <div class="d-flex flex-wrap gap-2"
+           th:if="${(currentUser != null ? currentUser.role : (session.currentUser != null ? session.currentUser.role : '')) != 'STAFF'}">
+        <button type="button" class="pos-tab-btn active" id="tabBtnPos">POS &amp; Concessions</button>
+        <button type="button" class="pos-tab-btn" id="tabBtnLookup">Order Lookup</button>
+        <button type="button" class="pos-tab-btn" id="tabBtnShift">Shift Summary</button>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 1: POS ==================== -->
+    <div id="tabPos" class="row g-4 align-items-start no-print">
+      <div class="col-lg-8">
+        <!-- Mode Switch -->
+        <div class="pos-card py-2 px-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <span class="small text-secondary fw-semibold">Transaction Type:</span>
+          <div class="btn-group btn-group-sm">
+            <button type="button" id="modeTicketBtn" class="btn btn-danger">Movie Tickets (+ Combos)</button>
+            <button type="button" id="modeFoodBtn" class="btn btn-outline-secondary">Concessions Only</button>
+          </div>
+        </div>
+
+        <!-- 3-Step Wizard Bar (Ticket Mode) -->
+        <div id="posWizardNav" class="pos-wizard-steps" role="tablist" aria-label="Counter order steps">
+          <button type="button" id="wizStep1" class="pos-wizard-step active">
+            <span class="pos-wizard-step-num">01</span>
+            <span>Movie &amp; Showtime</span>
+          </button>
+          <button type="button" id="wizStep2" class="pos-wizard-step" disabled>
+            <span class="pos-wizard-step-num">02</span>
+            <span>Select Seats</span>
+          </button>
+          <button type="button" id="wizStep3" class="pos-wizard-step" disabled>
+            <span class="pos-wizard-step-num">03</span>
+            <span>Combos &amp; Customer</span>
+          </button>
+        </div>
+
+        <!-- STEP 1: Select Movie (Poster Grid) -> Select Showtime -->
+        <div id="stepShowtimePanel">
+          <!-- Sub-view 1A: Movie Poster Catalog -->
+          <div id="movieCatalogView" class="pos-card">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+              <div class="d-flex align-items-center gap-2">
+                <span class="small text-uppercase fw-bold text-secondary">1. Select Movie</span>
+                <span id="movieCountBadge" class="badge bg-secondary bg-opacity-25 text-light">0 movies</span>
+              </div>
+              <div class="d-flex flex-wrap gap-2 flex-grow-1 justify-content-end">
+                <select id="cinemaFilterSelect" class="form-select form-select-sm pos-input" style="max-width: 210px;" aria-label="Filter by cinema">
+                  <option value="">All Cinemas</option>
+                </select>
+                <div class="input-group input-group-sm" style="max-width: 240px;">
+                  <input type="search" id="movieSearchInput" class="form-control pos-input"
+                         placeholder="Search movie title..." autocomplete="off">
+                </div>
+              </div>
+            </div>
+            <div id="movieGrid" class="pos-movie-grid" style="max-height: 600px; overflow-y: auto; padding: 4px 4px 8px;">
+              <div class="small text-secondary">Loading movies...</div>
+            </div>
+          </div>
+
+          <!-- Sub-view 1B: Showtimes for Selected Movie -->
+          <div id="movieShowtimesView" class="d-none">
+            <div class="selected-movie-bar">
+              <div class="d-flex align-items-center gap-3 min-w-0">
+                <img id="pickedMoviePoster" src="/assets/img/box-cinema-favicon.png" alt="Movie Poster" class="selected-movie-mini-poster"
+                     onerror="this.src='/assets/img/box-cinema-favicon.png'">
+                <div class="min-w-0">
+                  <div id="pickedMovieTitle" class="fw-bold text-truncate">—</div>
+                  <div id="pickedMovieMeta" class="small text-secondary text-truncate">—</div>
+                </div>
+              </div>
+              <button type="button" id="btnBackToMovies" class="btn btn-outline-secondary btn-sm flex-shrink-0">&larr; Back to Movies</button>
+            </div>
+
+            <div class="pos-card">
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="small text-uppercase fw-bold text-secondary">Select Showtime</span>
+                  <span id="showtimeCountBadge" class="badge bg-secondary bg-opacity-25 text-light">0 showtimes</span>
+                </div>
+                <div class="input-group input-group-sm" style="max-width: 250px;">
+                  <input type="search" id="showtimeSearchInput" class="form-control pos-input"
+                         placeholder="Search time, room, format..." autocomplete="off">
+                </div>
+              </div>
+              <div id="showtimeGrid" class="d-flex flex-column gap-3" style="max-height: 480px; overflow-y: auto; padding-right: 4px;">
+                <div class="small text-secondary">Select a movie first.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2: Select Seats -->
+        <div id="stepSeatPanel" class="d-none">
+          <!-- Selected Movie Summary + Back Button -->
+          <div class="selected-movie-bar">
+            <div class="d-flex align-items-center gap-3 min-w-0">
+              <img id="step2Poster" src="/assets/img/box-cinema-favicon.png" alt="Movie Poster" class="selected-movie-mini-poster"
+                   onerror="this.src='/assets/img/box-cinema-favicon.png'">
+              <div class="min-w-0">
+                <div id="step2Title" class="fw-bold text-truncate">—</div>
+                <div id="step2Meta" class="small text-secondary text-truncate">—</div>
+              </div>
+            </div>
+            <button type="button" id="btnBackToShowtime" class="btn btn-outline-secondary btn-sm flex-shrink-0">&larr; Back to Showtimes</button>
+          </div>
+
+          <!-- Temporary Seat Hold Live Banner (Synced with Customer Booking) -->
+          <div id="bookingHoldBanner" class="booking-hold-banner mb-3" role="region" aria-label="Temporary seat reservation countdown" hidden>
+            <div class="booking-hold-banner-main">
+              <div class="booking-hold-pulse-wrap" aria-hidden="true">
+                <span class="booking-hold-dot"></span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3 2" />
+                </svg>
+              </div>
+              <div class="booking-hold-info">
+                <div class="booking-hold-title-row">
+                  <span class="booking-hold-badge" id="bookingHoldStateBadge">SEATS TEMPORARILY HELD</span>
+                  <span class="booking-hold-seats-text" id="bookingHoldBannerSeats"></span>
+                </div>
+                <p class="booking-hold-desc">Seats are held for 10 minutes for this counter transaction.</p>
+              </div>
+              <div class="booking-hold-timer-box">
+                <span class="booking-hold-timer-label">Hold Timer</span>
+                <strong class="booking-hold-countdown" id="bookingHoldCountdown" aria-live="off">10:00</strong>
+              </div>
+            </div>
+            <div class="booking-hold-progress-track" aria-hidden="true">
+              <div id="bookingHoldProgressBar" class="booking-hold-progress-fill" style="width: 100%;"></div>
+            </div>
+          </div>
+
+          <!-- Expiry Alert -->
+          <div id="bookingExpiryNotice" class="booking-expiry-alert mb-3" role="alert" hidden>
+            <div class="booking-expiry-alert-icon" aria-hidden="true">&#9200;</div>
+            <div class="booking-expiry-alert-body">
+              <strong>Seat Hold Expired (10 minutes)</strong>
+              <p id="bookingExpiryMessage">Your temporary seat hold has expired and the seats have been released. Please reselect seats on the map.</p>
+            </div>
+            <button type="button" id="bookingExpiryDismiss" class="booking-secondary booking-btn-sm">Dismiss</button>
+          </div>
+
+          <!-- Compact Synchronized Customer-Style Seat Map -->
+          <div class="pos-card pos-seat-card">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="small text-uppercase fw-bold text-secondary">2. Seat Map</span>
+                <span id="roomBadge" class="badge bg-secondary bg-opacity-25 text-light">—</span>
+                <span class="booking-tag" id="bookingAvailableStat">Loading...</span>
+              </div>
+              <span class="small text-secondary">Max 8 seats per booking</span>
+            </div>
+
+            <p id="bookingStatus" class="booking-status" role="alert" hidden></p>
+
+            <!-- Compact Horizontal Legend Strip -->
+            <div id="bookingLegend" class="pos-compact-legend" aria-label="Seat Legend"></div>
+
+            <!-- Live Seat Info Bar on Hover / Focus / Tap -->
+            <div id="bookingSeatHoverInfo" class="booking-seat-hover-bar" aria-live="polite">
+              <span class="seat-hover-dot"></span>
+              <span id="bookingSeatHoverText">Hover or tap on any seat to view its category, ticket price, and availability status.</span>
+            </div>
+
+            <!-- Cinema Screen -->
+            <div class="booking-screen" aria-hidden="true">
+              <div></div><span>CINEMA SCREEN</span>
+            </div>
+
+            <!-- Seat Grid -->
+            <div class="booking-seat-scroll" id="bookingSeatScroll" tabindex="0" role="region" aria-label="Seat map">
+              <div id="bookingSeats" class="booking-seats">
+                <div class="text-center text-secondary small py-4">Select a showtime to load the seat map</div>
+              </div>
+            </div>
+
+            <!-- Selected Seat Chips Tray -->
+            <div id="bookingSelectedTray" class="booking-selected-tray" hidden>
+              <div class="booking-selected-tray-header">
+                <span>Selected seats (<strong id="bookingTrayCount">0</strong>/8):</span>
+                <button type="button" id="bookingClearSeats" class="booking-clear-link">Deselect All</button>
+              </div>
+              <div id="bookingSelectedChips" class="booking-selected-chips" aria-label="Selected seats list"></div>
+            </div>
+
+            <!-- Bottom Step 2 Navigation -->
+            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-secondary border-opacity-25">
+              <button type="button" id="btnStep2Back" class="btn btn-outline-secondary btn-sm">&larr; Back to Showtimes</button>
+              <button type="button" id="btnStep2Next" class="btn btn-danger btn-sm fw-bold px-3" disabled>
+                Next: Combos &amp; Customer &rarr;
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 3: Combos & Customer Information -->
+        <div id="stepCustomerFoodPanel" class="d-none">
+          <!-- Ticket Mode Context Bar -->
+          <div id="step3NavBar" class="selected-movie-bar">
+            <div class="d-flex align-items-center gap-3 min-w-0">
+              <button type="button" id="btnStep3Back" class="btn btn-outline-secondary btn-sm flex-shrink-0">&larr; Back to Seat Map</button>
+              <div class="min-w-0">
+                <div id="step3ContextText" class="small fw-semibold text-truncate">—</div>
+                <div id="step3HoldBadge" class="text-info d-none" style="font-size:0.74rem;">Hold Timer: <strong id="step3HoldCountdown">10:00</strong></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Concessions Only Banner -->
+          <div id="step3FoodOnlyBanner" class="selected-movie-bar d-none">
+            <div>
+              <div class="small fw-bold text-light">Concessions Only Sale</div>
+              <div class="small text-secondary">Add snacks or combos and enter customer details on the right to check out.</div>
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-7">
+              <div class="pos-card h-100 mb-0">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                  <span class="small text-uppercase fw-bold text-secondary">3. Food &amp; Combos</span>
+                  <div class="btn-group btn-group-sm" id="foodFilterGroup">
+                    <button type="button" class="btn btn-danger py-0 px-2" data-food-filter="ALL">All</button>
+                    <button type="button" class="btn btn-outline-secondary py-0 px-2" data-food-filter="COMBO">Combos</button>
+                    <button type="button" class="btn btn-outline-secondary py-0 px-2" data-food-filter="ITEM">Snacks &amp; Drinks</button>
+                  </div>
+                </div>
+                <div id="comboList" class="d-flex flex-column gap-2" style="max-height: 440px; overflow-y: auto; padding-right: 4px;">
+                  <div class="small text-secondary">Loading concessions...</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-5">
+              <div class="pos-card h-100 mb-0">
+                <span class="small text-uppercase fw-bold text-secondary d-block mb-3">Customer Information</span>
+                <div class="mb-2">
+                  <label class="form-label small text-secondary mb-1">Full Name <span class="text-danger">*</span></label>
+                  <input type="text" id="guestName" class="form-control form-control-sm pos-input" placeholder="Walk-in Customer">
+                </div>
+                <div class="mb-2">
+                  <label class="form-label small text-secondary mb-1">Phone Number <span class="text-danger">*</span></label>
+                  <input type="tel" id="guestPhone" class="form-control form-control-sm pos-input" placeholder="09xx xxx xxx">
+                </div>
+                <div>
+                  <label class="form-label small text-secondary mb-1">Email for E-Ticket (Optional)</label>
+                  <input type="email" id="guestEmail" class="form-control form-control-sm pos-input" placeholder="customer@example.com">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Summary -->
+      <div class="col-lg-4 pos-summary-col">
+        <div class="pos-card mb-0">
+          <div class="d-flex justify-content-between align-items-center pb-2 mb-3 border-bottom border-secondary border-opacity-25">
+            <h5 class="fw-bold mb-0">Order Summary</h5>
+            <span class="badge bg-danger bg-opacity-25 text-danger">COUNTER POS</span>
+          </div>
+
+          <div id="sumMovieBlock" class="mb-3">
+            <div id="sumMovie" class="fw-semibold">—</div>
+            <div id="sumShowtime" class="small text-secondary">—</div>
+          </div>
+
+          <div id="sumSeatsBlock" class="pb-3 mb-3 border-bottom border-secondary border-opacity-25">
+            <div class="d-flex justify-content-between small text-secondary mb-1">
+              <span>Selected Seats</span>
+              <span id="sumSeatCount">0 seats</span>
+            </div>
+            <div id="sumSeatsBadges" class="d-flex flex-wrap gap-1">
+              <span class="small text-secondary fst-italic">No seats selected</span>
+            </div>
+          </div>
+
+          <div class="pb-3 mb-3 border-bottom border-secondary border-opacity-25">
+            <div class="small text-secondary mb-1">Food &amp; Combos</div>
+            <div id="sumCombos" class="small">
+              <span class="text-secondary fst-italic">None</span>
+            </div>
+          </div>
+
+          <!-- Voucher -->
+          <div class="pb-3 mb-3 border-bottom border-secondary border-opacity-25">
+            <label class="form-label small text-secondary mb-1">Voucher Code (Optional)</label>
+            <div class="input-group input-group-sm">
+              <input type="text" id="voucherInput" class="form-control pos-input text-uppercase" placeholder="Enter voucher code...">
+              <button type="button" id="btnApplyVoucher" class="btn btn-outline-secondary">Apply</button>
+            </div>
+            <div id="voucherMsg" class="small mt-1 d-none"></div>
+          </div>
+
+          <!-- Totals -->
+          <div class="pb-3 mb-3 border-bottom border-secondary border-opacity-25 small">
+            <div id="ticketPriceRow" class="d-flex justify-content-between text-secondary mb-1">
+              <span>Tickets</span>
+              <span id="sumTicketPrice">0 đ</span>
+            </div>
+            <div class="d-flex justify-content-between text-secondary mb-1">
+              <span>Concessions</span>
+              <span id="sumFoodPrice">0 đ</span>
+            </div>
+            <div id="discountRow" class="d-flex justify-content-between text-success mb-1 d-none">
+              <span>Discount</span>
+              <span id="sumDiscount">-0 đ</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-baseline pt-2 border-top border-secondary border-opacity-25">
+              <span class="fw-bold fs-6">TOTAL</span>
+              <span id="sumTotal" class="fw-bold fs-4 text-danger">0 đ</span>
+            </div>
+          </div>
+
+          <!-- Payment Methods -->
+          <div class="mb-3">
+            <div class="small text-uppercase fw-bold text-secondary mb-2">Payment Method</div>
+            <div class="row g-2">
+              <div class="col-6">
+                <label class="pay-option w-100">
+                  <input type="radio" name="payMethod" value="CASH" checked class="d-none">
+                  <div class="pay-box">💵 Cash</div>
+                </label>
+              </div>
+              <div class="col-6">
+                <label class="pay-option w-100">
+                  <input type="radio" name="payMethod" value="PAYOS_QR" class="d-none">
+                  <div class="pay-box">📲 Bank Transfer</div>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" id="submitPosBtn" class="btn btn-box-primary w-100 fw-bold py-2 mb-2">
+            CONFIRM PAYMENT &amp; ISSUE TICKET
+          </button>
+          <button type="button" id="resetOrderBtn" class="btn btn-outline-secondary btn-sm w-100">Reset Order</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 2: LOOKUP ==================== -->
+    <div id="tabLookup" class="d-none no-print">
+      <div class="pos-card">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+          <div>
+            <h5 class="fw-bold mb-1">My Order Lookup &amp; QR Reprint</h5>
+            <p class="small text-secondary mb-0">Showing only counter orders sold by your account · Search by Booking Code (BOX-...), Phone, Email or Customer Name</p>
+          </div>
+          <div class="input-group" style="max-width: 340px;">
+            <input type="text" id="lookupQuery" class="form-control form-control-sm pos-input" placeholder="Enter booking code or phone...">
+            <button type="button" id="lookupSearchBtn" class="btn btn-box-primary btn-sm">Search</button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-dark table-hover align-middle small mb-0">
+            <thead>
+              <tr class="text-secondary">
+                <th>Booking Code</th>
+                <th>Customer</th>
+                <th>Movie / Showtime</th>
+                <th>Seats</th>
+                <th>Payment</th>
+                <th class="text-end">Total</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody id="lookupTableBody">
+              <tr><td colspan="7" class="text-center text-secondary py-4">Loading orders...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 3: SHIFT SUMMARY ==================== -->
+    <div id="tabShift" class="d-none no-print">
+      <div class="pos-card d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+          <h5 class="fw-bold mb-1">Cashier Shift Summary (My Sales)</h5>
+          <p class="small text-secondary mb-0">Showing only transactions processed by your account (<span id="shiftStaffName">—</span>)</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <label class="small text-secondary mb-0">Date:</label>
+          <input type="date" id="shiftDateInput" class="form-control form-control-sm pos-input">
+          <button type="button" class="btn btn-box-primary btn-sm" onclick="window.print()">🖨️ Print Report</button>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3">
+        <div class="col-md-4 col-12">
+          <div class="pos-card mb-0">
+            <div class="small text-secondary">Total Shift Revenue</div>
+            <div id="shiftTotalRev" class="fs-4 fw-bold text-danger mt-1">0 đ</div>
+            <div id="shiftOrderCount" class="small text-secondary mt-1">0 orders</div>
+          </div>
+        </div>
+        <div class="col-md-4 col-6">
+          <div class="pos-card mb-0">
+            <div class="small text-secondary">💵 Cash in Drawer</div>
+            <div id="shiftCashRev" class="fs-4 fw-bold text-success mt-1">0 đ</div>
+            <div class="small text-secondary mt-1">Cash drawer handover</div>
+          </div>
+        </div>
+        <div class="col-md-4 col-6">
+          <div class="pos-card mb-0">
+            <div class="small text-secondary">📲 PayOS Bank Transfer</div>
+            <div id="shiftPayOsRev" class="fs-4 fw-bold mt-1">0 đ</div>
+            <div class="small text-secondary mt-1">Confirmed PAID</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pos-card">
+        <h6 class="fw-bold mb-3">Shift Transaction History</h6>
+        <div class="table-responsive">
+          <table class="table table-dark table-hover align-middle small mb-0">
+            <thead>
+              <tr class="text-secondary">
+                <th>Booking Code</th>
+                <th>Customer</th>
+                <th>Service</th>
+                <th>Seats</th>
+                <th>Method</th>
+                <th class="text-end">Total</th>
+              </tr>
+            </thead>
+            <tbody id="shiftOrdersBody">
+              <tr><td colspan="6" class="text-center text-secondary py-3">No transactions recorded for this date</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- STEP 2 MODAL: AWAITING PAYOS QR -->
+  <div id="payOsModal" class="modal-backdrop-custom no-print">
+    <div class="modal-box-custom">
+      <div class="d-flex justify-content-between align-items-center pb-2 mb-3 border-bottom border-secondary border-opacity-25">
+        <div>
+          <h5 class="fw-bold mb-0">Awaiting Bank Transfer</h5>
+          <span class="small text-warning">PENDING_PAYMENT · Seats HELD</span>
+        </div>
+        <span id="payOsCountdown" class="badge bg-danger bg-opacity-25 text-danger fs-6 font-monospace">10:00</span>
+      </div>
+      <div class="text-center p-3 rounded border border-secondary border-opacity-25 mb-3" style="background: var(--box-bg-secondary);">
+        <div class="small text-secondary mb-2">Customer scans VietQR using banking app</div>
+        <div id="payOsQrBox" class="bg-white d-inline-block p-2 rounded mb-2"></div>
+        <div id="payOsAmount" class="fs-5 fw-bold text-danger">0 đ</div>
+        <div class="small text-secondary mt-1">
+          Transfer Memo: <strong id="payOsOrderCode" class="text-light font-monospace">—</strong>
+        </div>
+        <div id="payOsBankInfo" class="small text-secondary"></div>
+        <div class="small text-warning mt-2">Auto-checking payment status every 2 seconds...</div>
+      </div>
+      <button type="button" id="btnSimulatePayOs" class="btn btn-success w-100 fw-bold btn-sm mb-2">
+        ✓ Confirm Transfer Received (Simulate / Demo)
+      </button>
+      <button type="button" id="btnCancelPayOs" class="btn btn-outline-danger w-100 btn-sm">
+        Cancel &amp; Release Seats (Switch Payment Method)
+      </button>
+    </div>
+  </div>
+
+  <!-- QR TICKET ISSUED MODAL -->
+  <div id="qrModal" class="modal-backdrop-custom">
+    <div class="modal-box-custom">
+      <div class="d-flex justify-content-between align-items-center pb-2 mb-3 border-bottom border-secondary border-opacity-25">
+        <h5 class="fw-bold text-success mb-0">✓ Ticket Issued Successfully!</h5>
+        <span id="modalPayBadge" class="badge bg-success bg-opacity-25 text-success">CASH · PAID</span>
+      </div>
+      <div class="text-center p-3 rounded border border-secondary border-opacity-25 mb-3" style="background: var(--box-bg-secondary);">
+        <img id="modalQrImg" src="" alt="Ticket QR" class="bg-white p-2 rounded mb-2" style="width: 170px; height: 170px;">
+        <div id="modalBookingCode" class="fw-bold font-monospace">BOX-...</div>
+        <div class="small text-secondary">Scan this code at the theater gate (/staff/checkin)</div>
+      </div>
+      <div id="modalDetails" class="small text-secondary mb-3 d-flex flex-column gap-1"></div>
+      <div class="row g-2 no-print">
+        <div class="col-6">
+          <button type="button" class="btn btn-outline-secondary w-100 btn-sm" onclick="window.print()">🖨️ Print Ticket / Receipt</button>
+        </div>
+        <div class="col-6">
+          <button type="button" id="btnCloseQrModal" class="btn btn-box-primary w-100 btn-sm">New Transaction</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer th:replace="~{fragments/footer :: footer}"></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script type="module">
+    import { getSeatSvg } from '/js/modules/seat-icons.js?v=3.2';
+    import { loadBookingData, holdBookingSeats, releaseBookingSeats } from '/js/modules/booking-data.js?v=1.4';
+
+    const DEFAULT_HOLD_SECONDS = 600;
+    const SEAT_TYPE_NAMES = {
+      standard: 'Standard Seat',
+      vip: 'VIP Seat',
+      sweetbox: 'Sweetbox Couple Seat',
+      imax: 'IMAX Seat',
+      '4dx': '4DX Seat',
+      recliner: 'Recliner Seat',
+      wheelchair: 'Wheelchair Seat'
+    };
+
+    let posMode = 'TICKET';
+    let currentStep = 1;
+    let showtimes = [];
+    let selectedMovieKey = null;
+    let activeShowtime = null;
+    let bookingData = null;
+    let selected = [];
+    let combos = [];
+    let comboQty = {};
+    let foodItems = [];
+    let foodQty = {};          // key: `${foodItemId}_${variantId || 0}` -> qty
+    let foodSelectedVar = {};  // key: foodItemId -> variantId (or null)
+    let foodFilter = 'ALL';
+    let appliedVoucherCode = null;
+    let appliedDiscount = 0;
+
+    let holdTimerId = null;
+    let otherHoldsTimerId = null;
+    let seatEventSource = null;
+    let broadcastChannel = null;
+    let isSyncingLiveMap = false;
+    let holdTotalSeconds = DEFAULT_HOLD_SECONDS;
+    let holdRemainingSeconds = 0;
+    let holdDeadlineMs = 0;
+
+    let pendingPayOs = null;
+    let pollTimer = null;
+    let countdownTimer = null;
+
+    const el = (id) => document.getElementById(id);
+    const fmt = (n) => Number(n || 0).toLocaleString('vi-VN') + ' đ';
+    const escapeHtml = (str) => String(str ?? '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    const formatCountdown = (sec) => {
+      const safe = Math.max(0, Math.floor(Number(sec) || 0));
+      return `${String(Math.floor(safe / 60)).padStart(2, '0')}:${String(safe % 60).padStart(2, '0')}`;
+    };
+
+    function resolveSeatShape(seat) {
+      const rawShape = String(seat?.shapeType || seat?.type || 'standard').toLowerCase().replace(/[^a-z0-9]+/g, '');
+      if (['standard', 'vip', 'sweetbox', 'imax', '4dx', 'recliner', 'wheelchair'].includes(rawShape)) return rawShape;
+      const upper = String(seat?.type || '').toUpperCase();
+      if (upper.includes('SWEETBOX') || upper.includes('COUPLE') || upper.includes('PAIR')) return 'sweetbox';
+      if (upper.includes('VIP')) return 'vip';
+      if (upper.includes('IMAX')) return 'imax';
+      if (upper.includes('4DX') || upper.includes('4D')) return '4dx';
+      if (upper.includes('RECLINER') || upper.includes('GOLD')) return 'recliner';
+      if (upper.includes('WHEELCHAIR')) return 'wheelchair';
+      return 'standard';
+    }
+
+    function setStatus(msg = '') {
+      const st = el('bookingStatus');
+      st.textContent = msg;
+      st.hidden = !msg;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      el('shiftDateInput').value = new Date().toISOString().slice(0, 10);
+      el('tabBtnPos')?.addEventListener('click', () => switchTab('pos'));
+      el('tabBtnLookup')?.addEventListener('click', () => switchTab('lookup'));
+      el('tabBtnShift')?.addEventListener('click', () => switchTab('shift'));
+      document.querySelectorAll('a[data-staff-tab]').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetTab = link.getAttribute('data-staff-tab') || 'pos';
+          switchTab(targetTab);
+          const url = new URL(window.location.href);
+          url.searchParams.set('tab', targetTab);
+          window.history.replaceState({}, '', url);
+        });
+      });
+
+      const initialTab = new URLSearchParams(window.location.search).get('tab');
+      if (initialTab && ['pos', 'lookup', 'shift'].includes(initialTab)) {
+        switchTab(initialTab);
+      }
+      el('modeTicketBtn').addEventListener('click', () => setPosMode('TICKET'));
+      el('modeFoodBtn').addEventListener('click', () => setPosMode('FOOD_ONLY'));
+      el('bookingClearSeats').addEventListener('click', clearSelectedSeats);
+      el('bookingExpiryDismiss').addEventListener('click', () => { el('bookingExpiryNotice').hidden = true; });
+      el('btnApplyVoucher').addEventListener('click', applyVoucher);
+      el('movieSearchInput').addEventListener('input', renderMoviesCatalog);
+      el('showtimeSearchInput').addEventListener('input', renderShowtimes);
+      el('cinemaFilterSelect').addEventListener('change', () => {
+        selectedMovieKey = null;
+        renderMoviesCatalog();
+      });
+      el('btnBackToMovies').addEventListener('click', goBackToMovies);
+      el('wizStep1').addEventListener('click', () => {
+        if (currentStep !== 1) goBackToShowtimes();
+        else goBackToMovies();
+      });
+      el('wizStep2').addEventListener('click', () => { if (activeShowtime) goToStep(2); });
+      el('wizStep3').addEventListener('click', () => { if (activeShowtime && selected.length) goToStep(3); });
+      el('btnBackToShowtime').addEventListener('click', goBackToShowtimes);
+      el('btnStep2Back').addEventListener('click', goBackToShowtimes);
+      el('btnStep2Next').addEventListener('click', () => {
+        if (!selected.length) {
+          setStatus('Please select at least 1 seat before continuing.');
+          return;
+        }
+        goToStep(3);
+      });
+      el('btnStep3Back').addEventListener('click', () => goToStep(2));
+      el('submitPosBtn').addEventListener('click', submitPosOrder);
+      el('resetOrderBtn').addEventListener('click', resetOrder);
+      el('lookupSearchBtn').addEventListener('click', loadLookup);
+      el('lookupQuery').addEventListener('keydown', (e) => { if (e.key === 'Enter') loadLookup(); });
+      el('shiftDateInput').addEventListener('change', loadShiftSummary);
+      el('btnSimulatePayOs').addEventListener('click', simulatePayOsReceived);
+      el('btnCancelPayOs').addEventListener('click', cancelPendingPayOs);
+      el('btnCloseQrModal').addEventListener('click', closeQrModal);
+      document.querySelectorAll('#foodFilterGroup button[data-food-filter]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          foodFilter = btn.getAttribute('data-food-filter') || 'ALL';
+          document.querySelectorAll('#foodFilterGroup button[data-food-filter]').forEach(b => {
+            b.className = (b === btn) ? 'btn btn-danger py-0 px-2' : 'btn btn-outline-secondary py-0 px-2';
+          });
+          renderCombos();
+        });
+      });
+      document.querySelectorAll('input[name="payMethod"]').forEach(r => r.addEventListener('change', updatePayBtn));
+
+      loadShowtimes();
+      loadCombos();
+      updatePayBtn();
+    });
+
+    window.addEventListener('beforeunload', () => {
+      if (selected.length && activeShowtime?.showtimeId && !pendingPayOs) {
+        releaseBookingSeats(activeShowtime.showtimeId).catch(() => {});
+      }
+    });
+
+    function switchTab(tab) {
+      el('tabPos').classList.toggle('d-none', tab !== 'pos');
+      el('tabLookup').classList.toggle('d-none', tab !== 'lookup');
+      el('tabShift').classList.toggle('d-none', tab !== 'shift');
+      el('tabBtnPos')?.classList.toggle('active', tab === 'pos');
+      el('tabBtnLookup')?.classList.toggle('active', tab === 'lookup');
+      el('tabBtnShift')?.classList.toggle('active', tab === 'shift');
+      document.querySelectorAll('a[data-staff-tab]').forEach(link => {
+        link.classList.toggle('active', link.getAttribute('data-staff-tab') === tab);
+      });
+      if (tab === 'lookup') loadLookup();
+      if (tab === 'shift') loadShiftSummary();
+    }
+
+    function goToStep(step) {
+      if (posMode !== 'TICKET') return;
+      currentStep = step;
+      el('stepShowtimePanel').classList.toggle('d-none', step !== 1);
+      el('stepSeatPanel').classList.toggle('d-none', step !== 2);
+      el('stepCustomerFoodPanel').classList.toggle('d-none', step !== 3);
+
+      const s1 = el('wizStep1');
+      const s2 = el('wizStep2');
+      const s3 = el('wizStep3');
+      s1.classList.toggle('active', step === 1);
+      s1.classList.toggle('done', step > 1 && Boolean(activeShowtime));
+
+      s2.disabled = !activeShowtime;
+      s2.classList.toggle('active', step === 2);
+      s2.classList.toggle('done', step === 3 && selected.length > 0);
+
+      s3.disabled = !(activeShowtime && selected.length > 0);
+      s3.classList.toggle('active', step === 3);
+      s3.classList.remove('done');
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function getMovieKey(s) {
+      return s.movieId != null ? String(s.movieId) : String(s.movieTitle || '');
+    }
+
+    function getAgeBadgeClass(age) {
+      const a = String(age || '').toUpperCase();
+      if (a === 'P') return 'badge-age-p';
+      if (a === 'T13') return 'badge-age-t13';
+      if (a === 'T16') return 'badge-age-t16';
+      return 'badge-age-t18';
+    }
+
+    function goBackToMovies() {
+      selectedMovieKey = null;
+      el('movieShowtimesView').classList.add('d-none');
+      el('movieCatalogView').classList.remove('d-none');
+      renderMoviesCatalog();
+    }
+
+    async function goBackToShowtimes() {
+      if (selected.length && activeShowtime?.showtimeId) {
+        await releaseBookingSeats(activeShowtime.showtimeId).catch(() => {});
+        notifyCrossTab();
+      }
+      stopHoldTimer();
+      stopOtherHoldsWatcher();
+      selected = [];
+      activeShowtime = null;
+      bookingData = null;
+      if (selectedMovieKey) {
+        el('movieCatalogView').classList.add('d-none');
+        el('movieShowtimesView').classList.remove('d-none');
+        renderShowtimes();
+      } else {
+        goBackToMovies();
+      }
+      updateSummary();
+      goToStep(1);
+    }
+
+    async function setPosMode(mode) {
+      if (posMode === mode) return;
+      posMode = mode;
+      const isTicket = mode === 'TICKET';
+      if (!isTicket && selected.length && activeShowtime) {
+        await clearSelectedSeats();
+      }
+      el('posWizardNav').classList.toggle('d-none', !isTicket);
+      el('step3NavBar').classList.toggle('d-none', !isTicket);
+      el('step3FoodOnlyBanner').classList.toggle('d-none', isTicket);
+      el('sumMovieBlock').classList.toggle('d-none', !isTicket);
+      el('sumSeatsBlock').classList.toggle('d-none', !isTicket);
+      el('ticketPriceRow').classList.toggle('d-none', !isTicket);
+      el('modeTicketBtn').className = isTicket ? 'btn btn-danger' : 'btn btn-outline-secondary';
+      el('modeFoodBtn').className = !isTicket ? 'btn btn-danger' : 'btn btn-outline-secondary';
+
+      if (!isTicket) {
+        el('stepShowtimePanel').classList.add('d-none');
+        el('stepSeatPanel').classList.add('d-none');
+        el('stepCustomerFoodPanel').classList.remove('d-none');
+      } else {
+        goToStep(activeShowtime ? 2 : 1);
+      }
+      updateSummary();
+    }
+
+    function updatePayBtn() {
+      const m = document.querySelector('input[name="payMethod"]:checked').value;
+      el('submitPosBtn').textContent =
+        m === 'PAYOS_QR' ? 'GENERATE BANK TRANSFER QR (STEP 1)' : 'CONFIRM PAYMENT & ISSUE TICKET';
+    }
+
+    async function loadShowtimes() {
+      const movieGrid = el('movieGrid');
+      try {
+        const res = await fetch('/api/staff/pos/showtimes');
+        showtimes = await res.json();
+        const cinemaSelect = el('cinemaFilterSelect');
+        const assignedCinema = (el('bookingApp')?.dataset?.assignedCinema || '').trim();
+        if (cinemaSelect) {
+          if (assignedCinema) {
+            cinemaSelect.innerHTML = `<option value="${escapeHtml(assignedCinema)}" selected>${escapeHtml(assignedCinema)}</option>`;
+            cinemaSelect.disabled = true;
+            cinemaSelect.title = 'Locked to your assigned cinema branch';
+          } else {
+            const cinemas = Array.from(new Set(showtimes.map(s => s.cinemaName).filter(Boolean))).sort();
+            cinemaSelect.disabled = false;
+            cinemaSelect.innerHTML = '<option value="">All Cinemas</option>' +
+              cinemas.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+          }
+        }
+        selectedMovieKey = null;
+        activeShowtime = null;
+        if (!showtimes.length) {
+          el('movieCountBadge').textContent = '0 movies';
+          movieGrid.innerHTML = '<div class="small text-secondary">No upcoming movies or showtimes available.</div>';
+          return;
+        }
+        goBackToMovies();
+        if (posMode === 'TICKET') goToStep(1);
+      } catch (e) {
+        movieGrid.innerHTML = '<div class="small text-danger">Failed to load movies and showtimes.</div>';
+      }
+    }
+
+    function renderMoviesCatalog() {
+      const grid = el('movieGrid');
+      const query = (el('movieSearchInput')?.value || '').trim().toLowerCase();
+      const cinemaFilter = el('cinemaFilterSelect')?.value || '';
+
+      const byMovie = new Map();
+      showtimes.forEach(s => {
+        if (cinemaFilter && s.cinemaName !== cinemaFilter) return;
+        const key = getMovieKey(s);
+        if (!byMovie.has(key)) {
+          byMovie.set(key, {
+            key,
+            movieTitle: s.movieTitle,
+            posterUrl: s.posterUrl,
+            ageRating: s.ageRating,
+            durationMinutes: s.durationMinutes,
+            formats: new Set(),
+            count: 0
+          });
+        }
+        const entry = byMovie.get(key);
+        entry.count++;
+        if (s.roomType) {
+          entry.formats.add(s.roomType.replace(' Standard', '').replace(' Laser', '').replace(' Motion', '').trim());
+        }
+      });
+
+      const moviesList = Array.from(byMovie.values()).filter(m => {
+        if (!query) return true;
+        const fmtText = Array.from(m.formats).join(' ').toLowerCase();
+        return (m.movieTitle || '').toLowerCase().includes(query) || fmtText.includes(query);
+      });
+
+      el('movieCountBadge').textContent = `${moviesList.length} ${moviesList.length === 1 ? 'movie' : 'movies'}`;
+      grid.replaceChildren();
+      if (!moviesList.length) {
+        grid.innerHTML = '<div class="small text-secondary py-3" style="grid-column: 1 / -1; text-align:center;">No matching movies found.</div>';
+        return;
+      }
+
+      moviesList.forEach(m => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = `pos-catalog-card ${selectedMovieKey === m.key ? 'active' : ''}`;
+        const poster = escapeHtml(m.posterUrl || '/assets/img/crimson-horizon.webp');
+        const formatsHtml = Array.from(m.formats).slice(0, 3)
+          .map(f => `<span class="pos-format-badge">${escapeHtml(f)}</span>`).join('');
+        card.innerHTML = `
+          <div class="pos-catalog-poster">
+            ${m.ageRating ? `<span class="pos-badge-age ${getAgeBadgeClass(m.ageRating)}">${escapeHtml(m.ageRating)}</span>` : ''}
+            ${m.durationMinutes ? `<span class="pos-badge-duration">${m.durationMinutes} mins</span>` : ''}
+            <img src="${poster}" alt="${escapeHtml(m.movieTitle)}" loading="lazy"
+                 onerror="this.onerror=null;this.src='/assets/img/crimson-horizon.webp'">
+          </div>
+          <div class="pos-catalog-title" title="${escapeHtml(m.movieTitle)}">${escapeHtml(m.movieTitle)}</div>
+          <div class="d-flex flex-wrap align-items-center gap-1 mt-1">${formatsHtml}</div>
+          <div class="text-secondary mt-1" style="font-size:0.72rem;">${m.count} upcoming ${m.count === 1 ? 'showtime' : 'showtimes'}</div>
+        `;
+        card.addEventListener('click', () => selectMovie(m.key));
+        grid.append(card);
+      });
+    }
+
+    function selectMovie(movieKey) {
+      selectedMovieKey = movieKey;
+      const cinemaFilter = el('cinemaFilterSelect')?.value || '';
+      const matching = showtimes.filter(s => getMovieKey(s) === movieKey && (!cinemaFilter || s.cinemaName === cinemaFilter));
+      if (!matching.length) return;
+
+      const sample = matching[0];
+      el('pickedMoviePoster').src = sample.posterUrl || '/assets/img/crimson-horizon.webp';
+      el('pickedMovieTitle').textContent = sample.movieTitle;
+      const metaParts = [
+        sample.ageRating,
+        sample.durationMinutes ? `${sample.durationMinutes} mins` : null,
+        `${matching.length} ${matching.length === 1 ? 'showtime' : 'showtimes'}`
+      ].filter(Boolean);
+      el('pickedMovieMeta').textContent = metaParts.join(' · ');
+      el('showtimeSearchInput').value = '';
+
+      el('movieCatalogView').classList.add('d-none');
+      el('movieShowtimesView').classList.remove('d-none');
+      renderShowtimes();
+    }
+
+    function renderShowtimes() {
+      const grid = el('showtimeGrid');
+      const query = (el('showtimeSearchInput')?.value || '').trim().toLowerCase();
+      const cinemaFilter = el('cinemaFilterSelect')?.value || '';
+      const filtered = showtimes.filter(s => {
+        if (selectedMovieKey && getMovieKey(s) !== selectedMovieKey) return false;
+        if (cinemaFilter && s.cinemaName !== cinemaFilter) return false;
+        if (!query) return true;
+        return (s.cinemaName || '').toLowerCase().includes(query) ||
+          (s.roomName || '').toLowerCase().includes(query) ||
+          (s.roomType || '').toLowerCase().includes(query) ||
+          (s.formattedStart || '').toLowerCase().includes(query);
+      });
+
+      el('showtimeCountBadge').textContent = `${filtered.length} ${filtered.length === 1 ? 'showtime' : 'showtimes'}`;
+      grid.replaceChildren();
+      if (!filtered.length) {
+        grid.innerHTML = '<div class="small text-secondary py-3 text-center">No matching showtimes found for this movie.</div>';
+        return;
+      }
+
+      // Group showtimes cleanly by date (dd/MM)
+      const byDate = new Map();
+      const todayKey = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' });
+      filtered.forEach(s => {
+        const parts = String(s.formattedStart || '').split(' · ');
+        const dateKey = parts[1] || 'Upcoming';
+        if (!byDate.has(dateKey)) byDate.set(dateKey, []);
+        byDate.get(dateKey).push({ s, timeStr: parts[0] || s.formattedStart });
+      });
+
+      byDate.forEach((slots, dateKey) => {
+        const group = document.createElement('div');
+        const labelText = dateKey === todayKey ? `Today · ${dateKey}` : `Date · ${dateKey}`;
+        group.innerHTML = `<div class="small fw-bold text-secondary text-uppercase mb-2">${escapeHtml(labelText)}</div>`;
+        const row = document.createElement('div');
+        row.className = 'row g-2';
+
+        slots.forEach(({ s, timeStr }) => {
+          const col = document.createElement('div');
+          col.className = 'col-sm-6 col-md-4';
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `showtime-slot-btn ${activeShowtime && s.showtimeId === activeShowtime.showtimeId ? 'active' : ''}`;
+          btn.innerHTML = `
+            <div class="d-flex justify-content-between align-items-baseline gap-2">
+              <span class="fs-6 fw-bold text-light">${escapeHtml(timeStr)}</span>
+              <span class="text-danger fw-bold small">${fmt(s.basePrice)}</span>
+            </div>
+            <div class="text-secondary text-truncate mt-1" style="font-size:0.74rem;">
+              ${escapeHtml(s.roomName)}${s.roomType ? ' · ' + escapeHtml(s.roomType) : ''}
+            </div>
+            <div class="text-secondary text-truncate" style="font-size:0.7rem; opacity:0.85;">
+              ${escapeHtml(s.cinemaName)}
+            </div>
+          `;
+          btn.addEventListener('click', () => selectShowtime(s.showtimeId));
+          col.append(btn);
+          row.append(col);
+        });
+
+        group.append(row);
+        grid.append(group);
+      });
+
+      if (activeShowtime) {
+        el('roomBadge').textContent = `${activeShowtime.roomName} · ${activeShowtime.roomType}`;
+      }
+    }
+
+    async function selectShowtime(id) {
+      if (activeShowtime && activeShowtime.showtimeId === id) {
+        goToStep(2);
+        return;
+      }
+      if (selected.length && activeShowtime) {
+        await releaseBookingSeats(activeShowtime.showtimeId).catch(() => {});
+      }
+      stopHoldTimer();
+      stopOtherHoldsWatcher();
+      selected = [];
+      activeShowtime = showtimes.find(s => s.showtimeId === id);
+      if (!activeShowtime) return;
+
+      el('roomBadge').textContent = `${activeShowtime.roomName} · ${activeShowtime.roomType}`;
+      el('step2Poster').src = activeShowtime.posterUrl || '/assets/img/box-cinema-favicon.png';
+      el('step2Title').textContent = activeShowtime.movieTitle;
+      el('step2Meta').textContent = `${activeShowtime.formattedStart} · ${activeShowtime.cinemaName} · ${activeShowtime.roomName}`;
+      renderShowtimes();
+      goToStep(2);
+      await loadSeatMap(id);
+      updateSummary();
+    }
+
+    async function loadSeatMap(showtimeId) {
+      el('bookingSeats').innerHTML = '<div class="text-center text-secondary small py-4">Loading seat map...</div>';
+      try {
+        bookingData = await loadBookingData(showtimeId);
+        if (Array.isArray(bookingData.myHeldSeats) && bookingData.myHeldSeats.length) {
+          selected = [...bookingData.myHeldSeats];
+          if (bookingData.myHoldRemainingSeconds > 0) {
+            startOrUpdateHoldTimer(bookingData.myHoldRemainingSeconds, bookingData.holdDurationSeconds || DEFAULT_HOLD_SECONDS);
+          }
+        }
+        renderLegend();
+        renderSeats();
+        updateSummary();
+        startOtherHoldsWatcher(showtimeId);
+      } catch (e) {
+        if (e && e.status === 409) {
+          await loadShowtimes();
+          return;
+        }
+        el('bookingSeats').innerHTML = `<div class="text-center text-danger small py-4">${e.message || 'Failed to load seat map.'}</div>`;
+      }
+    }
+
+    function renderLegend() {
+      const legend = el('bookingLegend');
+      legend.replaceChildren();
+
+      const statusGroup = document.createElement('div');
+      statusGroup.className = 'pos-legend-group';
+      [
+        { label: 'Available', cls: 'status-available' },
+        { label: 'Held', cls: 'status-holding' },
+        { label: 'Selected', cls: 'status-selected' },
+        { label: 'Sold', cls: 'status-sold' }
+      ].forEach(s => {
+        const chip = document.createElement('span');
+        chip.className = 'pos-legend-chip';
+        chip.innerHTML = `<span class="legend-seat-icon ${s.cls}">${getSeatSvg('standard')}</span><span>${s.label}</span>`;
+        statusGroup.append(chip);
+      });
+
+      const typesGroup = document.createElement('div');
+      typesGroup.className = 'pos-legend-group';
+      const typesMap = new Map();
+      (bookingData?.seats || []).forEach(s => {
+        if (!s.type || s.status === 'INACTIVE' || s.status === 'UNAVAILABLE') return;
+        const shape = resolveSeatShape(s);
+        if (!typesMap.has(shape)) {
+          typesMap.set(shape, { name: s.type, shape, price: shape === 'sweetbox' ? s.price * 2 : s.price });
+        }
+      });
+      const order = ['standard', 'vip', 'sweetbox', 'imax', '4dx', 'recliner', 'wheelchair'];
+      Array.from(typesMap.values())
+        .sort((a, b) => order.indexOf(a.shape) - order.indexOf(b.shape))
+        .forEach(t => {
+          const chip = document.createElement('span');
+          chip.className = 'pos-legend-chip';
+          const iconCls = `legend-seat-icon shape-${t.shape}${t.shape === 'sweetbox' ? ' legend-icon-sweetbox' : ''}`;
+          const shortName = (SEAT_TYPE_NAMES[t.shape] || t.name).replace(' Seat', '');
+          const suffix = t.shape === 'sweetbox' ? '/pair' : '';
+          chip.innerHTML = `<span class="${iconCls}">${getSeatSvg(t.shape)}</span><span>${shortName}</span><span class="pos-legend-price">${fmt(t.price)}${suffix}</span>`;
+          typesGroup.append(chip);
+        });
+
+      legend.append(statusGroup, typesGroup);
+    }
+
+    function updateSeatHoverBar(label, typeLabel, priceValue, seatStatus, isSelectedNow, holdRemSec) {
+      const hoverBar = el('bookingSeatHoverInfo');
+      const hoverText = el('bookingSeatHoverText');
+      let stateText = 'Available — Click to select and hold seat';
+      let stateClass = 'state-available';
+      if (isSelectedNow) {
+        stateText = 'Held for you — Click again to deselect';
+        stateClass = 'state-selected';
+      } else if (seatStatus === 'HELD') {
+        const rem = holdRemSec > 0 ? ` (${formatCountdown(holdRemSec)} left)` : '';
+        stateText = `Temporarily held by another customer${rem} — Unavailable`;
+        stateClass = 'state-held';
+      } else if (seatStatus === 'BOOKED') {
+        stateText = 'Sold — Unavailable';
+        stateClass = 'state-booked';
+      }
+      hoverBar.className = `booking-seat-hover-bar ${stateClass}`;
+      hoverText.textContent = `${label} · ${typeLabel} · ${fmt(priceValue)} — ${stateText}`;
+    }
+
+    function renderSeats() {
+      const container = el('bookingSeats');
+      container.replaceChildren();
+      const allSeats = bookingData?.seats || [];
+      const availCount = allSeats.filter(s => s.status === 'AVAILABLE').length;
+      el('bookingAvailableStat').textContent = `${availCount} available`;
+
+      const rows = new Map();
+      allSeats.forEach(s => {
+        if (!rows.has(s.row)) rows.set(s.row, []);
+        rows.get(s.row).push(s);
+      });
+
+      rows.forEach((rowSeats, label) => {
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'booking-seat-row';
+        const leftLbl = document.createElement('span');
+        leftLbl.className = 'booking-row-label';
+        leftLbl.textContent = label;
+        rowDiv.append(leftLbl);
+
+        rowSeats.sort((a, b) => (a.col || a.number) - (b.col || b.number));
+        const handled = new Set();
+
+        rowSeats.forEach((seat, idx) => {
+          if (handled.has(seat.id)) return;
+          if (seat.status === 'UNAVAILABLE' || seat.status === 'INACTIVE') {
+            const emptySlot = document.createElement('div');
+            emptySlot.className = 'booking-seat seat-inactive-empty';
+            emptySlot.style.visibility = 'hidden';
+            rowDiv.append(emptySlot);
+            return;
+          }
+
+          const shape = resolveSeatShape(seat);
+          const typeSlug = seat.typeSlug || (seat.type || 'standard').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+          const typeLabel = SEAT_TYPE_NAMES[shape] || seat.type;
+
+          if (shape === 'sweetbox') {
+            let partner = seat.pairId
+              ? rowSeats.find(o => o !== seat && o.pairId === seat.pairId && o.status !== 'UNAVAILABLE' && o.status !== 'INACTIVE')
+              : null;
+            if (!partner) {
+              const next = rowSeats[idx + 1];
+              if (next && next.status !== 'UNAVAILABLE' && next.status !== 'INACTIVE' && resolveSeatShape(next) === 'sweetbox') {
+                partner = next;
+              }
+            }
+            if (partner && !handled.has(partner.id)) {
+              handled.add(seat.id);
+              handled.add(partner.id);
+              const first = (seat.col || seat.number) < (partner.col || partner.number) ? seat : partner;
+              const second = first === seat ? partner : seat;
+              const isPairAvail = first.status === 'AVAILABLE' && second.status === 'AVAILABLE';
+              let pairStatus = 'AVAILABLE';
+              if (first.status === 'BOOKED' || second.status === 'BOOKED') pairStatus = 'BOOKED';
+              else if (first.status === 'HELD' || second.status === 'HELD') pairStatus = 'HELD';
+
+              let cls = `booking-seat seat-shape-sweetbox seat-sweetbox-seamless seat-type-${typeSlug}`;
+              if (pairStatus === 'BOOKED') cls += ' booked';
+              else if (pairStatus === 'HELD') cls += ' held';
+
+              const btn = document.createElement('button');
+              btn.type = 'button';
+              btn.className = cls;
+              btn.disabled = !isPairAvail;
+              btn.dataset.seatId1 = first.id;
+              btn.dataset.seatId2 = second.id;
+              btn.setAttribute('aria-pressed', String(selected.includes(first.id) && selected.includes(second.id)));
+              btn.innerHTML = `
+                <div class="seat-svg-wrap">${getSeatSvg('sweetbox', 'full')}</div>
+                <div class="sweetbox-labels">
+                  <span class="sweetbox-num">${first.seatLabel || first.id}</span>
+                  <span class="sweetbox-num">${second.seatLabel || second.id}</span>
+                </div>
+              `;
+              const hoverFn = () => updateSeatHoverBar(
+                `Sweetbox ${first.seatLabel || first.id}–${second.seatLabel || second.id}`,
+                typeLabel, first.price + second.price, pairStatus,
+                selected.includes(first.id) && selected.includes(second.id),
+                Math.max(Number(first.holdRemainingSeconds || 0), Number(second.holdRemainingSeconds || 0))
+              );
+              btn.addEventListener('mouseenter', hoverFn);
+              btn.addEventListener('focus', hoverFn);
+              if (isPairAvail) {
+                btn.addEventListener('click', () => handleSeatClick([first.id, second.id], hoverFn));
+              }
+              rowDiv.append(btn);
+              return;
+            }
+          }
+
+          handled.add(seat.id);
+          const isAvail = seat.status === 'AVAILABLE';
+          let cls = `booking-seat seat-shape-${shape} seat-type-${typeSlug}`;
+          if (seat.status === 'BOOKED') cls += ' booked';
+          else if (seat.status === 'HELD') cls += ' held';
+
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = cls;
+          btn.disabled = !isAvail;
+          btn.dataset.seatId = seat.id;
+          btn.setAttribute('aria-pressed', String(selected.includes(seat.id)));
+          btn.innerHTML = `<div class="seat-svg-wrap">${getSeatSvg(shape, 'full')}</div><span class="seat-num">${seat.seatLabel || seat.id}</span>`;
+
+          const hoverFn = () => updateSeatHoverBar(
+            `Seat ${seat.seatLabel || seat.id}`, typeLabel, seat.price,
+            seat.status, selected.includes(seat.id), Number(seat.holdRemainingSeconds || 0)
+          );
+          btn.addEventListener('mouseenter', hoverFn);
+          btn.addEventListener('focus', hoverFn);
+          if (isAvail) {
+            btn.addEventListener('click', () => handleSeatClick([seat.id], hoverFn));
+          }
+          rowDiv.append(btn);
+        });
+
+        const rightLbl = document.createElement('span');
+        rightLbl.className = 'booking-row-label booking-row-label-right';
+        rightLbl.textContent = label;
+        rowDiv.append(rightLbl);
+        container.append(rowDiv);
+      });
+    }
+
+    function syncSeatStates() {
+      el('bookingSeats').querySelectorAll('.booking-seat').forEach(btn => {
+        if (btn.classList.contains('seat-sweetbox-seamless')) {
+          btn.setAttribute('aria-pressed', String(selected.includes(btn.dataset.seatId1) && selected.includes(btn.dataset.seatId2)));
+        } else if (btn.dataset.seatId) {
+          btn.setAttribute('aria-pressed', String(selected.includes(btn.dataset.seatId)));
+        }
+      });
+    }
+
+    async function handleSeatClick(ids, hoverFn) {
+      el('bookingExpiryNotice').hidden = true;
+      const allAlreadySelected = ids.every(id => selected.includes(id));
+      let next;
+      if (allAlreadySelected) {
+        next = selected.filter(id => !ids.includes(id));
+        setStatus('');
+      } else {
+        const toAdd = ids.filter(id => !selected.includes(id));
+        if (selected.length + toAdd.length > 8) {
+          setStatus(`You can select a maximum of 8 seats per booking.`);
+          return;
+        }
+        next = [...selected, ...toAdd];
+        setStatus('');
+      }
+      selected = next;
+      syncSeatStates();
+      updateSummary();
+      hoverFn();
+      await syncServerSeatHold(selected);
+    }
+
+    async function clearSelectedSeats() {
+      selected = [];
+      setStatus('');
+      syncSeatStates();
+      updateSummary();
+      await syncServerSeatHold([]);
+    }
+
+    function renderHoldTimerUi() {
+      const banner = el('bookingHoldBanner');
+      const step3Badge = el('step3HoldBadge');
+      if (!selected.length || holdRemainingSeconds <= 0) {
+        banner.hidden = true;
+        step3Badge?.classList.add('d-none');
+        return;
+      }
+      const formatted = formatCountdown(holdRemainingSeconds);
+      const isDanger = holdRemainingSeconds <= 30;
+      const isWarn = !isDanger && holdRemainingSeconds <= 120;
+      banner.hidden = false;
+      banner.classList.toggle('is-warning', isWarn);
+      banner.classList.toggle('is-danger', isDanger);
+      el('bookingHoldCountdown').textContent = formatted;
+      el('bookingHoldBannerSeats').textContent = `Seats: ${selected.join(', ')}`;
+      el('bookingHoldStateBadge').textContent = isDanger ? 'SEAT HOLD EXPIRING SOON!' : (isWarn ? 'LIMITED TIME LEFT' : 'SEATS TEMPORARILY HELD');
+      const pct = Math.max(0, Math.min(100, (holdRemainingSeconds / Math.max(1, holdTotalSeconds)) * 100));
+      el('bookingHoldProgressBar').style.width = `${pct.toFixed(1)}%`;
+      if (step3Badge) {
+        step3Badge.classList.remove('d-none');
+        el('step3HoldCountdown').textContent = formatted;
+      }
+    }
+
+    function stopHoldTimer() {
+      if (holdTimerId) { clearInterval(holdTimerId); holdTimerId = null; }
+      holdRemainingSeconds = 0;
+      holdDeadlineMs = 0;
+      el('bookingHoldBanner').hidden = true;
+      el('step3HoldBadge')?.classList.add('d-none');
+    }
+
+    function startOrUpdateHoldTimer(seconds = DEFAULT_HOLD_SECONDS, totalBasis = seconds) {
+      const safe = Math.max(1, Math.floor(Number(seconds) || DEFAULT_HOLD_SECONDS));
+      holdTotalSeconds = Math.max(safe, Math.floor(Number(totalBasis) || DEFAULT_HOLD_SECONDS));
+      holdRemainingSeconds = safe;
+      holdDeadlineMs = Date.now() + safe * 1000;
+      el('bookingExpiryNotice').hidden = true;
+      renderHoldTimerUi();
+      if (holdTimerId) clearInterval(holdTimerId);
+      holdTimerId = setInterval(() => {
+        if (!selected.length) { stopHoldTimer(); return; }
+        holdRemainingSeconds = Math.max(0, Math.ceil((holdDeadlineMs - Date.now()) / 1000));
+        renderHoldTimerUi();
+        if (holdRemainingSeconds <= 0) handleHoldExpired();
+      }, 1000);
+    }
+
+    async function handleHoldExpired() {
+      const expired = [...selected];
+      stopHoldTimer();
+      selected = [];
+      if (activeShowtime?.showtimeId) releaseBookingSeats(activeShowtime.showtimeId).catch(() => {});
+      syncSeatStates();
+      updateSummary();
+      el('bookingExpiryMessage').textContent = `Temporary hold expired for seats (${expired.join(', ')}). They have been released to the system.`;
+      el('bookingExpiryNotice').hidden = false;
+      if (posMode === 'TICKET' && currentStep === 3 && activeShowtime) {
+        goToStep(2);
+      }
+      if (activeShowtime?.showtimeId) refreshLiveSeatMapSilently();
+    }
+
+    async function syncServerSeatHold(nextSelected) {
+      if (!activeShowtime?.showtimeId) return;
+      if (!nextSelected.length) {
+        stopHoldTimer();
+        releaseBookingSeats(activeShowtime.showtimeId).then(notifyCrossTab).catch(() => {});
+        return;
+      }
+      if (!holdTimerId) startOrUpdateHoldTimer(DEFAULT_HOLD_SECONDS, DEFAULT_HOLD_SECONDS);
+      else renderHoldTimerUi();
+
+      try {
+        const res = await holdBookingSeats(activeShowtime.showtimeId, nextSelected);
+        notifyCrossTab();
+        if (res?.holdRemainingSeconds > 0) {
+          startOrUpdateHoldTimer(res.holdRemainingSeconds, res.holdDurationSeconds || DEFAULT_HOLD_SECONDS);
+        }
+      } catch (err) {
+        if (err?.status === 409) {
+          const conflicts = Array.isArray(err.conflictingSeats) ? err.conflictingSeats : [];
+          selected = conflicts.length ? selected.filter(id => !conflicts.includes(id)) : [];
+          if (!selected.length) stopHoldTimer();
+          setStatus(err.message || 'Selected seat was just held or booked by another customer.');
+          await refreshLiveSeatMapSilently();
+        }
+      }
+    }
+
+    function stopOtherHoldsWatcher() {
+      if (otherHoldsTimerId) { clearInterval(otherHoldsTimerId); otherHoldsTimerId = null; }
+      if (seatEventSource) { try { seatEventSource.close(); } catch (_) {} seatEventSource = null; }
+      if (broadcastChannel) { try { broadcastChannel.close(); } catch (_) {} broadcastChannel = null; }
+    }
+
+    function notifyCrossTab() {
+      if (!activeShowtime?.showtimeId || !broadcastChannel) return;
+      try { broadcastChannel.postMessage({ showtimeId: String(activeShowtime.showtimeId), ts: Date.now() }); } catch (_) {}
+    }
+
+    async function refreshLiveSeatMapSilently() {
+      if (!activeShowtime?.showtimeId || isSyncingLiveMap) return;
+      isSyncingLiveMap = true;
+      try {
+        const fresh = await loadBookingData(activeShowtime.showtimeId);
+        if (!fresh?.seats) return;
+        const oldSig = (bookingData?.seats || []).map(s => `${s.id}:${s.status}`).join('|');
+        const newSig = fresh.seats.map(s => `${s.id}:${s.status}`).join('|');
+        bookingData = fresh;
+        if (oldSig !== newSig) {
+          const availSet = new Set(fresh.seats.filter(s => s.status === 'AVAILABLE').map(s => s.id));
+          selected = selected.filter(id => availSet.has(id));
+          if (!selected.length && !pendingPayOs) stopHoldTimer();
+          renderSeats();
+          syncSeatStates();
+          updateSummary();
+        }
+      } catch (_) {}
+      finally { isSyncingLiveMap = false; }
+    }
+
+    function startOtherHoldsWatcher(showtimeId) {
+      stopOtherHoldsWatcher();
+      if (typeof window.EventSource === 'function') {
+        try {
+          seatEventSource = new EventSource(`/api/booking/showtimes/${encodeURIComponent(showtimeId)}/stream`);
+          seatEventSource.addEventListener('seat-update', () => refreshLiveSeatMapSilently());
+        } catch (_) {}
+      }
+      if (typeof window.BroadcastChannel === 'function') {
+        try {
+          broadcastChannel = new BroadcastChannel('box_cinema_seat_realtime');
+          broadcastChannel.onmessage = (ev) => {
+            if (ev?.data?.showtimeId === String(activeShowtime?.showtimeId)) refreshLiveSeatMapSilently();
+          };
+        } catch (_) {}
+      }
+      let ticks = 0;
+      otherHoldsTimerId = setInterval(() => {
+        ticks++;
+        if (ticks % 10 === 0) refreshLiveSeatMapSilently();
+      }, 1000);
+    }
+
+    async function loadCombos() {
+      const container = el('comboList');
+      try {
+        const [comboRes, itemRes] = await Promise.all([
+          fetch('/api/food/combos'),
+          fetch('/api/food/items')
+        ]);
+        combos = comboRes.ok ? await comboRes.json() : [];
+        foodItems = itemRes.ok ? await itemRes.json() : [];
+        combos.forEach(c => { comboQty[c.id] = 0; });
+        foodItems.forEach(item => {
+          const vars = Array.isArray(item.variants) ? item.variants : [];
+          foodSelectedVar[item.id] = vars.length ? vars[0].id : null;
+        });
+        renderCombos();
+      } catch (e) {
+        container.innerHTML = '<div class="small text-danger">Failed to load concessions.</div>';
+      }
+    }
+
+    function getFoodKey(itemId, variantId) {
+      return `${itemId}_${variantId || 0}`;
+    }
+
+    function getItemActivePrice(item) {
+      const vars = Array.isArray(item.variants) ? item.variants : [];
+      const selVarId = foodSelectedVar[item.id];
+      const v = vars.find(x => x.id === selVarId);
+      return Number(v ? v.price : item.price) || 0;
+    }
+
+    function renderCombos() {
+      const container = el('comboList');
+      const showCombos = foodFilter === 'ALL' || foodFilter === 'COMBO';
+      const showItems = foodFilter === 'ALL' || foodFilter === 'ITEM';
+      const visibleCombos = showCombos ? combos : [];
+      const visibleItems = showItems ? foodItems : [];
+
+      if (!visibleCombos.length && !visibleItems.length) {
+        container.innerHTML = '<div class="small text-secondary">No concessions available.</div>';
+        return;
+      }
+      container.replaceChildren();
+
+      visibleCombos.forEach(c => {
+        const itemsSummary = (Array.isArray(c.items) && c.items.length)
+          ? c.items.map(ci => `${ci.quantity}× ${ci.foodItemName}${ci.variantName ? ' (' + ci.variantName + ')' : ''}`).join(' + ')
+          : (c.description || '');
+        const row = document.createElement('div');
+        row.className = 'd-flex justify-content-between align-items-center p-2 rounded border border-secondary border-opacity-25';
+        row.style.background = 'var(--box-bg-secondary)';
+        row.innerHTML = `
+          <div class="me-2 flex-grow-1">
+            <div class="small fw-semibold">${c.name} <span class="badge bg-danger bg-opacity-25 text-danger ms-1" style="font-size:0.65rem;">COMBO</span></div>
+            ${itemsSummary ? `<div class="text-secondary" style="font-size:0.74rem; line-height:1.35;">Includes: ${itemsSummary}</div>` : ''}
+            <div class="small text-danger fw-bold mt-1">${fmt(c.price)}</div>
+          </div>
+          <div class="d-flex align-items-center gap-2 flex-shrink-0">
+            <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 btn-minus">-</button>
+            <span class="small fw-bold" style="min-width:18px;text-align:center;">${comboQty[c.id] || 0}</span>
+            <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 btn-plus">+</button>
+          </div>
+        `;
+        row.querySelector('.btn-minus').addEventListener('click', () => { comboQty[c.id] = Math.max(0, (comboQty[c.id] || 0) - 1); renderCombos(); updateSummary(); });
+        row.querySelector('.btn-plus').addEventListener('click', () => { comboQty[c.id] = (comboQty[c.id] || 0) + 1; renderCombos(); updateSummary(); });
+        container.append(row);
+      });
+
+      visibleItems.forEach(item => {
+        const vars = Array.isArray(item.variants) ? item.variants : [];
+        const selVarId = foodSelectedVar[item.id] ?? (vars.length ? vars[0].id : null);
+        const key = getFoodKey(item.id, selVarId);
+        const qty = foodQty[key] || 0;
+        const unitPrice = getItemActivePrice(item);
+
+        const row = document.createElement('div');
+        row.className = 'd-flex justify-content-between align-items-center p-2 rounded border border-secondary border-opacity-25';
+        row.style.background = 'var(--box-bg-secondary)';
+
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'me-2 flex-grow-1';
+        infoDiv.innerHTML = `<div class="small fw-semibold">${item.name}</div>`;
+        if (vars.length) {
+          const sel = document.createElement('select');
+          sel.className = 'form-select form-select-sm pos-input mt-1 mb-1 py-0';
+          sel.style.maxWidth = '190px';
+          sel.style.fontSize = '0.72rem';
+          sel.innerHTML = vars.map(v => `<option value="${v.id}" ${v.id === selVarId ? 'selected' : ''}>${v.name} — ${fmt(v.price)}</option>`).join('');
+          sel.addEventListener('change', (e) => {
+            foodSelectedVar[item.id] = Number(e.target.value);
+            renderCombos();
+            updateSummary();
+          });
+          infoDiv.append(sel);
+        }
+        const priceDiv = document.createElement('div');
+        priceDiv.className = 'small text-danger fw-bold';
+        priceDiv.textContent = fmt(unitPrice);
+        infoDiv.append(priceDiv);
+
+        const ctrlDiv = document.createElement('div');
+        ctrlDiv.className = 'd-flex align-items-center gap-2';
+        ctrlDiv.innerHTML = `
+          <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 btn-minus">-</button>
+          <span class="small fw-bold" style="min-width:18px;text-align:center;">${qty}</span>
+          <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 btn-plus">+</button>
+        `;
+        ctrlDiv.querySelector('.btn-minus').addEventListener('click', () => {
+          foodQty[key] = Math.max(0, (foodQty[key] || 0) - 1);
+          renderCombos();
+          updateSummary();
+        });
+        ctrlDiv.querySelector('.btn-plus').addEventListener('click', () => {
+          foodQty[key] = (foodQty[key] || 0) + 1;
+          renderCombos();
+          updateSummary();
+        });
+
+        row.append(infoDiv, ctrlDiv);
+        container.append(row);
+      });
+    }
+
+    function getSelectedSeatObjects() {
+      const seatMap = new Map((bookingData?.seats || []).map(s => [s.id, s]));
+      return selected.map(id => seatMap.get(id)).filter(Boolean);
+    }
+
+    function getPickedFoodLines() {
+      const lines = [];
+      combos.forEach(c => {
+        const q = comboQty[c.id] || 0;
+        if (q > 0) lines.push({ kind: 'COMBO', comboId: c.id, label: c.name, qty: q, unitPrice: Number(c.price || 0) });
+      });
+      foodItems.forEach(item => {
+        const vars = Array.isArray(item.variants) ? item.variants : [];
+        if (vars.length) {
+          vars.forEach(v => {
+            const q = foodQty[getFoodKey(item.id, v.id)] || 0;
+            if (q > 0) lines.push({ kind: 'FOOD', foodItemId: item.id, variantId: v.id, label: `${item.name} (${v.name})`, qty: q, unitPrice: Number(v.price || 0) });
+          });
+        } else {
+          const q = foodQty[getFoodKey(item.id, null)] || 0;
+          if (q > 0) lines.push({ kind: 'FOOD', foodItemId: item.id, variantId: null, label: item.name, qty: q, unitPrice: Number(item.price || 0) });
+        }
+      });
+      return lines;
+    }
+
+    function getRawTotals() {
+      let ticketTotal = 0;
+      if (posMode === 'TICKET') {
+        getSelectedSeatObjects().forEach(s => { ticketTotal += Number(s.price || 0); });
+      }
+      let foodTotal = 0;
+      getPickedFoodLines().forEach(l => { foodTotal += l.unitPrice * l.qty; });
+      return { ticketTotal, foodTotal, subtotal: ticketTotal + foodTotal };
+    }
+
+    async function applyVoucher() {
+      const code = el('voucherInput').value.trim().toUpperCase();
+      const msg = el('voucherMsg');
+      if (!code) {
+        appliedVoucherCode = null; appliedDiscount = 0; msg.classList.add('d-none'); updateSummary(); return;
+      }
+      const { subtotal } = getRawTotals();
+      try {
+        const res = await fetch('/api/vouchers/validate', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ voucherCode: code, orderAmount: subtotal })
+        });
+        const data = await res.json();
+        msg.classList.remove('d-none', 'text-success', 'text-danger');
+        if (res.ok && data.success) {
+          appliedVoucherCode = data.voucherCode;
+          appliedDiscount = Number(data.discountAmount || 0);
+          msg.textContent = `Applied ${data.voucherCode} (-${fmt(appliedDiscount)})`;
+          msg.classList.add('text-success');
+        } else {
+          appliedVoucherCode = null; appliedDiscount = 0;
+          msg.textContent = data.message || 'Invalid voucher code';
+          msg.classList.add('text-danger');
+        }
+      } catch (e) {
+        msg.textContent = 'Error validating voucher'; msg.classList.remove('d-none'); msg.classList.add('text-danger');
+      }
+      updateSummary();
+    }
+
+    function updateSummary() {
+      if (activeShowtime) {
+        el('sumMovie').textContent = activeShowtime.movieTitle;
+        el('sumShowtime').textContent = `${activeShowtime.formattedStart} · ${activeShowtime.roomName}`;
+      } else {
+        el('sumMovie').textContent = '—';
+        el('sumShowtime').textContent = '—';
+      }
+      const seatObjs = getSelectedSeatObjects();
+      const labels = seatObjs.map(s => s.seatLabel || s.id).sort();
+      el('sumSeatCount').textContent = `${labels.length} ${labels.length === 1 ? 'seat' : 'seats'}`;
+      el('sumSeatsBadges').innerHTML = labels.length
+        ? labels.map(l => `<span class="badge bg-danger">${l}</span>`).join('')
+        : '<span class="small text-secondary fst-italic">No seats selected</span>';
+
+      const tray = el('bookingSelectedTray');
+      tray.hidden = labels.length === 0;
+      el('bookingTrayCount').textContent = labels.length;
+      el('bookingSelectedChips').innerHTML = labels.map(l => `<span class="booking-chip">${l}</span>`).join('');
+
+      const nextBtn = el('btnStep2Next');
+      if (nextBtn) nextBtn.disabled = labels.length === 0;
+      const wizStep3 = el('wizStep3');
+      if (wizStep3 && posMode === 'TICKET') {
+        wizStep3.disabled = !(activeShowtime && labels.length > 0);
+      }
+      const ctxText = el('step3ContextText');
+      if (ctxText && activeShowtime) {
+        ctxText.textContent = `${activeShowtime.movieTitle} · ${activeShowtime.formattedStart} · Seats: ${labels.length ? labels.join(', ') : 'None'}`;
+      }
+
+      const pickedLines = getPickedFoodLines();
+      el('sumCombos').innerHTML = pickedLines.length
+        ? pickedLines.map(l => `<div class="d-flex justify-content-between"><span>${l.qty}× ${l.label}</span><span>${fmt(l.unitPrice * l.qty)}</span></div>`).join('')
+        : '<span class="text-secondary fst-italic">None</span>';
+
+      const { ticketTotal, foodTotal, subtotal } = getRawTotals();
+      const total = Math.max(0, subtotal - appliedDiscount);
+      el('sumTicketPrice').textContent = fmt(ticketTotal);
+      el('sumFoodPrice').textContent = fmt(foodTotal);
+      const discRow = el('discountRow');
+      if (appliedDiscount > 0) { discRow.classList.remove('d-none'); el('sumDiscount').textContent = '-' + fmt(appliedDiscount); }
+      else discRow.classList.add('d-none');
+      el('sumTotal').textContent = fmt(total);
+    }
+
+    async function submitPosOrder() {
+      const { foodTotal } = getRawTotals();
+      const seatObjs = getSelectedSeatObjects();
+      if (posMode === 'TICKET' && !seatObjs.length) {
+        alert('Please select at least 1 seat.');
+        goToStep(activeShowtime ? 2 : 1);
+        return;
+      }
+      if (posMode === 'FOOD_ONLY' && foodTotal === 0) { alert('Please select at least 1 combo item.'); return; }
+
+      const guestName = el('guestName').value.trim();
+      const guestPhone = el('guestPhone').value.trim();
+      const guestEmail = el('guestEmail').value.trim();
+      if (!guestName || !guestPhone) {
+        alert('Please enter customer full name and phone number.');
+        if (posMode === 'TICKET' && currentStep !== 3) goToStep(3);
+        return;
+      }
+
+      const paymentMethod = document.querySelector('input[name="payMethod"]:checked').value;
+      const pickedLines = getPickedFoodLines();
+      const combosReq = pickedLines.filter(l => l.kind === 'COMBO').map(l => ({ comboId: l.comboId, quantity: l.qty }));
+      const foodItemsReq = pickedLines.filter(l => l.kind === 'FOOD').map(l => ({
+        foodItemId: l.foodItemId, variantId: l.variantId, quantity: l.qty
+      }));
+
+      const payload = {
+        showtimeId: activeShowtime ? activeShowtime.showtimeId : null,
+        seatIds: posMode === 'TICKET' ? seatObjs.map(s => s.dbSeatId).filter(Boolean) : [],
+        guestName, guestPhone, guestEmail: guestEmail || null,
+        paymentMethod, voucherCode: appliedVoucherCode,
+        combos: combosReq,
+        foodItems: foodItemsReq
+      };
+
+      const btn = el('submitPosBtn');
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/staff/pos/bookings', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) { alert(data.message || 'Unable to create transaction.'); return; }
+        stopHoldTimer();
+        notifyCrossTab();
+        if (data.bookingStatus === 'PENDING_PAYMENT') openPayOsModal(data);
+        else openQrModal(data);
+      } catch (e) {
+        alert('Server connection error: ' + e.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function openPayOsModal(data) {
+      pendingPayOs = { bookingId: data.bookingId, paymentId: data.paymentId, orderCode: data.orderCode };
+      el('payOsAmount').textContent = fmt(data.totalAmount);
+      el('payOsOrderCode').textContent = data.orderCode || data.bookingCode;
+      el('payOsBankInfo').textContent = data.accountNumber ? `${data.bankName || ''} · ${data.accountNumber} · ${data.accountName || ''}` : '';
+      const qrBox = el('payOsQrBox');
+      qrBox.innerHTML = '';
+      if (data.payOsQrPayload && typeof QRCode !== 'undefined') {
+        new QRCode(qrBox, { text: data.payOsQrPayload, width: 150, height: 150 });
+      } else {
+        qrBox.innerHTML = `<div class="p-3 text-dark small font-monospace">${data.orderCode}</div>`;
+      }
+      startPayOsCountdown(600);
+      startPayOsPolling();
+      el('payOsModal').classList.add('show');
+    }
+
+    function startPayOsCountdown(sec) {
+      clearInterval(countdownTimer);
+      let left = sec;
+      const tick = () => { el('payOsCountdown').textContent = formatCountdown(left); if (left > 0) left--; };
+      tick();
+      countdownTimer = setInterval(tick, 1000);
+    }
+
+    function startPayOsPolling() {
+      clearInterval(pollTimer);
+      pollTimer = setInterval(async () => {
+        if (!pendingPayOs?.paymentId) return;
+        try {
+          const res = await fetch(`/api/payments/${pendingPayOs.paymentId}/status`);
+          const st = await res.json();
+          if (st.paid || st.status === 'PAID') {
+            clearInterval(pollTimer); clearInterval(countdownTimer);
+            el('payOsModal').classList.remove('show');
+            const detailRes = await fetch(`/api/staff/pos/bookings/${pendingPayOs.bookingId}/result`);
+            const detail = await detailRes.json();
+            pendingPayOs = null;
+            notifyCrossTab();
+            openQrModal(detail);
+          }
+        } catch (_) {}
+      }, 2000);
+    }
+
+    async function simulatePayOsReceived() {
+      if (!pendingPayOs?.orderCode) return;
+      await fetch(`/api/payments/payos/simulate-payment/${pendingPayOs.orderCode}`, { method: 'POST' });
+    }
+
+    async function cancelPendingPayOs() {
+      clearInterval(pollTimer); clearInterval(countdownTimer);
+      if (pendingPayOs?.bookingId) {
+        await fetch(`/api/staff/pos/bookings/${pendingPayOs.bookingId}/cancel`, { method: 'POST' });
+      }
+      pendingPayOs = null;
+      el('payOsModal').classList.remove('show');
+      selected = [];
+      notifyCrossTab();
+      if (activeShowtime) refreshLiveSeatMapSilently();
+    }
+
+    function openQrModal(data) {
+      el('modalPayBadge').textContent = `${data.paymentMethod || 'CASH'} · PAID`;
+      el('modalBookingCode').textContent = data.bookingCode;
+      el('modalQrImg').src = `/api/staff/pos/bookings/${data.bookingId}/qr?t=${Date.now()}`;
+      el('modalDetails').innerHTML = `
+        <div class="d-flex justify-content-between"><span>Customer:</span><strong class="text-light">${data.guestName || ''} (${data.guestPhone || ''})</strong></div>
+        <div class="d-flex justify-content-between"><span>Service:</span><strong class="text-light">${data.movieTitle || ''}</strong></div>
+        <div class="d-flex justify-content-between"><span>Showtime:</span><strong class="text-light">${data.showtimeStart || ''}</strong></div>
+        <div class="d-flex justify-content-between"><span>Seats:</span><strong class="text-light">${(data.seatLabels && data.seatLabels.length) ? data.seatLabels.join(', ') : 'None (Concessions Only)'}</strong></div>
+        <div class="d-flex justify-content-between"><span>Total Paid:</span><strong class="text-danger">${fmt(data.totalAmount)}</strong></div>
+        ${data.emailSent ? `<div class="text-success pt-1">✓ E-Ticket QR email queued for ${data.guestEmail}</div>` : ''}
+      `;
+      el('qrModal').classList.add('show');
+    }
+
+    async function closeQrModal() {
+      el('qrModal').classList.remove('show');
+      await resetOrder();
+      await loadShowtimes();
+    }
+
+    async function resetOrder() {
+      if (selected.length && activeShowtime?.showtimeId) {
+        await releaseBookingSeats(activeShowtime.showtimeId).catch(() => {});
+        notifyCrossTab();
+      }
+      stopHoldTimer();
+      stopOtherHoldsWatcher();
+      selected = [];
+      selectedMovieKey = null;
+      activeShowtime = null;
+      bookingData = null;
+      combos.forEach(c => { comboQty[c.id] = 0; });
+      foodQty = {};
+      appliedVoucherCode = null;
+      appliedDiscount = 0;
+      el('voucherInput').value = '';
+      el('voucherMsg').classList.add('d-none');
+      el('movieSearchInput').value = '';
+      el('showtimeSearchInput').value = '';
+      el('guestName').value = '';
+      el('guestPhone').value = '';
+      el('guestEmail').value = '';
+      syncSeatStates();
+      goBackToMovies();
+      renderCombos();
+      updateSummary();
+      if (posMode === 'TICKET') goToStep(1);
+    }
+
+    async function loadLookup() {
+      const q = el('lookupQuery').value.trim();
+      const tbody = el('lookupTableBody');
+      try {
+        const res = await fetch('/api/staff/pos/bookings/lookup?q=' + encodeURIComponent(q));
+        const list = await res.json();
+        if (!list.length) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center text-secondary py-4">No orders found</td></tr>';
+          return;
+        }
+        tbody.replaceChildren();
+        list.forEach(o => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="font-monospace fw-bold">${o.bookingCode}</td>
+            <td>${o.guestName || ''}<div class="text-secondary">${o.guestPhone || ''}</div></td>
+            <td>${o.movieTitle || ''}<div class="text-secondary">${o.showtimeStart || ''}</div></td>
+            <td>${(o.seatLabels && o.seatLabels.length) ? o.seatLabels.join(', ') : '—'}</td>
+            <td><span class="badge bg-secondary bg-opacity-25">${o.paymentMethod}</span></td>
+            <td class="text-end fw-bold text-danger">${fmt(o.totalAmount)}</td>
+            <td class="text-end"><button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2 btn-reprint">🖨️ Reprint QR</button></td>
+          `;
+          tr.querySelector('.btn-reprint').addEventListener('click', async () => {
+            const detailRes = await fetch(`/api/staff/pos/bookings/${o.bookingId}/result`);
+            openQrModal(await detailRes.json());
+          });
+          tbody.append(tr);
+        });
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">Failed to load orders</td></tr>';
+      }
+    }
+
+    async function loadShiftSummary() {
+      const dateVal = el('shiftDateInput').value;
+      try {
+        const res = await fetch('/api/staff/pos/shift-summary?date=' + encodeURIComponent(dateVal));
+        const s = await res.json();
+        el('shiftStaffName').textContent = s.staffName || 'Current Staff';
+        el('shiftTotalRev').textContent = fmt(s.totalRevenue);
+        el('shiftOrderCount').textContent = `${s.orderCount || 0} orders · ${s.ticketCount || 0} tickets`;
+        el('shiftCashRev').textContent = fmt(s.cashRevenue);
+        el('shiftPayOsRev').textContent = fmt(s.payOsRevenue);
+
+        const tbody = el('shiftOrdersBody');
+        if (!s.orders || !s.orders.length) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-secondary py-3">No transactions recorded for this date</td></tr>';
+          return;
+        }
+        tbody.innerHTML = s.orders.map(o => `
+          <tr>
+            <td class="font-monospace fw-bold">${o.bookingCode}</td>
+            <td>${o.guestName || ''}<div class="text-secondary">${o.guestPhone || ''}</div></td>
+            <td>${o.movieTitle || ''}</td>
+            <td>${(o.seatLabels && o.seatLabels.length) ? o.seatLabels.join(', ') : '—'}</td>
+            <td><span class="badge bg-secondary bg-opacity-25">${o.paymentMethod}</span></td>
+            <td class="text-end fw-bold text-danger">${fmt(o.totalAmount)}</td>
+          </tr>
+        `).join('');
+      } catch (e) { console.error(e); }
+    }
+  </script>
+</body>
+</html>

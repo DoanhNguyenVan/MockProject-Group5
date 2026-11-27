@@ -24,7 +24,11 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -32,6 +36,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -112,6 +117,22 @@ public class SecurityConfig {
         UserRepository userRepository = userRepositoryProvider.getIfAvailable();
         AuthAuditService authAuditService = authAuditServiceProvider.getIfAvailable();
 
+        AuthorizationManager<RequestAuthorizationContext> notStaff = (authentication, context) -> {
+            Authentication authObj = authentication.get();
+            boolean isStaff = authObj != null && authObj.isAuthenticated()
+                    && authObj.getAuthorities().stream()
+                            .anyMatch(a -> "ROLE_STAFF".equalsIgnoreCase(a.getAuthority()));
+            return new AuthorizationDecision(!isStaff);
+        };
+        AuthorizationManager<RequestAuthorizationContext> authenticatedNotStaff = (authentication, context) -> {
+            Authentication authObj = authentication.get();
+            boolean isAuth = authObj != null && authObj.isAuthenticated()
+                    && !(authObj instanceof AnonymousAuthenticationToken);
+            boolean isStaff = isAuth && authObj.getAuthorities().stream()
+                    .anyMatch(a -> "ROLE_STAFF".equalsIgnoreCase(a.getAuthority()));
+            return new AuthorizationDecision(isAuth && !isStaff);
+        };
+
         http
                 .securityContext(sc -> sc.securityContextRepository(securityContextRepository))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
@@ -145,7 +166,18 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/oauth2/authorization/google-link").authenticated()
                         .requestMatchers(
-                                "/", "/home", "/about", "/contact", "/showtimes/**", "/movies/**",
+                                "/", "/home", "/about", "/contact",
+                                "/showtimes", "/showtimes/**",
+                                "/movies", "/movies/**",
+                                "/booking/buy-tickets",
+                                "/booking/ticket/**",
+                                "/api/customer/bookings/**")
+                        .access(notStaff)
+                        .requestMatchers(HttpMethod.GET, "/api/movies/*/reviews")
+                        .access(notStaff)
+                        .requestMatchers("/api/movies/*/reviews", "/api/movies/*/reviews/**")
+                        .access(authenticatedNotStaff)
+                        .requestMatchers(
                                 "/login", "/register", "/signup", "/verify-email", "/verify-email/**",
                                 "/forgot-password",
                                 "/oauth2/authorization/**",
@@ -162,8 +194,6 @@ public class SecurityConfig {
                                 "/api/auth/password-reset/**",
                                 "/api/quick-booking/**",
                                 "/api/booking/showtimes/**",
-                                "/booking/buy-tickets",
-                                "/booking/ticket/**",
                                 "/t/**",
                                 "/scan",
                                 "/ticket-scanner",
@@ -173,12 +203,15 @@ public class SecurityConfig {
                                 "/api/vouchers/**",
                                 "/api/payments/**",
                                 "/api/bookings/**",
-                                "/api/customer/bookings/**",
+                                "/uploads/avatars/**",
+                                "/uploads/movies/**",
                                 "/css/**", "/js/**", "/assets/**", "/images/**", "/favicon.ico", "/error")
                         .permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/manager/**").hasAnyRole("MANAGER", "ADMIN")
                         .requestMatchers("/staff/**", "/api/staff/**").hasAnyRole("STAFF", "MANAGER", "ADMIN")
+                        .requestMatchers("/booking/**", "/my-tickets/**")
+                        .access(authenticatedNotStaff)
                         .requestMatchers(
                                 "/profile",
                                 "/profile/**",
@@ -192,8 +225,6 @@ public class SecurityConfig {
                                 "/api/auth/me",
                                 "/api/auth/logout",
                                 "/api/users/**",
-                                "/booking/**",
-                                "/my-tickets/**",
                                 "/api/booking/**")
                         .authenticated()
                         .anyRequest().authenticated())

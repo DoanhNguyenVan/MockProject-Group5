@@ -27,6 +27,9 @@ public class User {
     @Column(name = "google_id", length = 255, unique = true)
     private String googleId;
 
+    @Column(name = "avatar_url", length = 500)
+    private String avatarUrl;
+
     @Column(name = "role", length = 20, nullable = false)
     private String role = "CUSTOMER";
 
@@ -111,6 +114,14 @@ public class User {
 
     public void setGoogleId(String googleId) {
         this.googleId = googleId;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
     }
 
     public String getRole() {

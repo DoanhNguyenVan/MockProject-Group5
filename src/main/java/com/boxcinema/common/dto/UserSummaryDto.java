@@ -15,6 +15,7 @@ public class UserSummaryDto implements Serializable {
     private String accountStatus;
     private boolean hasPassword;
     private boolean googleLinked;
+    private String avatarUrl;
 
     public UserSummaryDto() {
     }
@@ -105,6 +106,14 @@ public class UserSummaryDto implements Serializable {
 
     public void setGoogleLinked(boolean googleLinked) {
         this.googleLinked = googleLinked;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
     }
 }
 

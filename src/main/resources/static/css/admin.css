@@ -2634,6 +2634,200 @@ html[data-theme="light"] .admin-chart-bar-track {
   background: #f1f5f9;
 }
 
+/* =====================================================
+   MOVIE MEDIA UPLOADER (POSTER & BANNER)
+   ===================================================== */
+.admin-media-upload-card {
+  background: var(--box-bg-secondary);
+  border: 1px solid var(--box-border-color);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.admin-media-upload-card.is-dragover {
+  border-color: var(--box-accent);
+  background: rgba(229, 9, 20, 0.06);
+}
+
+.admin-media-preview-row {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.admin-media-preview {
+  position: relative;
+  background: var(--box-bg-primary);
+  border: 1px dashed var(--box-border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.admin-media-preview:hover {
+  border-color: var(--box-accent);
+}
+
+.admin-media-preview.poster-ratio {
+  width: 64px;
+  height: 96px;
+}
+
+.admin-media-preview.banner-ratio {
+  width: 118px;
+  height: 66px;
+  align-self: center;
+}
+
+.admin-media-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.admin-media-placeholder {
+  text-align: center;
+  padding: 6px;
+  color: var(--box-text-muted);
+  font-size: 10.5px;
+  line-height: 1.3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.admin-media-controls {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.admin-media-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-media-upload-btn {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 6px !important;
+  padding: 7px 12px;
+  border-radius: 7px;
+  background: rgba(229, 9, 20, 0.14);
+  border: 1px solid rgba(229, 9, 20, 0.42);
+  color: #ff6b72 !important;
+  font-size: 12px !important;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 0;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.admin-media-upload-btn:hover {
+  background: rgba(229, 9, 20, 0.24);
+  border-color: var(--box-accent);
+}
+
+.admin-media-upload-btn.is-busy {
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.admin-media-clear-btn {
+  padding: 6px 10px;
+  border-radius: 7px;
+  background: transparent;
+  border: 1px solid var(--box-border-color);
+  color: var(--box-text-secondary);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-media-clear-btn:hover {
+  border-color: rgba(248, 113, 113, 0.55);
+  color: #f87171;
+}
+
+.admin-media-meta {
+  font-size: 11px;
+  color: var(--box-text-muted);
+  min-height: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.admin-media-uploading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.admin-media-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  animation: admin-media-spin 0.75s linear infinite;
+}
+
+@keyframes admin-media-spin {
+  to { transform: rotate(360deg); }
+}
+
+.admin-media-error {
+  font-size: 11.5px;
+  color: #f87171;
+  display: none;
+}
+
+.admin-media-error.is-visible {
+  display: block;
+}
+
+.admin-media-url-input {
+  font-size: 12px;
+  padding: 7px 10px;
+}
+
+html[data-theme="light"] .admin-media-upload-card {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+html[data-theme="light"] .admin-media-preview {
+  background: #ffffff;
+  border-color: #cbd5e1;
+}
+
+html[data-theme="light"] .admin-media-upload-btn {
+  color: #c81e1e !important;
+  background: rgba(220, 38, 38, 0.08);
+  border-color: rgba(220, 38, 38, 0.35);
+}
+
 @media print {
   body * {
     visibility: hidden;

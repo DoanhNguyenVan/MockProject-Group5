@@ -40,6 +40,7 @@ public class BoxCinemaUserDetails implements UserDetails {
         summary.setAccountStatus(user.getAccountStatus());
         summary.setHasPassword(user.getPasswordHash() != null && !user.getPasswordHash().isBlank());
         summary.setGoogleLinked(user.getGoogleId() != null && !user.getGoogleId().isBlank());
+        summary.setAvatarUrl(user.getAvatarUrl());
         this.userSummary = summary;
         this.passwordHash = user.getPasswordHash() != null ? user.getPasswordHash() : "";
         this.enabled = "ACTIVE".equalsIgnoreCase(user.getAccountStatus());

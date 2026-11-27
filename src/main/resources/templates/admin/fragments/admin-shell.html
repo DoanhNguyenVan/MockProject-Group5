@@ -8,7 +8,7 @@
   <title th:text="${pageTitle} + ' | BOX Cinema Admin'">BOX Cinema Admin</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="/css/main.css" th:href="@{/css/main.css}">
-  <link rel="stylesheet" href="/css/admin.css?v=5.3" th:href="@{/css/admin.css(v='5.3')}">
+  <link rel="stylesheet" href="/css/admin.css?v=5.4" th:href="@{/css/admin.css(v='5.4')}">
   <style>
     html, body.admin-page {
       background: var(--box-bg-primary);
@@ -51,6 +51,14 @@
       align-items: center;
       justify-content: center;
       font-size: 12px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .admin-user-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
     .admin-logout-btn {
       background: transparent;
@@ -132,9 +140,16 @@
 <body>
 
   <!-- Reusable User Badge Fragment -->
-  <div th:fragment="userBadge" class="admin-user-badge">
-    <span class="admin-user-avatar">A</span>
-    <span th:text="${(currentUser != null ? currentUser.fullName : (session.currentUser != null ? session.currentUser.fullName : 'Administrator'))}">Administrator</span>
+  <div th:fragment="userBadge" class="admin-user-badge"
+       th:with="admAvatar=${currentUser != null ? currentUser.avatarUrl : (session.currentUser != null ? session.currentUser.avatarUrl : null)},
+                admName=${currentUser != null ? currentUser.fullName : (session.currentUser != null ? session.currentUser.fullName : 'Administrator')}">
+    <span class="admin-user-avatar">
+      <img th:if="${admAvatar != null and !#strings.isEmpty(admAvatar)}" th:src="${admAvatar}" alt="Avatar"
+           onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='';">
+      <span th:style="${admAvatar != null and !#strings.isEmpty(admAvatar)} ? 'display:none' : ''"
+            th:text="${admName != null and !#strings.isEmpty(admName) ? #strings.toUpperCase(#strings.substring(admName, 0, 1)) : 'A'}">A</span>
+    </span>
+    <span th:text="${admName}">Administrator</span>
   </div>
 
   <!-- Reusable Sidebar Fragment -->
@@ -297,9 +312,16 @@
         localStorage.setItem('box_cinema_theme', curr);
       ">◐</button>
 
-      <div class="admin-user-badge">
-        <span class="admin-user-avatar">A</span>
-        <span th:text="${(currentUser != null ? currentUser.fullName : (session.currentUser != null ? session.currentUser.fullName : 'Administrator'))}">Administrator</span>
+      <div class="admin-user-badge"
+           th:with="admAvatar=${currentUser != null ? currentUser.avatarUrl : (session.currentUser != null ? session.currentUser.avatarUrl : null)},
+                    admName=${currentUser != null ? currentUser.fullName : (session.currentUser != null ? session.currentUser.fullName : 'Administrator')}">
+        <span class="admin-user-avatar">
+          <img th:if="${admAvatar != null and !#strings.isEmpty(admAvatar)}" th:src="${admAvatar}" alt="Avatar"
+               onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='';">
+          <span th:style="${admAvatar != null and !#strings.isEmpty(admAvatar)} ? 'display:none' : ''"
+                th:text="${admName != null and !#strings.isEmpty(admName) ? #strings.toUpperCase(#strings.substring(admName, 0, 1)) : 'A'}">A</span>
+        </span>
+        <span th:text="${admName}">Administrator</span>
       </div>
 
       <form action="/logout" th:action="@{/logout}" method="post" class="m-0 p-0 d-inline">

@@ -45,6 +45,68 @@
     html[data-theme="light"] .profile-card .border-secondary {
       border-color: rgba(15, 23, 42, 0.1) !important;
     }
+
+    .profile-avatar-block {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1.25rem;
+      padding: 1rem 1.15rem;
+      margin-bottom: 1.5rem;
+      border-radius: 12px;
+      background: var(--box-bg-secondary);
+      border: 1px solid var(--box-border-color);
+    }
+
+    .profile-avatar-circle {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #C91934 0%, #6f0b1b 100%);
+      border: 2px solid rgba(255, 255, 255, 0.18);
+      color: #fff;
+      font-size: 1.75rem;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+
+    .profile-avatar-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .profile-avatar-cam {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.52);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.18s ease;
+    }
+
+    .profile-avatar-circle:hover .profile-avatar-cam {
+      opacity: 1;
+    }
+
+    html[data-theme="light"] .profile-avatar-block {
+      background: #f8fafc;
+      border-color: rgba(15, 23, 42, 0.08);
+    }
+
+    html[data-theme="light"] .profile-avatar-circle {
+      border-color: rgba(15, 23, 42, 0.14);
+    }
   </style>
 </head>
 
@@ -96,6 +158,51 @@
         </a>
       </div>
 
+      <!-- Profile Avatar Upload & Preview -->
+      <div class="profile-avatar-block">
+        <label for="profileAvatarInput" class="profile-avatar-circle" title="Click to upload profile photo">
+          <img th:if="${user.avatarUrl != null and !#strings.isEmpty(user.avatarUrl)}"
+               th:src="${user.avatarUrl}"
+               alt="Profile photo"
+               onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline';">
+          <span th:style="${user.avatarUrl != null and !#strings.isEmpty(user.avatarUrl)} ? 'display:none' : ''"
+                th:text="${user.fullName != null and !#strings.isEmpty(user.fullName) ? #strings.toUpperCase(#strings.substring(user.fullName, 0, 1)) : 'U'}">U</span>
+          <span class="profile-avatar-cam" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+              <circle cx="12" cy="13" r="4"></circle>
+            </svg>
+          </span>
+        </label>
+
+        <div class="flex-grow-1" style="min-width: 210px;">
+          <div class="text-white fw-semibold mb-1" style="font-size: 0.95rem;">Profile Photo</div>
+          <div class="text-secondary small mb-2">JPG, PNG, or WEBP (max 2 MB). Automatically optimized and synced across all pages.</div>
+
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <form id="profileAvatarUploadForm" th:action="@{/profile/avatar}" method="post" enctype="multipart/form-data" class="m-0">
+              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+              <input type="file" id="profileAvatarInput" name="avatarFile" accept="image/jpeg,image/png,image/webp" hidden>
+              <label for="profileAvatarInput" class="btn-box-primary btn-sm px-3 d-inline-flex align-items-center gap-2 text-white mb-0" style="cursor: pointer;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <span th:text="${user.avatarUrl != null and !#strings.isEmpty(user.avatarUrl) ? 'Change Photo' : 'Upload Photo'}">Upload Photo</span>
+              </label>
+            </form>
+
+            <form th:if="${user.avatarUrl != null and !#strings.isEmpty(user.avatarUrl)}"
+                  th:action="@{/profile/avatar/remove}" method="post" class="m-0">
+              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+              <button type="submit" class="btn-box-outline btn-sm px-3 text-danger border-danger border-opacity-50">Remove</button>
+            </form>
+          </div>
+          <div id="avatarClientError" class="small text-danger mt-2 d-none" role="alert"></div>
+        </div>
+      </div>
+
       <div class="row g-3">
         <div class="col-md-6">
           <label class="form-label text-secondary small fw-semibold">Full Name</label>
@@ -120,6 +227,54 @@
   </main>
 
   <footer th:replace="~{fragments/footer :: footer}"></footer>
+  <script>
+    (function () {
+      var input = document.getElementById('profileAvatarInput');
+      var form = document.getElementById('profileAvatarUploadForm');
+      var err = document.getElementById('avatarClientError');
+      if (!input || !form) return;
+      input.addEventListener('change', async function () {
+        var file = input.files && input.files[0];
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) {
+          if (err) {
+            err.textContent = 'Profile photo must be 2 MB or smaller.';
+            err.classList.remove('d-none');
+          }
+          input.value = '';
+          return;
+        }
+        if (err) err.classList.add('d-none');
+
+        var csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+        var csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content') || 'X-CSRF-TOKEN';
+        var labelText = form.querySelector('label span');
+        var prevLabel = labelText ? labelText.textContent : '';
+        if (labelText) labelText.textContent = 'Uploading...';
+
+        try {
+          var headers = {};
+          if (csrfToken) headers[csrfHeader] = csrfToken;
+          var res = await fetch(form.getAttribute('action') || '/profile/avatar', {
+            method: 'POST',
+            headers: headers,
+            body: new FormData(form)
+          });
+          if (res.ok || res.redirected) {
+            window.location.assign('/profile');
+            return;
+          }
+          throw new Error('Upload failed (HTTP ' + res.status + ').');
+        } catch (e) {
+          if (labelText) labelText.textContent = prevLabel;
+          if (err) {
+            err.textContent = e.message || 'Unable to upload profile photo.';
+            err.classList.remove('d-none');
+          }
+        }
+      });
+    })();
+  </script>
 </body>
 
 </html>

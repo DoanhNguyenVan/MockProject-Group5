@@ -277,19 +277,87 @@
         </div>
 
         <div>
-          <label for="modalMoviePosterUrl" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
-            Poster URL
+          <label for="modalMoviePosterUrl" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+            <span>Poster</span>
+            <span style="font-size: 11px; font-weight: 500; color: var(--box-text-muted);">2:3 Portrait</span>
           </label>
-          <input type="url" class="admin-input" id="modalMoviePosterUrl" name="posterUrl" maxlength="500"
-                 placeholder="https://example.com/poster.jpg">
+          <div class="admin-media-upload-card" data-movie-media-picker data-media-type="poster" th:attr="data-upload-url=@{/admin/movies/upload-media}">
+            <div class="admin-media-preview-row">
+              <div class="admin-media-preview poster-ratio" data-media-preview-box title="Click or drop image">
+                <img data-media-preview-img alt="Poster preview" style="display: none;">
+                <div class="admin-media-placeholder" data-media-placeholder>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                  </svg>
+                  <span>2:3</span>
+                </div>
+              </div>
+              <div class="admin-media-controls">
+                <div class="admin-media-actions">
+                  <input type="file" id="modalPosterFileInput" data-media-file accept="image/jpeg,image/png,image/webp" hidden>
+                  <label for="modalPosterFileInput" class="admin-media-upload-btn" data-media-upload-btn>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="17 8 12 3 7 8"></polyline>
+                      <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span data-media-btn-label>Upload Photo</span>
+                  </label>
+                  <button type="button" class="admin-media-clear-btn" data-media-clear style="display: none;">Remove</button>
+                </div>
+                <div class="admin-media-meta" data-media-meta>
+                  <span>JPG, PNG, WEBP · Max 5 MB</span>
+                </div>
+              </div>
+            </div>
+            <input type="text" class="admin-input admin-media-url-input" id="modalMoviePosterUrl" name="posterUrl" maxlength="500"
+                   data-media-url placeholder="https://example.com/poster.jpg">
+            <div class="admin-media-error" data-media-error role="alert"></div>
+          </div>
         </div>
 
         <div>
-          <label for="modalMovieBannerUrl" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: block;">
-            Banner URL
+          <label for="modalMovieBannerUrl" style="font-size: 13px; font-weight: 600; color: var(--box-text-primary); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+            <span>Banner</span>
+            <span style="font-size: 11px; font-weight: 500; color: var(--box-text-muted);">16:9 Wide</span>
           </label>
-          <input type="url" class="admin-input" id="modalMovieBannerUrl" name="bannerUrl" maxlength="500"
-                 placeholder="https://example.com/banner.jpg">
+          <div class="admin-media-upload-card" data-movie-media-picker data-media-type="banner" th:attr="data-upload-url=@{/admin/movies/upload-media}">
+            <div class="admin-media-preview-row">
+              <div class="admin-media-preview banner-ratio" data-media-preview-box title="Click or drop image">
+                <img data-media-preview-img alt="Banner preview" style="display: none;">
+                <div class="admin-media-placeholder" data-media-placeholder>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <rect x="2" y="5" width="20" height="14" rx="2"></rect>
+                    <circle cx="8" cy="10" r="1.5"></circle>
+                    <polyline points="22 16 16 11 5 19"></polyline>
+                  </svg>
+                  <span>16:9</span>
+                </div>
+              </div>
+              <div class="admin-media-controls">
+                <div class="admin-media-actions">
+                  <input type="file" id="modalBannerFileInput" data-media-file accept="image/jpeg,image/png,image/webp" hidden>
+                  <label for="modalBannerFileInput" class="admin-media-upload-btn" data-media-upload-btn>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="17 8 12 3 7 8"></polyline>
+                      <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span data-media-btn-label>Upload Photo</span>
+                  </label>
+                  <button type="button" class="admin-media-clear-btn" data-media-clear style="display: none;">Remove</button>
+                </div>
+                <div class="admin-media-meta" data-media-meta>
+                  <span>JPG, PNG, WEBP · Max 5 MB</span>
+                </div>
+              </div>
+            </div>
+            <input type="text" class="admin-input admin-media-url-input" id="modalMovieBannerUrl" name="bannerUrl" maxlength="500"
+                   data-media-url placeholder="https://example.com/banner.jpg">
+            <div class="admin-media-error" data-media-error role="alert"></div>
+          </div>
         </div>
 
         <div class="admin-field-wide">
@@ -308,6 +376,7 @@
     </form>
   </dialog>
 
+  <script src="/js/modules/admin-movie-media.js" th:src="@{/js/modules/admin-movie-media.js}"></script>
   <script>
     function openAddMovieModal() {
       const form = document.getElementById('movieModalForm');
@@ -325,6 +394,7 @@
       document.getElementById('modalMovieBannerUrl').value = '';
       document.getElementById('modalMovieTrailerUrl').value = '';
       document.querySelectorAll('.modal-genre-checkbox').forEach(cb => cb.checked = false);
+      window.BoxAdminMovieMedia?.syncAll();
       document.getElementById('movieModal').showModal();
     }
 
@@ -351,6 +421,7 @@
         cb.checked = genreIds.includes(cb.value);
       });
 
+      window.BoxAdminMovieMedia?.syncAll();
       document.getElementById('movieModal').showModal();
     }
 

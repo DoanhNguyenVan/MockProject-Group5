@@ -26,6 +26,7 @@ import com.boxcinema.auth.service.LoginAttemptService;
 import com.boxcinema.common.service.MovieService;
 import com.boxcinema.auth.service.OtpChallengeTxHelper;
 import com.boxcinema.common.service.SessionManagementService;
+import com.boxcinema.customer.service.ProfileAvatarService;
 import com.boxcinema.auth.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
@@ -53,6 +54,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.net.URLEncoder;
@@ -122,6 +124,9 @@ public class AuthController {
     private final SecurityContextRepository securityContextRepository;
     private final UserRepository userRepository;
     private final PasswordResetRepository passwordResetRepository;
+
+    @Autowired(required = false)
+    private ProfileAvatarService profileAvatarService;
 
     @Autowired
     public AuthController(
@@ -2373,6 +2378,52 @@ public class AuthController {
         }
     }
 
+    @PostMapping("/profile/avatar")
+    public String uploadProfileAvatar(
+            @RequestParam("avatarFile") MultipartFile avatarFile,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+
+        UserSummaryDto currentUser = resolveAuthenticatedUser(request);
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+        if (profileAvatarService == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Avatar upload service is unavailable.");
+            return "redirect:/profile";
+        }
+
+        try {
+            String newAvatarUrl = profileAvatarService.uploadAvatar(currentUser.getUserId(), avatarFile);
+            syncSessionAvatar(request, newAvatarUrl);
+            redirectAttributes.addFlashAttribute("successMessage", "Profile photo updated successfully!");
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/profile";
+    }
+
+    @PostMapping("/profile/avatar/remove")
+    public String removeProfileAvatar(
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+
+        UserSummaryDto currentUser = resolveAuthenticatedUser(request);
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+        if (profileAvatarService != null) {
+            try {
+                profileAvatarService.removeAvatar(currentUser.getUserId());
+                syncSessionAvatar(request, null);
+                redirectAttributes.addFlashAttribute("successMessage", "Profile photo removed.");
+            } catch (IllegalArgumentException | IllegalStateException ex) {
+                redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+            }
+        }
+        return "redirect:/profile";
+    }
+
     // Synchronize updated profile information with the current session
     private void syncSessionCustomerProfile(
             HttpServletRequest request,
@@ -2387,6 +2438,9 @@ public class AuthController {
         if (currentUser != null) {
             currentUser.setFullName(updatedUser.getFullName());
             currentUser.setPhone(updatedUser.getPhone());
+            if (updatedUser.getAvatarUrl() != null) {
+                currentUser.setAvatarUrl(updatedUser.getAvatarUrl());
+            }
         }
 
         HttpSession session = request != null
@@ -2398,6 +2452,9 @@ public class AuthController {
 
             sessionUser.setFullName(updatedUser.getFullName());
             sessionUser.setPhone(updatedUser.getPhone());
+            if (updatedUser.getAvatarUrl() != null) {
+                sessionUser.setAvatarUrl(updatedUser.getAvatarUrl());
+            }
         }
 
         Authentication auth =
@@ -2409,6 +2466,24 @@ public class AuthController {
 
             details.getUserSummary().setFullName(updatedUser.getFullName());
             details.getUserSummary().setPhone(updatedUser.getPhone());
+            if (updatedUser.getAvatarUrl() != null) {
+                details.getUserSummary().setAvatarUrl(updatedUser.getAvatarUrl());
+            }
+        }
+    }
+
+    private void syncSessionAvatar(HttpServletRequest request, String avatarUrl) {
+        UserSummaryDto currentUser = resolveAuthenticatedUser(request);
+        if (currentUser != null) {
+            currentUser.setAvatarUrl(avatarUrl);
+        }
+        HttpSession session = request != null ? request.getSession(false) : null;
+        if (session != null && session.getAttribute("currentUser") instanceof UserSummaryDto sessionUser) {
+            sessionUser.setAvatarUrl(avatarUrl);
+        }
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof BoxCinemaUserDetails details && details.getUserSummary() != null) {
+            details.getUserSummary().setAvatarUrl(avatarUrl);
         }
     }
 }

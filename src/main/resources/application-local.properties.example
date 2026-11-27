@@ -28,3 +28,8 @@ payos.cancel-url=http://localhost:8080/booking/buy-tickets
 # Gmail SMTP Credentials (Optional - for OTP and ticket emails)
 # spring.mail.username=
 # spring.mail.password=
+
+# Cloudinary Storage Credentials (Optional - for WebP avatar upload)
+# cloudinary.cloud-name=
+# cloudinary.api-key=
+# cloudinary.api-secret=
