@@ -419,3 +419,25 @@ SCRATCH_DB_DROPPED=true
   - `src/main/java/com/boxcinema/refund/provider/PayOsPayoutProviderAdapter.java`
   - `src/test/java/com/boxcinema/refund/Stage3PayOsPayoutAdapterAndFeePolicyTest.java`
   - `docs/acceptance/refund/_progress.md`
+- **Stage 3 Commit Hash:** `c1f0d62` (`c1f0d626843dd51062bf682cfbd6ba4f36a5dc14`) on branch `feat/refund-payos-payout`
+  - Commit message: `feat(refund): complete Stage 3 PayOS payout adapter, fee policy guard, kill-switch, and reconciliation`
+  - Staged & committed ONLY the 12 newly created Stage 3 files + `docs/acceptance/refund/_progress.md` (`13` files total); pre-existing dirty tracked files (`91` modified `M` entries carrying pre-Stage-0 user diffs) remain preserved in the working tree.
+
+---
+
+## Stage 4 Gate Closure — `PASS` (`2026-11-27T11:21:02+07:00`)
+
+- **Gate Decision:** `PASS` (Coordinator `#60`, following Independent QA `#59`)
+- **Stage 4 Resolved Defects Summary (caught by `@qa-verifier` `#56` & fixed `#57`/`#58`):**
+  1. `admin/refunds.html`: Fixed `#limitConfigKeySelect` option values from `MANAGER_APPROVAL_LIMIT_*` to exact `RefundLimitConfig` keys (`MANAGER_PER_REQUEST`, `MANAGER_DAILY`, `CINEMA_DAILY`, `INCIDENT_CUMULATIVE`).
+  2. `refund-ops.js`: Fixed `btnAssessFee` reading `classification`/`reason` (instead of `feeClassification`/`blockReason`) and persisted the fee alert after `openRefundDetail` refresh.
+  3. `refund-ops.js`: Fixed `sendReviewAction`, `saveIncidentForm`, and `deleteIncidentById` to read `errorCode || code` from `GlobalExceptionHandler` (`[INCIDENT_LINKED_TO_REFUNDS]`, `[LIMIT_EXCEEDED_ESCALATION_REQUIRED]`).
+  4. `ManagerPageController.java`, `TicketPageController.java`, & `booking-detail.html`: Added `/manager/dashboard` & `/booking/detail/{bookingId}` route aliases and ensured `id="btnBookingDetailRequestRefund"` renders in both `th:if` and `th:unless` branches.
+- **Stage 4 Verification Summary (`#59`, `LIVE_PAYOUT_ENABLED=false`, `PAYOS_PAYOUT_MODE=MOCK`):**
+  - `node --test tests/frontend/*.test.mjs` -> **76/76 PASS** (`0` failures, `0` skipped, `3.96 s`; includes `stage4-refund-ui.test.mjs` `7/7` PASS)
+  - `mvn test "-Dtest=Stage4FrontendTemplatesAndWiringTest"` -> **4/4 PASS** (`0` failures, `0` errors, `BUILD SUCCESS`, `32.09 s`)
+  - `mvn package -DskipTests` -> **`BUILD SUCCESS`** (`7.43 s`, `target/box-cinema-1.0.0-SNAPSHOT.jar`)
+- **Selective Commit Scope (2 newly created Stage 4 test files + `docs/acceptance/refund/_progress.md`):**
+  - `tests/frontend/stage4-refund-ui.test.mjs`
+  - `src/test/java/com/boxcinema/refund/Stage4FrontendTemplatesAndWiringTest.java`
+  - `docs/acceptance/refund/_progress.md`
