@@ -33,17 +33,17 @@ public class SchemaCompatibilityInitializer implements ApplicationRunner {
         try {
             String usersTable = resolveExactTableName("users");
             String moviesTable = resolveExactTableName("movies");
+            String bookingQrTable = resolveExactTableName("booking_qr");
 
             if (usersTable != null) {
-                Integer avatarColCount = jdbcTemplate.queryForObject(
-                        "SELECT COUNT(*) FROM information_schema.columns " +
-                                "WHERE table_schema = DATABASE() AND LOWER(table_name) = 'users' AND LOWER(column_name) = 'avatar_url'",
-                        Integer.class
-                );
-                if (avatarColCount != null && avatarColCount == 0) {
-                    jdbcTemplate.execute("ALTER TABLE " + usersTable + " ADD COLUMN avatar_url VARCHAR(500) NULL");
-                    log.info("Added missing avatar_url column to {}.", usersTable);
-                }
+                ensureColumnExists(usersTable, "users", "avatar_url", "VARCHAR(500) NULL");
+            }
+
+            if (bookingQrTable != null) {
+                ensureColumnExists(bookingQrTable, "booking_qr", "used_at", "DATETIME NULL");
+                ensureColumnExists(bookingQrTable, "booking_qr", "revoked_at", "DATETIME NULL");
+                ensureColumnExists(bookingQrTable, "booking_qr", "ticket_url", "VARCHAR(500) NULL");
+                ensureColumnExists(bookingQrTable, "booking_qr", "qr_image_path", "VARCHAR(500) NULL");
             }
 
             if (usersTable != null && moviesTable != null) {
@@ -79,5 +79,19 @@ public class SchemaCompatibilityInitializer implements ApplicationRunner {
                 lowerName
         );
         return names.isEmpty() ? null : names.get(0);
+    }
+
+    private void ensureColumnExists(String exactTableName, String lowerTableName, String columnName, String columnDefinition) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM information_schema.columns " +
+                        "WHERE table_schema = DATABASE() AND LOWER(table_name) = ? AND LOWER(column_name) = ?",
+                Integer.class,
+                lowerTableName,
+                columnName.toLowerCase()
+        );
+        if (count != null && count == 0) {
+            jdbcTemplate.execute("ALTER TABLE " + exactTableName + " ADD COLUMN " + columnName + " " + columnDefinition);
+            log.info("Added missing {} column to {}.", columnName, exactTableName);
+        }
     }
 }

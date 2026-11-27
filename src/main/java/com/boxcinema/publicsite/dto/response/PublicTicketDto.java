@@ -5,17 +5,23 @@ import java.util.List;
 
 public class PublicTicketDto {
     private boolean valid;
+    private boolean confirmable;
     private String message;
     private String bookingCode;
     private String paymentStatus;
     private String bookingStatus;
+    private String ticketStatus;
+    private String statusReason;
+    private String checkedInAt;
     private String movieTitle;
     private String moviePosterUrl;
     private String cinemaName;
+    private String cinemaAddress;
     private String roomName;
     private String showDate;
     private String showTime;
     private List<String> seats = new ArrayList<>();
+    private List<String> ticketCodes = new ArrayList<>();
     private int ticketCount;
     private List<PublicFoodItemDto> foodItems = new ArrayList<>();
     private String foodFulfillmentStatus;
@@ -29,6 +35,14 @@ public class PublicTicketDto {
 
     public void setValid(boolean valid) {
         this.valid = valid;
+    }
+
+    public boolean isConfirmable() {
+        return confirmable;
+    }
+
+    public void setConfirmable(boolean confirmable) {
+        this.confirmable = confirmable;
     }
 
     public String getMessage() {
@@ -63,6 +77,30 @@ public class PublicTicketDto {
         this.bookingStatus = bookingStatus;
     }
 
+    public String getTicketStatus() {
+        return ticketStatus;
+    }
+
+    public void setTicketStatus(String ticketStatus) {
+        this.ticketStatus = ticketStatus;
+    }
+
+    public String getStatusReason() {
+        return statusReason;
+    }
+
+    public void setStatusReason(String statusReason) {
+        this.statusReason = statusReason;
+    }
+
+    public String getCheckedInAt() {
+        return checkedInAt;
+    }
+
+    public void setCheckedInAt(String checkedInAt) {
+        this.checkedInAt = checkedInAt;
+    }
+
     public String getMovieTitle() {
         return movieTitle;
     }
@@ -85,6 +123,14 @@ public class PublicTicketDto {
 
     public void setCinemaName(String cinemaName) {
         this.cinemaName = cinemaName;
+    }
+
+    public String getCinemaAddress() {
+        return cinemaAddress;
+    }
+
+    public void setCinemaAddress(String cinemaAddress) {
+        this.cinemaAddress = cinemaAddress;
     }
 
     public String getRoomName() {
@@ -117,6 +163,14 @@ public class PublicTicketDto {
 
     public void setSeats(List<String> seats) {
         this.seats = seats;
+    }
+
+    public List<String> getTicketCodes() {
+        return ticketCodes;
+    }
+
+    public void setTicketCodes(List<String> ticketCodes) {
+        this.ticketCodes = ticketCodes;
     }
 
     public int getTicketCount() {

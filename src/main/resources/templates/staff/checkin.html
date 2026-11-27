@@ -166,14 +166,15 @@
 
         if (res.ok && data.success) {
           resultBox.className = 'result-card result-success';
-          const seatsHtml = (data.seatsCheckedIn || []).map(s => `<span class="seat-badge">${s}</span>`).join('');
+          const checkedSeats = data.seats || data.seatLabels || data.seatsCheckedIn || [];
+          const seatsHtml = checkedSeats.map(s => `<span class="seat-badge">${s}</span>`).join('');
           resultBox.innerHTML = `
             <div class="d-flex align-items-center mb-2">
               <span class="fs-3 me-2 text-success">✓</span>
               <h4 class="mb-0 text-success fw-bold">CHECK-IN SUCCESSFUL!</h4>
             </div>
             <p class="mb-2"><strong>Booking Code:</strong> ${data.bookingCode || '#' + data.bookingId} | <strong>Time:</strong> ${new Date(data.checkedInAt).toLocaleString('en-US')}</p>
-            <div><strong>Verified Seats (${(data.seatsCheckedIn || []).length} seats):</strong></div>
+            <div><strong>Verified Seats (${checkedSeats.length} seats):</strong></div>
             <div class="mt-2 mb-2">${seatsHtml}</div>
             <div class="text-white-50 small">${data.message || 'Customer is verified and eligible to enter the theater.'}</div>
           `;

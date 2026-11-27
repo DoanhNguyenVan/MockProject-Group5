@@ -130,9 +130,25 @@
         statusBox.classList.add('alert-success');
         statusBox.textContent = 'QR recognized! Opening ticket details...';
 
-        // Case 1: Full URL (e.g. https://domain.ngrok-free.dev/t/BOX1.xyz or http://localhost:8080/t/BOX1.xyz)
+        // Case 1: Full URL (e.g. https://box-cinema.onrender.com/t/BOX1.xyz or http://localhost:8080/t/BOX1.xyz)
         if (text.startsWith('http://') || text.startsWith('https://')) {
-          window.location.href = text;
+          try {
+            const parsed = new URL(text);
+            const match = parsed.pathname.match(/\/t\/(BOX1\.[a-zA-Z0-9_-]+)/);
+            if (match && match[1]) {
+              window.location.href = '/t/' + encodeURIComponent(match[1]);
+              return;
+            }
+            if (parsed.origin === window.location.origin && parsed.pathname.startsWith('/t/')) {
+              window.location.href = parsed.pathname;
+              return;
+            }
+          } catch (e) {
+            // Fall through to invalid handling below
+          }
+          statusBox.classList.remove('d-none', 'alert-success');
+          statusBox.classList.add('alert-danger');
+          statusBox.textContent = 'Invalid BOX Cinema ticket QR code.';
           return;
         }
 

@@ -1,11 +1,14 @@
 package com.boxcinema.staff.service.impl;
 
 import com.boxcinema.common.dto.BookingResponseDto;
-import com.boxcinema.staff.dto.response.StaffCheckinResponseDto;
 import com.boxcinema.common.entity.*;
 import com.boxcinema.common.repository.*;
 import com.boxcinema.common.service.BookingService;
+import com.boxcinema.common.util.CryptoUtils;
+import com.boxcinema.staff.dto.response.StaffCheckinResponseDto;
 import com.boxcinema.staff.service.StaffCheckinService;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,10 +17,15 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @Transactional
 public class StaffCheckinServiceImpl implements StaffCheckinService {
+
+    private static final Pattern BOX_TOKEN_PATTERN = Pattern.compile("BOX1\\.[a-zA-Z0-9_-]{16,}");
+    private static final Pattern BOOKING_CODE_PATTERN = Pattern.compile("BOX-\\d{8}-\\d{4}");
 
     private final BookingQrRepository bookingQrRepository;
     private final BookingRepository bookingRepository;
@@ -25,6 +33,7 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
     private final BookingCheckinRepository checkinRepository;
     private final UserRepository userRepository;
     private final BookingService bookingService;
+    private final PaymentRepository paymentRepository;
 
     public StaffCheckinServiceImpl(
             BookingQrRepository bookingQrRepository,
@@ -32,111 +41,125 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
             TicketRepository ticketRepository,
             BookingCheckinRepository checkinRepository,
             UserRepository userRepository,
-            BookingService bookingService) {
+            BookingService bookingService,
+            PaymentRepository paymentRepository) {
         this.bookingQrRepository = bookingQrRepository;
         this.bookingRepository = bookingRepository;
         this.ticketRepository = ticketRepository;
         this.checkinRepository = checkinRepository;
         this.userRepository = userRepository;
         this.bookingService = bookingService;
+        this.paymentRepository = paymentRepository;
     }
 
     @Override
     public StaffCheckinResponseDto checkinByQrToken(String qrToken, Long staffUserId) {
+        if (staffUserId == null) {
+            throw new AccessDeniedException("Staff authentication is required to confirm ticket check-in.");
+        }
+        User staff = userRepository.findById(staffUserId)
+                .orElseThrow(() -> new AccessDeniedException("Authenticated staff account not found."));
+        String role = staff.getRole() != null ? staff.getRole().trim().toUpperCase() : "";
+        if (!"STAFF".equals(role) && !"MANAGER".equals(role) && !"ADMIN".equals(role)) {
+            throw new AccessDeniedException("Only authorized cinema staff can confirm ticket usage.");
+        }
+
         if (qrToken == null || qrToken.trim().isBlank()) {
             throw new IllegalArgumentException("QR code is invalid or empty.");
         }
 
         String tokenClean = qrToken.trim();
-        String tokenHash = com.boxcinema.common.util.CryptoUtils.sha256(tokenClean);
-
-        // Search by tokenHash or direct match with pessimistic write lock
-        Optional<BookingQr> bQrOpt = bookingQrRepository.findByTokenHashForUpdate(tokenHash);
+        Optional<BookingQr> bQrOpt = resolveLockedBookingQr(tokenClean);
         if (bQrOpt.isEmpty()) {
-            bQrOpt = bookingQrRepository.findByTokenHashForUpdate(tokenClean);
-        }
-
-        // Support extracting BOX1.<token> if embedded inside rich ticket text or URL
-        if (bQrOpt.isEmpty()) {
-            java.util.regex.Matcher mToken = java.util.regex.Pattern.compile("BOX1\\.[a-zA-Z0-9_-]+")
-
-                    .matcher(tokenClean);
-            if (mToken.find()) {
-                String extractedToken = mToken.group();
-                String extractedHash = com.boxcinema.common.util.CryptoUtils.sha256(extractedToken);
-                bQrOpt = bookingQrRepository.findByTokenHashForUpdate(extractedHash);
-                if (bQrOpt.isEmpty()) {
-                    bQrOpt = bookingQrRepository.findByTokenHashForUpdate(extractedToken);
-                }
-            }
-        }
-
-        // Fallback by bookingCode, e.g. BOX-20261116-3484
-        if (bQrOpt.isEmpty()) {
-            java.util.regex.Matcher mCode = java.util.regex.Pattern.compile("BOX-\\d{8}-\\d{4}").matcher(tokenClean);
-            if (mCode.find()) {
-                String bookingCode = mCode.group();
-                Optional<Booking> bOpt = bookingRepository.findByBookingCode(bookingCode);
-                if (bOpt.isPresent()) {
-                    bQrOpt = bookingQrRepository.findByBooking_BookingId(bOpt.get().getBookingId());
-                }
-            }
-        }
-
-        if (bQrOpt.isEmpty()) {
-            StaffCheckinResponseDto fail = new StaffCheckinResponseDto();
-            fail.setSuccess(false);
-            fail.setCode("INVALID_QR_TOKEN");
-            fail.setMessage("QR code does not exist in the system or is invalid.");
-            return fail;
+            return buildFailure("INVALID_QR_TOKEN", "QR code does not exist in the system or is invalid.", null);
         }
 
         BookingQr bookingQr = bQrOpt.get();
         Booking booking = bookingRepository.findByIdForUpdate(bookingQr.getBooking().getBookingId())
                 .orElseThrow(() -> new IllegalStateException("No booking found associated with this QR code."));
 
-        // Check if already checked in (Section 32 / QR-11: Second scan rejection)
         if ("USED".equalsIgnoreCase(bookingQr.getStatus())
                 || checkinRepository.findByBooking_BookingId(booking.getBookingId()).isPresent()) {
-            StaffCheckinResponseDto fail = new StaffCheckinResponseDto();
-            fail.setSuccess(false);
-            fail.setCode("BOOKING_ALREADY_CHECKED_IN");
-            fail.setMessage("Booking has already been checked in");
-            fail.setBookingId(booking.getBookingId());
-            fail.setBookingCode(booking.getBookingCode());
-            return fail;
+            return buildFailure("BOOKING_ALREADY_CHECKED_IN", "Ticket has already been used / checked in.", booking);
         }
 
-        if (!"ACTIVE".equalsIgnoreCase(bookingQr.getStatus())) {
-            StaffCheckinResponseDto fail = new StaffCheckinResponseDto();
-            fail.setSuccess(false);
-            fail.setCode("QR_NOT_ACTIVE");
-            fail.setMessage("QR code has been revoked or is no longer valid.");
-            return fail;
+        Optional<Payment> paymentOpt = paymentRepository.findByBooking_BookingId(booking.getBookingId());
+        if (paymentOpt.isPresent() && "REFUNDED".equalsIgnoreCase(paymentOpt.get().getPaymentStatus())) {
+            return buildFailure("BOOKING_REFUNDED", "Ticket has been refunded and cannot be used.", booking);
+        }
+
+        if ("CANCELLED".equalsIgnoreCase(booking.getBookingStatus())) {
+            return buildFailure("BOOKING_CANCELLED", "Booking has been cancelled and cannot be checked in.", booking);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        Showtime showtime = booking.getShowtime();
+        if (showtime != null && "CANCELLED".equalsIgnoreCase(showtime.getStatus())) {
+            return buildFailure("SHOWTIME_CANCELLED", "Showtime has been cancelled.", booking);
+        }
+
+        LocalDateTime effectiveExpiry = bookingQr.getExpiresAt() != null
+                ? bookingQr.getExpiresAt()
+                : (showtime != null && showtime.getEndAt() != null ? showtime.getEndAt().plusHours(4) : null);
+        if ("EXPIRED".equalsIgnoreCase(booking.getBookingStatus())
+                || (effectiveExpiry != null && now.isAfter(effectiveExpiry))) {
+            return buildFailure("TICKET_EXPIRED", "Ticket QR has expired for this showtime.", booking);
+        }
+
+        if ("REVOKED".equalsIgnoreCase(bookingQr.getStatus())
+                || !"ACTIVE".equalsIgnoreCase(bookingQr.getStatus())) {
+            return buildFailure("QR_NOT_ACTIVE", "QR code has been revoked or is no longer active.", booking);
         }
 
         if (!"CONFIRMED".equalsIgnoreCase(booking.getBookingStatus())) {
-            StaffCheckinResponseDto fail = new StaffCheckinResponseDto();
-            fail.setSuccess(false);
-            fail.setCode("BOOKING_NOT_CONFIRMED");
-            fail.setMessage(
-                    "Booking has not been paid successfully (Status: " + booking.getBookingStatus() + ").");
-            return fail;
+            return buildFailure(
+                    "BOOKING_NOT_CONFIRMED",
+                    "Booking has not been paid successfully (Status: " + booking.getBookingStatus() + ").",
+                    booking
+            );
         }
 
-        User staff = staffUserId != null ? userRepository.findById(staffUserId).orElse(null) : null;
-        LocalDateTime now = LocalDateTime.now();
-
-        // Check and mark all Tickets in booking as USED (Section 4 & 30: 1 QR marks ALL
-        // tickets in booking)
         List<Ticket> tickets = ticketRepository.findByBookingIdForUpdate(booking.getBookingId());
+        if (tickets.isEmpty()) {
+            return buildFailure("NO_TICKETS_FOUND", "No valid tickets found for this booking.", booking);
+        }
+        for (Ticket t : tickets) {
+            String tStatus = t.getTicketStatus() != null ? t.getTicketStatus().trim().toUpperCase() : "";
+            if ("REFUNDED".equals(tStatus)) {
+                return buildFailure("BOOKING_REFUNDED", "Ticket has been refunded and cannot be used.", booking);
+            }
+            if ("CANCELLED".equals(tStatus)) {
+                return buildFailure("BOOKING_CANCELLED", "Ticket has been cancelled.", booking);
+            }
+            if ("USED".equals(tStatus)) {
+                return buildFailure("BOOKING_ALREADY_CHECKED_IN", "Ticket has already been used / checked in.", booking);
+            }
+            if (!"VALID".equals(tStatus)) {
+                return buildFailure("TICKET_NOT_VALID", "Ticket is not valid for entry (Status: " + tStatus + ").", booking);
+            }
+        }
+
+        // Atomic conditional DB update prevents two concurrent requests from both confirming the same ticket
+        int updatedQrRows = bookingQrRepository.markUsedIfActive(bookingQr.getId(), now);
+        if (updatedQrRows != 1) {
+            return buildFailure("BOOKING_ALREADY_CHECKED_IN", "Ticket has already been used / checked in.", booking);
+        }
+
+        int updatedTicketRows = ticketRepository.markBookingTicketsUsed(booking.getBookingId(), now, staff);
+        if (updatedTicketRows != tickets.size()) {
+            throw new IllegalStateException("Concurrent ticket status modification detected; check-in rolled back.");
+        }
+
+        try {
+            BookingCheckin checkin = new BookingCheckin(booking, staff, "SUCCESS");
+            checkin.setCheckedInAt(now);
+            checkinRepository.saveAndFlush(checkin);
+        } catch (DataIntegrityViolationException ex) {
+            throw new IllegalStateException("Duplicate check-in detected; transaction rolled back.", ex);
+        }
+
         List<String> seatLabels = new ArrayList<>();
         for (Ticket t : tickets) {
-            t.setTicketStatus("USED");
-            t.setCheckedInAt(now);
-            t.setUsedAt(now);
-            t.setCheckedInBy(staff);
-
             if (booking.getBookingSeats() != null) {
                 booking.getBookingSeats().stream()
                         .filter(bs -> bs.getBookingSeatId().equals(t.getBookingSeatId()))
@@ -144,48 +167,76 @@ public class StaffCheckinServiceImpl implements StaffCheckinService {
                         .ifPresent(bs -> seatLabels.add(bs.getSeatLabelSnapshot()));
             }
         }
-        ticketRepository.saveAll(tickets);
 
-        // Mark BookingQr as USED
-        bookingQr.setStatus("USED");
-        bookingQr.setUsedAt(now);
-        bookingQrRepository.save(bookingQr);
-
-        // Record BookingCheckin
-        BookingCheckin checkin = new BookingCheckin(booking, staff, "SUCCESS");
-        checkin.setCheckedInAt(now);
-        checkinRepository.save(checkin);
-
-        // Build Response DTO (Section 31)
         StaffCheckinResponseDto res = new StaffCheckinResponseDto();
         res.setSuccess(true);
         res.setCode("SUCCESS");
-        res.setMessage("Check-in successful");
+        res.setMessage("Check-in successful — Ticket marked as USED");
         res.setBookingId(booking.getBookingId());
         res.setBookingCode(booking.getBookingCode());
-        if (booking.getShowtime() != null) {
-            if (booking.getShowtime().getMovie() != null) {
-                res.setMovieTitle(booking.getShowtime().getMovie().getTitle());
+        if (showtime != null) {
+            if (showtime.getMovie() != null) {
+                res.setMovieTitle(showtime.getMovie().getTitle());
             }
-            if (booking.getShowtime().getRoom() != null) {
-                res.setRoomName(booking.getShowtime().getRoom().getRoomName());
-                if (booking.getShowtime().getRoom().getCinema() != null) {
-                    res.setCinemaName(booking.getShowtime().getRoom().getCinema().getCinemaName());
+            if (showtime.getRoom() != null) {
+                res.setRoomName(showtime.getRoom().getRoomName());
+                if (showtime.getRoom().getCinema() != null) {
+                    res.setCinemaName(showtime.getRoom().getCinema().getCinemaName());
                 }
             }
-            if (booking.getShowtime().getStartAt() != null) {
+            if (showtime.getStartAt() != null) {
                 res.setShowtimeStart(
-                        booking.getShowtime().getStartAt().format(DateTimeFormatter.ofPattern("HH:mm - dd/MM/yyyy")));
+                        showtime.getStartAt().format(DateTimeFormatter.ofPattern("HH:mm - dd/MM/yyyy")));
             }
         }
         res.setTotalTickets(tickets.size());
         res.setCheckedInTickets(tickets.size());
         res.setSeats(seatLabels);
-        res.setCheckInStatus("CHECKED_IN");
-        res.setStaffName(staff != null ? staff.getFullName() : "Ticket Staff");
+        res.setCheckInStatus("USED");
+        res.setStaffName(staff.getFullName() != null ? staff.getFullName() : "Ticket Staff");
         res.setCheckedInAt(now);
-        res.setResult("CHECKED_IN");
+        res.setResult("USED");
         return res;
+    }
+
+    private Optional<BookingQr> resolveLockedBookingQr(String tokenClean) {
+        Matcher mToken = BOX_TOKEN_PATTERN.matcher(tokenClean);
+        if (mToken.find()) {
+            String extractedToken = mToken.group();
+            String extractedHash = CryptoUtils.sha256(extractedToken);
+            Optional<BookingQr> qr = bookingQrRepository.findByTokenHashForUpdate(extractedHash);
+            if (qr.isPresent()) {
+                return qr;
+            }
+        }
+
+        String tokenHash = CryptoUtils.sha256(tokenClean);
+        Optional<BookingQr> directHash = bookingQrRepository.findByTokenHashForUpdate(tokenHash);
+        if (directHash.isPresent()) {
+            return directHash;
+        }
+
+        // Counter fallback for authenticated staff typing printed bookingCode (e.g. BOX-20261116-3484)
+        Matcher mCode = BOOKING_CODE_PATTERN.matcher(tokenClean);
+        if (mCode.find()) {
+            Optional<Booking> bOpt = bookingRepository.findByBookingCode(mCode.group());
+            if (bOpt.isPresent()) {
+                return bookingQrRepository.findByBookingIdForUpdate(bOpt.get().getBookingId());
+            }
+        }
+        return Optional.empty();
+    }
+
+    private StaffCheckinResponseDto buildFailure(String code, String message, Booking booking) {
+        StaffCheckinResponseDto fail = new StaffCheckinResponseDto();
+        fail.setSuccess(false);
+        fail.setCode(code);
+        fail.setMessage(message);
+        if (booking != null) {
+            fail.setBookingId(booking.getBookingId());
+            fail.setBookingCode(booking.getBookingCode());
+        }
+        return fail;
     }
 
     @Override

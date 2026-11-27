@@ -40,9 +40,6 @@ public class TicketServiceImpl implements TicketService {
     @Value("${payos.checksum-key:BOX_CINEMA_DEFAULT_SECURE_PAYOS_KEY_2026_@!#}")
     private String checksumKey;
 
-    @Value("${app.public-base-url:https://absence-turret-chapped.ngrok-free.dev}")
-    private String publicBaseUrl;
-
     public TicketServiceImpl(
             BookingRepository bookingRepository,
             TicketRepository ticketRepository,

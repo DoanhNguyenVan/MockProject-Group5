@@ -30,8 +30,8 @@ public class BookingQrServiceImpl implements BookingQrService {
     private final BookingRepository bookingRepository;
     private final QrCodeService qrCodeService;
 
-    @Value("${app.public-base-url:https://absence-turret-chapped.ngrok-free.dev}")
-    private String publicBaseUrl;
+    @Value("${app.ticket.public-base-url:${app.public-base-url:}}")
+    private String ticketPublicBaseUrl;
 
     @Value("${app.qr.storage-dir:./uploads/booking-qr}")
     private String storageDir;
@@ -84,8 +84,7 @@ public class BookingQrServiceImpl implements BookingQrService {
         String tokenHash = com.boxcinema.common.util.CryptoUtils.sha256(rawToken);
         String tokenEncrypted = com.boxcinema.common.util.CryptoUtils.encryptAes(rawToken, checksumKey);
 
-        String base = (publicBaseUrl != null && !publicBaseUrl.isBlank()) ? publicBaseUrl.replaceAll("/+$", "") : "http://localhost:8080";
-        String ticketUrl = base + "/t/" + rawToken;
+        String ticketUrl = buildTicketUrl(rawToken);
 
         // 5. Generate ZXing PNG bytes
         byte[] pngBytes = qrCodeService.generateQrPng(ticketUrl, 300, 300);
@@ -135,8 +134,7 @@ public class BookingQrServiceImpl implements BookingQrService {
         }
 
         // Recovery path: Reconstruct the EXACT same PNG from the existing token/ticketUrl (never generate a new token!)
-        byte[] png = reconstructAndPersistQrPng(bQr, filePath);
-        return png;
+        return reconstructAndPersistQrPng(bQr, filePath);
     }
 
     @Override
@@ -146,39 +144,39 @@ public class BookingQrServiceImpl implements BookingQrService {
     }
 
     private void ensureQrFileExists(BookingQr bQr) {
-        boolean needsSave = false;
+        boolean urlMigrated = false;
+        String base = resolveTicketBaseUrl();
 
-        // Ensure ticketUrl is populated
-        if (bQr.getTicketUrl() == null || bQr.getTicketUrl().isBlank()) {
-            String rawToken = com.boxcinema.common.util.CryptoUtils.decryptAes(bQr.getTokenEncrypted(), checksumKey);
+        // Populate missing URL or safely migrate legacy Ngrok/localhost URLs to active Render HTTPS base URL
+        String currentUrl = bQr.getTicketUrl();
+        if (currentUrl == null || currentUrl.isBlank() || shouldMigrateTicketUrl(currentUrl, base)) {
+            String rawToken = decryptTokenSafely(bQr);
             if (rawToken != null && !rawToken.isBlank()) {
-                String base = (publicBaseUrl != null && !publicBaseUrl.isBlank()) ? publicBaseUrl.replaceAll("/+$", "") : "http://localhost:8080";
                 bQr.setTicketUrl(base + "/t/" + rawToken);
-                needsSave = true;
+                urlMigrated = true;
             }
         }
 
-        // Ensure file exists on disk
+        // Ensure file exists on disk (or overwrite stale PNG if ticketUrl just migrated off Ngrok)
         Path filePath = (bQr.getQrImagePath() != null && !bQr.getQrImagePath().isBlank())
                 ? Paths.get(bQr.getQrImagePath())
                 : resolveFilePath(bQr.getBooking().getBookingId());
 
-        if (!Files.exists(filePath)) {
+        if (urlMigrated || !Files.exists(filePath)) {
             reconstructAndPersistQrPng(bQr, filePath);
             bQr.setQrImagePath(filePath.toAbsolutePath().normalize().toString());
-            needsSave = true;
-        }
-
-        if (needsSave) {
             bookingQrRepository.save(bQr);
         }
     }
 
     private byte[] reconstructAndPersistQrPng(BookingQr bQr, Path targetPath) {
         String url = bQr.getTicketUrl();
-        if (url == null || url.isBlank()) {
-            String rawToken = com.boxcinema.common.util.CryptoUtils.decryptAes(bQr.getTokenEncrypted(), checksumKey);
-            String base = (publicBaseUrl != null && !publicBaseUrl.isBlank()) ? publicBaseUrl.replaceAll("/+$", "") : "http://localhost:8080";
+        String base = resolveTicketBaseUrl();
+        if (url == null || url.isBlank() || shouldMigrateTicketUrl(url, base)) {
+            String rawToken = decryptTokenSafely(bQr);
+            if (rawToken == null || rawToken.isBlank()) {
+                throw new IllegalStateException("Cannot reconstruct QR code without a valid encrypted token.");
+            }
             url = base + "/t/" + rawToken;
             bQr.setTicketUrl(url);
         }
@@ -192,6 +190,45 @@ public class BookingQrServiceImpl implements BookingQrService {
             log.error("Failed to write reconstructed QR file to disk: {}", e.getMessage(), e);
         }
         return pngBytes;
+    }
+
+    private String resolveTicketBaseUrl() {
+        String raw = ticketPublicBaseUrl != null ? ticketPublicBaseUrl.trim() : "";
+        if (raw.isEmpty()) {
+            throw new IllegalStateException("Ticket public base URL (app.ticket.public-base-url / TICKET_PUBLIC_BASE_URL) must be configured.");
+        }
+        String normalized = raw.replaceAll("/+$", "");
+        String lower = normalized.toLowerCase(java.util.Locale.ROOT);
+        if (!lower.startsWith("https://") && !lower.startsWith("http://")) {
+            throw new IllegalStateException("Ticket public base URL must start with https:// or http://.");
+        }
+        if (lower.contains("ngrok")) {
+            throw new IllegalStateException("Ngrok URLs are disallowed for ticket QR verification. Configure TICKET_PUBLIC_BASE_URL to your Render HTTPS URL.");
+        }
+        return normalized;
+    }
+
+    private String buildTicketUrl(String rawToken) {
+        return resolveTicketBaseUrl() + "/t/" + rawToken;
+    }
+
+    private boolean shouldMigrateTicketUrl(String existingUrl, String targetBaseUrl) {
+        String lowerExisting = existingUrl.trim().toLowerCase(java.util.Locale.ROOT);
+        if (lowerExisting.contains("ngrok")) {
+            return true;
+        }
+        String lowerTarget = targetBaseUrl.toLowerCase(java.util.Locale.ROOT);
+        return lowerTarget.startsWith("https://")
+                && !lowerTarget.contains("localhost")
+                && !lowerTarget.contains("127.0.0.1")
+                && (lowerExisting.startsWith("http://localhost") || lowerExisting.startsWith("http://127.0.0.1"));
+    }
+
+    private String decryptTokenSafely(BookingQr bQr) {
+        if (bQr.getTokenEncrypted() == null || bQr.getTokenEncrypted().isBlank()) {
+            return null;
+        }
+        return com.boxcinema.common.util.CryptoUtils.decryptAes(bQr.getTokenEncrypted(), checksumKey);
     }
 
     private Path resolveFilePath(Long bookingId) {

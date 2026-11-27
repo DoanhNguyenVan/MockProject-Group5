@@ -33,3 +33,6 @@ payos.cancel-url=http://localhost:8080/booking/buy-tickets
 # cloudinary.cloud-name=
 # cloudinary.api-key=
 # cloudinary.api-secret=
+
+# Movie Ticket QR Base URL (Optional - defaults to Render HTTPS in production; set localhost for local-only scanning)
+# app.ticket.public-base-url=http://localhost:8080

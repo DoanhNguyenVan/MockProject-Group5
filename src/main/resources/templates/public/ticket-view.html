@@ -5,6 +5,8 @@
   <link rel="icon" type="image/png" href="/assets/img/box-cinema-favicon.png" th:href="@{/assets/img/box-cinema-favicon.png}">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}" content="">
+  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}" content="">
   <title th:text="${found ? (ticket.movieTitle + ' | E-Ticket | BOX Cinema') : 'Ticket Not Found | BOX Cinema'}">E-Ticket | BOX Cinema</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -123,6 +125,62 @@
       letter-spacing: 0.04em;
     }
 
+    .badge-status-used {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #fbbf24;
+      font-weight: 700;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-status-invalid {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #f87171;
+      font-weight: 700;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+    }
+
+    .ticket-movie-hero {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .ticket-poster-thumb {
+      width: 68px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 0.65rem;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      flex-shrink: 0;
+    }
+
+    .ticket-code-chip {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-left: 0.25rem;
+    }
+
+    .staff-confirm-box {
+      background: rgba(229, 9, 20, 0.08);
+      border: 1px solid rgba(229, 9, 20, 0.32);
+      border-radius: 0.85rem;
+      padding: 1rem;
+    }
+
     .security-notice {
       background: rgba(56, 189, 248, 0.05);
       border: 1px solid rgba(56, 189, 248, 0.18);
@@ -195,30 +253,49 @@
   <!-- Main Content Area -->
   <main class="public-ticket-container flex-grow-1">
 
-    <!-- Case 1: Valid Ticket Found -->
-    <div th:if="${found and ticket.valid}" class="ticket-card">
+    <!-- Case 1: Authentic Ticket Record Found -->
+    <div th:if="${found}" class="ticket-card">
       <div class="ticket-top-accent"></div>
 
       <!-- Ticket Header Status -->
-      <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom border-secondary border-opacity-25">
-        <div>
-          <span class="badge-status-valid d-inline-flex align-items-center gap-1">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 pb-3 border-bottom border-secondary border-opacity-25">
+        <div class="d-flex align-items-center flex-wrap gap-2">
+          <span id="ticketStatusBadge"
+                th:class="${ticket.ticketStatus == 'VALID' ? 'badge-status-valid d-inline-flex align-items-center gap-1' : (ticket.ticketStatus == 'USED' ? 'badge-status-used d-inline-flex align-items-center gap-1' : 'badge-status-invalid d-inline-flex align-items-center gap-1')}">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
-            <span th:text="${ticket.bookingStatus == 'CONFIRMED' ? 'VALID TICKET' : ticket.bookingStatus}">VALID TICKET</span>
+            <span id="ticketStatusText"
+                  th:text="${ticket.ticketStatus == 'VALID' ? 'VALID TICKET' : ticket.ticketStatus}">VALID TICKET</span>
           </span>
-          <span class="badge-status-paid ms-1">PAID</span>
+          <span class="badge-status-paid" th:if="${ticket.paymentStatus == 'COMPLETED' or ticket.paymentStatus == 'PAID'}">PAID</span>
+          <span class="badge-status-invalid" th:if="${ticket.paymentStatus == 'REFUNDED'}">REFUNDED</span>
         </div>
         <div class="font-monospace text-secondary small fw-bold" th:text="${ticket.bookingCode}">
           BOX-20261116-3484
         </div>
       </div>
 
+      <!-- Rejection / Used Warning Banner -->
+      <div id="ticketStateWarning"
+           th:if="${!ticket.confirmable and ticket.statusReason != null}"
+           th:class="${ticket.ticketStatus == 'USED' ? 'alert alert-warning py-2 px-3 small mb-3' : 'alert alert-danger py-2 px-3 small mb-3'}"
+           role="alert">
+        <strong th:text="${ticket.ticketStatus == 'USED' ? 'Already Used: ' : 'Ticket Unavailable: '}">Notice: </strong>
+        <span th:text="${ticket.statusReason}">Status details</span>
+      </div>
+
       <!-- Movie Section -->
-      <div class="mb-4">
-        <div class="text-secondary small text-uppercase fw-semibold" style="letter-spacing: 0.08em; font-size: 0.72rem;">Now Showing</div>
-        <h1 class="h4 fw-bold text-white mt-1 mb-0" th:text="${ticket.movieTitle}">Alien: Romulus</h1>
+      <div class="ticket-movie-hero mb-4">
+        <img th:if="${ticket.moviePosterUrl != null and !#strings.isEmpty(ticket.moviePosterUrl)}"
+             th:src="${ticket.moviePosterUrl}"
+             alt="Movie Poster"
+             class="ticket-poster-thumb"
+             onerror="this.style.display='none'">
+        <div>
+          <div class="text-secondary small text-uppercase fw-semibold" style="letter-spacing: 0.08em; font-size: 0.72rem;">BOX Cinema E-Ticket</div>
+          <h1 class="h4 fw-bold text-white mt-1 mb-0" th:text="${ticket.movieTitle}">Alien: Romulus</h1>
+        </div>
       </div>
 
       <!-- Showtime & Cinema Details -->
@@ -226,6 +303,11 @@
         <div class="ticket-row">
           <span class="ticket-label">Cinema:</span>
           <span class="ticket-value" th:text="${ticket.cinemaName}">BOX Cinema Royal City</span>
+        </div>
+
+        <div class="ticket-row" th:if="${ticket.cinemaAddress != null and !#strings.isEmpty(ticket.cinemaAddress)}">
+          <span class="ticket-label">Address:</span>
+          <span class="ticket-value small" th:text="${ticket.cinemaAddress}">72A Nguyen Trai</span>
         </div>
 
         <div class="ticket-row">
@@ -250,9 +332,21 @@
           </span>
         </div>
 
+        <div class="ticket-row" th:if="${ticket.ticketCodes != null and !ticket.ticketCodes.isEmpty()}">
+          <span class="ticket-label">Ticket Code(s):</span>
+          <span class="ticket-value">
+            <span th:each="tc : ${ticket.ticketCodes}" class="ticket-code-chip" th:text="${tc}">TKT-001</span>
+          </span>
+        </div>
+
         <div class="ticket-row">
           <span class="ticket-label">Total Tickets:</span>
           <span class="ticket-value fw-bold text-white" th:text="${ticket.ticketCount} + ' ticket(s)'">2 tickets</span>
+        </div>
+
+        <div class="ticket-row" th:if="${ticket.checkedInAt != null}">
+          <span class="ticket-label">Checked-in At:</span>
+          <span class="ticket-value text-warning" id="ticketCheckedInAt" th:text="${ticket.checkedInAt}">18:45 - 17/11/2026</span>
         </div>
       </div>
 
@@ -286,6 +380,34 @@
         </div>
       </div>
 
+      <!-- Staff Confirmation Section (Visible & Authorized for Authenticated Staff Only) -->
+      <div th:if="${isStaff}" class="staff-confirm-box mt-4" id="staffConfirmPanel">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+          <div class="fw-bold text-white small text-uppercase" style="letter-spacing: 0.06em;">Staff Gate Verification</div>
+          <span class="small text-secondary" th:text="${ticket.bookingCode}">BOX-20261116-3484</span>
+        </div>
+
+        <div id="staffConfirmResult" class="d-none mb-2" role="alert"></div>
+
+        <button th:if="${ticket.confirmable}"
+                type="button"
+                id="btnConfirmTicketUsed"
+                class="btn btn-danger fw-bold w-100 py-2">
+          CONFIRM TICKET USED
+        </button>
+
+        <div th:unless="${ticket.confirmable}" class="small text-secondary mb-0">
+          Confirmation unavailable because this ticket is <strong th:text="${ticket.ticketStatus}">USED</strong>.
+        </div>
+      </div>
+
+      <!-- Unauthenticated Staff Helper -->
+      <div th:if="${!isStaff and ticket.confirmable}" class="mt-3 text-center">
+        <a href="/login" class="small text-secondary text-decoration-underline">
+          Cinema staff? Sign in to confirm this ticket as used
+        </a>
+      </div>
+
       <!-- Privacy & Verification Notice -->
       <div class="security-notice mt-4 d-flex align-items-start gap-2">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" class="flex-shrink-0 mt-0.5">
@@ -306,8 +428,8 @@
       </div>
     </div>
 
-    <!-- Case 2: Not Found or Invalid -->
-    <div th:if="${!found or !ticket.valid}" class="ticket-card text-center py-5">
+    <!-- Case 2: Not Found or Invalid Token -->
+    <div th:unless="${found}" class="ticket-card text-center py-5">
       <div class="ticket-top-accent"></div>
       
       <div class="mb-3">
@@ -340,6 +462,73 @@
   <footer class="py-3 text-center text-secondary small border-top border-secondary border-opacity-10">
     <div>&copy; 2026 BOX Cinema. All rights reserved.</div>
   </footer>
+
+  <script th:if="${isStaff and found and ticket.confirmable}" th:inline="javascript">
+    (function () {
+      const btn = document.getElementById('btnConfirmTicketUsed');
+      const resultEl = document.getElementById('staffConfirmResult');
+      const statusBadge = document.getElementById('ticketStatusBadge');
+      const statusText = document.getElementById('ticketStatusText');
+      const ticketToken = /*[[${ticketToken}]]*/ '';
+      if (!btn || !ticketToken) return;
+
+      btn.addEventListener('click', async function () {
+        btn.disabled = true;
+        btn.textContent = 'VERIFYING...';
+        if (resultEl) {
+          resultEl.className = 'd-none';
+          resultEl.textContent = '';
+        }
+
+        try {
+          const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content') || '';
+          const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content') || 'X-CSRF-TOKEN';
+          const headers = { 'Content-Type': 'application/json' };
+          if (csrfToken) headers[csrfHeader] = csrfToken;
+
+          const res = await fetch('/api/staff/bookings/check-in', {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({ qrPayload: ticketToken })
+          });
+          const data = await res.json().catch(() => ({}));
+
+          if (res.ok && data.success) {
+            if (statusBadge) statusBadge.className = 'badge-status-used d-inline-flex align-items-center gap-1';
+            if (statusText) statusText.textContent = 'USED';
+            btn.className = 'btn btn-outline-success fw-bold w-100 py-2';
+            btn.textContent = 'TICKET CONFIRMED AS USED';
+            btn.disabled = true;
+
+            if (resultEl) {
+              resultEl.className = 'alert alert-success py-2 px-3 small mb-2';
+              const staffLabel = data.staffName ? ` by ${data.staffName}` : '';
+              resultEl.textContent = (data.message || 'Check-in successful.') + staffLabel;
+            }
+          } else {
+            if (resultEl) {
+              resultEl.className = 'alert alert-danger py-2 px-3 small mb-2';
+              resultEl.textContent = data.message || 'Unable to confirm this ticket.';
+            }
+            if (data.code === 'BOOKING_ALREADY_CHECKED_IN' || data.code === 'BOOKING_REFUNDED' || data.code === 'BOOKING_CANCELLED') {
+              btn.disabled = true;
+              btn.textContent = 'CANNOT CONFIRM';
+            } else {
+              btn.disabled = false;
+              btn.textContent = 'CONFIRM TICKET USED';
+            }
+          }
+        } catch (err) {
+          if (resultEl) {
+            resultEl.className = 'alert alert-danger py-2 px-3 small mb-2';
+            resultEl.textContent = 'Network or server error while confirming ticket.';
+          }
+          btn.disabled = false;
+          btn.textContent = 'CONFIRM TICKET USED';
+        }
+      });
+    })();
+  </script>
 
 </body>
 
