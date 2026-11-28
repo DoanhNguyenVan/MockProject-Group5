@@ -60,6 +60,9 @@ export function initNavbar(doc = document, currentPath = window.location.pathnam
       if (navEl) navEl.classList.remove("menu-open");
     };
     toggler.addEventListener("click", () => {
+      const mobileBar = doc.getElementById("mobileNavSearchBar");
+      if (mobileBar) mobileBar.classList.remove("is-open");
+      if (navEl) navEl.classList.remove("search-active");
       const isOpen = collapseEl.classList.toggle("show");
       toggler.setAttribute("aria-expanded", String(isOpen));
       if (navEl) navEl.classList.toggle("menu-open", isOpen);
@@ -117,10 +120,29 @@ function initNavSearch(doc, navEl) {
   const searchForm = doc.getElementById("navSearchForm");
   const searchBtn = doc.getElementById("navSearchBtn");
   const searchInput = doc.getElementById("navSearchInput");
+  const mobileBar = doc.getElementById("mobileNavSearchBar");
+  const mobileInput = doc.getElementById("mobileNavSearchInput");
+  const mobileClose = doc.getElementById("mobileNavSearchClose");
 
   if (!searchWrap || !searchForm || !searchBtn || !searchInput) return;
 
+  const isMobileViewport = () => typeof window !== "undefined" && window.innerWidth <= 760;
+
   const openSearch = () => {
+    if (isMobileViewport() && mobileBar) {
+      const collapseEl = doc.getElementById("boxNavbarCollapse");
+      const toggler = doc.querySelector(".box-navbar-toggler");
+      if (collapseEl) collapseEl.classList.remove("show");
+      if (toggler) toggler.setAttribute("aria-expanded", "false");
+      if (navEl) navEl.classList.remove("menu-open");
+      mobileBar.classList.add("is-open");
+      if (navEl) navEl.classList.add("search-active");
+      if (mobileInput) {
+        mobileInput.value = searchInput.value || "";
+        setTimeout(() => mobileInput.focus(), 60);
+      }
+      return;
+    }
     searchForm.classList.add("active");
     if (navEl) navEl.classList.add("search-active");
     setTimeout(() => searchInput.focus(), 80);
@@ -128,12 +150,22 @@ function initNavSearch(doc, navEl) {
 
   const closeSearch = () => {
     searchForm.classList.remove("active");
+    if (mobileBar) mobileBar.classList.remove("is-open");
     if (navEl) navEl.classList.remove("search-active");
     searchInput.blur();
+    if (mobileInput) mobileInput.blur();
   };
 
   searchBtn.addEventListener("click", (e) => {
     e.stopPropagation();
+    if (isMobileViewport() && mobileBar) {
+      if (mobileBar.classList.contains("is-open")) {
+        closeSearch();
+      } else {
+        openSearch();
+      }
+      return;
+    }
     if (!searchForm.classList.contains("active")) {
       openSearch();
     } else {
@@ -188,8 +220,37 @@ function initNavSearch(doc, navEl) {
   };
 
   searchInput.addEventListener("input", () => {
+    if (mobileInput) mobileInput.value = searchInput.value;
     performSearch(searchInput.value.trim(), false);
   });
+
+  if (mobileInput) {
+    mobileInput.addEventListener("input", () => {
+      searchInput.value = mobileInput.value;
+      performSearch(mobileInput.value.trim(), false);
+    });
+    mobileInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        performSearch(mobileInput.value.trim(), true);
+      } else if (e.key === "Escape") {
+        closeSearch();
+      }
+    });
+  }
+
+  if (mobileClose) {
+    mobileClose.addEventListener("click", (e) => {
+      e.stopPropagation();
+      closeSearch();
+    });
+  }
+
+  if (mobileBar) {
+    mobileBar.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+  }
 
   searchInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
@@ -205,7 +266,9 @@ function initNavSearch(doc, navEl) {
   });
 
   doc.addEventListener("click", (e) => {
-    if (searchForm.classList.contains("active") && !searchWrap.contains(e.target)) {
+    const mobileOpen = mobileBar && mobileBar.classList.contains("is-open") && !mobileBar.contains(e.target);
+    const desktopOpen = searchForm.classList.contains("active") && !searchWrap.contains(e.target);
+    if ((desktopOpen || mobileOpen) && !searchWrap.contains(e.target)) {
       closeSearch();
     }
   });

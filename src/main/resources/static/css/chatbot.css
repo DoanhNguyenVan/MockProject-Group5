@@ -6,59 +6,78 @@
 /* Floating Launcher Button */
 .box-chat-launcher {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 58px;
-  height: 58px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #EC1C24 0%, #b31017 100%);
-  color: #ffffff;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 24px rgba(236, 28, 36, 0.45), 0 4px 12px rgba(0, 0, 0, 0.5);
+  bottom: 20px;
+  right: 22px;
+  width: 84px;
+  height: 84px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.48));
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 9999;
-  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s ease;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.25s ease;
   user-select: none;
 }
 
 .box-chat-launcher:hover {
-  transform: scale(1.08) translateY(-2px);
-  box-shadow: 0 12px 30px rgba(236, 28, 36, 0.65), 0 6px 16px rgba(0, 0, 0, 0.6);
+  transform: scale(1.08) translateY(-3px);
+  filter: drop-shadow(0 12px 22px rgba(236, 28, 36, 0.35));
 }
 
 .box-chat-launcher:active {
-  transform: scale(0.96);
+  transform: scale(0.95);
 }
 
-.box-chat-launcher .launcher-icon {
-  width: 28px;
-  height: 28px;
-  transition: transform 0.3s ease;
+.box-chat-launcher.is-active {
+  transform: scale(0.95);
 }
 
-.box-chat-launcher.is-active .launcher-icon {
-  transform: rotate(90deg);
+.box-chat-sprite-viewport {
+  width: 84px;
+  height: 84px;
+  overflow: hidden;
+  position: relative;
+}
+
+.box-chat-sprite-strip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 84px;
+  width: 1260px; /* 15 frames * 84px */
+  max-width: none;
+  will-change: transform;
+  pointer-events: none;
+  user-select: none;
 }
 
 .box-chat-badge {
   position: absolute;
-  top: 2px;
-  right: 2px;
+  bottom: 6px;
+  right: 6px;
   width: 13px;
   height: 13px;
   background-color: #10B981;
   border: 2px solid #14151b;
   border-radius: 50%;
   box-shadow: 0 0 6px rgba(16, 185, 129, 0.8);
+  z-index: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .box-chat-launcher {
+    transition: none;
+  }
 }
 
 /* Chat Container Popup */
 .box-chat-container {
   position: fixed;
-  bottom: 96px;
+  bottom: 112px;
   right: 24px;
   width: 380px;
   max-width: calc(100vw - 32px);

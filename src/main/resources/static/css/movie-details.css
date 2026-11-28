@@ -220,11 +220,11 @@
 .movie-details-buy {
   background: var(--box-accent);
   border-color: var(--box-accent);
-  color: var(--box-text-on-accent);
+  color: #ffffff;
   box-shadow: 0 10px 26px rgba(201, 25, 52, 0.32);
 }
 .movie-details-buy:hover {
-  color: var(--box-text-on-accent);
+  color: #ffffff;
   transform: translateY(-2px);
   box-shadow: 0 14px 32px rgba(201, 25, 52, 0.42);
 }
@@ -695,6 +695,12 @@ html[data-theme="light"] .movie-details-rating {
 }
 html[data-theme="light"] .header-star-pill,
 html[data-theme="light"] .star-hint { color: #855e18; }
+html[data-theme="light"] .movie-details-buy,
+html[data-theme="light"] .movie-details-buy:hover {
+  background: var(--box-accent);
+  border-color: var(--box-accent);
+  color: #ffffff;
+}
 html[data-theme="light"] .movie-details-watch {
   background: #ffffff;
   border-color: rgba(15, 23, 42, 0.16);
@@ -788,6 +794,22 @@ html[data-theme="light"] .review-btn-secondary:hover { border-color: rgba(15, 23
   .movie-details-shell { padding: 0 18px; }
   .movie-details { grid-template-columns: 1fr; gap: 24px; }
   .movie-details-poster { width: min(72%, 250px); }
-  .movie-details-actions > a { flex: 1; }
+  .movie-details-actions {
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+  .movie-details-actions > a {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 10px 8px;
+    gap: 5px;
+    font-size: clamp(0.7rem, 2.9vw, 0.82rem);
+    white-space: nowrap;
+  }
+  .movie-details-actions > a svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
   .review-body, .review-actions { margin-left: 0; }
 }

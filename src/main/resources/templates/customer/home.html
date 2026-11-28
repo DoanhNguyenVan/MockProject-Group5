@@ -201,11 +201,14 @@
               </div>
 
               <div class="hero-actions">
-                <!-- Orange/Red Buy Ticket Button (Matching Image 1) -->
+                <!-- Red Buy Ticket Button -->
                 <a class="btn-cta-buy" id="heroBuyBtn" href="/booking/buy-tickets"
                   th:href="@{/booking/buy-tickets(movieId=${spotlightMovies[0].movieId})}"
                   th:data-book-id="${spotlightMovies[0].movieId}" th:data-book-title="${spotlightMovies[0].title}">
-                  <span>🎟</span> Buy Tickets
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path transform="rotate(-45 12 12)" fill-rule="evenodd" d="M2 6h20a1 1 0 0 1 1 1v2.2a2.8 2.8 0 0 0 0 5.6V17a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-2.2a2.8 2.8 0 0 0 0-5.6V7a1 1 0 0 1 1-1zm13.5 1.2v1.8h1V7.2h-1zm0 3.9v1.8h1v-1.8h-1zm0 3.9v1.8h1V15h-1z"/>
+                  </svg>
+                  Buy Tickets
                 </a>
                 <!-- Glass Detail Button (Matching Image 1) -->
                 <a class="btn-cta-detail" id="heroDetailBtn"
@@ -229,7 +232,7 @@
                 <div th:each="movie, iter : ${spotlightMovies}" class="coverflow-card hot-mini-card"
                   th:classappend="${iter.index == 0 ? 'active' : ''}" th:data-index="${iter.index}"
                   th:data-clickable="${iter.index <= 2 || iter.index >= spotlightMovies.size() - 2 ? 'true' : 'false'}"
-                  onclick="if(window.coverflowGoToSlide){window.coverflowGoToSlide(this.dataset.index);}"
+                  onclick="if(this.classList.contains('active') && this.dataset.movieId){window.location.href='/movies/'+encodeURIComponent(this.dataset.movieId);return;}if(window.coverflowGoToSlide){window.coverflowGoToSlide(this.dataset.index);}"
                   th:data-movie-id="${movie.movieId}" th:data-title="${movie.title}"
                   th:data-synopsis="${movie.synopsis}" th:data-age="${movie.ageRating}"
                   th:data-duration="${movie.durationMinutes + ' mins'}" th:data-genres="${movie.genreNamesDisplay}"
@@ -487,7 +490,10 @@
                     <a th:if="${movie.status == 'NOW_SHOWING'}" class="btn-pop-buy"
                       href="/booking/buy-tickets" th:href="@{/booking/buy-tickets(movieId=${movie.movieId})}"
                       th:data-book-id="${movie.movieId}" th:data-book-title="${movie.title}">
-                      🎟 Buy Tickets
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="vertical-align:-2px;margin-right:3px;">
+                        <path transform="rotate(-45 12 12)" fill-rule="evenodd" d="M2 6h20a1 1 0 0 1 1 1v2.2a2.8 2.8 0 0 0 0 5.6V17a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-2.2a2.8 2.8 0 0 0 0-5.6V7a1 1 0 0 1 1-1zm13.5 1.2v1.8h1V7.2h-1zm0 3.9v1.8h1v-1.8h-1zm0 3.9v1.8h1V15h-1z"/>
+                      </svg>
+                      Buy Tickets
                     </a>
                     <a class="btn-pop-detail" th:href="@{/movies/{id}(id=${movie.movieId})}">
                       Details

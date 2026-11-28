@@ -184,6 +184,64 @@
     }
   }
 
+  let syncMascotState = null;
+
+  function initMascotSpriteLoop() {
+    const strip = document.getElementById("boxChatMascotStrip");
+    const viewport = document.getElementById("boxChatSpriteViewport");
+    if (!strip || !viewport) return;
+
+    const SEQUENCE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 6, 5, 4, 3, 2, 1];
+    const FRAME_MS = 110;
+    const REST_MS = 3000;
+    const OPEN_HOLD_FRAME = 11;
+    let stepIdx = 0;
+    let timer = null;
+
+    const renderFrame = (frameNum) => {
+      const frameWidth = viewport.clientWidth || 84;
+      const zeroIdx = frameNum - 1;
+      strip.style.transform = `translate3d(${-zeroIdx * frameWidth}px, 0, 0)`;
+    };
+
+    const isChatOpen = () => Boolean(chatContainer && chatContainer.classList.contains("is-open"));
+    const prefersReduced = () => Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+    const scheduleNext = () => {
+      clearTimeout(timer);
+      if (document.hidden || isChatOpen() || prefersReduced()) return;
+      const isLastRest = stepIdx === SEQUENCE.length - 1;
+      timer = setTimeout(() => {
+        stepIdx = (stepIdx + 1) % SEQUENCE.length;
+        renderFrame(SEQUENCE[stepIdx]);
+        scheduleNext();
+      }, isLastRest ? (FRAME_MS + REST_MS) : FRAME_MS);
+    };
+
+    syncMascotState = () => {
+      if (isChatOpen()) {
+        clearTimeout(timer);
+        renderFrame(OPEN_HOLD_FRAME);
+      } else if (prefersReduced()) {
+        clearTimeout(timer);
+        renderFrame(OPEN_HOLD_FRAME);
+      } else {
+        renderFrame(SEQUENCE[stepIdx]);
+        scheduleNext();
+      }
+    };
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        clearTimeout(timer);
+      } else {
+        syncMascotState();
+      }
+    });
+
+    syncMascotState();
+  }
+
   function setupEventListeners() {
     launcherBtn = document.getElementById("boxChatLauncher");
     chatContainer = document.getElementById("boxChatContainer");
@@ -205,6 +263,7 @@
           launcherBtn.classList.add("is-active");
           if (chatInput) chatInput.focus();
         }
+        if (syncMascotState) syncMascotState();
       });
     }
 
@@ -212,6 +271,7 @@
       closeBtn.addEventListener("click", () => {
         chatContainer.classList.remove("is-open");
         if (launcherBtn) launcherBtn.classList.remove("is-active");
+        if (syncMascotState) syncMascotState();
       });
     }
 
@@ -232,6 +292,7 @@
   document.addEventListener("DOMContentLoaded", () => {
     initSessionId();
     setupEventListeners();
+    initMascotSpriteLoop();
     loadInitialConfig();
   });
 })();

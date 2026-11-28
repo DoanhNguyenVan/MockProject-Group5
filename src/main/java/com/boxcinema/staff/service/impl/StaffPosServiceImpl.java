@@ -417,6 +417,9 @@ public class StaffPosServiceImpl implements StaffPosService {
                         .orElse("your assigned cinema");
                 throw new AccessDeniedException("You are assigned to " + branchName + " and cannot book showtimes at another cinema.");
             }
+            if (hasSeats && showtime.getStartAt() != null && !showtime.getStartAt().isAfter(LocalDateTime.now())) {
+                throw new IllegalStateException("This screening has already started or ticket sales have closed.");
+            }
             return showtime;
         }
         if (hasSeats) {

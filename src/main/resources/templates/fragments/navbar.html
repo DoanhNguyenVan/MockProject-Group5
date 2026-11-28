@@ -453,28 +453,6 @@
                 </div>
               </div>
             </th:block>
-            <div class="pt-2 mt-2 border-top border-secondary border-opacity-25">
-              <button type="button"
-                      class="nav-mobile-theme-btn"
-                      id="mobileThemeToggle"
-                      data-theme-toggle
-                      aria-label="Switch to light mode"
-                      aria-pressed="false">
-                <span class="nav-mobile-theme-icons" aria-hidden="true">
-                  <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="4"></circle>
-                    <path d="M12 2v2"></path><path d="M12 20v2"></path>
-                    <path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path>
-                    <path d="M2 12h2"></path><path d="M20 12h2"></path>
-                    <path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
-                  </svg>
-                  <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
-                  </svg>
-                </span>
-                <span data-theme-label>Dark Mode</span>
-              </button>
-            </div>
           </div>
         </div>
 
@@ -645,6 +623,18 @@
           <!-- Hamburger Button (Mobile / Tablet) -->
           <button class="box-navbar-toggler" type="button" aria-expanded="false" aria-label="Menu" aria-controls="boxNavbarCollapse"><span aria-hidden="true">☰</span></button>
         </div>
+      </div>
+
+      <!-- Mobile-Only Drop-down Search Bar (hidden on desktop) -->
+      <div class="mobile-nav-search-bar" id="mobileNavSearchBar" th:if="${!isStaffOnly}">
+        <div class="mobile-nav-search-field">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="mobileNavSearchInput" placeholder="Search movies, genres..." autocomplete="off" aria-label="Search movies on mobile">
+        </div>
+        <button type="button" class="mobile-nav-search-close" id="mobileNavSearchClose" aria-label="Close search">✕</button>
       </div>
     </nav>
   </header>
