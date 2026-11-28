@@ -11,6 +11,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @PreAuthorize("hasAnyRole('STAFF', 'MANAGER', 'ADMIN')")
 public class StaffPageController {
 
+    @GetMapping({"", "/"})
+    public String staffRoot() {
+        return "redirect:/staff/checkin";
+    }
+
     @GetMapping("/checkin")
     public String checkinPage(Model model) {
         model.addAttribute("activePage", "staff-checkin");
@@ -21,5 +26,11 @@ public class StaffPageController {
     public String foodKitchenPage(Model model) {
         model.addAttribute("activePage", "staff-food");
         return "staff/food";
+    }
+
+    @GetMapping("/incidents")
+    public String incidentsPage(Model model) {
+        model.addAttribute("activePage", "staff-incidents");
+        return "staff/incidents";
     }
 }

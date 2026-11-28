@@ -37,7 +37,10 @@ public class Promotion {
     private BigDecimal maxDiscount;
 
     @Column(name = "min_order_amount", precision = 12, scale = 2)
-    private BigDecimal minOrderAmount;
+    private BigDecimal minOrderAmount = BigDecimal.ZERO;
+
+    @Column(name = "applicable_scope", nullable = false, length = 30)
+    private String applicableScope = "ALL";
 
     @Column(name = "start_at")
     private LocalDateTime startAt;
@@ -48,12 +51,27 @@ public class Promotion {
     @Column(name = "usage_limit")
     private Integer usageLimit;
 
+    @Column(name = "usage_count", nullable = false)
+    private Integer usageCount = 0;
+
     @Column(name = "per_user_limit")
     private Integer perUserLimit;
 
     /** "ACTIVE" / "INACTIVE" */
     @Column(name = "status", nullable = false, length = 20)
     private String status = "ACTIVE";
+
+    @Column(name = "is_public", nullable = false)
+    private boolean isPublic = true;
+
+    @Column(name = "promotion_source", nullable = false, length = 30)
+    private String promotionSource = "CAMPAIGN";
+
+    @Column(name = "target_user_id")
+    private Long targetUserId;
+
+    @Column(name = "target_email", length = 255)
+    private String targetEmail;
 
     public Promotion() {}
 
@@ -82,6 +100,11 @@ public class Promotion {
     public BigDecimal getMinOrderAmount() { return minOrderAmount; }
     public void setMinOrderAmount(BigDecimal minOrderAmount) { this.minOrderAmount = minOrderAmount; }
 
+    public String getApplicableScope() { return applicableScope != null ? applicableScope : "ALL"; }
+    public void setApplicableScope(String applicableScope) {
+        this.applicableScope = (applicableScope != null && !applicableScope.isBlank()) ? applicableScope.trim().toUpperCase() : "ALL";
+    }
+
     public LocalDateTime getStartAt() { return startAt; }
     public void setStartAt(LocalDateTime startAt) { this.startAt = startAt; }
 
@@ -91,9 +114,24 @@ public class Promotion {
     public Integer getUsageLimit() { return usageLimit; }
     public void setUsageLimit(Integer usageLimit) { this.usageLimit = usageLimit; }
 
+    public Integer getUsageCount() { return usageCount != null ? usageCount : 0; }
+    public void setUsageCount(Integer usageCount) { this.usageCount = usageCount != null ? usageCount : 0; }
+
     public Integer getPerUserLimit() { return perUserLimit; }
     public void setPerUserLimit(Integer perUserLimit) { this.perUserLimit = perUserLimit; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public boolean isPublic() { return isPublic; }
+    public void setPublic(boolean isPublic) { this.isPublic = isPublic; }
+
+    public String getPromotionSource() { return promotionSource; }
+    public void setPromotionSource(String promotionSource) { this.promotionSource = promotionSource; }
+
+    public Long getTargetUserId() { return targetUserId; }
+    public void setTargetUserId(Long targetUserId) { this.targetUserId = targetUserId; }
+
+    public String getTargetEmail() { return targetEmail; }
+    public void setTargetEmail(String targetEmail) { this.targetEmail = targetEmail; }
 }

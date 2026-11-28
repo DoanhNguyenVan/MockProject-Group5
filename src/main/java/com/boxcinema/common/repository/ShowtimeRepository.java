@@ -86,5 +86,14 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
+
+    @Query("SELECT COUNT(s) FROM Showtime s " +
+           "WHERE s.movie.movieId = :movieId " +
+           "AND s.status = 'ACTIVE' " +
+           "AND s.startAt >= :now")
+    long countUpcomingActiveShowtimesByMovie(
+            @Param("movieId") Long movieId,
+            @Param("now") LocalDateTime now
+    );
 }
 

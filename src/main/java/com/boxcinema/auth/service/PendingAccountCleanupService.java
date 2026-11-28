@@ -123,7 +123,34 @@ public class PendingAccountCleanupService {
                 "SELECT COUNT(*) FROM TICKETS WHERE checked_in_by = ?",
                 Long.class, userId
         );
-        return checkedInTicketsCount != null && checkedInTicketsCount > 0;
+        if (checkedInTicketsCount != null && checkedInTicketsCount > 0) {
+            return true;
+        }
+        if (countRows("SELECT COUNT(*) FROM refund_requests WHERE customer_user_id = ? OR reviewed_by = ? OR payout_decided_by = ?", userId, userId, userId) > 0) {
+            return true;
+        }
+        if (countRows("SELECT COUNT(*) FROM customer_bank_accounts WHERE user_id = ?", userId) > 0) {
+            return true;
+        }
+        if (countRows("SELECT COUNT(*) FROM incident_reports WHERE reported_by_staff_id = ? OR manager_verified_by = ? OR admin_resolved_by = ? OR appealed_by = ?", userId, userId, userId, userId) > 0) {
+            return true;
+        }
+        if (countRows("SELECT COUNT(*) FROM staff_error_logs WHERE staff_user_id = ? OR reported_by_user_id = ? OR verified_by_manager_id = ?", userId, userId, userId) > 0) {
+            return true;
+        }
+        if (countRows("SELECT COUNT(*) FROM food_fulfillment WHERE assigned_staff_id = ?", userId) > 0) {
+            return true;
+        }
+        return countRows("SELECT COUNT(*) FROM booking_checkin WHERE staff_id = ?", userId) > 0;
+    }
+
+    private long countRows(String sql, Object... args) {
+        try {
+            Long cnt = jdbcTemplate.queryForObject(sql, Long.class, args);
+            return cnt != null ? cnt : 0L;
+        } catch (Exception ex) {
+            return 0L;
+        }
     }
 }
 

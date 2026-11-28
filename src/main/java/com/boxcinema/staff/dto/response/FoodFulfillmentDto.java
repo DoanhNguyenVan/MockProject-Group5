@@ -13,8 +13,9 @@ public class FoodFulfillmentDto {
     private String guestName;
     private String guestPhone;
     private String movieTitle;
+    private Long cinemaId;
     private String cinemaName;
-    private String status; // QUEUED, PREPARING, READY, PICKED_UP, CANCELLED
+    private String status; // QUEUED, PREPARING, READY, PICKED_UP, PARTIAL_DELIVERED, ISSUE_REPORTED, CANCELLED
     private String fulfillmentType;
     private String pickupLocation;
     private String assignedStaffName;
@@ -24,6 +25,47 @@ public class FoodFulfillmentDto {
     private LocalDateTime pickedUpAt;
     private String note;
     private List<BookingFoodItemDto> items = new ArrayList<>();
+    private List<HistoryEntryDto> history = new ArrayList<>();
+
+    public static class HistoryEntryDto {
+        private Long id;
+        private String actionType;
+        private String previousStatus;
+        private String newStatus;
+        private int quantityAffected;
+        private String deliveredItemName;
+        private String wrongItemDescription;
+        private String replacementDescription;
+        private Boolean customerAcceptedReplacement;
+        private String staffName;
+        private String note;
+        private LocalDateTime createdAt;
+
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+        public String getActionType() { return actionType; }
+        public void setActionType(String actionType) { this.actionType = actionType; }
+        public String getPreviousStatus() { return previousStatus; }
+        public void setPreviousStatus(String previousStatus) { this.previousStatus = previousStatus; }
+        public String getNewStatus() { return newStatus; }
+        public void setNewStatus(String newStatus) { this.newStatus = newStatus; }
+        public int getQuantityAffected() { return quantityAffected; }
+        public void setQuantityAffected(int quantityAffected) { this.quantityAffected = quantityAffected; }
+        public String getDeliveredItemName() { return deliveredItemName; }
+        public void setDeliveredItemName(String deliveredItemName) { this.deliveredItemName = deliveredItemName; }
+        public String getWrongItemDescription() { return wrongItemDescription; }
+        public void setWrongItemDescription(String wrongItemDescription) { this.wrongItemDescription = wrongItemDescription; }
+        public String getReplacementDescription() { return replacementDescription; }
+        public void setReplacementDescription(String replacementDescription) { this.replacementDescription = replacementDescription; }
+        public Boolean getCustomerAcceptedReplacement() { return customerAcceptedReplacement; }
+        public void setCustomerAcceptedReplacement(Boolean customerAcceptedReplacement) { this.customerAcceptedReplacement = customerAcceptedReplacement; }
+        public String getStaffName() { return staffName; }
+        public void setStaffName(String staffName) { this.staffName = staffName; }
+        public String getNote() { return note; }
+        public void setNote(String note) { this.note = note; }
+        public LocalDateTime getCreatedAt() { return createdAt; }
+        public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    }
 
     public FoodFulfillmentDto() {}
 
@@ -39,6 +81,8 @@ public class FoodFulfillmentDto {
     public void setGuestPhone(String guestPhone) { this.guestPhone = guestPhone; }
     public String getMovieTitle() { return movieTitle; }
     public void setMovieTitle(String movieTitle) { this.movieTitle = movieTitle; }
+    public Long getCinemaId() { return cinemaId; }
+    public void setCinemaId(Long cinemaId) { this.cinemaId = cinemaId; }
     public String getCinemaName() { return cinemaName; }
     public void setCinemaName(String cinemaName) { this.cinemaName = cinemaName; }
     public String getStatus() { return status; }
@@ -61,4 +105,6 @@ public class FoodFulfillmentDto {
     public void setNote(String note) { this.note = note; }
     public List<BookingFoodItemDto> getItems() { return items; }
     public void setItems(List<BookingFoodItemDto> items) { this.items = items; }
+    public List<HistoryEntryDto> getHistory() { return history; }
+    public void setHistory(List<HistoryEntryDto> history) { this.history = history; }
 }

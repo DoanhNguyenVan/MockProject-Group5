@@ -162,9 +162,23 @@
             </div>
           </div>
 
-          <!-- Right: Validated Contact Form -->
+          <!-- Right: Tabbed Inquiry, Refund Request & Status Lookup -->
           <div class="col-lg-7">
-            <div class="box-surface-card p-4 p-lg-5">
+            <div class="box-surface-card p-4 p-lg-5" id="refundSupportRoot">
+              <ul class="nav nav-pills mb-4 gap-2" id="contactSupportTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button class="btn btn-sm btn-box-primary active" id="tab-inquiry-btn" data-bs-toggle="pill" data-bs-target="#tab-inquiry" type="button" role="tab">Customer Inquiry</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="btn btn-sm btn-outline-danger" id="tab-refund-btn" data-bs-toggle="pill" data-bs-target="#tab-refund" type="button" role="tab">Request Refund / Issue</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button class="btn btn-sm btn-outline-secondary" id="tab-lookup-btn" data-bs-toggle="pill" data-bs-target="#tab-lookup" type="button" role="tab">Track Refund &amp; Reply</button>
+                </li>
+              </ul>
+
+              <div class="tab-content">
+                <div class="tab-pane fade show active" id="tab-inquiry" role="tabpanel">
               <span class="text-glow-red small fw-bold text-uppercase">Send Us A Message</span>
               <h2 class="h3 fw-bold text-white mb-2">Customer Inquiry Form</h2>
               <p class="small text-secondary mb-4">
@@ -244,7 +258,7 @@
                     <select id="contactTopic" name="topic" class="form-select form-select-dark" required>
                       <option value="">-- Select a Topic --</option>
                       <option value="Booking &amp; E-Ticket Support" th:selected="${enteredTopic == 'Booking &amp; E-Ticket Support'}">Booking &amp; E-Ticket Support</option>
-                      <option value="Payment &amp; Transaction Support (No-Refund Policy)" th:selected="${enteredTopic == 'Payment &amp; Transaction Support (No-Refund Policy)'}">Payment &amp; Transaction Support (No-Refund Policy)</option>
+                      <option value="Payment &amp; Transaction Support (Incident &amp; Refund Policy)" th:selected="${enteredTopic == 'Payment &amp; Transaction Support (Incident &amp; Refund Policy)' or enteredTopic == 'Payment &amp; Transaction Support (No-Refund Policy)'}">Payment &amp; Transaction Support (Incident &amp; Refund Policy)</option>
                       <option value="Private Auditorium &amp; Group Booking" th:selected="${enteredTopic == 'Private Auditorium &amp; Group Booking'}">Private Auditorium &amp; Group Booking</option>
                       <option value="Membership &amp; Promo Vouchers" th:selected="${enteredTopic == 'Membership &amp; Promo Vouchers'}">Membership &amp; Promo Vouchers</option>
                       <option value="General Feedback" th:selected="${enteredTopic == 'General Feedback'}">General Feedback</option>
@@ -271,6 +285,149 @@
                   </div>
                 </div>
               </form>
+                </div>
+
+                <!-- Tab 2: Public Refund Request (No login required) -->
+                <div class="tab-pane fade" id="tab-refund" role="tabpanel">
+                  <span class="text-glow-red small fw-bold text-uppercase">Order Verification &amp; Payout</span>
+                  <h2 class="h3 fw-bold text-white mb-2">Request Refund / Report Issue</h2>
+                  <p class="small text-secondary mb-3">
+                    No sign-in required. Enter your booking code (or ticket code) and purchase email to select affected tickets, food items, or individual combo components.
+                  </p>
+
+                  <div class="row g-2 mb-3">
+                    <div class="col-md-5">
+                      <label for="refundOrderCode" class="form-label small text-secondary fw-semibold">Booking / Ticket Code *</label>
+                      <input type="text" id="refundOrderCode" class="form-control form-control-dark" placeholder="BOX-20261121-1234 or TCK-...">
+                    </div>
+                    <div class="col-md-5">
+                      <label for="refundPurchaseEmail" class="form-label small text-secondary fw-semibold">Purchase Email *</label>
+                      <input type="email" id="refundPurchaseEmail" class="form-control form-control-dark" placeholder="email@example.com"
+                             th:value="${session.currentUser != null ? session.currentUser.email : (currentUser != null ? currentUser.email : '')}">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                      <button type="button" id="btnLookupOrder" class="btn btn-outline-danger w-100">Verify</button>
+                    </div>
+                  </div>
+                  <div id="orderLookupStatus" class="d-none"></div>
+
+                  <div id="refundOrderDetailsBox" class="d-none">
+                    <div id="refundOrderMeta" class="p-3 rounded border border-secondary border-opacity-25 mb-3"></div>
+                    <div id="refundCheckedInPolicyNotice" class="alert alert-info py-2 px-3 small mb-3">
+                      Checked-in / USED tickets remain eligible for submission and review under verified cinema incident evaluation and are never auto-rejected solely due to check-in status.
+                    </div>
+                    <form id="publicRefundForm">
+                      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                        <h5 class="h6 text-white mb-0">Select Affected Items / Combo Components *</h5>
+                        <span id="refundSelectedTotalBadge" class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25">Selected Refundable Total: 0 VND</span>
+                      </div>
+                      <div id="refundItemList" class="mb-3"></div>
+
+                      <div class="row g-3">
+                        <div class="col-md-6">
+                          <label for="refundCustomerName" class="form-label small text-secondary">Contact Name</label>
+                          <input type="text" id="refundCustomerName" class="form-control form-control-dark" placeholder="Full Name"
+                                 th:value="${session.currentUser != null ? session.currentUser.fullName : (currentUser != null ? currentUser.fullName : '')}">
+                        </div>
+                        <div class="col-md-6">
+                          <label for="refundCustomerPhone" class="form-label small text-secondary">Phone Number</label>
+                          <input type="tel" id="refundCustomerPhone" class="form-control form-control-dark" placeholder="0901234567">
+                        </div>
+                        <div class="col-12">
+                          <label for="refundReasonCategory" class="form-label small text-secondary fw-semibold">Issue Category *</label>
+                          <select id="refundReasonCategory" class="form-select form-select-dark" required>
+                            <option value="CINEMA_INCIDENT">Cinema Incident (Projector / Sound / Power / Cancelled Showtime)</option>
+                            <option value="PRODUCT_INCIDENT">Defective / Spoiled Food or Missing Item</option>
+                            <option value="STAFF_ERROR">Wrong Item Delivered / Counter Mistake</option>
+                            <option value="UNDELIVERED_FOOD">Undelivered Concessions</option>
+                            <option value="OTHER">Other Valid Reason</option>
+                          </select>
+                        </div>
+                        <div class="col-12">
+                          <label for="refundDescription" class="form-label small text-secondary fw-semibold">Detailed Description *</label>
+                          <textarea id="refundDescription" rows="3" class="form-control form-control-dark" required placeholder="Describe what happened..."></textarea>
+                        </div>
+                        <div class="col-md-6">
+                          <label for="refundEvidenceFile" class="form-label small text-secondary">Upload Evidence Photo (JPG/PNG/WEBP)</label>
+                          <input type="file" id="refundEvidenceFile" accept="image/png,image/jpeg,image/webp" class="form-control form-control-dark">
+                        </div>
+                        <div class="col-md-6">
+                          <label for="refundEvidenceUrl" class="form-label small text-secondary">Or Evidence URL</label>
+                          <input type="text" id="refundEvidenceUrl" class="form-control form-control-dark" placeholder="https://...">
+                        </div>
+
+                        <div class="col-12 pt-2 border-top border-secondary border-opacity-25">
+                          <h6 class="text-white mb-2">Recipient Bank Account (for Automated PayOS Payout)</h6>
+                        </div>
+                        <div class="col-12 d-none" id="refundSavedBankWrap">
+                          <label for="refundSavedBankSelect" class="form-label small text-secondary fw-semibold">Saved Bank Account</label>
+                          <select id="refundSavedBankSelect" class="form-select form-select-dark">
+                            <option value="">-- Enter new bank account manually --</option>
+                          </select>
+                        </div>
+                        <div class="col-md-6">
+                          <label for="refundBankBin" class="form-label small text-secondary fw-semibold">Recipient Bank (BIN) *</label>
+                          <select id="refundBankBin" class="form-select form-select-dark" required></select>
+                        </div>
+                        <div class="col-md-6">
+                          <label for="refundAccountNumber" class="form-label small text-secondary fw-semibold">Bank Account Number *</label>
+                          <input type="text" id="refundAccountNumber" class="form-control form-control-dark" autocomplete="off" required placeholder="6–19 digits (stored encrypted &amp; masked)">
+                        </div>
+                        <div class="col-md-6">
+                          <label for="refundAccountNumberConfirm" class="form-label small text-secondary fw-semibold">Confirm Bank Account Number *</label>
+                          <input type="text" id="refundAccountNumberConfirm" class="form-control form-control-dark" autocomplete="off" required placeholder="Re-enter bank account number">
+                          <div id="refundAccountConfirmError" class="small text-danger mt-1 d-none"></div>
+                        </div>
+                        <div class="col-md-6">
+                          <label for="refundBankHolder" class="form-label small text-secondary fw-semibold">Account Holder Name *</label>
+                          <input type="text" id="refundBankHolder" class="form-control form-control-dark" required placeholder="NGUYEN VAN A">
+                        </div>
+                        <div class="col-12">
+                          <label for="refundBankNote" class="form-label small text-secondary">Bank Branch / Note (Optional)</label>
+                          <input type="text" id="refundBankNote" class="form-control form-control-dark" placeholder="Ghi chú ngân hàng / chi nhánh (tùy chọn)">
+                        </div>
+                        <div class="col-12 d-none" id="refundSaveBankWrap">
+                          <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="refundSaveBankAccount">
+                            <label class="form-check-label small text-secondary" for="refundSaveBankAccount">
+                              Save this bank account to my profile for future refunds
+                            </label>
+                          </div>
+                        </div>
+                        <div class="col-12 pt-2">
+                          <button type="submit" class="btn btn-box-primary px-4">Submit Refund Request</button>
+                        </div>
+                      </div>
+                      <div id="refundSubmitStatus" class="d-none"></div>
+                    </form>
+                  </div>
+                </div>
+
+                <!-- Tab 3: Track Refund Request Status & Reply -->
+                <div class="tab-pane fade" id="tab-lookup" role="tabpanel">
+                  <span class="text-glow-red small fw-bold text-uppercase">Public Status &amp; Appeals Tracker</span>
+                  <h2 class="h3 fw-bold text-white mb-2">Track Refund, Payout &amp; Appeal Status</h2>
+                  <p class="small text-secondary mb-3">
+                    Track your refund workflow status, payout &amp; fee assessment status, processing timeline, and submit or review a customer appeal if a request was rejected.
+                  </p>
+                  <form id="refundStatusLookupForm" class="row g-2 mb-3">
+                    <div class="col-md-5">
+                      <label for="lookupRefundCode" class="form-label small text-secondary fw-semibold">Refund Request Code *</label>
+                      <input type="text" id="lookupRefundCode" class="form-control form-control-dark" placeholder="RFD-20261121-1234" required>
+                    </div>
+                    <div class="col-md-5">
+                      <label for="lookupRefundEmail" class="form-label small text-secondary fw-semibold">Purchase Email *</label>
+                      <input type="email" id="lookupRefundEmail" class="form-control form-control-dark" placeholder="email@example.com"
+                             th:value="${session.currentUser != null ? session.currentUser.email : (currentUser != null ? currentUser.email : '')}" required>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                      <button type="submit" class="btn btn-box-primary w-100">Lookup</button>
+                    </div>
+                  </form>
+                  <div id="refundLookupStatus" class="d-none"></div>
+                  <div id="refundLookupResult" class="d-none"></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -281,7 +438,9 @@
   <!-- Shared Footer -->
   <footer th:replace="~{fragments/footer :: footer}"></footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script type="module" src="/js/modules/navbar.js?v=20261113a" th:src="@{/js/modules/navbar.js(v='20261113a')}"></script>
   <script type="module" src="/js/modules/auth-validation.js" th:src="@{/js/modules/auth-validation.js(v='2.3')}"></script>
+  <script type="module" src="/js/modules/contact-refund.js" th:src="@{/js/modules/contact-refund.js(v='1.0')}"></script>
 </body>
 </html>

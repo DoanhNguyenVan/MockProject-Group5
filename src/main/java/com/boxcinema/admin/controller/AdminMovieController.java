@@ -1,12 +1,15 @@
 
 package com.boxcinema.admin.controller;
 
+import com.boxcinema.admin.dto.MovieFormDto;
 import com.boxcinema.common.entity.Movie;
 import com.boxcinema.admin.service.AdminMovieManagementService;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -14,12 +17,19 @@ import java.util.Set;
 
 @Controller
 @RequestMapping("/admin/movies")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminMovieController {
 
     private final AdminMovieManagementService movieService;
 
     public AdminMovieController(AdminMovieManagementService movieService) {
         this.movieService = movieService;
+    }
+
+    @InitBinder("movie")
+    public void initMovieBinder(WebDataBinder binder) {
+        binder.setAllowedFields("title", "synopsis", "durationMinutes", "ageRating",
+                "language", "releaseDate", "endDate", "status", "posterUrl", "bannerUrl", "trailerUrl");
     }
 
     @GetMapping
@@ -46,14 +56,13 @@ public class AdminMovieController {
 
     @PostMapping("/create")
     public String createMovie(
-            @ModelAttribute("movie") Movie movie,
+            @ModelAttribute("movie") MovieFormDto form,
             @RequestParam(required = false) Set<Long> genreIds,
             Model model,
             RedirectAttributes redirectAttributes) {
 
         try {
-
-            movieService.createMovie(movie, genreIds);
+            movieService.createMovie(toMovieEntity(form), genreIds);
 
             redirectAttributes.addFlashAttribute(
                     "successMessage",
@@ -62,7 +71,7 @@ public class AdminMovieController {
 
             return "redirect:/admin/movies";
 
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
 
             redirectAttributes.addFlashAttribute(
                     "errorMessage",
@@ -103,14 +112,13 @@ public class AdminMovieController {
     @PostMapping("/edit/{id}")
     public String updateMovie(
             @PathVariable Long id,
-            @ModelAttribute("movie") Movie movie,
+            @ModelAttribute("movie") MovieFormDto form,
             @RequestParam(required = false) Set<Long> genreIds,
             Model model,
             RedirectAttributes redirectAttributes) {
 
         try {
-
-            movieService.updateMovie(id, movie, genreIds);
+            movieService.updateMovie(id, toMovieEntity(form), genreIds);
 
             redirectAttributes.addFlashAttribute(
                     "successMessage",
@@ -119,7 +127,7 @@ public class AdminMovieController {
 
             return "redirect:/admin/movies";
 
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
 
             redirectAttributes.addFlashAttribute(
                     "errorMessage",
@@ -128,6 +136,24 @@ public class AdminMovieController {
 
             return "redirect:/admin/movies";
         }
+    }
+
+    private Movie toMovieEntity(MovieFormDto form) {
+        Movie movie = new Movie();
+        if (form != null) {
+            movie.setTitle(form.getTitle());
+            movie.setSynopsis(form.getSynopsis());
+            movie.setDurationMinutes(form.getDurationMinutes());
+            movie.setAgeRating(form.getAgeRating());
+            movie.setLanguage(form.getLanguage());
+            movie.setReleaseDate(form.getReleaseDate());
+            movie.setEndDate(form.getEndDate());
+            movie.setStatus(form.getStatus());
+            movie.setPosterUrl(form.getPosterUrl());
+            movie.setBannerUrl(form.getBannerUrl());
+            movie.setTrailerUrl(form.getTrailerUrl());
+        }
+        return movie;
     }
 
     @PostMapping("/delete/{id}")
@@ -151,7 +177,7 @@ public class AdminMovieController {
                     "Cannot delete this movie because it is linked to other records."
             );
 
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
 
             redirectAttributes.addFlashAttribute(
                     "errorMessage",

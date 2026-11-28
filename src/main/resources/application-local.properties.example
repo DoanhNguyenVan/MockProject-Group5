@@ -12,13 +12,26 @@ spring.datasource.url=jdbc:mysql://localhost:3306/box_cinema?useSSL=false&server
 spring.datasource.username=root
 spring.datasource.password=YOUR_MYSQL_PASSWORD_HERE
 
-# PayOS Payment Gateway Credentials
-payos.client-id=YOUR_PAYOS_CLIENT_ID
-payos.api-key=YOUR_PAYOS_API_KEY
-payos.checksum-key=YOUR_PAYOS_CHECKSUM_KEY
+# PayOS Collection Gateway (Thu tiền) - keep strictly separate from Payout!
+# Safe default keeps LIVE locked until PAYOS_COLLECTION_MODE=LIVE is explicitly set.
+payos.collection.mode=MOCK
+payos.collection.allow-simulate=false
+payos.client-id=YOUR_PAYOS_COLLECTION_CLIENT_ID
+payos.api-key=YOUR_PAYOS_COLLECTION_API_KEY
+payos.checksum-key=YOUR_PAYOS_COLLECTION_CHECKSUM_KEY
 payos.base-url=https://api-merchant.payos.vn
 payos.return-url=http://localhost:8080/booking/buy-tickets
 payos.cancel-url=http://localhost:8080/booking/buy-tickets
+
+# PayOS Payout Gateway (Chi tiền / Hoàn tiền) - MUST use separate Payout channel credentials!
+payos.payout.mode=MOCK
+payos.payout.base-url=https://api-merchant.payos.vn
+payos.payout.client-id=YOUR_PAYOS_PAYOUT_CLIENT_ID
+payos.payout.api-key=YOUR_PAYOS_PAYOUT_API_KEY
+payos.payout.checksum-key=YOUR_PAYOS_PAYOUT_CHECKSUM_KEY
+
+# AES-256 Bank Data Encryption Key (32+ chars or Base64-encoded 32 bytes; required in Payout LIVE mode)
+app.security.bank-encryption-key=YOUR_32_BYTE_BASE64_BANK_ENCRYPTION_KEY
 
 # Google OAuth2 Credentials (Optional - for social login)
 # app.oauth2.google.client-id=
@@ -28,3 +41,10 @@ payos.cancel-url=http://localhost:8080/booking/buy-tickets
 # Gmail SMTP Credentials (Optional - for OTP and ticket emails)
 # spring.mail.username=
 # spring.mail.password=
+
+# Public Base URL, Reverse Proxy & Session Cookie Hardening (Optional - for ngrok / HTTPS deployments)
+# app.public-base-url=http://localhost:8080
+# app.cors.allowed-origins=http://localhost:8080,http://127.0.0.1:8080
+# server.servlet.session.cookie.secure=false
+# server.forward-headers-strategy=framework
+# app.scheduling.enabled=true

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments/admin-shell :: head('Incidents &amp; Appeals')}"></head>
+<body class="admin-page">
+  <div class="admin-shell">
+    <aside th:replace="~{admin/fragments/admin-shell :: sidebar('incidents')}"></aside>
+    <section class="admin-content">
+      <header th:replace="~{admin/fragments/admin-shell :: topbar('Incidents &amp; Appeals', null, '/admin/incidents')}"></header>
+      <div class="admin-content-body" id="refundOpsRoot" data-role-scope="admin" data-ops-mode="incidents">
+        <div class="admin-page-heading mb-4">
+          <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+              <p class="admin-eyebrow">SYSTEM-WIDE GOVERNANCE</p>
+              <h1>Incidents, Customer Refund Appeals &amp; Staff Error Logs</h1>
+              <p>Create, update (including customer_notified_at for late incident deadline calculation), verify, or delete unlinked incidents across all branches, and resolve customer refund appeals.</p>
+            </div>
+            <button id="btnToggleIncidentForm" type="button" class="btn btn-sm btn-warning">+ Tạo sự cố hệ thống mới</button>
+          </div>
+        </div>
+
+        <div id="opsIncidentFormCard" class="card bg-dark border-warning p-3 mb-3 d-none">
+          <h6 id="incFormHeading" class="text-warning mb-2">Tạo / Cập nhật sự cố rạp toàn hệ thống (Không tự động hoàn tiền)</h6>
+          <input type="hidden" id="incFormId" value="">
+          <div class="row g-2 mb-2">
+            <div class="col-md-3">
+              <label class="form-label small text-secondary mb-1">Rạp (Cinema ID)</label>
+              <input type="number" id="incFormCinemaId" class="form-control form-control-sm form-control-dark" placeholder="Cinema ID (VD: 1)" min="1" value="1">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small text-secondary mb-1">Nhóm sự cố</label>
+              <select id="incFormGroup" class="form-select form-select-sm form-select-dark">
+                <option value="CINEMA_INCIDENT">CINEMA_INCIDENT</option>
+                <option value="PRODUCT_INCIDENT">PRODUCT_INCIDENT</option>
+                <option value="STAFF_ERROR">STAFF_ERROR</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small text-secondary mb-1">Loại sự cố</label>
+              <input type="text" id="incFormType" class="form-control form-control-sm form-control-dark" placeholder="PROJECTOR_FAILURE...">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label small text-secondary mb-1">Mức độ</label>
+              <select id="incFormSeverity" class="form-select form-select-sm form-select-dark">
+                <option value="MEDIUM">MEDIUM</option>
+                <option value="HIGH">HIGH</option>
+                <option value="CRITICAL">CRITICAL</option>
+                <option value="LOW">LOW</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small text-secondary mb-1">Thông báo khách (customerNotifiedAt)</label>
+              <input type="datetime-local" id="incFormCustomerNotifiedAt" class="form-control form-control-sm form-control-dark">
+            </div>
+          </div>
+          <div class="row g-2 mb-2">
+            <div class="col-md-5">
+              <input type="text" id="incFormTitle" class="form-control form-control-sm form-control-dark" placeholder="Tiêu đề sự cố (bắt buộc)...">
+            </div>
+            <div class="col-md-2">
+              <input type="number" id="incFormShowtimeId" class="form-control form-control-sm form-control-dark" placeholder="Showtime ID">
+            </div>
+            <div class="col-md-3">
+              <input type="text" id="incFormBookingCode" class="form-control form-control-sm form-control-dark" placeholder="Booking Code (tùy chọn)">
+            </div>
+            <div class="col-md-2">
+              <input type="number" id="incFormAffectedQty" class="form-control form-control-sm form-control-dark" placeholder="Số lượng" min="1" value="1">
+            </div>
+          </div>
+          <div class="row g-2 mb-2">
+            <div class="col-md-8">
+              <textarea id="incFormDescription" class="form-control form-control-sm form-control-dark" rows="2" placeholder="Mô tả chi tiết nguyên nhân và phạm vi ảnh hưởng..."></textarea>
+            </div>
+            <div class="col-md-4">
+              <input type="text" id="incFormEvidenceUrl" class="form-control form-control-sm form-control-dark mb-1" placeholder="Evidence URL / Tên file minh chứng">
+              <div class="d-flex gap-2">
+                <button id="btnSaveIncident" type="button" class="btn btn-sm btn-success w-100">Lưu sự cố</button>
+                <button id="btnCancelIncidentEdit" type="button" class="btn btn-sm btn-outline-secondary">Đóng</button>
+              </div>
+            </div>
+          </div>
+          <div id="opsIncidentFormStatus" class="d-none"></div>
+        </div>
+
+        <div class="card bg-dark border-secondary p-3 mb-3">
+          <div class="row g-2">
+            <div class="col-md-3"><select id="opsCinemaFilter" class="form-select form-select-dark"></select></div>
+            <div class="col-md-3">
+              <select id="opsIncidentStatusFilter" class="form-select form-select-dark">
+                <option value="">All Incident Statuses</option>
+                <option value="APPEALED">APPEALED</option>
+                <option value="PENDING_VERIFICATION">PENDING_VERIFICATION</option>
+                <option value="MORE_EVIDENCE_REQUIRED">MORE_EVIDENCE_REQUIRED</option>
+                <option value="VERIFIED">VERIFIED</option>
+                <option value="REJECTED">REJECTED</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <select id="opsIncidentGroupFilter" class="form-select form-select-dark">
+                <option value="">All Groups</option>
+                <option value="CINEMA_INCIDENT">CINEMA_INCIDENT</option>
+                <option value="PRODUCT_INCIDENT">PRODUCT_INCIDENT</option>
+                <option value="STAFF_ERROR">STAFF_ERROR</option>
+              </select>
+            </div>
+            <div class="col-md-3"><button id="btnOpsReloadIncidents" class="btn btn-warning w-100">Filter Incidents</button></div>
+          </div>
+        </div>
+
+        <div class="card bg-dark border-secondary p-3 mb-3">
+          <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle mb-0">
+              <thead><tr><th>Code</th><th>Branch / Group</th><th>Title</th><th>Status</th><th>Decisions</th><th>Action</th></tr></thead>
+              <tbody id="opsIncidentTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="opsIncidentDetailPanel" class="card bg-dark border-secondary p-3 mb-4 d-none"></div>
+
+        <!-- Customer Refund Appeals Section -->
+        <div class="card bg-dark border-secondary p-3 mb-4">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+            <h5 class="mb-0 text-white">Customer Refund Appeals (Kháng nghị hoàn tiền của khách hàng)</h5>
+            <div class="d-flex gap-2">
+              <select id="opsAppealStatusFilter" class="form-select form-select-sm form-select-dark">
+                <option value="">All Appeal Statuses</option>
+                <option value="APPEAL_SUBMITTED">APPEAL_SUBMITTED</option>
+                <option value="APPEAL_UNDER_REVIEW">APPEAL_UNDER_REVIEW</option>
+                <option value="APPEAL_ACCEPTED">APPEAL_ACCEPTED</option>
+                <option value="APPEAL_REJECTED">APPEAL_REJECTED</option>
+              </select>
+              <button id="btnOpsReloadAppeals" type="button" class="btn btn-sm btn-outline-info">Refresh Appeals</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle mb-0">
+              <thead><tr><th>Appeal Code</th><th>Refund / Branch</th><th>Customer Email</th><th>Reason &amp; Evidence</th><th>Status</th><th>Reviewer / Time</th><th>Action</th></tr></thead>
+              <tbody id="opsAppealTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="opsAppealDetailPanel" class="card bg-dark border-info p-3 mb-4 d-none"></div>
+
+        <div class="card bg-dark border-secondary p-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="mb-0 text-white">Staff Error Logs (Isolated from Refund History)</h5>
+            <button id="btnOpsReloadErrors" class="btn btn-sm btn-outline-secondary">Refresh</button>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle mb-0">
+              <thead><tr><th>Branch</th><th>Staff</th><th>Category</th><th>Reference</th><th>Description</th><th>Status</th></tr></thead>
+              <tbody id="opsStaffErrorTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script type="module" src="/js/modules/refund-ops.js?v=1.0" th:src="@{/js/modules/refund-ops.js(v='1.0')}"></script>
+</body>
+</html>

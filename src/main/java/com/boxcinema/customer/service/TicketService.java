@@ -7,6 +7,7 @@ import java.util.List;
 
 public interface TicketService {
     BookingTicketViewDto getTicketView(Long bookingId, Long currentUserId);
+    BookingTicketViewDto getTicketViewForOutbox(Long bookingId);
     byte[] getBookingQrImage(Long bookingId, Long currentUserId);
     void resendEmail(Long bookingId, Long currentUserId);
     List<BookingHistoryItemDto> getBookingHistory(Long userId);

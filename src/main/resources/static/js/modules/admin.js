@@ -1,4 +1,5 @@
 import { getSeatSvg } from "./seat-icons.js?v=3.2";
+import { getCsrfHeaders } from '../core/http-client.js';
 import { ADMIN_SECTIONS } from './admin-config.js?v=2.3';
 import { createAdminPreview } from './admin-preview.js?v=2.0';
 import { recordLabel, filterRecords, paginateRecords, validateAdminRecord, deleteBlockReason, summarizeSales, createSeatLayout, reportCsv } from './admin-model.js?v=2.0';
@@ -19,6 +20,12 @@ export function initAdmin(doc = document) {
   const formatMoney = value => new Intl.NumberFormat('vi-VN').format(value) + ' ₫';
   const shortMoney = value => `${new Intl.NumberFormat('en', { maximumFractionDigits: 1 }).format(value / 1000000)}M ₫`;
   const humanize = value => String(value).toLowerCase().replaceAll('_', ' ').replace(/^./, letter => letter.toUpperCase());
+  const escapeHtml = value => String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
   let notifyTimer = null;
   const notify = message => {
     const el = get('adminStatus');
@@ -145,6 +152,17 @@ export function initAdmin(doc = document) {
     link.append(icon, element('span', item.title));
     if (section === key) link.setAttribute('aria-current', 'page');
     get('adminNavigation').append(link);
+    if (key === 'bookings') {
+      for (const [extraHref, extraIcon, extraLabel] of [
+        ['/admin/refunds', '↺', 'Refunds & Payouts'],
+        ['/admin/incidents', '⚠', 'Incidents & Appeals']
+      ]) {
+        const extraLink = element('a'); extraLink.href = extraHref;
+        const extraIconEl = element('span', extraIcon); extraIconEl.setAttribute('aria-hidden', 'true');
+        extraLink.append(extraIconEl, element('span', extraLabel));
+        get('adminNavigation').append(extraLink);
+      }
+    }
   }
   get('adminMenuToggle').addEventListener('click', () => {
     const open = get('adminNavigation').classList.toggle('is-open'); get('adminMenuToggle').setAttribute('aria-expanded', String(open));
@@ -319,7 +337,7 @@ export function initAdmin(doc = document) {
             try {
               const res = await win.fetch('/admin/api/save/pricing', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...getCsrfHeaders() },
                 body: JSON.stringify(record)
               });
               if (res.ok) {
@@ -362,7 +380,10 @@ export function initAdmin(doc = document) {
         if (reason) { notify(reason); return; }
         confirm('Delete record?', `Delete "${recordLabel(section, record, state)}" from database?`, 'Delete record', async () => {
           try {
-            const res = await win.fetch(`/admin/api/delete/${section}/${record.id}`, { method: 'DELETE' });
+            const res = await win.fetch(`/admin/api/delete/${section}/${record.id}`, {
+              method: 'DELETE',
+              headers: { ...getCsrfHeaders() }
+            });
             const data = await res.json();
             if (!res.ok || data.success === false) {
               notify(data.error || 'Could not delete record from database.');
@@ -565,7 +586,7 @@ export function initAdmin(doc = document) {
     try {
       const res = await win.fetch(`/admin/api/save/${section}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getCsrfHeaders() },
         body: JSON.stringify(record)
       });
       const data = await res.json();
@@ -622,15 +643,15 @@ export function initAdmin(doc = document) {
       tdCode.style.color = '#ef4444';
 
       const tdCust = element('td');
-      tdCust.innerHTML = `<strong>${b.customerName}</strong><br><small style="color: var(--box-text-muted);">${b.customerPhone || b.customerEmail || '—'}</small>`;
+      tdCust.innerHTML = `<strong>${escapeHtml(b.customerName)}</strong><br><small style="color: var(--box-text-muted);">${escapeHtml(b.customerPhone || b.customerEmail || '—')}</small>`;
 
       const tdMovie = element('td');
-      tdMovie.innerHTML = `<strong>${b.movieTitle}</strong><br><small style="color: var(--box-text-muted);">${b.roomName}</small>`;
+      tdMovie.innerHTML = `<strong>${escapeHtml(b.movieTitle)}</strong><br><small style="color: var(--box-text-muted);">${escapeHtml(b.roomName)}</small>`;
 
       const tdTime = element('td', b.startAt);
 
       const tdTickets = element('td');
-      tdTickets.innerHTML = `<span style="display: inline-block; padding: 2px 7px; border-radius: 4px; background: rgba(255,255,255,0.08); font-weight: 600;">${b.ticketCount} tickets</span>`;
+      tdTickets.innerHTML = `<span style="display: inline-block; padding: 2px 7px; border-radius: 4px; background: rgba(255,255,255,0.08); font-weight: 600;">${escapeHtml(b.ticketCount)} tickets</span>`;
 
       const tdAmount = element('td', formatMoney(b.totalAmount));
       tdAmount.style.fontWeight = '700';
@@ -669,7 +690,7 @@ export function initAdmin(doc = document) {
       try {
         const res = await win.fetch('/admin/api/resolve-deactivation', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...getCsrfHeaders() },
           body: JSON.stringify({
             section: sec,
             id,
@@ -1701,7 +1722,7 @@ export function initAdmin(doc = document) {
     try {
       const res = await win.fetch(`/admin/api/seats/${seatRoom}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getCsrfHeaders() },
         body: JSON.stringify(seatDraft)
       });
       const data = await res.json();
@@ -1833,33 +1854,33 @@ export function initAdmin(doc = document) {
 
       // 1. Code & Date
       const tdCode = element('td');
-      tdCode.innerHTML = `<span style="font-family: monospace; font-weight: 700; color: #ef4444; font-size: 13px;">${b.bookingCode}</span><br><small style="color: var(--box-text-muted);">${b.bookedAt || '—'}</small>`;
+      tdCode.innerHTML = `<span style="font-family: monospace; font-weight: 700; color: #ef4444; font-size: 13px;">${escapeHtml(b.bookingCode)}</span><br><small style="color: var(--box-text-muted);">${escapeHtml(b.bookedAt || '—')}</small>`;
 
       // 2. Movie & Showtime
       const tdMovie = element('td');
-      tdMovie.innerHTML = `<div style="font-weight: 600; color: var(--box-text-primary);">${b.movieTitle} <span class="badge-age-${String(b.ageRating || 'p').toLowerCase()}" style="font-size: 10px; padding: 1px 5px;">${b.ageRating || 'P'}</span></div>` +
-        `<small style="color: #38bdf8; font-weight: 600;">⏰ ${b.showtimeStart || '—'}</small><br>` +
-        `<small style="color: var(--box-text-muted);">${b.roomName} (${b.roomType})</small>`;
+      tdMovie.innerHTML = `<div style="font-weight: 600; color: var(--box-text-primary);">${escapeHtml(b.movieTitle)} <span class="badge-age-${escapeHtml(String(b.ageRating || 'p').toLowerCase())}" style="font-size: 10px; padding: 1px 5px;">${escapeHtml(b.ageRating || 'P')}</span></div>` +
+        `<small style="color: #38bdf8; font-weight: 600;">⏰ ${escapeHtml(b.showtimeStart || '—')}</small><br>` +
+        `<small style="color: var(--box-text-muted);">${escapeHtml(b.roomName)} (${escapeHtml(b.roomType)})</small>`;
 
       // 3. Cinema
       const tdCinema = element('td');
-      tdCinema.innerHTML = `<strong>${b.cinemaName}</strong><br><small style="color: var(--box-text-muted);">${b.city}</small>`;
+      tdCinema.innerHTML = `<strong>${escapeHtml(b.cinemaName)}</strong><br><small style="color: var(--box-text-muted);">${escapeHtml(b.city)}</small>`;
 
       // 4. Customer
       const tdCust = element('td');
-      tdCust.innerHTML = `<strong>${b.customerName}</strong><br><small style="color: var(--box-text-muted);">${b.customerPhone || b.customerEmail || '—'}</small><br><span style="font-size: 10px; color: var(--box-text-muted); text-transform: uppercase;">[${b.bookingChannel}]</span>`;
+      tdCust.innerHTML = `<strong>${escapeHtml(b.customerName)}</strong><br><small style="color: var(--box-text-muted);">${escapeHtml(b.customerPhone || b.customerEmail || '—')}</small><br><span style="font-size: 10px; color: var(--box-text-muted); text-transform: uppercase;">[${escapeHtml(b.bookingChannel)}]</span>`;
 
       // 5. Seats & Combos
       const tdItems = element('td');
-      let itemsHtml = `<div><span style="display: inline-block; padding: 2px 7px; border-radius: 4px; background: rgba(255,255,255,0.08); font-weight: 700; color: #fbbf24;">${b.ticketCount} tickets: ${b.seatsSummary || '—'}</span></div>`;
+      let itemsHtml = `<div><span style="display: inline-block; padding: 2px 7px; border-radius: 4px; background: rgba(255,255,255,0.08); font-weight: 700; color: #fbbf24;">${escapeHtml(b.ticketCount)} tickets: ${escapeHtml(b.seatsSummary || '—')}</span></div>`;
       if (b.combosDetail) {
-        itemsHtml += `<small style="color: #a855f7; display: block; margin-top: 3px;">🍿 ${b.combosDetail}</small>`;
+        itemsHtml += `<small style="color: #a855f7; display: block; margin-top: 3px;">🍿 ${escapeHtml(b.combosDetail)}</small>`;
       }
       tdItems.innerHTML = itemsHtml;
 
       // 6. Total Amount & Payment
       const tdAmount = element('td');
-      tdAmount.innerHTML = `<span style="font-weight: 700; color: var(--box-accent); font-size: 14px;">${formatMoney(b.totalAmount)}</span><br><small style="color: var(--box-text-muted);">${b.paymentMethod || 'VNPAY'} · ${b.paymentProvider || 'QR'}</small>`;
+      tdAmount.innerHTML = `<span style="font-weight: 700; color: var(--box-accent); font-size: 14px;">${escapeHtml(formatMoney(b.totalAmount))}</span><br><small style="color: var(--box-text-muted);">${escapeHtml(b.paymentMethod || 'VNPAY')} · ${escapeHtml(b.paymentProvider || 'QR')}</small>`;
 
       // 7. Status
       const tdStatus = element('td');
@@ -1868,7 +1889,7 @@ export function initAdmin(doc = document) {
       if (st === 'CANCELLED') badgeClass = 'badge-status-cancelled';
       else if (st === 'REFUNDED') badgeClass = 'badge-status-refunded';
       else if (st === 'HOLDING') badgeClass = 'badge-status-holding';
-      tdStatus.innerHTML = `<span class="admin-badge ${badgeClass}">${st}</span>`;
+      tdStatus.innerHTML = `<span class="admin-badge ${badgeClass}">${escapeHtml(st)}</span>`;
 
       // 8. Action: View Invoice
       const tdAction = element('td');
@@ -1902,11 +1923,11 @@ export function initAdmin(doc = document) {
       <!-- Banner -->
       <div class="admin-invoice-banner">
         <div>
-          <div style="font-size: 16px; font-weight: 700; color: #ef4444; font-family: monospace;">ORDER: ${b.bookingCode}</div>
-          <div style="font-size: 12px; color: var(--box-text-muted); margin-top: 2px;">Channel: <strong>${b.bookingChannel}</strong> · Transaction Date: ${b.bookedAt || '—'}</div>
+          <div style="font-size: 16px; font-weight: 700; color: #ef4444; font-family: monospace;">ORDER: ${escapeHtml(b.bookingCode)}</div>
+          <div style="font-size: 12px; color: var(--box-text-muted); margin-top: 2px;">Channel: <strong>${escapeHtml(b.bookingChannel)}</strong> · Transaction Date: ${escapeHtml(b.bookedAt || '—')}</div>
         </div>
         <div>
-          <span class="admin-badge ${badgeClass}" style="font-size: 12px; padding: 5px 12px;">${st}</span>
+          <span class="admin-badge ${badgeClass}" style="font-size: 12px; padding: 5px 12px;">${escapeHtml(st)}</span>
         </div>
       </div>
 
@@ -1914,15 +1935,15 @@ export function initAdmin(doc = document) {
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
         <div class="admin-invoice-section">
           <div class="admin-invoice-section-title">👤 Customer Information</div>
-          <div><strong>${b.customerName}</strong></div>
-          <div style="color: var(--box-text-muted);">Phone: <strong>${b.customerPhone || '—'}</strong></div>
-          <div style="color: var(--box-text-muted);">Email: ${b.customerEmail || '—'}</div>
+          <div><strong>${escapeHtml(b.customerName)}</strong></div>
+          <div style="color: var(--box-text-muted);">Phone: <strong>${escapeHtml(b.customerPhone || '—')}</strong></div>
+          <div style="color: var(--box-text-muted);">Email: ${escapeHtml(b.customerEmail || '—')}</div>
         </div>
         <div class="admin-invoice-section">
           <div class="admin-invoice-section-title">🎬 Screening Information</div>
-          <div><strong>${b.movieTitle}</strong> (${b.roomType})</div>
-          <div style="color: #38bdf8; font-weight: 600;">⏰ ${b.showtimeStart || '—'}</div>
-          <div style="color: var(--box-text-muted);">Cinema: ${b.cinemaName} · ${b.roomName}</div>
+          <div><strong>${escapeHtml(b.movieTitle)}</strong> (${escapeHtml(b.roomType)})</div>
+          <div style="color: #38bdf8; font-weight: 600;">⏰ ${escapeHtml(b.showtimeStart || '—')}</div>
+          <div style="color: var(--box-text-muted);">Cinema: ${escapeHtml(b.cinemaName)} · ${escapeHtml(b.roomName)}</div>
         </div>
       </div>
 
@@ -1941,14 +1962,14 @@ export function initAdmin(doc = document) {
           <tbody>
             <tr>
               <td><strong>Movie Tickets</strong></td>
-              <td>${b.seatsDetail || b.seatsSummary || 'Standard Seat'}</td>
-              <td>${b.ticketCount} tickets</td>
-              <td style="text-align: right; font-weight: 600;">${formatMoney(b.subtotal || b.totalAmount)}</td>
+              <td>${escapeHtml(b.seatsDetail || b.seatsSummary || 'Standard Seat')}</td>
+              <td>${escapeHtml(b.ticketCount)} tickets</td>
+              <td style="text-align: right; font-weight: 600;">${escapeHtml(formatMoney(b.subtotal || b.totalAmount))}</td>
             </tr>
             ${b.combosDetail ? `
             <tr>
               <td><strong>Concessions &amp; Combo</strong></td>
-              <td>${b.combosDetail}</td>
+              <td>${escapeHtml(b.combosDetail)}</td>
               <td>1 pack</td>
               <td style="text-align: right; font-weight: 600;">Included</td>
             </tr>` : ''}
@@ -1959,16 +1980,16 @@ export function initAdmin(doc = document) {
         <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--box-border-color);">
           <div class="admin-invoice-total-row">
             <span>Subtotal:</span>
-            <span>${formatMoney(b.subtotal || b.totalAmount)}</span>
+            <span>${escapeHtml(formatMoney(b.subtotal || b.totalAmount))}</span>
           </div>
           ${b.discountAmount > 0 ? `
           <div class="admin-invoice-total-row" style="color: #10b981;">
-            <span>Discount (${b.voucherCode || b.promotionName || 'Voucher'}):</span>
-            <span>-${formatMoney(b.discountAmount)}</span>
+            <span>Discount (${escapeHtml(b.voucherCode || b.promotionName || 'Voucher')}):</span>
+            <span>-${escapeHtml(formatMoney(b.discountAmount))}</span>
           </div>` : ''}
           <div class="admin-invoice-total-row admin-invoice-grand-total">
             <span>TOTAL AMOUNT:</span>
-            <span>${formatMoney(b.totalAmount)}</span>
+            <span>${escapeHtml(formatMoney(b.totalAmount))}</span>
           </div>
         </div>
       </div>
@@ -1977,11 +1998,11 @@ export function initAdmin(doc = document) {
       <div class="admin-invoice-section" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0;">
         <div>
           <div style="font-size: 11px; color: var(--box-text-muted); text-transform: uppercase;">Payment Gateway</div>
-          <div style="font-weight: 600; color: #38bdf8;">${b.paymentProvider || 'VNPAY'} · ${b.paymentMethod || 'QR_CODE'}</div>
+          <div style="font-weight: 600; color: #38bdf8;">${escapeHtml(b.paymentProvider || 'VNPAY')} · ${escapeHtml(b.paymentMethod || 'QR_CODE')}</div>
         </div>
         <div style="text-align: right;">
           <div style="font-size: 11px; color: var(--box-text-muted); text-transform: uppercase;">Payment Status</div>
-          <div style="font-weight: 700; color: ${b.paymentStatus === 'SUCCESS' ? '#10b981' : b.paymentStatus === 'REFUNDED' ? '#f59e0b' : '#ef4444'};">${b.paymentStatus || 'SUCCESS'}</div>
+          <div style="font-weight: 700; color: ${b.paymentStatus === 'SUCCESS' ? '#10b981' : b.paymentStatus === 'REFUNDED' ? '#f59e0b' : '#ef4444'};">${escapeHtml(b.paymentStatus || 'SUCCESS')}</div>
         </div>
       </div>
     `;

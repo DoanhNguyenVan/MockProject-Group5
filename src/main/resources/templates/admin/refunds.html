@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments/admin-shell :: head('Refunds &amp; Payouts')}"></head>
+<body class="admin-page">
+  <div class="admin-shell">
+    <aside th:replace="~{admin/fragments/admin-shell :: sidebar('refunds')}"></aside>
+    <section class="admin-content">
+      <header th:replace="~{admin/fragments/admin-shell :: topbar('Refunds &amp; Payouts', null, '/admin/refunds')}"></header>
+      <div class="admin-content-body" id="refundOpsRoot" data-role-scope="admin" data-ops-mode="refunds">
+        <div class="admin-page-heading mb-3">
+          <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+              <p class="admin-eyebrow">SYSTEM-WIDE FINANCIAL OPERATIONS</p>
+              <h1>Quản lý Hoàn tiền &amp; Duyệt chi PayOS Payout</h1>
+              <p>Kiểm tra sàng lọc 2 bước, hạn mức đặt chỗ nguyên tử, kháng nghị hoàn tiền, bảo đảm 100% phí nhận và đối soát PayOS Payout theo thời gian thực.</p>
+            </div>
+            <span id="opsPayoutPreflightBadge" class="badge bg-secondary py-2 px-3">LIVE_PAYOUT_ENABLED: FALSE • Mode: MOCK</span>
+          </div>
+        </div>
+
+        <!-- LIVE PAYOUT CONTROL (Admin only, real money) -->
+        <div id="livePayoutPanel" class="card bg-dark border-danger p-3 mb-3">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+            <span class="fw-semibold text-danger small">LIVE PAYOUT CONTROL — REAL MONEY (ADMIN ONLY)</span>
+            <span id="liveModeBadge" class="badge bg-secondary py-2 px-3">DISABLED</span>
+          </div>
+          <div id="liveEnvInfo" class="small text-secondary mb-2">Loading…</div>
+          <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+            <input type="text" id="liveModeNote" class="form-control form-control-sm form-control-dark" style="max-width:280px;" placeholder="Audit note (optional)">
+            <button id="btnLiveEnable" type="button" class="btn btn-sm btn-outline-danger">Enable LIVE</button>
+            <button id="btnLiveDisable" type="button" class="btn btn-sm btn-outline-light">Disable</button>
+            <button id="btnLiveRefreshStatus" type="button" class="btn btn-sm btn-outline-info">Refresh</button>
+          </div>
+          <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+            <input type="number" min="1" step="1" id="liveMaxAmountInput" class="form-control form-control-sm form-control-dark" style="max-width:220px;" placeholder="Max test amount (VND) - you choose">
+            <button id="btnLiveSetMax" type="button" class="btn btn-sm btn-outline-warning">Set max test amount</button>
+            <input type="number" min="1" step="1" id="liveRefundIdInput" class="form-control form-control-sm form-control-dark" style="max-width:180px;" placeholder="Refund request ID">
+            <button id="btnLiveLoadConfirmation" type="button" class="btn btn-sm btn-warning">Review live payout</button>
+          </div>
+          <div id="liveError" class="alert alert-danger py-2 small d-none"></div>
+          <div id="liveConfirmationBox" class="d-none border border-danger rounded p-3 mt-2">
+            <div id="liveWarning" class="alert alert-danger py-2 small fw-semibold"></div>
+            <dl id="liveConfirmationFields" class="small text-light mb-2"></dl>
+            <ul id="liveBlockers" class="small text-warning d-none"></ul>
+            <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+              <input type="number" min="1" step="1" id="liveConfirmAmount" class="form-control form-control-sm form-control-dark" style="max-width:220px;" placeholder="Re-type approved amount (VND)" autocomplete="off">
+              <input type="text" id="liveConfirmPhrase" class="form-control form-control-sm form-control-dark" style="max-width:260px;" placeholder="Type: CONFIRM LIVE PAYOUT" autocomplete="off">
+            </div>
+            <div class="form-check mb-2">
+              <input type="checkbox" id="liveAckRealMoney" class="form-check-input">
+              <label for="liveAckRealMoney" class="form-check-label small text-danger">I understand this transfers REAL money and cannot be undone by BOX Cinema.</label>
+            </div>
+            <button id="btnLiveExecute" type="button" class="btn btn-danger fw-semibold" disabled>Execute REAL payout (one payout)</button>
+          </div>
+          <div id="liveResult" class="small text-info mt-2"></div>
+        </div>
+
+        <!-- System-wide Limits & Reservations Summary Banner -->
+        <div id="opsLimitSummaryBanner" class="card bg-dark border-info p-3 mb-3">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
+            <span class="fw-semibold text-info small">HẠN MỨC PHÊ DUYỆT &amp; ĐẶT CHỖ TÀI CHÍNH TOÀN HỆ THỐNG (ASIA/HO_CHI_MINH)</span>
+            <button id="btnOpsReloadLimits" type="button" class="btn btn-sm btn-outline-info">Làm mới hạn mức</button>
+          </div>
+          <div id="opsLimitSummaryContent" class="small text-secondary">Đang tải thông tin hạn mức và đặt chỗ tài chính...</div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-pills gap-2 mb-3" id="adminRefundTabs">
+          <li class="nav-item">
+            <button type="button" id="btnTabPayoutQueue" class="btn btn-sm btn-danger admin-refund-tab active" data-target-pane="admin-tab-payout-queue">
+              Chờ Admin duyệt chi
+            </button>
+          </li>
+          <li class="nav-item">
+            <button type="button" id="btnTabAllRefunds" class="btn btn-sm btn-outline-light admin-refund-tab" data-target-pane="admin-tab-all-refunds">
+              Tất cả yêu cầu &amp; Thẩm định
+            </button>
+          </li>
+          <li class="nav-item">
+            <button type="button" id="btnTabPayoutHistory" class="btn btn-sm btn-outline-warning admin-refund-tab" data-target-pane="admin-tab-payout-history">
+              Lịch sử chuyển tiền &amp; PayOS
+            </button>
+          </li>
+          <li class="nav-item">
+            <button type="button" id="btnTabAppeals" class="btn btn-sm btn-outline-info admin-refund-tab" data-target-pane="admin-tab-appeals">
+              Kháng nghị Hoàn tiền (Appeals)
+            </button>
+          </li>
+          <li class="nav-item">
+            <button type="button" id="btnTabLimits" class="btn btn-sm btn-outline-light admin-refund-tab" data-target-pane="admin-tab-limits">
+              Cấu hình Hạn mức &amp; Quotas
+            </button>
+          </li>
+        </ul>
+
+        <!-- Shared Multi-Criteria Filter Bar -->
+        <div class="card bg-dark border-secondary p-3 mb-3">
+          <div class="row g-2">
+            <div class="col-md-2">
+              <select id="opsCinemaFilter" class="form-select form-select-dark"></select>
+            </div>
+            <div class="col-md-3">
+              <input type="text" id="opsRefundSearch" class="form-control form-control-dark" placeholder="Mã yêu cầu, mã đơn, email, tên khách...">
+            </div>
+            <div class="col-md-2">
+              <select id="opsReasonFilter" class="form-select form-select-dark">
+                <option value="">Tất cả loại sự cố</option>
+                <option value="CINEMA_INCIDENT">CINEMA_INCIDENT</option>
+                <option value="PRODUCT_INCIDENT">PRODUCT_INCIDENT</option>
+                <option value="STAFF_ERROR">STAFF_ERROR</option>
+                <option value="UNDELIVERED_FOOD">UNDELIVERED_FOOD</option>
+                <option value="PAID_SEAT_CONFLICT">PAID_SEAT_CONFLICT</option>
+                <option value="OTHER">OTHER</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <input type="text" id="opsVerifierFilter" class="form-control form-control-dark" placeholder="Người xác minh (tên/email)">
+            </div>
+            <div class="col-md-1">
+              <input type="number" id="opsMinAmount" class="form-control form-control-dark" placeholder="Từ (đ)" min="0">
+            </div>
+            <div class="col-md-2">
+              <input type="number" id="opsMaxAmount" class="form-control form-control-dark" placeholder="Đến (đ)" min="0">
+            </div>
+          </div>
+          <div class="row g-2 mt-1 align-items-center">
+            <div class="col-md-2">
+              <input type="date" id="opsFromDate" class="form-control form-control-dark" title="Từ ngày">
+            </div>
+            <div class="col-md-2">
+              <input type="date" id="opsToDate" class="form-control form-control-dark" title="Đến ngày">
+            </div>
+            <div class="col-md-3">
+              <select id="opsRefundStatusFilter" class="form-select form-select-dark">
+                <option value="">Tất cả trạng thái yêu cầu</option>
+                <option value="REQUESTED">REQUESTED (Mới yêu cầu)</option>
+                <option value="UNDER_REVIEW">UNDER_REVIEW (Đang thẩm định)</option>
+                <option value="APPROVED">APPROVED (Đã duyệt nghiệp vụ)</option>
+                <option value="PAYOUT_PENDING">PAYOUT_PENDING (Chờ duyệt chi)</option>
+                <option value="PROCESSING">PROCESSING (Đang xử lý chi)</option>
+                <option value="SUCCESS">SUCCESS (Hoàn tiền thành công)</option>
+                <option value="FAILED">FAILED (Chi thất bại)</option>
+                <option value="UNKNOWN">UNKNOWN (Chưa rõ kết quả - Cần đối soát)</option>
+                <option value="PAYOUT_BLOCKED">PAYOUT_BLOCKED (Chặn chi do phí/chính sách)</option>
+                <option value="PENDING_REVIEW">PENDING_REVIEW (Mới tiếp nhận)</option>
+                <option value="UNDER_VERIFICATION">UNDER_VERIFICATION (Đang xác minh)</option>
+                <option value="MORE_INFO_REQUIRED">MORE_INFO_REQUIRED (Chờ bổ sung)</option>
+                <option value="VERIFIED">VERIFIED (Đã xác minh)</option>
+                <option value="AWAITING_PAYOUT_APPROVAL">AWAITING_PAYOUT_APPROVAL (Chờ duyệt chi)</option>
+                <option value="PAYOUT_APPROVED">PAYOUT_APPROVED (Đã duyệt chuyển tiền)</option>
+                <option value="PAYOUT_PROCESSING">PAYOUT_PROCESSING (Đang xử lý)</option>
+                <option value="PAYOUT_SUCCEEDED">PAYOUT_SUCCEEDED (Chi thành công)</option>
+                <option value="COMPLETED">COMPLETED (Hoàn tất)</option>
+                <option value="PAYOUT_FAILED">PAYOUT_FAILED (Chuyển tiền thất bại)</option>
+                <option value="PAYOUT_REJECTED">PAYOUT_REJECTED (Từ chối chi)</option>
+                <option value="INELIGIBLE">INELIGIBLE (Không đủ điều kiện)</option>
+                <option value="REJECTED">REJECTED (Đã từ chối)</option>
+                <option value="CANCELLED">CANCELLED (Đã hủy)</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <select id="opsPayoutStatusFilter" class="form-select form-select-dark">
+                <option value="">Tất cả trạng thái Payout</option>
+                <option value="PAYOUT_PENDING">PAYOUT_PENDING</option>
+                <option value="AWAITING_APPROVAL">AWAITING_APPROVAL</option>
+                <option value="PENDING">PENDING</option>
+                <option value="PROCESSING">PROCESSING</option>
+                <option value="SUCCESS">SUCCESS</option>
+                <option value="SUCCEEDED">SUCCEEDED</option>
+                <option value="FAILED">FAILED</option>
+                <option value="UNKNOWN">UNKNOWN</option>
+                <option value="PAYOUT_BLOCKED">PAYOUT_BLOCKED</option>
+                <option value="REJECTED">REJECTED</option>
+                <option value="CANCELLED">CANCELLED</option>
+                <option value="NOT_REQUIRED">NOT_REQUIRED</option>
+              </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+              <button id="btnOpsReloadQueue" type="button" class="btn btn-danger w-100">Áp dụng lọc</button>
+              <button id="btnOpsReloadRefunds" type="button" class="btn btn-outline-light d-none">Filter</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 1: ADMIN PAYOUT APPROVAL QUEUE (SINGLE & BATCH) -->
+        <div id="admin-tab-payout-queue" class="admin-refund-pane">
+          <div id="batchActionBar" class="card bg-dark border-danger p-3 mb-3 d-flex flex-row justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+              <span class="badge bg-danger me-2">HÀNG ĐỢI DUYỆT CHI</span>
+              <span class="text-white fw-semibold">Đã chọn: <strong id="batchSelectedCount">0</strong> yêu cầu</span>
+              <span class="text-secondary mx-2">|</span>
+              <span class="text-warning fw-semibold">Tổng tiền dự kiến chuyển: <strong id="batchSelectedTotal">0 VND</strong></span>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+              <button id="btnBatchSelectAllEligible" type="button" class="btn btn-sm btn-outline-info">Chọn tất cả đủ điều kiện</button>
+              <button id="btnBatchClearSelection" type="button" class="btn btn-sm btn-outline-secondary">Bỏ chọn</button>
+              <button id="btnOpenBatchConfirm" type="button" class="btn btn-sm btn-success fw-semibold" disabled>Duyệt &amp; chuyển tiền hàng loạt</button>
+            </div>
+          </div>
+
+          <div class="card bg-dark border-secondary p-3 mb-3">
+            <div class="table-responsive">
+              <table class="table table-dark table-hover align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th style="width:36px;"><input type="checkbox" id="payoutQueueSelectAll" class="form-check-input" title="Chọn tất cả đủ điều kiện trên trang"></th>
+                    <th>Mã yêu cầu</th>
+                    <th>Đơn hàng / Rạp</th>
+                    <th>Khách hàng</th>
+                    <th>Sự cố &amp; Người xác minh</th>
+                    <th>Ngân hàng &amp; Số tiền</th>
+                    <th>Điều kiện chi</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="opsPayoutQueueBody"></tbody>
+              </table>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+              <span id="opsQueuePageInfo" class="small text-secondary">Page 1</span>
+              <div class="d-flex gap-2">
+                <button id="opsQueuePrev" class="btn btn-sm btn-outline-secondary" type="button">Previous</button>
+                <button id="opsQueueNext" class="btn btn-sm btn-outline-secondary" type="button">Next</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Batch Execution Result Panel -->
+          <div id="batchPayoutResultPanel" class="card bg-dark border-info p-3 mb-3 d-none">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h5 class="mb-0 text-info">Kết quả xử lý chuyển tiền hàng loạt</h5>
+              <button id="btnCloseBatchResult" type="button" class="btn btn-sm btn-outline-secondary">Đóng</button>
+            </div>
+            <div id="batchResultSummary" class="mb-3"></div>
+            <div class="table-responsive">
+              <table class="table table-dark table-sm table-bordered align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Mã yêu cầu</th>
+                    <th>Đơn hàng</th>
+                    <th>Người nhận / Tài khoản</th>
+                    <th>Số tiền</th>
+                    <th>Kết quả</th>
+                    <th>Reference ID / PayOS ID</th>
+                    <th>Chi tiết</th>
+                  </tr>
+                </thead>
+                <tbody id="batchResultTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: ALL REFUND REQUESTS & BUSINESS SCREENING -->
+        <div id="admin-tab-all-refunds" class="admin-refund-pane d-none">
+          <div class="card bg-dark border-secondary p-3 mb-3">
+            <div class="table-responsive">
+              <table class="table table-dark table-hover align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Order / Branch</th>
+                    <th>Email / Customer</th>
+                    <th>Amount / Bank</th>
+                    <th>Status</th>
+                    <th>Payout / Voucher</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="opsRefundTableBody"></tbody>
+              </table>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+              <span id="opsRefundPageInfo" class="small text-secondary">Page 1</span>
+              <div class="d-flex gap-2">
+                <button id="opsRefundPrev" class="btn btn-sm btn-outline-secondary" type="button">Previous</button>
+                <button id="opsRefundNext" class="btn btn-sm btn-outline-secondary" type="button">Next</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: PAYOS PAYOUT TRANSACTION HISTORY & ACCOUNT BALANCE -->
+        <div id="admin-tab-payout-history" class="admin-refund-pane d-none">
+          <div id="payoutBalanceCard" class="card bg-dark border-info p-3 mb-3">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <div>
+                <h6 class="text-info mb-1">Tài khoản Chi hộ PayOS Payout</h6>
+                <div id="payoutBalanceInfo" class="small text-secondary">Nhấn "Kiểm tra số dư" để xem trạng thái cấu hình và số dư kênh Chi PayOS.</div>
+              </div>
+              <button id="btnCheckPayoutBalance" type="button" class="btn btn-sm btn-outline-info">Kiểm tra số dư PayOS</button>
+            </div>
+          </div>
+
+          <div class="card bg-dark border-secondary p-3 mb-3">
+            <div class="row g-2 mb-3">
+              <div class="col-md-3">
+                <select id="payoutTxStatusFilter" class="form-select form-select-dark">
+                  <option value="">Tất cả trạng thái giao dịch</option>
+                  <option value="PENDING">PENDING (Đã gửi lệnh)</option>
+                  <option value="PROCESSING">PROCESSING (Đang xử lý / Chưa xác định)</option>
+                  <option value="UNKNOWN">UNKNOWN (Chưa xác định - Cần đối soát)</option>
+                  <option value="PAYOUT_BLOCKED">PAYOUT_BLOCKED (Chặn chi do phí)</option>
+                  <option value="SUCCESS">SUCCESS (Thành công)</option>
+                  <option value="SUCCEEDED">SUCCEEDED (Thành công)</option>
+                  <option value="FAILED">FAILED (Thất bại)</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <input type="text" id="payoutTxBatchFilter" class="form-control form-control-dark" placeholder="Mã Batch (BATCH-...)">
+              </div>
+              <div class="col-md-4">
+                <input type="text" id="payoutTxSearch" class="form-control form-control-dark" placeholder="Reference ID, PayOS ID, Mã yêu cầu, Mã đơn...">
+              </div>
+              <div class="col-md-2">
+                <button id="btnReloadPayoutTx" type="button" class="btn btn-warning w-100">Lọc giao dịch</button>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-dark table-hover align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Reference ID / Batch</th>
+                    <th>Yêu cầu / Đơn hàng</th>
+                    <th>Ngân hàng / Người nhận</th>
+                    <th>Số tiền</th>
+                    <th>Giai đoạn / Trạng thái</th>
+                    <th>PayOS ID &amp; Thời gian</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="opsPayoutTxBody"></tbody>
+              </table>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-3">
+              <span id="opsPayoutTxPageInfo" class="small text-secondary">Page 1</span>
+              <div class="d-flex gap-2">
+                <button id="opsPayoutTxPrev" class="btn btn-sm btn-outline-secondary" type="button">Previous</button>
+                <button id="opsPayoutTxNext" class="btn btn-sm btn-outline-secondary" type="button">Next</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="opsPayoutTxDetailPanel" class="card bg-dark border-secondary p-3 mb-3 d-none"></div>
+        </div>
+
+        <!-- TAB 4: CUSTOMER REFUND APPEALS (SYSTEM-WIDE) -->
+        <div id="admin-tab-appeals" class="admin-refund-pane d-none">
+          <div class="card bg-dark border-secondary p-3 mb-3">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+              <div>
+                <h5 class="mb-0 text-white">Quản lý Kháng nghị Hoàn tiền Toàn hệ thống (Customer Refund Appeals)</h5>
+                <div class="small text-secondary">Chấp nhận kháng nghị (APPEAL_ACCEPTED) sẽ đưa yêu cầu hoàn tiền gốc quay lại trạng thái UNDER_REVIEW (không tự động duyệt chi).</div>
+              </div>
+              <div class="d-flex gap-2">
+                <select id="opsAppealStatusFilter" class="form-select form-select-sm form-select-dark">
+                  <option value="">Tất cả trạng thái kháng nghị</option>
+                  <option value="APPEAL_SUBMITTED">APPEAL_SUBMITTED (Mới gửi)</option>
+                  <option value="APPEAL_UNDER_REVIEW">APPEAL_UNDER_REVIEW (Đang thẩm định)</option>
+                  <option value="APPEAL_ACCEPTED">APPEAL_ACCEPTED (Đã chấp nhận -> UNDER_REVIEW)</option>
+                  <option value="APPEAL_REJECTED">APPEAL_REJECTED (Đã bác kháng nghị)</option>
+                </select>
+                <button id="btnOpsReloadAppeals" type="button" class="btn btn-sm btn-info">Làm mới Kháng nghị</button>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-dark table-hover align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Mã kháng nghị</th>
+                    <th>Mã yêu cầu / Rạp</th>
+                    <th>Email khách hàng</th>
+                    <th>Lý do &amp; Minh chứng</th>
+                    <th>Trạng thái Kháng nghị / Yêu cầu</th>
+                    <th>Người xử lý / Thời gian</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="opsAppealTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="opsAppealDetailPanel" class="card bg-dark border-info p-3 mb-3 d-none"></div>
+        </div>
+
+        <!-- TAB 5: REFUND LIMITS & QUOTAS CONFIGURATION -->
+        <div id="admin-tab-limits" class="admin-refund-pane d-none">
+          <div class="card bg-dark border-secondary p-3 mb-3">
+            <h5 class="text-white mb-2">Tra cứu Đặt chỗ Tài chính (Committed / Reserved / Released / Available)</h5>
+            <div class="row g-2 mb-3">
+              <div class="col-md-3">
+                <input type="number" id="limitSummaryManagerId" class="form-control form-control-sm form-control-dark" placeholder="Manager User ID (tùy chọn)">
+              </div>
+              <div class="col-md-3">
+                <input type="number" id="limitSummaryIncidentId" class="form-control form-control-sm form-control-dark" placeholder="Incident ID (tùy chọn)">
+              </div>
+              <div class="col-md-3">
+                <input type="date" id="limitSummaryDate" class="form-control form-control-sm form-control-dark" title="Ngày hạn mức (Asia/Ho_Chi_Minh)">
+              </div>
+              <div class="col-md-3">
+                <button id="btnReloadLimitSummary" type="button" class="btn btn-sm btn-outline-info w-100">Tra cứu Quotas</button>
+              </div>
+            </div>
+            <div id="adminLimitSummaryBox" class="p-3 rounded border border-secondary small text-light"></div>
+          </div>
+
+          <div class="card bg-dark border-secondary p-3 mb-3">
+            <h5 class="text-white mb-2">Cấu hình Hạn mức Phê duyệt (Two-Stage Approval &amp; Payout Thresholds)</h5>
+            <div class="table-responsive mb-3">
+              <table class="table table-dark table-sm table-bordered align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Config Key</th>
+                    <th>Hạn mức hiện tại (VND)</th>
+                    <th>Mô tả</th>
+                    <th>Cập nhật lần cuối</th>
+                    <th>Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="opsLimitConfigTableBody"></tbody>
+              </table>
+            </div>
+
+            <div class="p-3 rounded border border-warning">
+              <h6 class="text-warning mb-2">Cập nhật cấu hình hạn mức (Ghi nhật ký kiểm toán refund_limit_config_history)</h6>
+              <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                  <label class="form-label small text-secondary mb-1">Loại hạn mức (Config Key)</label>
+                  <select id="limitConfigKeySelect" class="form-select form-select-sm form-select-dark">
+                    <option value="MANAGER_PER_REQUEST">MANAGER_PER_REQUEST (Mặc định 500,000 VND)</option>
+                    <option value="MANAGER_DAILY">MANAGER_DAILY (Mặc định 2,000,000 VND)</option>
+                    <option value="CINEMA_DAILY">CINEMA_DAILY (Mặc định 5,000,000 VND)</option>
+                    <option value="INCIDENT_CUMULATIVE">INCIDENT_CUMULATIVE (Mặc định 10,000,000 VND)</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small text-secondary mb-1">Số tiền hạn mức mới (VND)</label>
+                  <input type="number" id="limitAmountVndInput" class="form-control form-control-sm form-control-dark" min="1" step="1000" placeholder="Ví dụ: 500000">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small text-secondary mb-1">Lý do thay đổi (Bắt buộc)</label>
+                  <input type="text" id="limitChangeReasonInput" class="form-control form-control-sm form-control-dark" placeholder="Nhập lý do điều chỉnh...">
+                </div>
+                <div class="col-md-2">
+                  <button id="btnSaveLimitConfig" type="button" class="btn btn-sm btn-warning w-100 fw-semibold">Lưu hạn mức</button>
+                </div>
+              </div>
+              <div id="limitConfigStatusMsg" class="d-none mt-2"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shared Refund Detail & Single Decision Panel -->
+        <div id="opsRefundDetailPanel" class="card bg-dark border-secondary p-3 d-none"></div>
+
+        <!-- Confirmation Modal for Single & Batch Payout Dispatch -->
+        <div id="payoutConfirmModal" class="d-none" role="dialog" aria-modal="true" style="position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1060;overflow-y:auto;padding:32px 16px;">
+          <div class="card bg-dark border-danger mx-auto p-4" style="max-width:860px;">
+            <h5 id="confirmModalTitle" class="text-white mb-2">Xác nhận duyệt chuyển tiền PayOS Payout</h5>
+            <div id="confirmPreflightBanner" class="alert alert-info py-2 small mb-2">
+              Chế độ: <strong>LIVE_PAYOUT_ENABLED=FALSE (MOCK)</strong> • Cam kết khách hàng nhận <strong>100% số tiền hoàn được duyệt</strong> (Không khấu trừ phí người nhận).
+            </div>
+            <div class="alert alert-warning py-2 small mb-3">
+              Kiểm tra kỹ danh sách người nhận, ngân hàng, tài khoản đã che, mô tả chuyển khoản, đánh giá phí và tổng số tiền trước khi xác nhận. Mỗi yêu cầu sẽ tạo <strong>01 lệnh Payout độc lập</strong> kèm Idempotency Key riêng.
+            </div>
+            <div class="d-flex gap-3 mb-3 small text-light flex-wrap">
+              <span>Số yêu cầu đủ điều kiện: <strong id="confirmSelectedCount" class="text-info">0</strong></span>
+              <span>Tổng số tiền dự kiến chuyển: <strong id="confirmSelectedTotal" class="text-warning">0 VND</strong></span>
+            </div>
+            <div id="confirmFeeBlockedBanner" class="alert alert-danger py-2 small d-none"></div>
+            <div id="confirmIneligibleWarning" class="alert alert-danger py-2 small d-none"></div>
+            <div class="table-responsive mb-3" style="max-height:280px;overflow-y:auto;">
+              <table class="table table-dark table-sm align-middle mb-0">
+                <thead>
+                  <tr><th>Mã yêu cầu</th><th>Đơn hàng / Rạp</th><th>Người nhận</th><th>Ngân hàng / Tài khoản / Phí</th><th>Số tiền (100% Nhận)</th></tr>
+                </thead>
+                <tbody id="confirmItemTableBody"></tbody>
+              </table>
+            </div>
+            <div id="confirmLimitOverrideBox" class="p-2 mb-3 rounded border border-warning small">
+              <div class="form-check mb-1">
+                <input type="checkbox" id="confirmLimitOverrideApproved" class="form-check-input">
+                <label for="confirmLimitOverrideApproved" class="form-check-label text-warning fw-semibold">
+                  Admin Limit Override: Cho phép vượt hạn mức ngày/sự cố khi tái kiểm tra lúc chi tiền (Ghi audit refund_limit_overrides)
+                </label>
+              </div>
+              <input type="text" id="confirmLimitOverrideReason" class="form-control form-control-sm form-control-dark" placeholder="Lý do Admin vượt hạn mức khi duyệt chi (bắt buộc nếu bật Override)...">
+            </div>
+            <textarea id="confirmNoteInput" class="form-control form-control-dark mb-3" rows="2" placeholder="Ghi chú duyệt chi của Admin (tùy chọn)..."></textarea>
+            <div id="confirmModalError" class="alert alert-danger py-2 small d-none"></div>
+            <div class="d-flex justify-content-end gap-2">
+              <button id="btnConfirmCancel" type="button" class="btn btn-outline-secondary">Hủy bỏ</button>
+              <button id="btnConfirmExecute" type="button" class="btn btn-success fw-semibold">Xác nhận chuyển tiền</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rejection Modal for Admin Payout Rejection -->
+        <div id="payoutRejectModal" class="d-none" role="dialog" aria-modal="true" style="position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1060;padding:48px 16px;">
+          <div class="card bg-dark border-danger mx-auto p-4" style="max-width:540px;">
+            <h5 class="text-white mb-2">Từ chối duyệt chuyển tiền</h5>
+            <div id="rejectRequestSummary" class="small text-secondary mb-3"></div>
+            <label for="rejectReasonInput" class="form-label small text-light">Lý do từ chối chuyển tiền (bắt buộc):</label>
+            <textarea id="rejectReasonInput" class="form-control form-control-dark mb-3" rows="3" placeholder="Nhập lý do từ chối cụ thể để lưu lịch sử và thông báo cho khách hàng..."></textarea>
+            <div id="rejectModalError" class="alert alert-danger py-2 small d-none"></div>
+            <div class="d-flex justify-content-end gap-2">
+              <button id="btnRejectCancel" type="button" class="btn btn-outline-secondary">Hủy</button>
+              <button id="btnRejectExecute" type="button" class="btn btn-danger fw-semibold">Xác nhận từ chối</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </div>
+  <script type="module" src="/js/modules/refund-ops.js?v=2.0" th:src="@{/js/modules/refund-ops.js(v='2.0')}"></script>
+<script type="module" src="/js/modules/live-payout.js?v=1.0" th:src="@{/js/modules/live-payout.js(v='1.0')}"></script>
+</body>
+</html>

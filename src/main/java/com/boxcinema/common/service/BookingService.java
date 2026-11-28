@@ -9,4 +9,8 @@ public interface BookingService {
     BookingResponseDto updateFoodItems(Long bookingId, UpdateFoodItemsRequestDto request, Long currentUserId);
     BookingResponseDto confirmBooking(Long bookingId, Long currentUserId);
     BookingResponseDto getBookingById(Long bookingId);
+    BookingResponseDto getBookingById(Long bookingId, Long currentUserId);
+    default BookingResponseDto applyVoucherToBooking(Long bookingId, String voucherCode, Long currentUserId) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
 }

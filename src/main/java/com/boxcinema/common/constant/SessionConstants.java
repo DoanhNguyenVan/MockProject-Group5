@@ -8,6 +8,7 @@ public final class SessionConstants {
     public static final String CURRENT_USER = "currentUser";
     public static final String REDIRECT_AFTER_LOGIN = "REDIRECT_AFTER_LOGIN";
     public static final String BOX_HOLD_SESSION_ID = "BOX_HOLD_SESSION_ID";
+    public static final String SESSION_GUEST_BOOKING_IDS = "BOX_GUEST_BOOKING_IDS";
 
     public static final String SESSION_OAUTH_STATE = "BOX_OAUTH_STATE";
     public static final String SESSION_OAUTH_NONCE = "BOX_OAUTH_NONCE";

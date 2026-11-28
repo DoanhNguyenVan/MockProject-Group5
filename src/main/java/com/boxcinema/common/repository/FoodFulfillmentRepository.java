@@ -18,6 +18,9 @@ public interface FoodFulfillmentRepository extends JpaRepository<FoodFulfillment
     List<FoodFulfillment> findByStatusOrderByCreatedAtAsc(String status);
     List<FoodFulfillment> findAllByOrderByCreatedAtDesc();
 
+    List<FoodFulfillment> findByCinema_CinemaIdOrderByCreatedAtDesc(Long cinemaId);
+    List<FoodFulfillment> findByCinema_CinemaIdAndStatusOrderByCreatedAtAsc(Long cinemaId, String status);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT ff FROM FoodFulfillment ff WHERE ff.id = :id")
     Optional<FoodFulfillment> findByIdForUpdate(@Param("id") Long id);

@@ -113,18 +113,8 @@ public class SecurityConfig {
                 .securityContext(sc -> sc.securityContextRepository(securityContextRepository))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(csrf -> csrf.ignoringRequestMatchers(
-                        "/api/quick-booking/**",
-                        "/api/booking/showtimes/**",
-                        "/admin/api/**",
-                        "/api/payments/**",
-                        "/api/bookings/**",
-                        "/api/customer/bookings/**",
-                        "/api/food/**",
-                        "/api/vouchers/**",
-                        "/api/staff/**",
-                        "/api/auth/**",
-                        "/api/public/**",
-                        "/api/account/**"))
+                        "/api/payments/payos/webhook",
+                        "/api/payments/payos/payout/webhook"))
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .exceptionHandling(ex -> ex
                         .defaultAuthenticationEntryPointFor(
@@ -140,6 +130,10 @@ public class SecurityConfig {
                                 AnyRequestMatcher.INSTANCE))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/oauth2/authorization/google-link").authenticated()
+                        .requestMatchers(
+                                "/api/refunds/public/evidence/**",
+                                "/api/refunds/evidence/**")
+                        .authenticated()
                         .requestMatchers(
                                 "/", "/home", "/about", "/contact", "/showtimes/**", "/movies/**",
                                 "/login", "/register", "/signup", "/verify-email", "/verify-email/**",
@@ -164,15 +158,18 @@ public class SecurityConfig {
                                 "/scan",
                                 "/ticket-scanner",
                                 "/api/public/**",
+                                "/api/refunds/public/**",
                                 "/api/food/**",
                                 "/api/vouchers/**",
+                                "/api/payments/payos/webhook",
+                                "/api/payments/payos/payout/webhook",
                                 "/api/payments/**",
                                 "/api/bookings/**",
                                 "/api/customer/bookings/**",
                                 "/css/**", "/js/**", "/assets/**", "/images/**", "/favicon.ico", "/error")
                         .permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/manager/**").hasAnyRole("MANAGER", "ADMIN")
+                        .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/manager/**", "/api/manager/**").hasAnyRole("MANAGER", "ADMIN")
                         .requestMatchers("/staff/**", "/api/staff/**").hasAnyRole("STAFF", "MANAGER", "ADMIN")
                         .requestMatchers(
                                 "/profile",
@@ -183,6 +180,7 @@ public class SecurityConfig {
                                 "/oauth2/link/google/**",
                                 "/oauth2/set-password/google/**",
                                 "/api/account/**",
+                                "/api/customer/bank-accounts/**",
                                 "/api/auth/google/**",
                                 "/api/auth/me",
                                 "/api/auth/logout",
@@ -252,7 +250,7 @@ public class SecurityConfig {
 
                 // Check for saved redirect after customer login (e.g. from seat selection)
                 String redirect = (String) session.getAttribute("REDIRECT_AFTER_LOGIN");
-                if (redirect != null && !redirect.isBlank() && redirect.startsWith("/")) {
+                if (isSafeRelativeRedirect(redirect)) {
                     session.removeAttribute("REDIRECT_AFTER_LOGIN");
                     response.sendRedirect(redirect);
                     return;
@@ -260,6 +258,16 @@ public class SecurityConfig {
             }
             delegate.onAuthenticationSuccess(request, response, authentication);
         };
+    }
+
+    private boolean isSafeRelativeRedirect(String redirect) {
+        return redirect != null
+                && !redirect.isBlank()
+                && redirect.startsWith("/")
+                && !redirect.startsWith("//")
+                && !redirect.startsWith("/\\")
+                && !redirect.contains("\r")
+                && !redirect.contains("\n");
     }
 
     @Bean

@@ -4,6 +4,7 @@ package com.boxcinema.admin.controller;
 import com.boxcinema.common.entity.Genre;
 import com.boxcinema.admin.service.GenreManagementService;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +12,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/admin/genres")
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminGenreController {
 
     private final GenreManagementService genreService;

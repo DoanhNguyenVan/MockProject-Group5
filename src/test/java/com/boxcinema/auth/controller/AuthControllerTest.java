@@ -422,6 +422,9 @@ public class AuthControllerTest {
                 mockMvc.perform(get("/profile"))
                                 .andExpect(status().is3xxRedirection())
                                 .andExpect(redirectedUrlPattern("**/login"));
+                mockMvc.perform(get("/account-settings"))
+                                .andExpect(status().is3xxRedirection())
+                                .andExpect(redirectedUrlPattern("**/login"));
                 mockMvc.perform(get("/auth/account/link/google"))
                                 .andExpect(status().is3xxRedirection())
                                 .andExpect(redirectedUrlPattern("**/login"));
@@ -442,7 +445,7 @@ public class AuthControllerTest {
                                 .with(user(principal))
                                 .with(csrf()))
                                 .andExpect(status().is3xxRedirection())
-                                .andExpect(redirectedUrl("/profile?linkStatus=error&linkError=RECENT_AUTH_REQUIRED"))
+                                .andExpect(redirectedUrl("/account-settings?linkStatus=error&linkError=RECENT_AUTH_REQUIRED"))
                                 .andExpect(flash().attribute("errorMessage", containsString("password")));
 
                 // Test G: Missing CSRF on POST /api/account/google-link/reauth & POST
@@ -505,7 +508,7 @@ public class AuthControllerTest {
                                 .param("code", "link-code-1")
                                 .param("state", "link-state-1"))
                                 .andExpect(status().is3xxRedirection())
-                                .andExpect(redirectedUrl("/profile?linkStatus=success"))
+                                .andExpect(redirectedUrl("/account-settings?linkStatus=success"))
                                 .andExpect(authenticated().withUsername("alex@boxcinema.com"))
                                 .andExpect(flash().attribute("successMessage",
                                                 containsString("connected successfully")));
@@ -519,7 +522,7 @@ public class AuthControllerTest {
                                 .param("code", "link-code-1")
                                 .param("state", "link-state-1"))
                                 .andExpect(status().is3xxRedirection())
-                                .andExpect(redirectedUrl("/profile?linkStatus=error&linkError=OAUTH_STATE_INVALID"));
+                                .andExpect(redirectedUrl("/account-settings?linkStatus=error&linkError=OAUTH_STATE_INVALID"));
 
                 // Test G (Expired State): OAuth state past expiration is rejected before
                 // exchanging code
@@ -550,7 +553,7 @@ public class AuthControllerTest {
                                 .param("state", "link-state-exp"))
                                 .andExpect(status().is3xxRedirection())
                                 .andExpect(redirectedUrl(
-                                                "/profile?linkStatus=error&linkError=LINK_TRANSACTION_EXPIRED"))
+                                                "/account-settings?linkStatus=error&linkError=LINK_TRANSACTION_EXPIRED"))
                                 .andExpect(flash().attribute("errorMessage", containsString("expired")));
                 verify(googleOidcService, never()).exchangeCodeAndVerifyIdToken(eq("code-exp"), anyString(),
                                 anyString(), any());
@@ -594,7 +597,7 @@ public class AuthControllerTest {
                                 .param("code", "code-wrong")
                                 .param("state", "link-state-wrong"))
                                 .andExpect(status().is3xxRedirection())
-                                .andExpect(redirectedUrl("/profile?linkStatus=error&linkError=GOOGLE_EMAIL_CONFLICT"))
+                                .andExpect(redirectedUrl("/account-settings?linkStatus=error&linkError=GOOGLE_EMAIL_CONFLICT"))
                                 .andExpect(authenticated().withUsername("alex@boxcinema.com"))
                                 .andExpect(flash().attribute("errorMessage", containsString("already associated")));
 
@@ -641,7 +644,7 @@ public class AuthControllerTest {
                                 .param("state", "link-state-hijack")
                                 .param("userId", "1"))
                                 .andExpect(status().is3xxRedirection())
-                                .andExpect(redirectedUrl("/profile?linkStatus=error&linkError=OAUTH_STATE_INVALID"))
+                                .andExpect(redirectedUrl("/account-settings?linkStatus=error&linkError=OAUTH_STATE_INVALID"))
                                 .andExpect(flash().attribute("errorMessage", containsString("OAuth state")));
                 verify(userService, never()).linkGoogleAccount(eq(2L), anyString(), anyString());
 
@@ -731,11 +734,11 @@ public class AuthControllerTest {
                                 .param("code", "code-shared-ok")
                                 .param("state", "link-state-shared-1"))
                                 .andExpect(status().is3xxRedirection())
-                                .andExpect(redirectedUrl("/profile?linkStatus=success"))
+                                .andExpect(redirectedUrl("/account-settings?linkStatus=success"))
                                 .andExpect(authenticated().withUsername("alex@boxcinema.com"));
                 verify(userService, times(1)).linkGoogleAccount(1L, "sub-shared-1", "alex@boxcinema.com");
 
-                // Cancel on shared callback preserves profile error redirect instead of
+                // Cancel on shared callback preserves account-settings error redirect instead of
                 // treating it as login cancel
                 when(googleOidcService.generateCryptographicToken())
                                 .thenReturn("tx-shared-2", "link-state-cancel", "link-nonce-cancel");
@@ -763,7 +766,7 @@ public class AuthControllerTest {
                                 .param("error", "access_denied")
                                 .param("state", "link-state-cancel"))
                                 .andExpect(status().is3xxRedirection())
-                                .andExpect(redirectedUrl("/profile?linkStatus=error&linkError=OAUTH_CANCELLED"));
+                                .andExpect(redirectedUrl("/account-settings?linkStatus=error&linkError=OAUTH_CANCELLED"));
 
                 // Google-only Set-Password re-auth also dispatches via shared
                 // /login/oauth2/code/google callback
@@ -795,7 +798,7 @@ public class AuthControllerTest {
                                 .param("code", "setpw-code-shared")
                                 .param("state", "setpw-state-shared"))
                                 .andExpect(status().is3xxRedirection())
-                                .andExpect(redirectedUrl("/profile?setPasswordReady=true"));
+                                .andExpect(redirectedUrl("/account-settings?setPasswordReady=true"));
                 verify(userService, times(1)).verifyGoogleSubOwnership(1L, "sub-shared-1");
         }
 
@@ -874,7 +877,7 @@ public class AuthControllerTest {
                                 .param("code", "spec-code-1")
                                 .param("state", "spec-state-1"))
                                 .andExpect(status().is3xxRedirection())
-                                .andExpect(redirectedUrl("/profile?linkStatus=success"))
+                                .andExpect(redirectedUrl("/account-settings?linkStatus=success"))
                                 .andExpect(authenticated().withUsername("alex@boxcinema.com"));
                 verify(userService, times(1)).linkGoogleAccount(1L, "sub-cross-work", "alex.work@gmail.com");
 
@@ -885,7 +888,7 @@ public class AuthControllerTest {
                                 .with(user(principal)))
                                 .andExpect(status().is3xxRedirection())
                                 .andExpect(redirectedUrl(
-                                                "/profile?linkStatus=error&linkError=LINK_TRANSACTION_ALREADY_USED"));
+                                                "/account-settings?linkStatus=error&linkError=LINK_TRANSACTION_ALREADY_USED"));
 
                 // 8. OIDC nonce invalid on callback -> redirects with OAUTH_NONCE_INVALID
                 when(googleOidcService.generateCryptographicToken()).thenReturn("tx-spec-nonce", "spec-state-nonce",
@@ -919,7 +922,7 @@ public class AuthControllerTest {
                                 .param("code", "bad-nonce-code")
                                 .param("state", "spec-state-nonce"))
                                 .andExpect(status().is3xxRedirection())
-                                .andExpect(redirectedUrl("/profile?linkStatus=error&linkError=OAUTH_NONCE_INVALID"));
+                                .andExpect(redirectedUrl("/account-settings?linkStatus=error&linkError=OAUTH_NONCE_INVALID"));
 
                 // 9. /api/account/google/unlink rejects Google-only user with
                 // CANNOT_UNLINK_LAST_AUTH_METHOD
@@ -971,15 +974,83 @@ public class AuthControllerTest {
                 .andExpect(redirectedUrl("/"))
                 .andExpect(authenticated().withUsername("alex@boxcinema.com"));
 
-                // 11. Account Settings /profile HTML uses Connect Google / Not connected
-                // without matching Gmail copy
-                mockMvc.perform(get("/profile").with(user(principal)))
+                // 11. Account Settings /account-settings HTML uses Connect Google / Not Connected
+                // without matching Gmail copy, while /profile renders Personal Info
+                mockMvc.perform(get("/account-settings").with(user(principal)))
                                 .andExpect(status().isOk())
                                 .andExpect(content().string(containsString("Connect Google")))
-                                .andExpect(content().string(containsString("Not connected")))
+                                .andExpect(content().string(containsString("Not Connected")))
                                 .andExpect(content()
                                                 .string(org.hamcrest.Matchers.not(containsString("matching Gmail"))))
                                 .andExpect(content()
                                                 .string(org.hamcrest.Matchers.not(containsString("Connected Gmail:"))));
+
+                mockMvc.perform(get("/profile").with(user(principal)))
+                                .andExpect(status().isOk())
+                                .andExpect(content().string(containsString("Profile Information")))
+                                .andExpect(content().string(containsString("/account-settings")));
+        }
+
+        @Test
+        void testChangePasswordPageAndApiEnforceAuthAndCsrf() throws Exception {
+                UserSummaryDto userDto = new UserSummaryDto(1L, "Alex Nguyen", "alex@boxcinema.com", "0901234567",
+                                "CUSTOMER");
+                BoxCinemaUserDetails principal = new BoxCinemaUserDetails(userDto);
+
+                // Page includes CSRF meta tags for fetch('/api/account/change-password')
+                mockMvc.perform(get("/profile/change-password").with(user(principal)))
+                                .andExpect(status().isOk())
+                                .andExpect(view().name("customer/change-password"))
+                                .andExpect(content().string(containsString("name=\"_csrf\"")))
+                                .andExpect(content().string(containsString("name=\"_csrf_header\"")));
+
+                // Unauthenticated POST with CSRF -> 401
+                mockMvc.perform(post("/api/account/change-password")
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"currentPassword\":\"Old@123\",\"newPassword\":\"New@123\",\"confirmPassword\":\"New@123\"}"))
+                                .andExpect(status().isUnauthorized());
+
+                // Authenticated POST without CSRF -> 403 Forbidden
+                mockMvc.perform(post("/api/account/change-password")
+                                .with(user(principal))
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"currentPassword\":\"Old@123\",\"newPassword\":\"New@123\",\"confirmPassword\":\"New@123\"}"))
+                                .andExpect(status().isForbidden());
+                verify(userService, never()).changePassword(anyLong(), anyString(), anyString(), anyString());
+
+                // Authenticated POST with CSRF -> 200 OK
+                mockMvc.perform(post("/api/account/change-password")
+                                .with(user(principal))
+                                .with(csrf())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"currentPassword\":\"Old@123\",\"newPassword\":\"New@123\",\"confirmPassword\":\"New@123\"}"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.success").value(true));
+                verify(userService, times(1)).changePassword(1L, "Old@123", "New@123", "New@123");
+        }
+
+        @Test
+        void testLoginRedirectRejectsOpenRedirects() throws Exception {
+                MockHttpSession unsafeSession = new MockHttpSession();
+                mockMvc.perform(get("/login")
+                                .session(unsafeSession)
+                                .param("redirect", "//evil.example/phish"))
+                                .andExpect(status().isOk());
+                assertNull(unsafeSession.getAttribute("REDIRECT_AFTER_LOGIN"));
+
+                MockHttpSession backslashSession = new MockHttpSession();
+                mockMvc.perform(get("/login")
+                                .session(backslashSession)
+                                .param("redirect", "/\\evil.example"))
+                                .andExpect(status().isOk());
+                assertNull(backslashSession.getAttribute("REDIRECT_AFTER_LOGIN"));
+
+                MockHttpSession safeSession = new MockHttpSession();
+                mockMvc.perform(get("/login")
+                                .session(safeSession)
+                                .param("redirect", "/booking/buy-tickets"))
+                                .andExpect(status().isOk());
+                assertEquals("/booking/buy-tickets", safeSession.getAttribute("REDIRECT_AFTER_LOGIN"));
         }
 }

@@ -7,6 +7,7 @@ public class PaymentStatusDto {
     private Long paymentId;
     private Long bookingId;
     private String bookingCode;
+    private String bookingStatus;
     private Long orderCode;
     private BigDecimal amount;
     private String status; // PENDING, PAID, FAILED, EXPIRED, REVIEW_REQUIRED
@@ -24,6 +25,8 @@ public class PaymentStatusDto {
     public void setBookingId(Long bookingId) { this.bookingId = bookingId; }
     public String getBookingCode() { return bookingCode; }
     public void setBookingCode(String bookingCode) { this.bookingCode = bookingCode; }
+    public String getBookingStatus() { return bookingStatus; }
+    public void setBookingStatus(String bookingStatus) { this.bookingStatus = bookingStatus; }
     public Long getOrderCode() { return orderCode; }
     public void setOrderCode(Long orderCode) { this.orderCode = orderCode; }
     public BigDecimal getAmount() { return amount; }

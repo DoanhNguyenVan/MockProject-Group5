@@ -1107,16 +1107,30 @@ function initQuickBooking(doc) {
   const dateSelect = doc.getElementById("qbDate");
   const timeSelect = doc.getElementById("qbTime");
 
+  function populateSelectOptions(selectEl, placeholder, items, getValue, getLabel) {
+    if (!selectEl) return;
+    selectEl.replaceChildren();
+    const defOpt = doc.createElement("option");
+    defOpt.value = "";
+    defOpt.textContent = placeholder;
+    selectEl.appendChild(defOpt);
+    for (const item of items) {
+      const opt = doc.createElement("option");
+      opt.value = String(getValue(item));
+      opt.textContent = String(getLabel(item));
+      selectEl.appendChild(opt);
+    }
+  }
+
   async function loadCinemasForMovie() {
     if (!cinemaSelect) return;
     const movieId = movieSelect ? movieSelect.value : "";
     try {
-      const url = movieId ? `/api/quick-booking/cinemas?movieId=${movieId}` : `/api/quick-booking/cinemas`;
+      const url = movieId ? `/api/quick-booking/cinemas?movieId=${encodeURIComponent(movieId)}` : `/api/quick-booking/cinemas`;
       const res = await fetch(url);
       if (res.ok) {
         const cinemas = await res.json();
-        cinemaSelect.innerHTML = '<option value="">-- Select cinema --</option>' +
-          cinemas.map(c => `<option value="${c.cinemaId}">${c.displayName}</option>`).join("");
+        populateSelectOptions(cinemaSelect, "-- Select cinema --", cinemas, c => c.cinemaId, c => c.displayName);
       }
     } catch {
       // ignore
@@ -1128,17 +1142,16 @@ function initQuickBooking(doc) {
     const movieId = movieSelect ? movieSelect.value : "";
     const cinemaId = cinemaSelect ? cinemaSelect.value : "";
     if (!movieId || !cinemaId) {
-      dateSelect.innerHTML = '<option value="">-- Select date --</option>';
-      if (timeSelect) timeSelect.innerHTML = '<option value="">-- Select showtime --</option>';
+      populateSelectOptions(dateSelect, "-- Select date --", [], () => "", () => "");
+      if (timeSelect) populateSelectOptions(timeSelect, "-- Select showtime --", [], () => "", () => "");
       return;
     }
 
     try {
-      const res = await fetch(`/api/quick-booking/dates?movieId=${movieId}&cinemaId=${cinemaId}`);
+      const res = await fetch(`/api/quick-booking/dates?movieId=${encodeURIComponent(movieId)}&cinemaId=${encodeURIComponent(cinemaId)}`);
       if (res.ok) {
         const dates = await res.json();
-        dateSelect.innerHTML = '<option value="">-- Select date --</option>' +
-          dates.map(d => `<option value="${d.value}">${d.label}</option>`).join("");
+        populateSelectOptions(dateSelect, "-- Select date --", dates, d => d.value, d => d.label);
         if (dates.length > 0) {
           dateSelect.value = dates[0].value;
           await loadShowtimes();
@@ -1155,19 +1168,18 @@ function initQuickBooking(doc) {
     const cinemaId = cinemaSelect ? cinemaSelect.value : "";
     const date = dateSelect ? dateSelect.value : "";
     if (!movieId || !cinemaId || !date) {
-      timeSelect.innerHTML = '<option value="">-- Select showtime --</option>';
+      populateSelectOptions(timeSelect, "-- Select showtime --", [], () => "", () => "");
       return;
     }
 
     try {
-      const res = await fetch(`/api/quick-booking/showtimes?movieId=${movieId}&cinemaId=${cinemaId}&date=${date}`);
+      const res = await fetch(`/api/quick-booking/showtimes?movieId=${encodeURIComponent(movieId)}&cinemaId=${encodeURIComponent(cinemaId)}&date=${encodeURIComponent(date)}`);
       if (res.ok) {
         const times = await res.json();
         if (times.length > 0) {
-          timeSelect.innerHTML = '<option value="">-- Select showtime --</option>' +
-            times.map(t => `<option value="${t.showtimeId}">${t.label}</option>`).join("");
+          populateSelectOptions(timeSelect, "-- Select showtime --", times, t => t.showtimeId, t => t.label);
         } else {
-          timeSelect.innerHTML = '<option value="">No showtimes available</option>';
+          populateSelectOptions(timeSelect, "No showtimes available", [], () => "", () => "");
         }
       }
     } catch {
@@ -1369,12 +1381,121 @@ export function initWelcomeCinemaModal(doc = document) {
   });
 }
 
+export function initMyVouchersModal(doc = document) {
+  if (typeof doc.querySelectorAll !== "function") return;
+  const triggers = doc.querySelectorAll("[data-my-vouchers-trigger]");
+  if (!triggers.length) return;
+
+  function ensureModal() {
+    let modal = doc.getElementById("myVouchersModal");
+    if (modal) return modal;
+    modal = doc.createElement("div");
+    modal.id = "myVouchersModal";
+    modal.className = "d-none";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1060;display:flex;align-items:center;justify-content:center;padding:16px;";
+
+    const card = doc.createElement("div");
+    card.className = "card bg-dark text-white border-secondary p-4";
+    card.style.cssText = "max-width:560px;width:100%;max-height:80vh;overflow-y:auto;";
+
+    const hdr = doc.createElement("div");
+    hdr.className = "d-flex justify-content-between align-items-center mb-3";
+    const title = doc.createElement("h5");
+    title.className = "mb-0 fw-bold";
+    title.textContent = "My Vouchers";
+    const closeBtn = doc.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "btn btn-sm btn-outline-secondary";
+    closeBtn.textContent = "✕";
+    closeBtn.onclick = () => modal.classList.add("d-none");
+    hdr.append(title, closeBtn);
+
+    const body = doc.createElement("div");
+    body.id = "myVouchersBody";
+    card.append(hdr, body);
+    modal.append(card);
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) modal.classList.add("d-none");
+    });
+    doc.body?.appendChild(modal);
+    return modal;
+  }
+
+  async function openMyVouchers(e) {
+    if (e) e.preventDefault();
+    const modal = ensureModal();
+    const body = doc.getElementById("myVouchersBody");
+    modal.classList.remove("d-none");
+    body.replaceChildren();
+    const loading = doc.createElement("div");
+    loading.className = "text-secondary small py-3";
+    loading.textContent = "Loading your vouchers...";
+    body.append(loading);
+
+    try {
+      const res = await fetch("/api/vouchers/my", { credentials: "same-origin" });
+      if (!res.ok) {
+        body.replaceChildren();
+        const err = doc.createElement("div");
+        err.className = "alert alert-warning small mb-0";
+        err.textContent = res.status === 401 ? "Please sign in to view your vouchers." : "Unable to load vouchers right now.";
+        body.append(err);
+        return;
+      }
+      const vouchers = await res.json();
+      body.replaceChildren();
+      if (!Array.isArray(vouchers) || !vouchers.length) {
+        const empty = doc.createElement("div");
+        empty.className = "text-secondary small py-3 text-center";
+        empty.textContent = "You have no active vouchers right now.";
+        body.append(empty);
+        return;
+      }
+      for (const v of vouchers) {
+        const row = doc.createElement("div");
+        row.className = "p-3 mb-2 rounded border border-secondary border-opacity-25 d-flex justify-content-between align-items-center gap-2";
+        const left = doc.createElement("div");
+        const codeEl = doc.createElement("div");
+        codeEl.className = "fw-bold font-monospace text-danger";
+        codeEl.textContent = v.voucherCode || "";
+        const nameEl = doc.createElement("div");
+        nameEl.className = "small text-white fw-semibold";
+        nameEl.textContent = v.promotionName || "";
+        const metaEl = doc.createElement("div");
+        metaEl.className = "small text-secondary";
+        const disc = v.discountType === "PERCENT"
+          ? `${v.discountValue}% off`
+          : `${Number(v.discountValue || 0).toLocaleString("vi-VN")} ₫ off`;
+        metaEl.textContent = `${disc} · Min order: ${Number(v.minOrderAmount || 0).toLocaleString("vi-VN")} ₫`;
+        left.append(codeEl, nameEl, metaEl);
+        row.append(left);
+        body.append(row);
+      }
+    } catch (_) {
+      body.replaceChildren();
+      const err = doc.createElement("div");
+      err.className = "alert alert-danger small mb-0";
+      err.textContent = "Network error while loading vouchers.";
+      body.append(err);
+    }
+  }
+
+  triggers.forEach(t => {
+    if (t.dataset.vouchersBound) return;
+    t.dataset.vouchersBound = "true";
+    t.addEventListener("click", openMyVouchers);
+  });
+}
+
 export function initHomeInteractions(doc = document) {
   initHeroRail(doc);
   initCatalogManager(doc);
   initTrailerModal(doc);
   initQuickBooking(doc);
   initWelcomeCinemaModal(doc);
+  initMyVouchersModal(doc);
 }
 
 if (typeof document !== "undefined") {

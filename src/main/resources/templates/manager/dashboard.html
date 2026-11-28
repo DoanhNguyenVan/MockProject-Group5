@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}" content="">
+  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}" content="X-CSRF-TOKEN">
+  <title>Manager Operations | BOX Cinema</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/main.css?v=20261113c" th:href="@{/css/main.css(v='20261113c')}">
+  <style>
+    body { background-color: var(--box-bg-primary); color: var(--box-text-primary); }
+    .mgr-wrap { max-width: 1280px; margin: 32px auto; padding: 0 16px; }
+    .mgr-card { background: var(--box-bg-card); border: 1px solid var(--box-border-color); border-radius: 12px; padding: 22px; margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+  <header th:replace="~{fragments/navbar :: navbar}"></header>
+  <main class="mgr-wrap" id="refundOpsRoot" data-role-scope="manager" data-ops-mode="all" th:attr="data-active-tab=${managerTab}">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <div>
+        <h1 class="h3 fw-bold text-white mb-1">Cinema Branch Manager Workspace</h1>
+        <p class="text-secondary mb-0">Branch-isolated Refund Screening, Two-Stage Limits &amp; Reservations, Customer Appeals, Incident Management &amp; Staff Error Logs</p>
+      </div>
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <span id="opsPayoutPreflightBadge" class="badge bg-secondary py-2 px-3">LIVE_PAYOUT_ENABLED: FALSE • Mode: MOCK</span>
+        <a href="/staff/checkin" class="btn btn-box-outline">Ticket Scanner</a>
+        <a href="/staff/food" class="btn btn-box-outline">Concessions</a>
+        <a href="/staff/incidents" class="btn btn-box-outline">Report Incident</a>
+      </div>
+    </div>
+
+    <!-- Branch & Manager Daily Approval Limits / Reservations Banner -->
+    <div id="opsLimitSummaryBanner" class="mgr-card py-3 mb-3">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+        <span class="fw-semibold text-info small">HẠN MỨC PHÊ DUYỆT &amp; ĐẶT CHỖ TÀI CHÍNH TRONG NGÀY (ASIA/HO_CHI_MINH)</span>
+        <button id="btnOpsReloadLimits" type="button" class="btn btn-sm btn-outline-info">Làm mới hạn mức</button>
+      </div>
+      <div id="opsLimitSummaryContent" class="small text-secondary">Đang tải hạn mức phê duyệt của Quản lý và Rạp...</div>
+    </div>
+
+    <ul class="nav nav-pills gap-2 mb-3">
+      <li class="nav-item"><button class="btn btn-sm btn-box-primary mgr-tab-btn active" data-bs-toggle="pill" data-bs-target="#mgr-refunds" type="button">Refund Requests</button></li>
+      <li class="nav-item"><button class="btn btn-sm btn-outline-info mgr-tab-btn" data-bs-toggle="pill" data-bs-target="#mgr-appeals" type="button">Customer Appeals</button></li>
+      <li class="nav-item"><button class="btn btn-sm btn-outline-warning mgr-tab-btn" data-bs-toggle="pill" data-bs-target="#mgr-incidents" type="button">Incident Verification</button></li>
+      <li class="nav-item"><button class="btn btn-sm btn-outline-secondary mgr-tab-btn" data-bs-toggle="pill" data-bs-target="#mgr-staff-errors" type="button">Staff Error Logs</button></li>
+    </ul>
+
+    <div class="tab-content">
+      <div class="tab-pane fade show active" id="mgr-refunds">
+        <div class="mgr-card">
+          <div class="row g-2 mb-3">
+            <div class="col-md-3"><input type="text" id="opsRefundSearch" class="form-control form-control-dark" placeholder="Search code, email, order..."></div>
+            <div class="col-md-3">
+              <select id="opsRefundStatusFilter" class="form-select form-select-dark">
+                <option value="">All Refund Statuses</option>
+                <option value="REQUESTED">REQUESTED (Mới yêu cầu)</option>
+                <option value="UNDER_REVIEW">UNDER_REVIEW (Đang thẩm định)</option>
+                <option value="APPROVED">APPROVED (Đã duyệt nghiệp vụ)</option>
+                <option value="PAYOUT_PENDING">PAYOUT_PENDING (Chờ duyệt chi)</option>
+                <option value="PROCESSING">PROCESSING (Đang xử lý chi)</option>
+                <option value="SUCCESS">SUCCESS (Hoàn tiền thành công)</option>
+                <option value="FAILED">FAILED (Chi thất bại)</option>
+                <option value="UNKNOWN">UNKNOWN (Chưa rõ kết quả - Cần đối soát)</option>
+                <option value="PAYOUT_BLOCKED">PAYOUT_BLOCKED (Chặn chi do phí/chính sách)</option>
+                <option value="PENDING_REVIEW">PENDING_REVIEW (Mới tiếp nhận)</option>
+                <option value="UNDER_VERIFICATION">UNDER_VERIFICATION (Đang xác minh)</option>
+                <option value="MORE_INFO_REQUIRED">MORE_INFO_REQUIRED (Chờ bổ sung)</option>
+                <option value="VERIFIED">VERIFIED (Đã xác minh)</option>
+                <option value="AWAITING_PAYOUT_APPROVAL">AWAITING_PAYOUT_APPROVAL (Chờ Admin duyệt chi)</option>
+                <option value="PAYOUT_APPROVED">PAYOUT_APPROVED (Admin đã duyệt chi)</option>
+                <option value="PAYOUT_PROCESSING">PAYOUT_PROCESSING (Đang chi tiền)</option>
+                <option value="PAYOUT_SUCCEEDED">PAYOUT_SUCCEEDED (Chi thành công)</option>
+                <option value="COMPLETED">COMPLETED (Hoàn tất)</option>
+                <option value="PAYOUT_FAILED">PAYOUT_FAILED (Chi thất bại)</option>
+                <option value="PAYOUT_REJECTED">PAYOUT_REJECTED (Admin từ chối chi)</option>
+                <option value="INELIGIBLE">INELIGIBLE (Không đủ điều kiện)</option>
+                <option value="REJECTED">REJECTED (Đã từ chối)</option>
+                <option value="CANCELLED">CANCELLED (Đã hủy)</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <select id="opsReasonFilter" class="form-select form-select-dark">
+                <option value="">All Incidents</option>
+                <option value="CINEMA_INCIDENT">CINEMA_INCIDENT</option>
+                <option value="PRODUCT_INCIDENT">PRODUCT_INCIDENT</option>
+                <option value="STAFF_ERROR">STAFF_ERROR</option>
+                <option value="UNDELIVERED_FOOD">UNDELIVERED_FOOD</option>
+                <option value="PAID_SEAT_CONFLICT">PAID_SEAT_CONFLICT</option>
+                <option value="OTHER">OTHER</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <select id="opsPayoutStatusFilter" class="form-select form-select-dark">
+                <option value="">All Payout Statuses</option>
+                <option value="PAYOUT_PENDING">PAYOUT_PENDING</option>
+                <option value="AWAITING_APPROVAL">AWAITING_APPROVAL</option>
+                <option value="PENDING">PENDING</option>
+                <option value="PROCESSING">PROCESSING</option>
+                <option value="SUCCESS">SUCCESS</option>
+                <option value="SUCCEEDED">SUCCEEDED</option>
+                <option value="FAILED">FAILED</option>
+                <option value="UNKNOWN">UNKNOWN</option>
+                <option value="PAYOUT_BLOCKED">PAYOUT_BLOCKED</option>
+                <option value="REJECTED">REJECTED</option>
+                <option value="CANCELLED">CANCELLED</option>
+              </select>
+            </div>
+            <div class="col-md-2"><button id="btnOpsReloadRefunds" class="btn btn-box-primary w-100">Filter</button></div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle mb-0">
+              <thead><tr><th>Code</th><th>Order / Branch</th><th>Email</th><th>Amount / Bank</th><th>Status</th><th>Payout / Voucher</th><th>Action</th></tr></thead>
+              <tbody id="opsRefundTableBody"></tbody>
+            </table>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mt-3">
+            <span id="opsRefundPageInfo" class="small text-secondary">Page 1</span>
+            <div class="d-flex gap-2">
+              <button id="opsRefundPrev" class="btn btn-sm btn-outline-secondary" type="button">Previous</button>
+              <button id="opsRefundNext" class="btn btn-sm btn-outline-secondary" type="button">Next</button>
+            </div>
+          </div>
+        </div>
+        <div id="opsRefundDetailPanel" class="mgr-card d-none"></div>
+      </div>
+
+      <!-- TAB: CUSTOMER REFUND APPEALS -->
+      <div class="tab-pane fade" id="mgr-appeals">
+        <div class="mgr-card">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div>
+              <h5 class="mb-0 text-white">Customer Refund Appeals (Kháng nghị yêu cầu hoàn tiền bị từ chối)</h5>
+              <div class="small text-secondary">Khi chấp nhận kháng nghị (APPEAL_ACCEPTED), yêu cầu hoàn tiền gốc sẽ quay về trạng thái UNDER_REVIEW (không tự động chi tiền).</div>
+            </div>
+            <div class="d-flex gap-2">
+              <select id="opsAppealStatusFilter" class="form-select form-select-sm form-select-dark">
+                <option value="">All Appeal Statuses</option>
+                <option value="APPEAL_SUBMITTED">APPEAL_SUBMITTED (Mới gửi kháng nghị)</option>
+                <option value="APPEAL_UNDER_REVIEW">APPEAL_UNDER_REVIEW (Đang xem xét)</option>
+                <option value="APPEAL_ACCEPTED">APPEAL_ACCEPTED (Đã chấp nhận -> UNDER_REVIEW)</option>
+                <option value="APPEAL_REJECTED">APPEAL_REJECTED (Đã bác kháng nghị)</option>
+              </select>
+              <button id="btnOpsReloadAppeals" type="button" class="btn btn-sm btn-outline-info">Refresh Appeals</button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Appeal Code</th>
+                  <th>Refund / Branch</th>
+                  <th>Customer Email</th>
+                  <th>Appeal Reason &amp; Evidence</th>
+                  <th>Appeal / Refund Status</th>
+                  <th>Reviewer / Time</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="opsAppealTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="opsAppealDetailPanel" class="mgr-card d-none"></div>
+      </div>
+
+      <div class="tab-pane fade" id="mgr-incidents">
+        <div class="mgr-card">
+          <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <h5 class="mb-0 text-white">Branch Incident Management (manager_admin)</h5>
+            <button id="btnToggleIncidentForm" type="button" class="btn btn-sm btn-warning">+ Tạo sự cố rạp mới</button>
+          </div>
+
+          <div id="opsIncidentFormCard" class="p-3 mb-3 rounded border border-warning d-none">
+            <h6 id="incFormHeading" class="text-warning mb-2">Tạo / Cập nhật sự cố tại rạp (Không tự động hoàn tiền)</h6>
+            <input type="hidden" id="incFormId" value="">
+            <div class="row g-2 mb-2">
+              <div class="col-md-3">
+                <label class="form-label small text-secondary mb-1">Nhóm sự cố</label>
+                <select id="incFormGroup" class="form-select form-select-sm form-select-dark">
+                  <option value="CINEMA_INCIDENT">CINEMA_INCIDENT</option>
+                  <option value="PRODUCT_INCIDENT">PRODUCT_INCIDENT</option>
+                  <option value="STAFF_ERROR">STAFF_ERROR</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small text-secondary mb-1">Loại sự cố (Type)</label>
+                <input type="text" id="incFormType" class="form-control form-control-sm form-control-dark" placeholder="PROJECTOR_FAILURE, SOUND_FAILURE...">
+              </div>
+              <div class="col-md-2">
+                <label class="form-label small text-secondary mb-1">Mức độ</label>
+                <select id="incFormSeverity" class="form-select form-select-sm form-select-dark">
+                  <option value="MEDIUM">MEDIUM</option>
+                  <option value="HIGH">HIGH</option>
+                  <option value="CRITICAL">CRITICAL</option>
+                  <option value="LOW">LOW</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small text-secondary mb-1">Thời điểm thông báo khách (customerNotifiedAt)</label>
+                <input type="datetime-local" id="incFormCustomerNotifiedAt" class="form-control form-control-sm form-control-dark">
+              </div>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-md-5">
+                <input type="text" id="incFormTitle" class="form-control form-control-sm form-control-dark" placeholder="Tiêu đề sự cố (bắt buộc)...">
+              </div>
+              <div class="col-md-2">
+                <input type="number" id="incFormShowtimeId" class="form-control form-control-sm form-control-dark" placeholder="Showtime ID">
+              </div>
+              <div class="col-md-3">
+                <input type="text" id="incFormBookingCode" class="form-control form-control-sm form-control-dark" placeholder="Booking Code (tùy chọn)">
+              </div>
+              <div class="col-md-2">
+                <input type="number" id="incFormAffectedQty" class="form-control form-control-sm form-control-dark" placeholder="Số lượng" min="1" value="1">
+              </div>
+            </div>
+            <div class="row g-2 mb-2">
+              <div class="col-md-8">
+                <textarea id="incFormDescription" class="form-control form-control-sm form-control-dark" rows="2" placeholder="Mô tả chi tiết nguyên nhân và phạm vi ảnh hưởng..."></textarea>
+              </div>
+              <div class="col-md-4">
+                <input type="text" id="incFormEvidenceUrl" class="form-control form-control-sm form-control-dark mb-1" placeholder="Evidence URL / Tên file minh chứng">
+                <div class="d-flex gap-2">
+                  <button id="btnSaveIncident" type="button" class="btn btn-sm btn-success w-100">Lưu sự cố</button>
+                  <button id="btnCancelIncidentEdit" type="button" class="btn btn-sm btn-outline-secondary">Đóng</button>
+                </div>
+              </div>
+            </div>
+            <div id="opsIncidentFormStatus" class="d-none"></div>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-md-4">
+              <select id="opsIncidentStatusFilter" class="form-select form-select-dark">
+                <option value="">All Incident Statuses</option>
+                <option value="PENDING_VERIFICATION">PENDING_VERIFICATION</option>
+                <option value="MORE_EVIDENCE_REQUIRED">MORE_EVIDENCE_REQUIRED</option>
+                <option value="VERIFIED">VERIFIED</option>
+                <option value="REJECTED">REJECTED</option>
+                <option value="APPEALED">APPEALED</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <select id="opsIncidentGroupFilter" class="form-select form-select-dark">
+                <option value="">All Groups</option>
+                <option value="CINEMA_INCIDENT">CINEMA_INCIDENT</option>
+                <option value="PRODUCT_INCIDENT">PRODUCT_INCIDENT</option>
+                <option value="STAFF_ERROR">STAFF_ERROR</option>
+              </select>
+            </div>
+            <div class="col-md-4"><button id="btnOpsReloadIncidents" class="btn btn-outline-warning w-100">Refresh Incidents</button></div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle mb-0">
+              <thead><tr><th>Code</th><th>Branch / Group</th><th>Title</th><th>Status</th><th>Decisions</th><th>Action</th></tr></thead>
+              <tbody id="opsIncidentTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="opsIncidentDetailPanel" class="mgr-card d-none"></div>
+      </div>
+
+      <div class="tab-pane fade" id="mgr-staff-errors">
+        <div class="mgr-card">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0 text-white">Staff Error Logs (Isolated from Refund History)</h5>
+            <button id="btnOpsReloadErrors" class="btn btn-sm btn-outline-secondary">Refresh</button>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle mb-0">
+              <thead><tr><th>Branch</th><th>Staff</th><th>Category</th><th>Reference</th><th>Description</th><th>Status</th></tr></thead>
+              <tbody id="opsStaffErrorTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer th:replace="~{fragments/footer :: footer}"></footer>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module" src="/js/modules/navbar.js?v=20261113a" th:src="@{/js/modules/navbar.js(v='20261113a')}"></script>
+  <script type="module" src="/js/modules/refund-ops.js?v=2.0" th:src="@{/js/modules/refund-ops.js(v='2.0')}"></script>
+</body>
+</html>

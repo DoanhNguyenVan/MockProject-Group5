@@ -18,5 +18,9 @@ public interface AdminWorkspaceService {
 
     Map<String, Object> deleteRecord(String section, Long id);
 
+    default Map<String, Object> deleteRecord(String section, String id) {
+        return deleteRecord(section, Long.valueOf(id));
+    }
+
     Map<String, Object> saveRoomSeats(Long roomId, List<Map<String, Object>> seats);
 }

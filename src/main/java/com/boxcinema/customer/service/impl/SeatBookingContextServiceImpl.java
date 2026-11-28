@@ -16,12 +16,16 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Timestamp;
 import java.text.Normalizer;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 public class SeatBookingContextServiceImpl implements SeatBookingContextService {
@@ -115,7 +119,7 @@ public class SeatBookingContextServiceImpl implements SeatBookingContextService 
                         Map<String, Object> map = new LinkedHashMap<>();
                         map.put("id", String.valueOf(rs.getLong("seat_type_id")));
                         map.put("typeName", rs.getString("type_name"));
-                        map.put("surcharge", rs.getDouble("price_surcharge"));
+                        map.put("surcharge", rs.getBigDecimal("price_surcharge") != null ? rs.getBigDecimal("price_surcharge") : BigDecimal.ZERO);
                         map.put("description", rs.getString("description"));
                         map.put("shapeType", rs.getString("shape_type"));
                         return map;
@@ -155,7 +159,8 @@ public class SeatBookingContextServiceImpl implements SeatBookingContextService 
                     "FROM booking_seats bs " +
                     "JOIN bookings b ON bs.booking_id = b.booking_id " +
                     "LEFT JOIN showtime_seats ss ON bs.showtime_seat_id = ss.showtime_seat_id " +
-                    "WHERE b.showtime_id = ? AND b.booking_status IN ('CONFIRMED', 'PENDING', 'PAID')",
+                    "WHERE b.showtime_id = ? AND (b.booking_status IN ('CONFIRMED', 'PAID') " +
+                    "OR (b.booking_status IN ('PENDING', 'PENDING_PAYMENT') AND (b.payment_deadline IS NULL OR b.payment_deadline > NOW())))",
                     rs -> {
                         String label = rs.getString("seat_label_snapshot");
                         if (label != null && !label.isBlank()) {
@@ -208,37 +213,11 @@ public class SeatBookingContextServiceImpl implements SeatBookingContextService 
         } catch (Exception ignored) {
         }
 
-        int basePriceInt = showtime.getBasePrice() != null ? showtime.getBasePrice().intValue() : 9000;
+        BigDecimal basePrice = showtime.getBasePrice() != null ? showtime.getBasePrice() : BigDecimal.valueOf(90000);
+        int basePriceInt = basePrice.setScale(0, RoundingMode.HALF_UP).intValue();
         List<Map<String, Object>> seats = new ArrayList<>();
 
-        if (seatRows.isEmpty()) {
-            for (int r = 0; r < 7; r++) {
-                String rowLetter = String.valueOf((char) ('A' + r));
-                for (int c = 1; c <= 10; c++) {
-                    Map<String, Object> seat = new LinkedHashMap<>();
-                    String seatId = rowLetter + c;
-                    String typeUpper = (r >= 2 && r <= 5) ? "VIP" : (r == 6 ? "SWEETBOX" : "STANDARD");
-                    String shape = (r >= 2 && r <= 5) ? "vip" : (r == 6 ? "sweetbox" : "standard");
-                    Map<String, Object> meta = seatTypeMetaMap.getOrDefault(typeUpper, Map.of(
-                            "name", typeUpper, "slug", typeUpper.toLowerCase(), "shapeType", shape
-                    ));
-                    seat.put("id", seatId);
-                    seat.put("row", rowLetter);
-                    seat.put("number", c);
-                    seat.put("type", meta.get("name"));
-                    seat.put("typeSlug", meta.get("slug"));
-                    seat.put("shapeType", meta.getOrDefault("shapeType", shape));
-                    seat.put("price", basePriceInt + ((r >= 2 && r <= 5) ? 3000 : (r == 6 ? 5000 : 0)));
-                    seat.put("status", bookedSeatLabels.contains(seatId) ? "BOOKED" : "AVAILABLE");
-                    seat.put("aisleAfter", c == 5);
-                    if (r == 6) {
-                        int firstCol = (c % 2 == 1) ? c : (c - 1);
-                        seat.put("pairId", "G" + firstCol + "-G" + (firstCol + 1));
-                    }
-                    seats.add(seat);
-                }
-            }
-        } else {
+        if (!seatRows.isEmpty()) {
             for (Map<String, Object> rowMap : seatRows) {
                 Long physicalSeatId = (Long) rowMap.get("seatId");
                 String rowLetter = (String) rowMap.get("row");
@@ -247,7 +226,10 @@ public class SeatBookingContextServiceImpl implements SeatBookingContextService 
                 String rawTypeName = (String) rowMap.get("typeName");
                 String seatTypeId = (String) rowMap.get("seatTypeId");
                 String upper = rawTypeName != null ? rawTypeName.trim().toUpperCase() : "STANDARD";
-                double surcharge = (double) rowMap.get("surcharge");
+                Object rawSurcharge = rowMap.get("surcharge");
+                BigDecimal surcharge = rawSurcharge instanceof BigDecimal bd
+                        ? bd
+                        : (rawSurcharge instanceof Number n ? BigDecimal.valueOf(n.doubleValue()) : BigDecimal.ZERO);
 
                 Map<String, Object> meta = seatTypeMetaMap.get(seatTypeId);
                 if (meta == null) meta = seatTypeMetaMap.get(upper);
@@ -278,7 +260,7 @@ public class SeatBookingContextServiceImpl implements SeatBookingContextService 
                 seat.put("number", number);
                 seat.put("type", typeName);
                 seat.put("typeSlug", typeSlug);
-                seat.put("price", basePriceInt + (int) Math.round(surcharge));
+                seat.put("price", basePrice.add(surcharge).setScale(0, RoundingMode.HALF_UP).intValue());
                 seat.put("rawStatus", dbStatus);
                 seat.put("shapeType", rowMap.get("shapeType") != null ? rowMap.get("shapeType") : meta.getOrDefault("shapeType", "standard"));
                 seat.put("pairId", rowMap.get("pairId"));
@@ -452,8 +434,6 @@ public class SeatBookingContextServiceImpl implements SeatBookingContextService 
             return error(HttpStatus.SERVICE_UNAVAILABLE, "DB_UNAVAILABLE", "Database connection is required to hold seats.");
         }
 
-        cleanupExpiredHolds();
-
         Showtime showtime = showtimes.findById(showtimeId).orElse(null);
         if (showtime == null || !"ACTIVE".equalsIgnoreCase(showtime.getStatus())) {
             return error(HttpStatus.NOT_FOUND, "SHOWTIME_NOT_FOUND", "Showtime does not exist or has been discontinued.");
@@ -489,9 +469,7 @@ public class SeatBookingContextServiceImpl implements SeatBookingContextService 
 
         if (requestedSeatIds.isEmpty()) {
             releaseCallerHolds(showtimeId, callerUserId, callerSessionId);
-            if (seatRealtimePushService != null) {
-                seatRealtimePushService.broadcastSeatUpdate(showtimeId, "SEAT_RELEASED");
-            }
+            broadcastAfterCommit(showtimeId, "SEAT_RELEASED");
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "showtimeId", String.valueOf(showtimeId),
@@ -532,7 +510,7 @@ public class SeatBookingContextServiceImpl implements SeatBookingContextService 
         }
 
         List<Long> targetPhysicalSeatIds = new ArrayList<>();
-        List<String> normalizedSeatLabels = new ArrayList<>();
+        Map<Long, String> seatIdToLabel = new LinkedHashMap<>();
         for (String reqLabel : requestedSeatIds) {
             Map<String, Object> seatRow = labelToSeatMap.get(reqLabel);
             if (seatRow == null) {
@@ -549,11 +527,17 @@ public class SeatBookingContextServiceImpl implements SeatBookingContextService 
             }
             Long dbSeatId = (Long) seatRow.get("seatId");
             String activeLabel = (String) seatRow.get("activeLabel");
-            if (!targetPhysicalSeatIds.contains(dbSeatId)) {
+            if (!seatIdToLabel.containsKey(dbSeatId)) {
                 targetPhysicalSeatIds.add(dbSeatId);
-                normalizedSeatLabels.add(activeLabel);
+                seatIdToLabel.put(dbSeatId, activeLabel);
             }
         }
+        Collections.sort(targetPhysicalSeatIds);
+        List<String> normalizedSeatLabels = targetPhysicalSeatIds.stream().map(seatIdToLabel::get).toList();
+
+        // Serialize missing-row creation & seat holds per showtime to prevent InnoDB gap-lock insert deadlocks
+        jdbcTemplate.queryForList("SELECT showtime_id FROM showtimes WHERE showtime_id = ? FOR UPDATE", showtimeId);
+        cleanupExpiredHoldsForShowtime(showtimeId);
 
         Set<String> bookedLabels = new HashSet<>();
         try {
@@ -561,7 +545,8 @@ public class SeatBookingContextServiceImpl implements SeatBookingContextService 
                     "SELECT bs.seat_label_snapshot " +
                     "FROM booking_seats bs " +
                     "JOIN bookings b ON bs.booking_id = b.booking_id " +
-                    "WHERE b.showtime_id = ? AND b.booking_status IN ('CONFIRMED', 'PENDING', 'PAID')",
+                    "WHERE b.showtime_id = ? AND (b.booking_status IN ('CONFIRMED', 'PAID') " +
+                    "OR (b.booking_status IN ('PENDING', 'PENDING_PAYMENT', 'HOLDING', 'DRAFT') AND (COALESCE(b.payment_deadline, b.expires_at) IS NULL OR COALESCE(b.payment_deadline, b.expires_at) > NOW())))",
                     rs -> {
                         String lbl = rs.getString("seat_label_snapshot");
                         if (lbl != null) bookedLabels.add(lbl.trim().toUpperCase());
@@ -572,9 +557,9 @@ public class SeatBookingContextServiceImpl implements SeatBookingContextService 
         }
 
         List<String> conflictingSeats = new ArrayList<>();
-        for (int i = 0; i < targetPhysicalSeatIds.size(); i++) {
-            Long dbSeatId = targetPhysicalSeatIds.get(i);
-            String label = normalizedSeatLabels.get(i);
+        Set<Long> existingRowSeatIds = new HashSet<>();
+        for (Long dbSeatId : targetPhysicalSeatIds) {
+            String label = seatIdToLabel.get(dbSeatId);
             if (bookedLabels.contains(label)) {
                 conflictingSeats.add(label);
                 continue;
@@ -582,7 +567,7 @@ public class SeatBookingContextServiceImpl implements SeatBookingContextService 
             List<Map<String, Object>> existingRows = jdbcTemplate.query(
                     "SELECT seat_status, held_by_user_id, hold_session_id, " +
                     "       TIMESTAMPDIFF(SECOND, NOW(), hold_expires_at) AS rem_sec " +
-                    "FROM showtime_seats WHERE showtime_id = ? AND seat_id = ?",
+                    "FROM showtime_seats WHERE showtime_id = ? AND seat_id = ? FOR UPDATE",
                     (rs, rowNum) -> {
                         Map<String, Object> m = new HashMap<>();
                         m.put("status", rs.getString("seat_status"));
@@ -594,6 +579,7 @@ public class SeatBookingContextServiceImpl implements SeatBookingContextService 
                     showtimeId, dbSeatId
             );
             if (!existingRows.isEmpty()) {
+                existingRowSeatIds.add(dbSeatId);
                 Map<String, Object> existing = existingRows.get(0);
                 String st = (String) existing.get("status");
                 long remSec = (Long) existing.get("remSec");
@@ -618,14 +604,15 @@ public class SeatBookingContextServiceImpl implements SeatBookingContextService 
         }
 
         boolean resetTimer = body != null && Boolean.TRUE.equals(body.get("resetTimer"));
+        int serverMaxHoldSeconds = defaultHoldDurationSeconds > 0 ? defaultHoldDurationSeconds : DEFAULT_HOLD_DURATION_SECONDS;
         Integer requestedDuration = null;
         if (body != null && body.get("durationSeconds") instanceof Number num) {
-            requestedDuration = Math.max(5, Math.min(1800, num.intValue()));
+            requestedDuration = Math.max(5, Math.min(serverMaxHoldSeconds, num.intValue()));
         }
 
         int holdSeconds = requestedDuration != null
                 ? requestedDuration
-                : (defaultHoldDurationSeconds > 0 ? defaultHoldDurationSeconds : DEFAULT_HOLD_DURATION_SECONDS);
+                : serverMaxHoldSeconds;
 
         LocalDateTime expiresAt = null;
         if (!resetTimer && requestedDuration == null) {
@@ -656,17 +643,26 @@ public class SeatBookingContextServiceImpl implements SeatBookingContextService 
         Timestamp expiresTimestamp = Timestamp.valueOf(expiresAt);
         for (Long dbSeatId : targetPhysicalSeatIds) {
             String tokenHash = CryptoUtils.sha256(showtimeId + ":" + dbSeatId + ":" + callerSessionId + ":" + callerUserId);
-            jdbcTemplate.update(
-                    "INSERT INTO showtime_seats (showtime_id, seat_id, seat_status, hold_token_hash, held_by_user_id, hold_session_id, hold_expires_at) " +
-                    "VALUES (?, ?, 'HELD', ?, ?, ?, ?) " +
-                    "ON DUPLICATE KEY UPDATE " +
-                    "    seat_status = 'HELD', " +
-                    "    hold_token_hash = VALUES(hold_token_hash), " +
-                    "    held_by_user_id = VALUES(held_by_user_id), " +
-                    "    hold_session_id = VALUES(hold_session_id), " +
-                    "    hold_expires_at = VALUES(hold_expires_at)",
-                    showtimeId, dbSeatId, tokenHash, callerUserId, callerSessionId, expiresTimestamp
-            );
+            if (existingRowSeatIds.contains(dbSeatId)) {
+                jdbcTemplate.update(
+                        "UPDATE showtime_seats SET seat_status = 'HELD', hold_token_hash = ?, held_by_user_id = ?, hold_session_id = ?, hold_expires_at = ? WHERE showtime_id = ? AND seat_id = ?",
+                        tokenHash, callerUserId, callerSessionId, expiresTimestamp, showtimeId, dbSeatId
+                );
+            } else {
+                try {
+                    jdbcTemplate.update(
+                            "INSERT INTO showtime_seats (showtime_id, seat_id, seat_status, hold_token_hash, held_by_user_id, hold_session_id, hold_expires_at) VALUES (?, ?, 'HELD', ?, ?, ?, ?)",
+                            showtimeId, dbSeatId, tokenHash, callerUserId, callerSessionId, expiresTimestamp
+                    );
+                } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                            "success", false,
+                            "errorCode", "SEAT_ALREADY_HELD_OR_BOOKED",
+                            "conflictingSeats", List.of(seatIdToLabel.get(dbSeatId)),
+                            "message", "Seat(s) " + seatIdToLabel.get(dbSeatId) + " were just held or booked by another customer. Please choose other seats."
+                    ));
+                }
+            }
         }
 
         long remainingSeconds = Math.max(1L, Duration.between(LocalDateTime.now(), expiresAt).getSeconds());
@@ -680,9 +676,7 @@ public class SeatBookingContextServiceImpl implements SeatBookingContextService 
         result.put("holdDurationSeconds", holdSeconds);
         result.put("message", "Successfully held seat(s) " + String.join(", ", normalizedSeatLabels) + ".");
 
-        if (seatRealtimePushService != null) {
-            seatRealtimePushService.broadcastSeatUpdate(showtimeId, "SEAT_HELD");
-        }
+        broadcastAfterCommit(showtimeId, "SEAT_HELD");
 
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
@@ -699,15 +693,29 @@ public class SeatBookingContextServiceImpl implements SeatBookingContextService 
             return error(HttpStatus.UNAUTHORIZED, "ACCOUNT_NOT_AUTHENTICATED", "Please sign in to select and reserve seats.");
         }
         int released = releaseCallerHolds(showtimeId, callerUserId, callerSessionId);
-        if (seatRealtimePushService != null) {
-            seatRealtimePushService.broadcastSeatUpdate(showtimeId, "SEAT_RELEASED");
-        }
+        broadcastAfterCommit(showtimeId, "SEAT_RELEASED");
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "showtimeId", String.valueOf(showtimeId),
                 "releasedCount", released,
                 "message", "Held seats have been released."
         ));
+    }
+
+    private void broadcastAfterCommit(Long showtimeId, String reason) {
+        if (seatRealtimePushService == null || showtimeId == null) {
+            return;
+        }
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    seatRealtimePushService.broadcastSeatUpdate(showtimeId, reason);
+                }
+            });
+        } else {
+            seatRealtimePushService.broadcastSeatUpdate(showtimeId, reason);
+        }
     }
 
     private static String slugify(String text) {
@@ -732,6 +740,24 @@ public class SeatBookingContextServiceImpl implements SeatBookingContextService 
                     "    hold_expires_at = NULL " +
                     "WHERE seat_status = 'HELD' " +
                     "  AND (hold_expires_at IS NULL OR hold_expires_at <= NOW())"
+            );
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void cleanupExpiredHoldsForShowtime(Long showtimeId) {
+        if (jdbcTemplate == null || showtimeId == null) return;
+        try {
+            jdbcTemplate.update(
+                    "UPDATE showtime_seats " +
+                    "SET seat_status = 'AVAILABLE', " +
+                    "    hold_token_hash = NULL, " +
+                    "    held_by_user_id = NULL, " +
+                    "    hold_session_id = NULL, " +
+                    "    hold_expires_at = NULL " +
+                    "WHERE showtime_id = ? AND seat_status = 'HELD' " +
+                    "  AND (hold_expires_at IS NULL OR hold_expires_at <= NOW())",
+                    showtimeId
             );
         } catch (Exception ignored) {
         }
@@ -796,7 +822,7 @@ public class SeatBookingContextServiceImpl implements SeatBookingContextService 
                         map.put("seatStatus", rs.getString("seat_status"));
                         map.put("pairId", rs.getString("pair_id"));
                         map.put("typeName", rs.getString("type_name"));
-                        map.put("surcharge", rs.getDouble("price_surcharge"));
+                        map.put("surcharge", rs.getBigDecimal("price_surcharge") != null ? rs.getBigDecimal("price_surcharge") : BigDecimal.ZERO);
                         map.put("shapeType", rs.getString("shape_type"));
                         return map;
                     },

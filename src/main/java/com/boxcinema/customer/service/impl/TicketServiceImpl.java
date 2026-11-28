@@ -37,10 +37,10 @@ public class TicketServiceImpl implements TicketService {
     private final QrCodeService qrCodeService;
     private final PaymentRepository paymentRepository;
 
-    @Value("${payos.checksum-key:BOX_CINEMA_DEFAULT_SECURE_PAYOS_KEY_2026_@!#}")
+    @Value("${app.qr.encryption-key:${payos.collection.checksum-key:${payos.checksum-key:BOX_CINEMA_DEFAULT_SECURE_PAYOS_KEY_2026_@!#}}}")
     private String checksumKey;
 
-    @Value("${app.public-base-url:https://absence-turret-chapped.ngrok-free.dev}")
+    @Value("${app.public-base-url:http://localhost:8080}")
     private String publicBaseUrl;
 
     public TicketServiceImpl(
@@ -79,14 +79,49 @@ public class TicketServiceImpl implements TicketService {
             Long ownerId = booking.getUser().getUserId();
             if (!ownerId.equals(currentUserId)) {
                 User user = userRepository.findById(currentUserId).orElse(null);
-                if (user == null || (!"ADMIN".equalsIgnoreCase(user.getRole())
-                        && !"STAFF".equalsIgnoreCase(user.getRole())
-                        && !"MANAGER".equalsIgnoreCase(user.getRole()))) {
+                if (user == null || !hasStaffOrAdminBranchAccess(user, booking)) {
                     throw new AccessDeniedException(
                             "You do not have permission to access QR code or ticket details for this order.");
                 }
             }
+            return;
         }
+        // Guest booking: require ADMIN/branch-scoped MANAGER/STAFF, session BOX_GUEST_BOOKING_IDS, or X-Booking-Code
+        if (currentUserId != null) {
+            User user = userRepository.findById(currentUserId).orElse(null);
+            if (user != null && hasStaffOrAdminBranchAccess(user, booking)) {
+                return;
+            }
+        }
+        if (com.boxcinema.common.util.SecurityContextUtils.hasGuestBookingAccess(booking)) {
+            return;
+        }
+        throw new AccessDeniedException(
+                "You do not have permission to access QR code or ticket details for this order.");
+    }
+
+    private boolean hasStaffOrAdminBranchAccess(User actor, Booking booking) {
+        if (actor == null || actor.getRole() == null) {
+            return false;
+        }
+        String role = actor.getRole().trim().toUpperCase(Locale.ROOT);
+        if ("ADMIN".equals(role)) {
+            return true;
+        }
+        if ("STAFF".equals(role) || "MANAGER".equals(role)) {
+            Long branchId = actor.getCinemaId();
+            Long bookingCinemaId = booking.resolveCinemaId();
+            return branchId != null && branchId.equals(bookingCinemaId);
+        }
+        return false;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BookingTicketViewDto getTicketViewForOutbox(Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
+        return buildTicketViewDto(booking);
     }
 
     @Override
@@ -95,9 +130,12 @@ public class TicketServiceImpl implements TicketService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
 
-        if (currentUserId != null) {
-            validateBookingAccess(booking, currentUserId);
-        }
+        validateBookingAccess(booking, currentUserId);
+        return buildTicketViewDto(booking);
+    }
+
+    private BookingTicketViewDto buildTicketViewDto(Booking booking) {
+        Long bookingId = booking.getBookingId();
 
         BookingTicketViewDto dto = new BookingTicketViewDto();
         dto.setBookingId(booking.getBookingId());
@@ -191,11 +229,7 @@ public class TicketServiceImpl implements TicketService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
 
-        if (currentUserId != null) {
-            if (currentUserId != null) {
-            validateBookingAccess(booking, currentUserId);
-        }
-        }
+        validateBookingAccess(booking, currentUserId);
 
         return bookingQrService.getBookingQrPngBytes(bookingId);
     }
@@ -205,11 +239,7 @@ public class TicketServiceImpl implements TicketService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found: " + bookingId));
 
-        if (currentUserId != null) {
-            if (currentUserId != null) {
-            validateBookingAccess(booking, currentUserId);
-        }
-        }
+        validateBookingAccess(booking, currentUserId);
 
         if (!"CONFIRMED".equalsIgnoreCase(booking.getBookingStatus())) {
             throw new IllegalStateException("Emails can only be resent for successfully confirmed bookings.");
@@ -239,14 +269,6 @@ public class TicketServiceImpl implements TicketService {
         }
 
         List<Booking> bookings = bookingRepository.findByUser_UserIdOrderByBookedAtDesc(userId);
-        if (bookings.isEmpty()) {
-            User user = userRepository.findById(userId).orElse(null);
-            if (user != null && ("ADMIN".equalsIgnoreCase(user.getRole())
-                    || "STAFF".equalsIgnoreCase(user.getRole())
-                    || "MANAGER".equalsIgnoreCase(user.getRole()))) {
-                bookings = bookingRepository.findAll(Sort.by(Sort.Direction.DESC, "bookedAt"));
-            }
-        }
 
         List<BookingHistoryItemDto> historyList = new ArrayList<>();
         for (Booking b : bookings) {
@@ -288,7 +310,9 @@ public class TicketServiceImpl implements TicketService {
             item.setTotalAmount(total);
             item.setTotalAmountFormatted(formatVnd(total));
 
-            long pts = Math.max(100L, Math.round(total.doubleValue() / 60.0));
+            boolean pointsEligible = "CONFIRMED".equalsIgnoreCase(b.getBookingStatus())
+                    || "PAID".equalsIgnoreCase(b.getBookingStatus());
+            long pts = pointsEligible ? Math.max(100L, Math.round(total.doubleValue() / 60.0)) : 0L;
             item.setRewardPointsFormatted(String.format(Locale.US, "%.1f", (double) pts));
 
             item.setBookingStatus(b.getBookingStatus());
@@ -305,11 +329,7 @@ public class TicketServiceImpl implements TicketService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found with id: " + bookingId));
 
-        if (currentUserId != null) {
-            if (currentUserId != null) {
-            validateBookingAccess(booking, currentUserId);
-        }
-        }
+        validateBookingAccess(booking, currentUserId);
 
         BookingHistoryDetailDto dto = new BookingHistoryDetailDto();
         dto.setBookingId(booking.getBookingId());
@@ -382,16 +402,20 @@ public class TicketServiceImpl implements TicketService {
         dto.setComboCount(totalComboQty);
         dto.setComboText(combos.isEmpty() ? "None" : String.join(", ", combos));
 
-        // Total & Points
+        // Total & Points (only shown for CONFIRMED/PAID bookings per PBOA-04)
         BigDecimal total = booking.getTotalAmount() != null ? booking.getTotalAmount() : BigDecimal.ZERO;
         dto.setTotalAmount(total);
         dto.setTotalAmountFormatted(formatVnd(total));
 
-        long pts = Math.max(100L, Math.round(total.doubleValue() / 60.0));
+        boolean pointsEligible = "CONFIRMED".equalsIgnoreCase(booking.getBookingStatus())
+                || "PAID".equalsIgnoreCase(booking.getBookingStatus());
+        long pts = pointsEligible ? Math.max(100L, Math.round(total.doubleValue() / 60.0)) : 0L;
         dto.setRewardPointsFormatted(String.valueOf(pts));
 
         // Payment info
-        Optional<Payment> paymentOpt = paymentRepository.findByBooking_BookingId(bookingId);
+        Optional<Payment> paymentOpt = paymentRepository
+                .findFirstByBooking_BookingIdAndPaymentStatusOrderByPaymentIdDesc(bookingId, "PAID")
+                .or(() -> paymentRepository.findTopByBooking_BookingIdOrderByPaymentIdDesc(bookingId));
         if (paymentOpt.isPresent()) {
             Payment p = paymentOpt.get();
             String method = p.getPaymentMethod();
@@ -403,22 +427,35 @@ public class TicketServiceImpl implements TicketService {
             dto.setPaymentStatus(p.getPaymentStatus() != null ? p.getPaymentStatus() : "PAID");
         } else {
             dto.setPaymentMethod("QR_PAYMENT");
-            dto.setPaymentStatus("PAID");
+            dto.setPaymentStatus("CONFIRMED".equalsIgnoreCase(booking.getBookingStatus()) ? "PAID" : "UNPAID");
         }
 
         // Checkin status
         Optional<BookingCheckin> checkinOpt = checkinRepository.findByBooking_BookingId(bookingId);
         dto.setCheckinStatus(checkinOpt.isPresent() ? "CHECKED_IN" : "PENDING");
 
-        // QR Code generation (the exact check-in QR code sent to Gmail)
-        try {
-            byte[] qrBytes = getBookingQrImage(bookingId, currentUserId);
-            if (qrBytes != null && qrBytes.length > 0) {
-                String b64 = java.util.Base64.getEncoder().encodeToString(qrBytes);
-                dto.setQrCodeDataUri("data:image/png;base64," + b64);
+        // QR Code generation (pure read-only inside readOnly tx: never write DB/disk)
+        if ("CONFIRMED".equalsIgnoreCase(booking.getBookingStatus())) {
+            try {
+                Optional<BookingQr> bQrOpt = bookingQrRepository.findByBooking_BookingId(bookingId);
+                if (bQrOpt.isPresent() && !"REVOKED".equalsIgnoreCase(bQrOpt.get().getStatus())) {
+                    BookingQr bQr = bQrOpt.get();
+                    String url = bQr.getTicketUrl();
+                    if ((url == null || url.isBlank()) && bQr.getTokenEncrypted() != null) {
+                        String rawToken = com.boxcinema.common.util.CryptoUtils.decryptAes(bQr.getTokenEncrypted(), checksumKey);
+                        String base = (publicBaseUrl != null && !publicBaseUrl.isBlank()) ? publicBaseUrl.replaceAll("/+$", "") : "http://localhost:8080";
+                        url = base + "/t/" + rawToken;
+                    }
+                    if (url != null && !url.isBlank()) {
+                        byte[] qrBytes = qrCodeService.generateQrPng(url, 300, 300);
+                        if (qrBytes != null && qrBytes.length > 0) {
+                            dto.setQrCodeDataUri("data:image/png;base64," + java.util.Base64.getEncoder().encodeToString(qrBytes));
+                        }
+                    }
+                }
+            } catch (Exception ignored) {
+                // QR might not exist
             }
-        } catch (Exception ignored) {
-            // QR might not exist for non-confirmed bookings
         }
 
         return dto;

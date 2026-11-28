@@ -116,9 +116,62 @@
         </div>
       </div>
     </div>
+
+    <!-- Saved Refund Bank Accounts -->
+    <div class="profile-card mb-4" id="customerBankAccountsRoot">
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 pb-2 border-bottom border-secondary border-opacity-25">
+        <div>
+          <h2 class="h5 fw-bold text-white mb-0">Saved Refund Bank Accounts</h2>
+          <p class="small text-secondary mb-0">Encrypted and masked for fast, secure PayOS refund payouts.</p>
+        </div>
+      </div>
+
+      <div id="bankAccountsStatus" class="d-none" role="alert" aria-live="polite"></div>
+      <div id="savedBankAccountsList" class="mb-4"></div>
+
+      <form id="savedBankAccountForm" class="p-3 rounded border border-secondary border-opacity-25">
+        <h3 class="h6 fw-bold text-white mb-3" id="bankFormTitle">Add New Bank Account</h3>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label for="savedBankBin" class="form-label small text-secondary fw-semibold">Recipient Bank (BIN) *</label>
+            <select id="savedBankBin" class="form-select form-select-dark" required></select>
+          </div>
+          <div class="col-md-6">
+            <label for="savedBankHolder" class="form-label small text-secondary fw-semibold">Account Holder Name *</label>
+            <input type="text" id="savedBankHolder" class="form-control form-control-dark" required placeholder="NGUYEN VAN A">
+          </div>
+          <div class="col-md-6">
+            <label for="savedBankAccountNumber" class="form-label small text-secondary fw-semibold">Bank Account Number *</label>
+            <input type="text" id="savedBankAccountNumber" class="form-control form-control-dark" autocomplete="off" required placeholder="6–19 digits">
+          </div>
+          <div class="col-md-6">
+            <label for="savedBankAccountConfirm" class="form-label small text-secondary fw-semibold">Confirm Bank Account Number *</label>
+            <input type="text" id="savedBankAccountConfirm" class="form-control form-control-dark" autocomplete="off" required placeholder="Re-enter bank account number">
+            <div id="savedBankConfirmError" class="small text-danger mt-1 d-none"></div>
+          </div>
+          <div class="col-12">
+            <label for="savedBankNote" class="form-label small text-secondary">Bank Branch / Note (Optional)</label>
+            <input type="text" id="savedBankNote" class="form-control form-control-dark" placeholder="Ghi chú ngân hàng / chi nhánh (tùy chọn)">
+          </div>
+          <div class="col-12">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="savedBankDefault">
+              <label class="form-check-label small text-secondary" for="savedBankDefault">
+                Set as default refund bank account
+              </label>
+            </div>
+          </div>
+          <div class="col-12 d-flex gap-2">
+            <button type="submit" id="btnSaveBankAccount" class="btn btn-box-primary btn-sm px-4">Save Bank Account</button>
+            <button type="button" id="btnCancelEditBankAccount" class="btn btn-outline-secondary btn-sm px-3 d-none">Cancel Edit</button>
+          </div>
+        </div>
+      </form>
+    </div>
   </main>
 
   <footer th:replace="~{fragments/footer :: footer}"></footer>
+  <script type="module" src="/js/modules/customer-bank-accounts.js" th:src="@{/js/modules/customer-bank-accounts.js(v='1.0')}"></script>
 </body>
 
 </html>

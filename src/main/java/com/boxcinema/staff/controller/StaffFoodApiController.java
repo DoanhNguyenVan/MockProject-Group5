@@ -1,14 +1,16 @@
 package com.boxcinema.staff.controller;
 
-import com.boxcinema.staff.dto.response.FoodFulfillmentDto;
-import com.boxcinema.staff.dto.request.FoodFulfillmentStatusUpdateRequestDto;
-import com.boxcinema.staff.service.FoodFulfillmentService;
 import com.boxcinema.common.util.SecurityContextUtils;
+import com.boxcinema.refund.dto.StaffFoodActionRequestDto;
+import com.boxcinema.staff.dto.request.FoodFulfillmentStatusUpdateRequestDto;
+import com.boxcinema.staff.dto.response.FoodFulfillmentDto;
+import com.boxcinema.staff.service.FoodFulfillmentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/staff/food-fulfillments")
@@ -23,12 +25,21 @@ public class StaffFoodApiController {
 
     @GetMapping
     public ResponseEntity<List<FoodFulfillmentDto>> getOrders(@RequestParam(required = false) String status) {
-        return ResponseEntity.ok(foodFulfillmentService.getOrders(status));
+        Long staffUserId = SecurityContextUtils.resolveCurrentUserId();
+        return ResponseEntity.ok(foodFulfillmentService.getOrdersForActor(status, staffUserId));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<FoodFulfillmentDto> getOrderById(@PathVariable Long id) {
-        return ResponseEntity.ok(foodFulfillmentService.getOrderById(id));
+        Long staffUserId = SecurityContextUtils.resolveCurrentUserId();
+        return ResponseEntity.ok(foodFulfillmentService.getOrderByIdForActor(id, staffUserId));
+    }
+
+    @PostMapping("/scan")
+    public ResponseEntity<FoodFulfillmentDto> scanOrder(@RequestBody Map<String, String> payload) {
+        Long staffUserId = SecurityContextUtils.resolveCurrentUserId();
+        String code = payload != null ? payload.getOrDefault("qrPayload", payload.get("code")) : null;
+        return ResponseEntity.ok(foodFulfillmentService.scanOrder(code, staffUserId));
     }
 
     @PatchMapping("/{id}/status")
@@ -44,5 +55,14 @@ public class StaffFoodApiController {
                 staffUserId
         );
         return ResponseEntity.ok(updated);
+    }
+
+    @PostMapping("/{id}/deliver")
+    public ResponseEntity<FoodFulfillmentDto> recordDeliveryAction(
+            @PathVariable Long id,
+            @RequestBody StaffFoodActionRequestDto request
+    ) {
+        Long staffUserId = SecurityContextUtils.resolveCurrentUserId();
+        return ResponseEntity.ok(foodFulfillmentService.recordDeliveryAction(id, request, staffUserId));
     }
 }

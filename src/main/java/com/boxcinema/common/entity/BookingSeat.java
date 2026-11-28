@@ -22,6 +22,15 @@ public class BookingSeat {
     @Column(name = "unit_price", nullable = false, precision = 12, scale = 2)
     private BigDecimal unitPrice;
 
+    @Column(name = "gross_price", nullable = false, precision = 12, scale = 2)
+    private BigDecimal grossPrice = BigDecimal.ZERO;
+
+    @Column(name = "discount_allocated", nullable = false, precision = 12, scale = 2)
+    private BigDecimal discountAllocated = BigDecimal.ZERO;
+
+    @Column(name = "net_paid_amount", nullable = false, precision = 12, scale = 2)
+    private BigDecimal netPaidAmount = BigDecimal.ZERO;
+
     @Column(name = "seat_label_snapshot", nullable = false, length = 20)
     private String seatLabelSnapshot;
 
@@ -37,6 +46,8 @@ public class BookingSeat {
         this.booking = booking;
         this.showtimeSeatId = showtimeSeatId;
         this.unitPrice = unitPrice;
+        this.grossPrice = unitPrice != null ? unitPrice : BigDecimal.ZERO;
+        this.netPaidAmount = this.grossPrice;
         this.seatLabelSnapshot = seatLabelSnapshot;
         this.status = status;
     }
@@ -52,6 +63,15 @@ public class BookingSeat {
 
     public BigDecimal getUnitPrice() { return unitPrice; }
     public void setUnitPrice(BigDecimal unitPrice) { this.unitPrice = unitPrice; }
+
+    public BigDecimal getGrossPrice() { return grossPrice; }
+    public void setGrossPrice(BigDecimal grossPrice) { this.grossPrice = grossPrice; }
+
+    public BigDecimal getDiscountAllocated() { return discountAllocated; }
+    public void setDiscountAllocated(BigDecimal discountAllocated) { this.discountAllocated = discountAllocated; }
+
+    public BigDecimal getNetPaidAmount() { return netPaidAmount; }
+    public void setNetPaidAmount(BigDecimal netPaidAmount) { this.netPaidAmount = netPaidAmount; }
 
     public String getSeatLabelSnapshot() { return seatLabelSnapshot; }
     public void setSeatLabelSnapshot(String seatLabelSnapshot) { this.seatLabelSnapshot = seatLabelSnapshot; }

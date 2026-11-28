@@ -347,7 +347,7 @@ public class V12SecurityIntegrationTest {
                             .param("code", "code-mm")
                             .param("state", stateMismatch))
                     .andExpect(status().is3xxRedirection())
-                    .andExpect(redirectedUrl("/profile?linkStatus=error&linkError=GOOGLE_EMAIL_CONFLICT"))
+                    .andExpect(redirectedUrl("/account-settings?linkStatus=error&linkError=GOOGLE_EMAIL_CONFLICT"))
                     .andExpect(authenticated().withUsername(emailA));
             assertNull(userRepository.findById(idA).orElseThrow().getGoogleId());
 
@@ -374,7 +374,7 @@ public class V12SecurityIntegrationTest {
                                         .param("state", stateConflict))
                                         .andExpect(status().is3xxRedirection())
                                         .andExpect(redirectedUrl(
-                                                        "/profile?linkStatus=error&linkError=GOOGLE_IDENTITY_ALREADY_LINKED"));
+                                                        "/account-settings?linkStatus=error&linkError=GOOGLE_IDENTITY_ALREADY_LINKED"));
                         assertNull(userRepository.findById(idA).orElseThrow().getGoogleId());
 
             // 4. Recent password login (< 5m) allows /api/account/google/link/start -> /oauth2/authorization/google-link -> /login/oauth2/code/google-link
@@ -405,7 +405,7 @@ public class V12SecurityIntegrationTest {
                             .param("code", "code-ok")
                             .param("state", stateOk))
                     .andExpect(status().is3xxRedirection())
-                    .andExpect(redirectedUrl("/profile?linkStatus=success"))
+                    .andExpect(redirectedUrl("/account-settings?linkStatus=success"))
                     .andExpect(authenticated().withUsername(emailA));
 
             User linkedA = userRepository.findById(idA).orElseThrow();
@@ -461,7 +461,7 @@ public class V12SecurityIntegrationTest {
                                         .param("code", "code-wrong-sub")
                                         .param("state", setPwState))
                                         .andExpect(status().is3xxRedirection())
-                                        .andExpect(redirectedUrl("/profile?setPasswordError=GOOGLE_SUB_MISMATCH"));
+                                        .andExpect(redirectedUrl("/account-settings?setPasswordError=GOOGLE_SUB_MISMATCH"));
 
             // 7. Account B cannot unlink last auth method (CANNOT_UNLINK_LAST_AUTH_METHOD);
             // Account A can unlink via /api/account/google/unlink & still log in via password

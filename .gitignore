@@ -18,8 +18,14 @@ target/
 Thumbs.db
 
 ### Local Environment & Secrets ###
+.env
+.env.*
 src/main/resources/application-local.properties
+src/main/resources/application-live.properties
+src/main/resources/application-prod.properties
 application-local.properties
+application-live.properties
+application-prod.properties
 *.local.properties
  
 uploads/*

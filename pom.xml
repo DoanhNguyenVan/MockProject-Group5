@@ -92,10 +92,37 @@
   </dependencies>
 
   <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <excludes>
+          <exclude>application-local.properties</exclude>
+          <exclude>application-live.properties</exclude>
+          <exclude>application-prod.properties</exclude>
+          <exclude>*.local.properties</exclude>
+        </excludes>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables>
+            <spring.datasource.url>jdbc:mysql://localhost:3306/box_cinema_test?useSSL=false&amp;serverTimezone=Asia/Ho_Chi_Minh&amp;allowPublicKeyRetrieval=true&amp;characterEncoding=UTF-8</spring.datasource.url>
+            <DB_URL>jdbc:mysql://localhost:3306/box_cinema_test?useSSL=false&amp;serverTimezone=Asia/Ho_Chi_Minh&amp;allowPublicKeyRetrieval=true&amp;characterEncoding=UTF-8</DB_URL>
+            <payos.collection.mode>MOCK</payos.collection.mode>
+            <PAYOS_COLLECTION_MODE>MOCK</PAYOS_COLLECTION_MODE>
+            <payos.payout.mode>MOCK</payos.payout.mode>
+            <PAYOS_PAYOUT_MODE>MOCK</PAYOS_PAYOUT_MODE>
+            <payos.collection.allow-simulate>false</payos.collection.allow-simulate>
+            <PAYOS_COLLECTION_ALLOW_SIMULATE>false</PAYOS_COLLECTION_ALLOW_SIMULATE>
+          </systemPropertyVariables>
+        </configuration>
       </plugin>
     </plugins>
   </build>

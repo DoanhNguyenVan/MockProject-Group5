@@ -86,10 +86,8 @@ public class EmailServiceImpl implements EmailService {
   @Override
   public boolean sendInquiryConfirmationEmail(String toEmail, String fullName, Long inquiryId, String topic,
       String userMessage) {
-    log.info("=================================================================");
-    log.info("[CONTACT INQUIRY CONFIRMATION] Recipient: {} ({}) | Ticket #BOX-REQ-{} | Topic: {}",
-        fullName, toEmail, inquiryId, topic);
-    log.info("=================================================================");
+    log.info("[CONTACT INQUIRY CONFIRMATION] Recipient: {} | Ticket #BOX-REQ-{} | Topic: {}",
+        com.boxcinema.auth.service.AuthAuditService.maskEmail(toEmail), inquiryId, sanitizeLog(topic));
 
     String subject = "BOX Cinema - Support Inquiry Received [#BOX-REQ-" + inquiryId + "]";
     return sendHtmlEmail(
@@ -125,7 +123,8 @@ public class EmailServiceImpl implements EmailService {
 
   @Override
   public boolean sendPasswordResetConfirmationEmail(String toEmail, String fullName) {
-    log.info("[PASSWORD RESET ALERT] Recipient: {} ({})", fullName, toEmail);
+    log.info("[PASSWORD RESET ALERT] Recipient: {}",
+        com.boxcinema.auth.service.AuthAuditService.maskEmail(toEmail));
 
     return sendHtmlEmail(
         toEmail,
@@ -177,7 +176,8 @@ public class EmailServiceImpl implements EmailService {
     }
 
     if (!isSmtpConfigured()) {
-      log.info("SMTP credentials or JavaMailSender are not configured. Skipping live email dispatch to {}.", toEmail);
+      log.info("SMTP credentials or JavaMailSender are not configured. Skipping live email dispatch to {}.",
+          com.boxcinema.auth.service.AuthAuditService.maskEmail(toEmail));
       return false;
     }
 
@@ -194,7 +194,7 @@ public class EmailServiceImpl implements EmailService {
         helper.setTo(toEmail.trim());
       }
 
-      helper.setSubject(subject);
+      helper.setSubject(sanitizeHeader(subject));
       helper.setSentDate(new java.util.Date());
 
       // Multipart plain-text + HTML: Clean deliverability score for Gmail outbound queue
@@ -209,13 +209,22 @@ public class EmailServiceImpl implements EmailService {
       mimeMessage.setHeader("Message-ID", "<" + java.util.UUID.randomUUID() + "@boxcinema.vn>");
 
       mailSender.send(mimeMessage);
-      log.info("Successfully dispatched email '{}' to {} via {} (JavaMailSender).", subject, toEmail, smtpHost);
+      log.info("Successfully dispatched email '{}' to {} via {} (JavaMailSender).",
+          sanitizeLog(subject), com.boxcinema.auth.service.AuthAuditService.maskEmail(toEmail), smtpHost);
       return true;
     } catch (MailException | MessagingException | UnsupportedEncodingException ex) {
       log.warn("Failed to dispatch email '{}' to {} via {} (JavaMailSender): {}",
-          subject, toEmail, smtpHost, ex.getMessage());
+          sanitizeLog(subject), com.boxcinema.auth.service.AuthAuditService.maskEmail(toEmail), smtpHost, sanitizeLog(ex.getMessage()));
       return false;
     }
+  }
+
+  private String sanitizeHeader(String raw) {
+    return raw == null ? "" : raw.replace("\r", " ").replace("\n", " ").trim();
+  }
+
+  private String sanitizeLog(String raw) {
+    return raw == null ? "" : raw.replace("\r", "\\r").replace("\n", "\\n");
   }
 
   private boolean isSmtpConfigured() {

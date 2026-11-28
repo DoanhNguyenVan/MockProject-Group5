@@ -121,7 +121,9 @@
           <p class="text-secondary small mb-0">Booking Code: <span class="text-white font-monospace fw-bold" th:text="${detail.bookingCode}">BOX-20261116-3484</span></p>
         </div>
         <div class="d-flex align-items-center gap-2">
-          <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25 px-3 py-1.5 fs-7 fw-bold" th:text="${detail.bookingStatus}">
+          <span class="badge px-3 py-1.5 fs-7 fw-bold border"
+                th:classappend="${detail.bookingStatus == 'CONFIRMED' ? 'bg-success bg-opacity-25 text-success border-success border-opacity-25' : ((detail.bookingStatus == 'PENDING_PAYMENT' or detail.bookingStatus == 'PAID_SEAT_CONFLICT' or detail.bookingStatus == 'PAYMENT_REVIEW') ? 'bg-warning bg-opacity-25 text-warning border-warning border-opacity-25' : 'bg-danger bg-opacity-25 text-danger border-danger border-opacity-25')}"
+                th:text="${detail.bookingStatus}">
             CONFIRMED
           </span>
         </div>
@@ -198,7 +200,9 @@
           <div class="detail-item-row align-items-center">
             <span class="detail-item-label">Status:</span>
             <span class="detail-item-value">
-              <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25 px-2.5 py-1">
+              <span class="badge border px-2.5 py-1"
+                    th:classappend="${(detail.paymentStatus == 'PAID' or detail.paymentStatus == 'COMPLETED') ? 'bg-success bg-opacity-25 text-success border-success border-opacity-25' : ((detail.paymentStatus == 'PENDING' or detail.paymentStatus == 'REVIEW_REQUIRED') ? 'bg-warning bg-opacity-25 text-warning border-warning border-opacity-25' : 'bg-danger bg-opacity-25 text-danger border-danger border-opacity-25')}"
+                    th:text="${detail.paymentStatus != null ? detail.paymentStatus : 'UNKNOWN'}">
                 PAID
               </span>
             </span>
@@ -211,14 +215,14 @@
         </div>
       </div>
 
-      <!-- Right Column: Check-in QR Code Card -->
+      <!-- Right Column: Check-in QR Code Card (only when CONFIRMED and QR is ready) -->
       <div class="col-lg-5">
-        <div class="profile-card text-center">
+        <div class="profile-card text-center" th:if="${detail.bookingStatus == 'CONFIRMED' and detail.qrCodeDataUri != null}">
           <h2 class="h5 fw-bold text-white mb-1">Check-in QR Code</h2>
           <p class="text-secondary small mb-3">Present this code at the cinema counter or gate</p>
 
           <div class="qr-card-box my-2">
-            <img th:src="${detail.qrCodeDataUri != null ? detail.qrCodeDataUri : '/api/customer/bookings/' + detail.bookingId + '/ticket/qr'}"
+            <img th:src="${detail.qrCodeDataUri}"
                  alt="BOX Cinema Check-in QR Code"
                  width="230"
                  height="230">
@@ -235,6 +239,35 @@
               <path d="M15 12h.01"></path>
             </svg>
             <span>View Full E-Ticket</span>
+          </a>
+
+          <a th:if="${detail.bookingStatus == 'CONFIRMED' or detail.bookingStatus == 'PAID_SEAT_CONFLICT' or detail.bookingStatus == 'PAYMENT_REVIEW' or detail.bookingStatus == 'PARTIALLY_REFUNDED'}"
+             th:href="@{/contact(tab='refund', orderCode=${detail.bookingCode}, email=${session.currentUser != null ? session.currentUser.email : (currentUser != null ? currentUser.email : '')})}"
+             id="btnBookingDetailRequestRefund"
+             class="btn btn-outline-danger btn-sm w-100 py-2 mt-2 d-inline-flex align-items-center justify-content-center gap-2 text-decoration-none">
+            <span>Request Refund / Issue Support</span>
+          </a>
+        </div>
+
+        <div class="profile-card text-center" th:unless="${detail.bookingStatus == 'CONFIRMED' and detail.qrCodeDataUri != null}">
+          <h2 class="h5 fw-bold text-white mb-2">Ticket Status</h2>
+          <div th:if="${detail.bookingStatus == 'PAID_SEAT_CONFLICT'}" class="alert alert-warning text-start small mb-3">
+            <strong>Payment Received — Seat Conflict:</strong> Your seat hold expired before payment completed and seats were taken by another order. No ticket QR was issued; you are eligible for a full refund.
+          </div>
+          <div th:if="${detail.bookingStatus == 'PAYMENT_REVIEW'}" class="alert alert-warning text-start small mb-3">
+            <strong>Payment Under Verification:</strong> This payment is undergoing manual verification. Please contact support if you need assistance.
+          </div>
+          <div th:if="${detail.bookingStatus == 'PENDING_PAYMENT'}" class="alert alert-warning text-start small mb-3">
+            <strong>Payment Pending:</strong> This booking has not been confirmed yet. Check-in QR will be issued once payment succeeds.
+          </div>
+          <div th:if="${detail.bookingStatus != 'PAID_SEAT_CONFLICT' and detail.bookingStatus != 'PAYMENT_REVIEW' and detail.bookingStatus != 'PENDING_PAYMENT'}" class="alert alert-danger text-start small mb-3">
+            <strong>Booking Not Active (<span th:text="${detail.bookingStatus}">EXPIRED</span>):</strong> No check-in QR code is available for this booking.
+          </div>
+          <a th:if="${detail.bookingStatus == 'CONFIRMED' or detail.bookingStatus == 'PAID_SEAT_CONFLICT' or detail.bookingStatus == 'PAYMENT_REVIEW' or detail.bookingStatus == 'PARTIALLY_REFUNDED'}"
+             th:href="@{/contact(tab='refund', orderCode=${detail.bookingCode}, email=${session.currentUser != null ? session.currentUser.email : (currentUser != null ? currentUser.email : '')})}"
+             id="btnBookingDetailRequestRefund"
+             class="btn btn-warning btn-sm w-100 fw-semibold">
+            Request Refund / Issue Support
           </a>
         </div>
       </div>

@@ -15,8 +15,12 @@ public class FoodFulfillment {
     @JoinColumn(name = "booking_id", nullable = false, unique = true)
     private Booking booking;
 
-    @Column(nullable = false, length = 20)
-    private String status = "QUEUED"; // QUEUED, PREPARING, READY, PICKED_UP, CANCELLED
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cinema_id")
+    private Cinema cinema;
+
+    @Column(nullable = false, length = 30)
+    private String status = "QUEUED"; // QUEUED, PREPARING, READY, PICKED_UP, PARTIAL_DELIVERED, ISSUE_REPORTED, CANCELLED
 
     @Column(name = "fulfillment_type", nullable = false, length = 30)
     private String fulfillmentType = "COUNTER_PICKUP";
@@ -42,6 +46,14 @@ public class FoodFulfillment {
 
     @Column(columnDefinition = "TEXT")
     private String note;
+
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt = LocalDateTime.now();
+
+    @PreUpdate
+    public void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 
     public FoodFulfillment() {}
 
@@ -83,4 +95,10 @@ public class FoodFulfillment {
 
     public String getNote() { return note; }
     public void setNote(String note) { this.note = note; }
+
+    public Cinema getCinema() { return cinema; }
+    public void setCinema(Cinema cinema) { this.cinema = cinema; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

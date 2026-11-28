@@ -1,4 +1,3 @@
-USE box_cinema;
 SET NAMES utf8mb4;
 
 -- 1. Update bookings table columns
@@ -136,6 +135,18 @@ PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 SET @col_exists := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payments' AND COLUMN_NAME = 'expired_at');
 SET @sql := IF(@col_exists = 0, 'ALTER TABLE payments ADD COLUMN expired_at DATETIME NULL AFTER paid_at', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payments' AND COLUMN_NAME = 'bin');
+SET @sql := IF(@col_exists = 0, 'ALTER TABLE payments ADD COLUMN bin VARCHAR(20) NULL AFTER expired_at', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payments' AND COLUMN_NAME = 'account_number');
+SET @sql := IF(@col_exists = 0, 'ALTER TABLE payments ADD COLUMN account_number VARCHAR(50) NULL AFTER bin', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payments' AND COLUMN_NAME = 'account_name');
+SET @sql := IF(@col_exists = 0, 'ALTER TABLE payments ADD COLUMN account_name VARCHAR(100) NULL AFTER account_number', 'SELECT 1');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- 5. Payment Webhook Event (Idempotency & Auditing)

@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}" content="">
+  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}" content="X-CSRF-TOKEN">
   <title>Kitchen Fulfillment (KDS) | BOX Cinema Staff</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/css/main.css?v=20261113c" th:href="@{/css/main.css(v='20261113c')}">
@@ -117,10 +119,19 @@
         <h2 class="h3 font-weight-bold text-white mb-1">Kitchen Display System &amp; Concessions (KDS)</h2>
         <p class="text-white-50 mb-0">Real-time concession preparation and fulfillment management (BR-11, BR-14)</p>
       </div>
-      <div>
-        <a href="/staff/checkin" class="btn btn-box-outline me-2">← Ticket Check-in</a>
+      <div class="d-flex gap-2">
+        <a href="/staff/checkin" class="btn btn-box-outline">← Ticket Check-in</a>
+        <a href="/staff/incidents" class="btn btn-outline-warning">Report Incident</a>
         <button class="btn btn-box-primary" onclick="loadOrders()">⟳ Refresh Now</button>
       </div>
+    </div>
+
+    <!-- QR / Code Lookup Bar -->
+    <div class="order-card p-3 mb-3">
+      <form class="d-flex gap-2" onsubmit="scanFoodQr(event)">
+        <input type="text" id="foodQrScanInput" class="form-control form-control-dark" placeholder="Scan food QR payload (BOX1...) or enter booking code (BOX-...)" />
+        <button type="submit" class="btn btn-outline-danger px-4">Scan / Find</button>
+      </form>
     </div>
 
     <!-- Filter Tabs -->
@@ -129,6 +140,7 @@
       <button class="kds-tab" data-filter="QUEUED" onclick="setFilter('QUEUED', this)">Queued</button>
       <button class="kds-tab" data-filter="PREPARING" onclick="setFilter('PREPARING', this)">Preparing</button>
       <button class="kds-tab" data-filter="READY" onclick="setFilter('READY', this)">Ready for Pickup</button>
+      <button class="kds-tab" data-filter="PARTIAL_DELIVERED" onclick="setFilter('PARTIAL_DELIVERED', this)">Partial</button>
       <button class="kds-tab" data-filter="PICKED_UP" onclick="setFilter('PICKED_UP', this)">Picked Up</button>
     </div>
 
@@ -136,18 +148,91 @@
     <div id="orderGrid" class="order-grid">
       <div class="text-white-50 py-5 text-center col-12">Loading concession orders...</div>
     </div>
+
+    <!-- Component Delivery / Exchange / Replacement Modal -->
+    <div class="modal fade" id="foodActionModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white border-secondary">
+          <div class="modal-header border-secondary">
+            <h5 class="modal-title" id="foodActionTitle">Concession Delivery Action</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="faOrderId">
+            <input type="hidden" id="faItemId">
+            <input type="hidden" id="faCompId">
+            <div class="mb-2">
+              <label class="form-label small text-secondary">Action Type</label>
+              <select id="faActionType" class="form-select form-select-dark">
+                <option value="INITIAL_DELIVERY">Confirm Delivery</option>
+                <option value="MISSING_REDELIVERY">Missing Item Re-Delivery (Giao bù)</option>
+                <option value="WRONG_ITEM_EXCHANGE">Wrong Item Exchange (Đổi lại đúng món)</option>
+                <option value="REPLACEMENT_CONFIRMED">Customer Accepted Replacement</option>
+                <option value="CANNOT_FULFILL">Cannot Fulfill / Out of Stock</option>
+              </select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small text-secondary">Quantity Affected</label>
+              <input type="number" id="faQty" min="1" value="1" class="form-control form-control-dark">
+            </div>
+            <div class="mb-2">
+              <label class="form-label small text-secondary">Wrong / Replacement Item Note (optional)</label>
+              <input type="text" id="faReplDesc" class="form-control form-control-dark" placeholder="e.g. Exchanged to Caramel Popcorn / Customer accepted Sprite">
+            </div>
+            <div class="form-check mb-2">
+              <input type="checkbox" id="faCustAccepted" class="form-check-input">
+              <label class="form-check-label small" for="faCustAccepted">Customer confirmed acceptance of replacement</label>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small text-secondary">Staff Note</label>
+              <textarea id="faNote" rows="2" class="form-control form-control-dark"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer border-secondary">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" id="btnSubmitFoodAction" class="btn btn-box-primary" onclick="submitFoodAction()">Record Immutable Action</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </main>
 
   <footer th:replace="~{fragments/footer :: footer}"></footer>
-
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    let currentFilter = '';
+    function csrfHeaders() {
+      const t = document.querySelector('meta[name="_csrf"]')?.content;
+      const h = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+      return t ? { [h]: t } : {};
+    }
 
+    let currentFilter = '';
     function setFilter(filter, btn) {
       currentFilter = filter;
       document.querySelectorAll('.kds-tab').forEach(t => t.classList.remove('active'));
       btn.classList.add('active');
       loadOrders();
+    }
+
+    async function scanFoodQr(e) {
+      e.preventDefault();
+      const val = document.getElementById('foodQrScanInput').value.trim();
+      if (!val) return loadOrders();
+      const btn = e.target?.querySelector?.('button[type="submit"]');
+      if (btn) btn.disabled = true;
+      try {
+        const res = await fetch('/api/staff/food-fulfillments/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+          credentials: 'same-origin',
+          body: JSON.stringify({ qrPayload: val })
+        });
+        if (!res.ok) { alert('No food order found for that QR/code.'); return; }
+        const order = await res.json();
+        renderOrders([order]);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
     }
 
     async function loadOrders() {
@@ -157,89 +242,207 @@
         if (!res.ok) return;
         const orders = await res.json();
         renderOrders(orders);
-      } catch (err) {
-        console.error(err);
+      } catch (err) { console.error(err); }
+    }
+
+    function openFoodAction(orderId, itemId, compId, label) {
+      document.getElementById('faOrderId').value = orderId;
+      document.getElementById('faItemId').value = itemId || '';
+      document.getElementById('faCompId').value = compId || '';
+      document.getElementById('foodActionTitle').textContent = 'Delivery Action — ' + label;
+      document.getElementById('faQty').value = '1';
+      document.getElementById('faReplDesc').value = '';
+      document.getElementById('faNote').value = '';
+      document.getElementById('faCustAccepted').checked = false;
+      new bootstrap.Modal(document.getElementById('foodActionModal')).show();
+    }
+
+    async function submitFoodAction() {
+      const orderId = document.getElementById('faOrderId').value;
+      const itemId = document.getElementById('faItemId').value;
+      const compId = document.getElementById('faCompId').value;
+      const payload = {
+        bookingFoodItemId: itemId ? Number(itemId) : null,
+        bookingFoodItemComponentId: compId ? Number(compId) : null,
+        actionType: document.getElementById('faActionType').value,
+        quantity: Number(document.getElementById('faQty').value || 1),
+        replacementDescription: document.getElementById('faReplDesc').value.trim() || null,
+        wrongItemDescription: document.getElementById('faReplDesc').value.trim() || null,
+        customerAcceptedReplacement: document.getElementById('faCustAccepted').checked,
+        note: document.getElementById('faNote').value.trim() || null
+      };
+      const submitBtn = document.getElementById('btnSubmitFoodAction');
+      if (submitBtn) submitBtn.disabled = true;
+      try {
+        const res = await fetch(`/api/staff/food-fulfillments/${orderId}/deliver`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+          credentials: 'same-origin',
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          bootstrap.Modal.getInstance(document.getElementById('foodActionModal')).hide();
+          loadOrders();
+        } else {
+          const d = await res.json().catch(() => ({}));
+          alert(d.message || 'Action failed');
+        }
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
       }
     }
 
     function renderOrders(orders) {
       const grid = document.getElementById('orderGrid');
+      grid.replaceChildren();
       if (!orders || orders.length === 0) {
-        grid.innerHTML = '<div class="text-white-50 py-5 text-center col-12">No orders in this category.</div>';
+        const empty = document.createElement('div');
+        empty.className = 'text-white-50 py-5 text-center col-12';
+        empty.textContent = 'No orders in this category.';
+        grid.append(empty);
         return;
       }
 
-      grid.innerHTML = orders.map(order => {
-        let statusBadge = '';
-        let actionBtn = '';
+      for (const order of orders) {
+        const card = document.createElement('div');
+        card.className = 'order-card';
 
+        const hdr = document.createElement('div');
+        hdr.className = 'order-header';
+        const codeSpan = document.createElement('span');
+        codeSpan.className = 'order-code';
+        codeSpan.textContent = '#' + (order.bookingCode || order.bookingId);
+        const badge = document.createElement('span');
+        badge.className = 'badge-status badge-' + (order.status || 'queued').toLowerCase();
+        badge.textContent = order.status;
+        hdr.append(codeSpan, badge);
+        card.append(hdr);
+
+        const body = document.createElement('div');
+        body.className = 'order-body';
+        const cinemaLine = document.createElement('div');
+        cinemaLine.className = 'text-white-50 small mb-2';
+        cinemaLine.textContent = 'Cinema: ' + (order.cinemaName || 'BOX Cinema');
+        body.append(cinemaLine);
+
+        const ul = document.createElement('ul');
+        ul.className = 'item-list';
+        for (const item of order.items || []) {
+          const li = document.createElement('li');
+          li.className = 'item-row d-block';
+          const rowTop = document.createElement('div');
+          rowTop.className = 'd-flex justify-content-between align-items-center';
+          const label = document.createElement('span');
+          label.textContent = `${item.quantity}x ${item.productName}${item.variantName ? ' (' + item.variantName + ')' : ''} [${item.deliveredQuantity || 0}/${item.quantity}]`;
+          rowTop.append(label);
+          if (!item.components || item.components.length === 0) {
+            const btn = document.createElement('button');
+            btn.className = 'btn btn-xs btn-outline-light py-0 px-2 small';
+            btn.textContent = 'Deliver/Fix';
+            btn.onclick = () => openFoodAction(order.id, item.id, null, item.productName);
+            rowTop.append(btn);
+          }
+          li.append(rowTop);
+
+          if (item.components && item.components.length > 0) {
+            for (const c of item.components) {
+              const crow = document.createElement('div');
+              crow.className = 'd-flex justify-content-between align-items-center ps-3 mt-1 small text-info';
+              const clbl = document.createElement('span');
+              clbl.textContent = `↳ ${c.componentName} (${c.deliveredQuantity}/${c.totalQuantity}, repl:${c.replacementAcceptedQuantity})`;
+              const cbtn = document.createElement('button');
+              cbtn.className = 'btn btn-outline-info py-0 px-2';
+              cbtn.style.fontSize = '0.72rem';
+              cbtn.textContent = 'Action';
+              cbtn.onclick = () => openFoodAction(order.id, item.id, c.id, c.componentName);
+              crow.append(clbl, cbtn);
+              li.append(crow);
+            }
+          }
+          ul.append(li);
+        }
+        body.append(ul);
+
+        if (order.history && order.history.length > 0) {
+          const hTitle = document.createElement('div');
+          hTitle.className = 'small text-secondary mt-2 fw-bold';
+          hTitle.textContent = `Immutable History (${order.history.length})`;
+          body.append(hTitle);
+          for (const h of order.history.slice(0, 3)) {
+            const hLine = document.createElement('div');
+            hLine.className = 'small text-white-50';
+            hLine.textContent = `• ${h.actionType} (${h.quantityAffected || 0}) ${h.deliveredItemName || ''} — ${h.note || h.newStatus}`;
+            body.append(hLine);
+          }
+        }
+        card.append(body);
+
+        const footer = document.createElement('div');
+        footer.className = 'order-footer d-flex gap-2';
         if (order.status === 'QUEUED') {
-          statusBadge = '<span class="badge-status badge-queued">QUEUED</span>';
-          actionBtn = `<button class="btn btn-primary w-100 fw-bold" onclick="updateOrderStatus(${order.id}, 'PREPARING')">▶ START PREPARING</button>`;
+          const b = document.createElement('button');
+          b.className = 'btn btn-primary w-100 fw-bold';
+          b.textContent = '▶ START PREPARING';
+          b.onclick = () => updateOrderStatus(order.id, 'PREPARING', b);
+          footer.append(b);
         } else if (order.status === 'PREPARING') {
-          statusBadge = '<span class="badge-status badge-preparing">PREPARING</span>';
-          actionBtn = `<button class="btn btn-success w-100 fw-bold" onclick="updateOrderStatus(${order.id}, 'READY')">✓ READY FOR PICKUP</button>`;
-        } else if (order.status === 'READY') {
-          statusBadge = '<span class="badge-status badge-ready">READY</span>';
-          actionBtn = `<button class="btn btn-warning w-100 fw-bold text-dark" onclick="updateOrderStatus(${order.id}, 'PICKED_UP')">🎉 COMPLETE PICKUP</button>`;
+          const b = document.createElement('button');
+          b.className = 'btn btn-success w-100 fw-bold';
+          b.textContent = '✓ READY FOR PICKUP';
+          b.onclick = () => updateOrderStatus(order.id, 'READY', b);
+          footer.append(b);
+        } else if (order.status === 'READY' || order.status === 'PARTIAL_DELIVERED') {
+          const b = document.createElement('button');
+          b.className = 'btn btn-warning w-100 fw-bold text-dark';
+          b.textContent = 'COMPLETE PICKUP';
+          b.onclick = () => updateOrderStatus(order.id, 'PICKED_UP', b);
+          footer.append(b);
         } else {
-          statusBadge = '<span class="badge-status badge-picked_up">COMPLETED</span>';
-          actionBtn = `<button class="btn btn-secondary w-100" disabled>FULFILLED</button>`;
+          const b = document.createElement('button');
+          b.className = 'btn btn-secondary w-100';
+          b.disabled = true;
+          b.textContent = order.status;
+          footer.append(b);
         }
-
-        const itemsHtml = (order.items || []).map(item => `
-          <li class="item-row">
-            <div>
-              <span class="item-qty">${item.quantity}x</span>
-              <strong>${item.productName || 'Item'}</strong>
-              ${item.variantName ? `<span class="text-white-50 small">(${item.variantName})</span>` : ''}
-            </div>
-          </li>
-        `).join('');
-
-        return `
-          <div class="order-card">
-            <div class="order-header">
-              <span class="order-code">#${order.bookingCode || order.bookingId}</span>
-              <div class="d-flex align-items-center gap-2">
-                ${statusBadge}
-                <span class="order-time">${order.createdAt ? new Date(order.createdAt).toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'}) : ''}</span>
-              </div>
-            </div>
-            <div class="order-body">
-              <div class="text-white-50 small mb-2">Cinema: <strong>${order.cinemaName || 'BOX Cinema'}</strong></div>
-              <ul class="item-list">
-                ${itemsHtml}
-              </ul>
-              ${order.note ? `<div class="mt-2 text-warning small">Note: ${order.note}</div>` : ''}
-            </div>
-            <div class="order-footer">
-              ${actionBtn}
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    async function updateOrderStatus(orderId, newStatus) {
-      try {
-        const res = await fetch(`/api/staff/food-fulfillments/${orderId}/status`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus })
-        });
-        if (res.ok) {
-          loadOrders();
-        } else {
-          alert('Unable to update order status!');
-        }
-      } catch (err) {
-        alert('Error: ' + err.message);
+        card.append(footer);
+        grid.append(card);
       }
     }
 
-    // Auto refresh every 5 seconds
-    setInterval(loadOrders, 5000);
+    async function updateOrderStatus(orderId, newStatus, btn) {
+      if (btn) btn.disabled = true;
+      try {
+        const res = await fetch(`/api/staff/food-fulfillments/${orderId}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
+          credentials: 'same-origin',
+          body: JSON.stringify({ status: newStatus })
+        });
+        if (res.ok) loadOrders();
+        else {
+          const d = await res.json().catch(() => ({}));
+          alert(d.message || 'Unable to update order status!');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    function shouldAutoRefreshOrders() {
+      const modal = document.getElementById('foodActionModal');
+      if (modal && modal.classList.contains('show')) return false;
+      const scanInput = document.getElementById('foodQrScanInput');
+      if (scanInput && scanInput.value.trim().length > 0) return false;
+      const grid = document.getElementById('orderGrid');
+      if (grid && (grid.contains(document.activeElement) || grid.matches(':hover'))) return false;
+      return true;
+    }
+
+    setInterval(() => {
+      if (shouldAutoRefreshOrders()) loadOrders();
+    }, 8000);
     document.addEventListener('DOMContentLoaded', loadOrders);
   </script>
 </body>

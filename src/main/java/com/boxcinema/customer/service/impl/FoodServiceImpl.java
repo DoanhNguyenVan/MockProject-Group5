@@ -93,10 +93,7 @@ public class FoodServiceImpl implements FoodService {
     public void checkAndReserveFoodStock(Long foodItemId, int quantity) {
         if (quantity <= 0) return;
         FoodInventory inventory = inventoryRepository.findByFoodItemIdForUpdate(foodItemId)
-                .orElseGet(() -> {
-                    FoodItem item = itemRepository.findById(foodItemId).orElseThrow();
-                    return inventoryRepository.save(new FoodInventory(item, 200, 0));
-                });
+                .orElseThrow(() -> new IllegalStateException("Product inventory is not configured or out of stock."));
 
         if (inventory.getAvailableQuantity() < quantity) {
             throw new IllegalStateException("Product '" + inventory.getFoodItem().getName() + "' is out of stock or insufficient quantity.");
@@ -108,7 +105,10 @@ public class FoodServiceImpl implements FoodService {
     @Override
     public void checkAndReserveComboStock(Long comboId, int comboQuantity) {
         if (comboQuantity <= 0) return;
-        List<FoodComboItem> items = comboItemRepository.findByCombo_Id(comboId);
+        List<FoodComboItem> items = comboItemRepository.findByCombo_Id(comboId).stream()
+                .filter(ci -> ci.getFoodItem() != null && ci.getFoodItem().getId() != null)
+                .sorted(java.util.Comparator.comparing(ci -> ci.getFoodItem().getId()))
+                .toList();
         for (FoodComboItem ci : items) {
             int needed = ci.getQuantity() * comboQuantity;
             checkAndReserveFoodStock(ci.getFoodItem().getId(), needed);
@@ -128,7 +128,10 @@ public class FoodServiceImpl implements FoodService {
     @Override
     public void commitComboStock(Long comboId, int comboQuantity) {
         if (comboQuantity <= 0) return;
-        List<FoodComboItem> items = comboItemRepository.findByCombo_Id(comboId);
+        List<FoodComboItem> items = comboItemRepository.findByCombo_Id(comboId).stream()
+                .filter(ci -> ci.getFoodItem() != null && ci.getFoodItem().getId() != null)
+                .sorted(java.util.Comparator.comparing(ci -> ci.getFoodItem().getId()))
+                .toList();
         for (FoodComboItem ci : items) {
             commitFoodStock(ci.getFoodItem().getId(), ci.getQuantity() * comboQuantity);
         }
@@ -146,7 +149,10 @@ public class FoodServiceImpl implements FoodService {
     @Override
     public void releaseComboStock(Long comboId, int comboQuantity) {
         if (comboQuantity <= 0) return;
-        List<FoodComboItem> items = comboItemRepository.findByCombo_Id(comboId);
+        List<FoodComboItem> items = comboItemRepository.findByCombo_Id(comboId).stream()
+                .filter(ci -> ci.getFoodItem() != null && ci.getFoodItem().getId() != null)
+                .sorted(java.util.Comparator.comparing(ci -> ci.getFoodItem().getId()))
+                .toList();
         for (FoodComboItem ci : items) {
             releaseFoodStock(ci.getFoodItem().getId(), ci.getQuantity() * comboQuantity);
         }

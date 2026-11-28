@@ -65,18 +65,6 @@ public class PublicTicketServiceImpl implements PublicTicketService {
             }
         }
 
-        // 4. Extract booking code (e.g. BOX-20261116-3484)
-        if (bQrOpt.isEmpty()) {
-            Matcher mCode = Pattern.compile("BOX-\\d{8}-\\d{4}").matcher(tokenClean);
-            if (mCode.find()) {
-                String bookingCode = mCode.group();
-                Optional<Booking> bOpt = bookingRepository.findByBookingCode(bookingCode);
-                if (bOpt.isPresent()) {
-                    bQrOpt = bookingQrRepository.findByBooking_BookingId(bOpt.get().getBookingId());
-                }
-            }
-        }
-
         if (bQrOpt.isEmpty()) {
             return Optional.empty();
         }
@@ -88,12 +76,22 @@ public class PublicTicketServiceImpl implements PublicTicketService {
         }
 
         PublicTicketDto dto = new PublicTicketDto();
-        dto.setValid(true);
+        boolean isExpired = bookingQr.getExpiresAt() != null
+                && bookingQr.getExpiresAt().isBefore(java.time.LocalDateTime.now());
+        boolean isValidQr = "CONFIRMED".equalsIgnoreCase(booking.getBookingStatus())
+                && !"REVOKED".equalsIgnoreCase(bookingQr.getStatus())
+                && !isExpired;
+        dto.setValid(isValidQr);
+        if (isExpired) {
+            dto.setMessage("This ticket QR code has expired.");
+        }
         dto.setBookingCode(booking.getBookingCode());
         dto.setBookingStatus(booking.getBookingStatus());
 
         // Payment status
-        Optional<Payment> paymentOpt = paymentRepository.findByBooking_BookingId(booking.getBookingId());
+        Optional<Payment> paymentOpt = paymentRepository
+                .findFirstByBooking_BookingIdAndPaymentStatusOrderByPaymentIdDesc(booking.getBookingId(), "PAID")
+                .or(() -> paymentRepository.findTopByBooking_BookingIdOrderByPaymentIdDesc(booking.getBookingId()));
         if (paymentOpt.isPresent()) {
             dto.setPaymentStatus(paymentOpt.get().getPaymentStatus());
         } else if ("CONFIRMED".equalsIgnoreCase(booking.getBookingStatus())) {

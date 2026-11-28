@@ -138,53 +138,64 @@
     <!-- Transactions List -->
     <div class="d-flex flex-column gap-3">
       <th:block th:if="${historyList != null and !historyList.isEmpty()}">
-        <a th:each="item : ${historyList}"
-           th:href="@{'/booking/history/' + ${item.bookingId}}"
-           class="history-card-link">
-          <!-- Left Column: Movie & Showtime -->
-          <div class="history-col-left">
-            <div class="d-flex align-items-center gap-2 mb-1">
-              <span class="badge bg-danger bg-opacity-25 text-danger border border-danger border-opacity-25 px-2 py-0.5" style="font-size: 0.72rem;" th:text="${item.bookingStatus}">
-                CONFIRMED
-              </span>
-              <span class="small text-secondary font-monospace" th:text="'#' + ${item.bookingCode}">BOX-12345</span>
+        <div th:each="item : ${historyList}" class="d-flex flex-column gap-1">
+          <a th:href="@{'/booking/history/' + ${item.bookingId}}"
+             class="history-card-link">
+            <!-- Left Column: Movie & Showtime -->
+            <div class="history-col-left">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge border px-2 py-0.5" style="font-size: 0.72rem;"
+                      th:classappend="${item.bookingStatus == 'CONFIRMED' ? 'bg-success bg-opacity-25 text-success border-success border-opacity-25' : ((item.bookingStatus == 'PENDING_PAYMENT' or item.bookingStatus == 'PENDING' or item.bookingStatus == 'PAID_SEAT_CONFLICT' or item.bookingStatus == 'PAYMENT_REVIEW') ? 'bg-warning bg-opacity-25 text-warning border-warning border-opacity-25' : 'bg-danger bg-opacity-25 text-danger border-danger border-opacity-25')}"
+                      th:text="${item.bookingStatus}">
+                  CONFIRMED
+                </span>
+                <span class="small text-secondary font-monospace" th:text="'#' + ${item.bookingCode}">BOX-12345</span>
+              </div>
+              <div class="history-movie-title" th:text="${item.movieTitle}">Movie Title</div>
+              <div class="history-movie-meta">
+                <span class="d-inline-flex align-items-center gap-1">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  <span th:text="${item.showDateTimeText}">17/11/2026 | 09:00</span>
+                </span>
+                <span>•</span>
+                <span class="d-inline-flex align-items-center gap-1">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
+                  <span th:text="${item.cinemaName}">BOX Cinema Royal City</span>
+                </span>
+              </div>
             </div>
-            <div class="history-movie-title" th:text="${item.movieTitle}">Movie Title</div>
-            <div class="history-movie-meta">
-              <span class="d-inline-flex align-items-center gap-1">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="16" y1="2" x2="16" y2="6"></line>
-                  <line x1="8" y1="2" x2="8" y2="6"></line>
-                  <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                <span th:text="${item.showDateTimeText}">17/11/2026 | 09:00</span>
-              </span>
-              <span>•</span>
-              <span class="d-inline-flex align-items-center gap-1">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                  <circle cx="12" cy="10" r="3"></circle>
-                </svg>
-                <span th:text="${item.cinemaName}">BOX Cinema Royal City</span>
-              </span>
-            </div>
-          </div>
 
-          <!-- Vertical Divider -->
-          <div class="history-divider"></div>
+            <!-- Vertical Divider -->
+            <div class="history-divider"></div>
 
-          <!-- Right Column: Amount -->
-          <div class="history-col-right">
-            <div class="history-amount" th:text="${item.totalAmountFormatted}">198,000 ₫</div>
-            <div class="text-secondary small d-inline-flex align-items-center gap-1 mt-1">
-              <span>Details</span>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
+            <!-- Right Column: Amount -->
+            <div class="history-col-right">
+              <div class="history-amount" th:text="${item.totalAmountFormatted}">198,000 ₫</div>
+              <div class="text-secondary small d-inline-flex align-items-center gap-1 mt-1">
+                <span>Details</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </div>
             </div>
+          </a>
+          <div class="d-flex justify-content-end px-2"
+               th:if="${item.bookingStatus == 'CONFIRMED' or item.bookingStatus == 'PAID_SEAT_CONFLICT' or item.bookingStatus == 'PAYMENT_REVIEW' or item.bookingStatus == 'PARTIALLY_REFUNDED'}">
+            <a th:href="@{/contact(tab='refund', orderCode=${item.bookingCode}, email=${session.currentUser != null ? session.currentUser.email : (currentUser != null ? currentUser.email : '')})}"
+               class="btn btn-sm btn-outline-danger py-1 px-3 text-decoration-none"
+               style="font-size: 0.78rem;">
+              Request Refund / Issue Support
+            </a>
           </div>
-        </a>
+        </div>
       </th:block>
 
       <!-- Empty State -->

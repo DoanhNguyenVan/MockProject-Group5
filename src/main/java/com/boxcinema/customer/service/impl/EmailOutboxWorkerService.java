@@ -19,20 +19,33 @@ import org.springframework.stereotype.Service;
 import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import java.util.function.Supplier;
 
 @Service
 public class EmailOutboxWorkerService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailOutboxWorkerService.class);
+    private static final int CLAIM_BATCH_SIZE = 50;
+    private static final int MAX_RETRIES = 3;
+    private static final long DEFAULT_LEASE_TIMEOUT_SECONDS = 300L;
+    private static final String PROCESSING_LEASE_PREFIX = "PROCESSING_LEASE:";
 
     private final EmailOutboxRepository emailOutboxRepository;
     private final TicketService ticketService;
     private final BookingQrService bookingQrService;
     private final JavaMailSender mailSender;
+    private final TransactionTemplate txTemplate;
+    private final TransactionTemplate readOnlyTxTemplate;
+    private volatile long leaseTimeoutSeconds = DEFAULT_LEASE_TIMEOUT_SECONDS;
 
     @Value("${spring.mail.username:}")
     private String fromEmail;
@@ -46,80 +59,241 @@ public class EmailOutboxWorkerService {
             BookingQrService bookingQrService,
             @Autowired(required = false) JavaMailSender mailSender
     ) {
+        this(emailOutboxRepository, ticketService, bookingQrService, mailSender, null);
+    }
+
+    @Autowired
+    public EmailOutboxWorkerService(
+            EmailOutboxRepository emailOutboxRepository,
+            TicketService ticketService,
+            BookingQrService bookingQrService,
+            @Autowired(required = false) JavaMailSender mailSender,
+            @Autowired(required = false) PlatformTransactionManager transactionManager
+    ) {
         this.emailOutboxRepository = emailOutboxRepository;
         this.ticketService = ticketService;
         this.bookingQrService = bookingQrService;
         this.mailSender = mailSender;
+        if (transactionManager != null) {
+            TransactionTemplate writeTpl = new TransactionTemplate(transactionManager);
+            writeTpl.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            this.txTemplate = writeTpl;
+
+            TransactionTemplate readTpl = new TransactionTemplate(transactionManager);
+            readTpl.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+            readTpl.setReadOnly(true);
+            this.readOnlyTxTemplate = readTpl;
+        } else {
+            this.txTemplate = null;
+            this.readOnlyTxTemplate = null;
+        }
+    }
+
+    public void setLeaseTimeoutSecondsForTesting(long seconds) {
+        this.leaseTimeoutSeconds = Math.max(0L, seconds);
     }
 
     @Scheduled(fixedDelay = 5000)
-    @Transactional
     public void processOutbox() {
-        List<EmailOutbox> pendingList = emailOutboxRepository.findByStatusOrderByCreatedAtAsc("PENDING");
-        for (EmailOutbox outbox : pendingList) {
-            processItem(outbox);
-        }
-
-        // Also retry failed ones under max retries
-        List<EmailOutbox> retryingList = emailOutboxRepository.findByStatusAndRetryCountLessThan("RETRYING", 3);
-        for (EmailOutbox outbox : retryingList) {
-            processItem(outbox);
+        runInTx(txTemplate, this::recoverStaleProcessingLeasesTx);
+        for (int batch = 0; batch < 20; batch++) {
+            List<Long> claimedIds = runInTx(txTemplate, this::claimNextBatchTx);
+            if (claimedIds == null || claimedIds.isEmpty()) {
+                return;
+            }
+            boolean hadFailure = false;
+            for (Long id : claimedIds) {
+                if (!processClaimedItem(id)) {
+                    hadFailure = true;
+                }
+            }
+            if (hadFailure || claimedIds.size() < CLAIM_BATCH_SIZE) {
+                return;
+            }
         }
     }
 
-    private void processItem(EmailOutbox outbox) {
+    private <T> T runInTx(TransactionTemplate tpl, Supplier<T> action) {
+        if (tpl == null) {
+            return action.get();
+        }
+        int maxAttempts = 3;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                return tpl.execute(status -> action.get());
+            } catch (org.springframework.dao.CannotAcquireLockException | org.springframework.dao.DeadlockLoserDataAccessException ex) {
+                if (attempt == maxAttempts) {
+                    throw ex;
+                }
+                log.debug("Transient DB lock contention in EmailOutboxWorkerService (attempt {}/{}), retrying...", attempt, maxAttempts);
+                try {
+                    Thread.sleep(15L * attempt);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw ex;
+                }
+            }
+        }
+        return null;
+    }
+
+    private int recoverStaleProcessingLeasesTx() {
+        List<Long> processingIds = emailOutboxRepository.findProcessingIdsForUpdateSkipLocked(CLAIM_BATCH_SIZE);
+        if (processingIds.isEmpty()) {
+            return 0;
+        }
+        LocalDateTime cutoff = LocalDateTime.now().minusSeconds(Math.max(0L, leaseTimeoutSeconds));
+        List<EmailOutbox> rows = emailOutboxRepository.findAllById(processingIds);
+        List<EmailOutbox> recovered = new ArrayList<>();
+        for (EmailOutbox row : rows) {
+            if (!"PROCESSING".equalsIgnoreCase(row.getStatus())) {
+                continue;
+            }
+            if (isLeaseStale(row, cutoff)) {
+                int nextRetries = row.getRetryCount() + 1;
+                row.setRetryCount(nextRetries);
+                row.setStatus(nextRetries >= MAX_RETRIES ? "FAILED" : "RETRYING");
+                row.setLastError("Recovered stale PROCESSING lease");
+                recovered.add(row);
+            }
+        }
+        if (!recovered.isEmpty()) {
+            emailOutboxRepository.saveAllAndFlush(recovered);
+            log.warn("Recovered {} stale PROCESSING email outbox lease(s).", recovered.size());
+        }
+        return recovered.size();
+    }
+
+    private boolean isLeaseStale(EmailOutbox row, LocalDateTime cutoff) {
+        String lastError = row.getLastError();
+        if (lastError != null && lastError.startsWith(PROCESSING_LEASE_PREFIX)) {
+            String rawTs = lastError.substring(PROCESSING_LEASE_PREFIX.length()).trim();
+            try {
+                LocalDateTime leaseAt = LocalDateTime.parse(rawTs, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                return !leaseAt.isAfter(cutoff);
+            } catch (Exception ignored) {
+                return true;
+            }
+        }
+        return row.getCreatedAt() == null || !row.getCreatedAt().isAfter(cutoff);
+    }
+
+    private List<Long> claimNextBatchTx() {
+        List<Long> ids = emailOutboxRepository.findClaimableIdsForUpdateSkipLocked(MAX_RETRIES, CLAIM_BATCH_SIZE);
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        String leaseMarker = PROCESSING_LEASE_PREFIX + LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        List<EmailOutbox> rows = emailOutboxRepository.findAllById(ids);
+        for (EmailOutbox row : rows) {
+            row.setStatus("PROCESSING");
+            row.setLastError(leaseMarker);
+        }
+        emailOutboxRepository.saveAllAndFlush(rows);
+        return rows.stream().map(EmailOutbox::getId).toList();
+    }
+
+    private record DispatchPayload(
+            Long id,
+            String recipientEmail,
+            String emailType,
+            String subject,
+            String html,
+            byte[] inlineQrPng,
+            Long bookingId
+    ) {}
+
+    private boolean processClaimedItem(Long outboxId) {
         try {
-            Long bookingId = outbox.getBooking().getBookingId();
-            Long ownerId = outbox.getBooking() != null && outbox.getBooking().getUser() != null
-                    ? outbox.getBooking().getUser().getUserId()
-                    : null;
-            BookingTicketViewDto ticketView = ticketService.getTicketView(bookingId, ownerId);
-            byte[] qrPng = bookingQrService.getBookingQrPngBytes(bookingId);
-            String ticketUrl = bookingQrService.getBookingTicketUrl(bookingId);
+            DispatchPayload payload = runInTx(readOnlyTxTemplate, () -> prepareDispatchPayload(outboxId));
+            if (payload == null) {
+                return true;
+            }
 
             if (mailSender == null) {
-                log.warn("JavaMailSender is not configured. Simulating email dispatch to {}", outbox.getRecipientEmail());
-                outbox.setStatus("SENT");
-                outbox.setSentAt(LocalDateTime.now());
-                emailOutboxRepository.save(outbox);
-                return;
+                log.warn("JavaMailSender is not configured. Simulating {} email dispatch to {}",
+                        payload.emailType(), com.boxcinema.auth.service.AuthAuditService.maskEmail(payload.recipientEmail()));
+                runInTx(txTemplate, () -> markSentTx(outboxId));
+                return true;
             }
 
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, StandardCharsets.UTF_8.name());
-
             helper.setFrom(fromEmail.isBlank() ? "no-reply@boxcinema.vn" : fromEmail, fromName);
-            helper.setTo(outbox.getRecipientEmail());
-            helper.setSubject("BOX Cinema - Booking Confirmation #" + ticketView.getBookingCode());
-
-            String html = buildEmailHtml(ticketView, ticketUrl);
-            helper.setText(html, true);
-
-            // Attach ZXing QR Code inline as CID (never leak token to 3rd-party services)
-            if (qrPng != null && qrPng.length > 0) {
-                helper.addInline("bookingQrCode", new ByteArrayResource(qrPng), "image/png");
+            helper.setTo(payload.recipientEmail());
+            helper.setSubject(payload.subject());
+            helper.setText(payload.html(), true);
+            if (payload.inlineQrPng() != null && payload.inlineQrPng().length > 0) {
+                helper.addInline("bookingQrCode", new ByteArrayResource(payload.inlineQrPng()), "image/png");
             }
-
             mailSender.send(message);
 
+            runInTx(txTemplate, () -> markSentTx(outboxId));
+            log.info("Outbox email [{}] dispatched successfully to {}",
+                    payload.emailType(), com.boxcinema.auth.service.AuthAuditService.maskEmail(payload.recipientEmail()));
+            return true;
+        } catch (Exception ex) {
+            log.error("Failed to send email for outbox id {}: {}", outboxId, ex.getMessage());
+            runInTx(txTemplate, () -> markFailedAttemptTx(outboxId, ex.getMessage()));
+            return false;
+        }
+    }
+
+    private DispatchPayload prepareDispatchPayload(Long outboxId) {
+        EmailOutbox outbox = emailOutboxRepository.findWithBookingById(outboxId).orElse(null);
+        if (outbox == null) {
+            return null;
+        }
+        if (outbox.getSubject() != null && outbox.getBodyHtml() != null) {
+            return new DispatchPayload(
+                    outbox.getId(),
+                    outbox.getRecipientEmail(),
+                    outbox.getEmailType(),
+                    outbox.getSubject(),
+                    outbox.getBodyHtml(),
+                    null,
+                    outbox.getBooking() != null ? outbox.getBooking().getBookingId() : null
+            );
+        }
+        if (outbox.getBooking() == null) {
+            throw new IllegalStateException("Booking reference missing for booking confirmation outbox " + outbox.getId());
+        }
+        Long bookingId = outbox.getBooking().getBookingId();
+        BookingTicketViewDto ticketView = ticketService.getTicketViewForOutbox(bookingId);
+        byte[] qrPng = bookingQrService.getBookingQrPngBytes(bookingId);
+        String ticketUrl = bookingQrService.getBookingTicketUrl(bookingId);
+        return new DispatchPayload(
+                outbox.getId(),
+                outbox.getRecipientEmail(),
+                outbox.getEmailType(),
+                "BOX Cinema - Booking Confirmation #" + ticketView.getBookingCode(),
+                buildEmailHtml(ticketView, ticketUrl),
+                qrPng,
+                bookingId
+        );
+    }
+
+    private Void markSentTx(Long outboxId) {
+        EmailOutbox outbox = emailOutboxRepository.findById(outboxId).orElse(null);
+        if (outbox != null) {
             outbox.setStatus("SENT");
             outbox.setSentAt(LocalDateTime.now());
             outbox.setLastError(null);
             emailOutboxRepository.save(outbox);
-            log.info("Ticket email dispatched successfully for booking {}", bookingId);
+        }
+        return null;
+    }
 
-        } catch (Exception ex) {
-            log.error("Failed to send ticket email for outbox id {}: {}", outbox.getId(), ex.getMessage());
+    private Void markFailedAttemptTx(Long outboxId, String errorMsg) {
+        EmailOutbox outbox = emailOutboxRepository.findById(outboxId).orElse(null);
+        if (outbox != null) {
             int retries = outbox.getRetryCount() + 1;
             outbox.setRetryCount(retries);
-            if (retries >= 3) {
-                outbox.setStatus("FAILED");
-            } else {
-                outbox.setStatus("RETRYING");
-            }
-            outbox.setLastError(ex.getMessage());
+            outbox.setStatus(retries >= MAX_RETRIES ? "FAILED" : "RETRYING");
+            outbox.setLastError(errorMsg);
             emailOutboxRepository.save(outbox);
         }
+        return null;
     }
 
     private String buildEmailHtml(BookingTicketViewDto ticket, String ticketUrl) {
@@ -129,7 +303,7 @@ public class EmailOutboxWorkerService {
         if (ticket.getTickets() != null) {
             for (var s : ticket.getTickets()) {
                 seatsHtml.append("<span style='display:inline-block;padding:4px 8px;margin:2px;background:#e2e8f0;border-radius:4px;font-weight:600;'>")
-                        .append(s.getSeatLabel())
+                        .append(org.springframework.web.util.HtmlUtils.htmlEscape(s.getSeatLabel() != null ? s.getSeatLabel() : ""))
                         .append("</span> ");
             }
         }
@@ -140,9 +314,12 @@ public class EmailOutboxWorkerService {
             foodHtml.append("<h4 style='margin:0 0 8px;color:#1e293b;'>Concessions & Combos:</h4>");
             foodHtml.append("<ul style='padding-left:20px;margin:0;color:#475569;'>");
             for (var f : ticket.getFoodItems()) {
-                foodHtml.append("<li>").append(f.getQuantity()).append("x ").append(f.getProductName());
+                foodHtml.append("<li>").append(f.getQuantity()).append("x ")
+                        .append(org.springframework.web.util.HtmlUtils.htmlEscape(f.getProductName() != null ? f.getProductName() : ""));
                 if (f.getVariantName() != null && !f.getVariantName().isBlank()) {
-                    foodHtml.append(" (").append(f.getVariantName()).append(")");
+                    foodHtml.append(" (")
+                            .append(org.springframework.web.util.HtmlUtils.htmlEscape(f.getVariantName()))
+                            .append(")");
                 }
                 foodHtml.append(" - ").append(nf.format(f.getUnitPrice().multiply(java.math.BigDecimal.valueOf(f.getQuantity())))).append(" VND</li>");
             }
@@ -195,15 +372,15 @@ public class EmailOutboxWorkerService {
             </body>
             </html>
             """.formatted(
-                ticket.getMovieTitle() != null ? ticket.getMovieTitle() : "Movie Ticket",
-                ticket.getBookingCode(),
-                ticketUrl != null ? ticketUrl : "#",
-                ticket.getCinemaName() != null ? ticket.getCinemaName() : "BOX Cinema",
-                ticket.getRoomName() != null ? ticket.getRoomName() : "Auditorium",
-                ticket.getShowtimeStart() != null ? ticket.getShowtimeStart() : "",
+                org.springframework.web.util.HtmlUtils.htmlEscape(ticket.getMovieTitle() != null ? ticket.getMovieTitle() : "Movie Ticket"),
+                org.springframework.web.util.HtmlUtils.htmlEscape(ticket.getBookingCode() != null ? ticket.getBookingCode() : ""),
+                org.springframework.web.util.HtmlUtils.htmlEscape(ticketUrl != null ? ticketUrl : "#"),
+                org.springframework.web.util.HtmlUtils.htmlEscape(ticket.getCinemaName() != null ? ticket.getCinemaName() : "BOX Cinema"),
+                org.springframework.web.util.HtmlUtils.htmlEscape(ticket.getRoomName() != null ? ticket.getRoomName() : "Auditorium"),
+                org.springframework.web.util.HtmlUtils.htmlEscape(ticket.getShowtimeStart() != null ? ticket.getShowtimeStart() : ""),
                 seatsHtml.toString(),
                 foodHtml.toString(),
-                nf.format(ticket.getTotalAmount())
+                nf.format(ticket.getTotalAmount() != null ? ticket.getTotalAmount() : java.math.BigDecimal.ZERO)
         );
     }
 }

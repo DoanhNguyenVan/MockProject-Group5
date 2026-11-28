@@ -91,4 +91,38 @@ class PromotionServiceTest {
                 promotionService.validateAndCalculateDiscount("EXPIRED", BigDecimal.valueOf(150000), 1L)
         );
     }
+
+    @Test
+    void testValidateAndLockForRedemption_ExcludingCurrentBooking_PreservesSelfHeldSingleUseRecoveryVoucher() {
+        Promotion promo = new Promotion();
+        promo.setPromotionId(99L);
+        promo.setVoucherCode("RCV-99-TEST");
+        promo.setStatus("ACTIVE");
+        promo.setDiscountType("FIXED");
+        promo.setDiscountValue(BigDecimal.valueOf(15000));
+        promo.setMaxDiscount(BigDecimal.valueOf(15000));
+        promo.setMinOrderAmount(BigDecimal.ZERO);
+        promo.setUsageLimit(1);
+        promo.setPerUserLimit(1);
+        promo.setPublic(false);
+        promo.setTargetUserId(7L);
+        promo.setTargetEmail("guest@box.test");
+        promo.setStartAt(LocalDateTime.now().minusMinutes(5));
+        promo.setEndAt(LocalDateTime.now().plusDays(30));
+
+        when(promotionRepository.findByVoucherCodeIgnoreCaseForUpdate("RCV-99-TEST")).thenReturn(Optional.of(promo));
+        // Simulates booking #55 already holding this single-use voucher while updating food items (excludeBookingId=55 -> 0 other usages)
+        when(promotionRepository.countTotalUsageExcludingBooking(99L, 55L)).thenReturn(0L);
+        when(promotionRepository.countUsageByUserExcludingBooking(99L, 7L, 55L)).thenReturn(0L);
+        // Without excluding booking #55 (or if another booking used it), total usage is 1 -> rejected
+        when(promotionRepository.countTotalUsageExcludingBooking(99L, 88L)).thenReturn(1L);
+
+        BigDecimal kept = promotionService.validateAndLockForRedemption(
+                "RCV-99-TEST", BigDecimal.valueOf(100000), 7L, "guest@box.test", 55L);
+        assertEquals(0, BigDecimal.valueOf(15000).compareTo(kept));
+
+        assertThrows(IllegalArgumentException.class, () ->
+                promotionService.validateAndLockForRedemption(
+                        "RCV-99-TEST", BigDecimal.valueOf(100000), 7L, "guest@box.test", 88L));
+    }
 }

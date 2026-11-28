@@ -201,6 +201,14 @@
         <span aria-hidden="true">🧾</span>
         <span>Ticket orders</span>
       </a>
+      <a href="/admin/refunds" th:href="@{/admin/refunds}" th:attr="aria-current=${activeSection == 'refunds' ? 'page' : null}">
+        <span aria-hidden="true">↺</span>
+        <span>Refunds &amp; Payouts</span>
+      </a>
+      <a href="/admin/incidents" th:href="@{/admin/incidents}" th:attr="aria-current=${activeSection == 'incidents' ? 'page' : null}">
+        <span aria-hidden="true">⚠</span>
+        <span>Incidents &amp; Appeals</span>
+      </a>
       <a href="/admin/accounts" th:href="@{/admin/accounts}" th:attr="aria-current=${activeSection == 'accounts' ? 'page' : null}">
         <span aria-hidden="true">♙</span>
         <span>Accounts &amp; roles</span>

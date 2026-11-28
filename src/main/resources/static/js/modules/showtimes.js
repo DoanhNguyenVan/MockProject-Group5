@@ -421,10 +421,10 @@ export function initShowtimesPage(doc = document) {
              data-formats="${escapeHtml(formatNames.join(', '))}"
              data-orig-order="${idx}">
           <div class="showtime-poster-col">
-            <span class="showtime-age-badge ${ageClass}">${movie.ageRating}</span>
-            <img src="${movie.posterUrl}" alt="${escapeHtml(movie.title)}" loading="lazy" onerror="this.onerror=null;this.src='/assets/img/crimson-horizon.webp'">
-            ${movie.trailerUrl ? `
-              <button type="button" class="poster-trailer-overlay" data-trailer-url="${movie.trailerUrl}" aria-label="Watch trailer">
+            <span class="showtime-age-badge ${escapeHtml(ageClass)}">${escapeHtml(movie.ageRating || "")}</span>
+            <img src="${escapeHtml(safeMediaUrl(movie.posterUrl, "/assets/img/crimson-horizon.webp"))}" alt="${escapeHtml(movie.title)}" loading="lazy" onerror="this.onerror=null;this.src='/assets/img/crimson-horizon.webp'">
+            ${movie.trailerUrl && safeMediaUrl(movie.trailerUrl, "") ? `
+              <button type="button" class="poster-trailer-overlay" data-trailer-url="${escapeHtml(safeMediaUrl(movie.trailerUrl, ""))}" aria-label="Watch trailer">
                 <span class="trailer-play-icon">
                   <svg viewBox="0 0 24 24" width="20" height="20"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>
                 </span>
@@ -455,8 +455,15 @@ export function initShowtimesPage(doc = document) {
   }
 
   function escapeHtml(str) {
-    if (!str) return "";
-    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    if (str === null || str === undefined) return "";
+    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function safeMediaUrl(url, fallback = "") {
+    if (typeof url !== "string") return fallback;
+    const trimmed = url.trim();
+    if (/^\/(?!\/)/.test(trimmed) || /^https?:\/\//i.test(trimmed)) return trimmed;
+    return fallback;
   }
 
   // Selecting a screening opens seat selection directly.

@@ -302,11 +302,13 @@
       const csrfInput = document.querySelector('#case3OtpForm input[name]');
       const emailVal = (emailInput.value || '').trim();
       if (!emailVal) {
-        statusEl.innerHTML = '<span class="text-danger">Please enter your BOX Cinema email first.</span>';
+        statusEl.className = 'small mt-2 text-danger';
+        statusEl.textContent = 'Please enter your BOX Cinema email first.';
         return;
       }
       hiddenEmail.value = emailVal;
-      statusEl.innerHTML = '<span class="text-secondary">Sending 6-digit verification code...</span>';
+      statusEl.className = 'small mt-2 text-secondary';
+      statusEl.textContent = 'Sending 6-digit verification code...';
       const body = new URLSearchParams();
       body.set('boxEmail', emailVal);
       if (csrfInput && csrfInput.name) {
@@ -326,11 +328,13 @@
         if (data.challengeId) {
           challengeInput.value = data.challengeId;
         }
-        statusEl.innerHTML = data.success
-          ? '<span class="text-success">' + (data.message || 'Verification code sent.') + '</span>'
-          : '<span class="text-warning">' + (data.message || 'Unable to send OTP right now.') + '</span>';
+        statusEl.className = data.success ? 'small mt-2 text-success' : 'small mt-2 text-warning';
+        statusEl.textContent = data.success
+          ? (data.message || 'Verification code sent.')
+          : (data.message || 'Unable to send OTP right now.');
       } catch (err) {
-        statusEl.innerHTML = '<span class="text-danger">Request failed. Please try again or use Email &amp; Password.</span>';
+        statusEl.className = 'small mt-2 text-danger';
+        statusEl.textContent = 'Request failed. Please try again or use Email & Password.';
       }
     }
   </script>

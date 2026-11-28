@@ -441,3 +441,6 @@ SCRATCH_DB_DROPPED=true
   - `tests/frontend/stage4-refund-ui.test.mjs`
   - `src/test/java/com/boxcinema/refund/Stage4FrontendTemplatesAndWiringTest.java`
   - `docs/acceptance/refund/_progress.md`
+- **Stage 4 Commit Hash:** `e834a68` (`e834a6880a8499b94a8608f0163a4b41931384b3`) on branch `feat/refund-payos-payout`
+  - Commit message: `feat(refund): complete Stage 4 frontend integration tests and wiring verification`
+  - Staged & committed ONLY the 2 newly created Stage 4 test files + `docs/acceptance/refund/_progress.md` (`3` files total); pre-existing dirty tracked/untracked files (`217` entries: `92 M`, `120 ??`, `5 D`) remain preserved untouched in the working tree.

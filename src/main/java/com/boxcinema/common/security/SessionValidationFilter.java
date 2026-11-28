@@ -39,7 +39,9 @@ public class SessionValidationFilter extends OncePerRequestFilter {
                 || path.startsWith("/assets/")
                 || path.startsWith("/images/")
                 || "/favicon.ico".equals(path)
-                || "/error".equals(path));
+                || "/error".equals(path)
+                || "/api/payments/payos/webhook".equals(path)
+                || "/api/payments/payos/payout/webhook".equals(path));
     }
 
     @Override

@@ -23,8 +23,12 @@ public class Booking {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "showtime_id", nullable = false)
+    @JoinColumn(name = "showtime_id")
     private Showtime showtime;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cinema_id")
+    private Cinema cinema;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sold_by_staff_id")
@@ -32,6 +36,9 @@ public class Booking {
 
     @Column(name = "booking_channel", nullable = false, length = 20)
     private String bookingChannel = "ONLINE";
+
+    @Column(name = "order_type", nullable = false, length = 20)
+    private String orderType = "TICKET_ONLY";
 
     @Column(name = "guest_name", length = 100)
     private String guestName;
@@ -87,6 +94,21 @@ public class Booking {
 
     @Column(name = "voucher_code_snapshot", length = 50)
     private String voucherCodeSnapshot;
+
+    @Column(name = "promotion_discount_type_snapshot", length = 20)
+    private String promotionDiscountTypeSnapshot;
+
+    @Column(name = "promotion_discount_value_snapshot", precision = 12, scale = 2)
+    private BigDecimal promotionDiscountValueSnapshot;
+
+    @Column(name = "promotion_max_discount_snapshot", precision = 12, scale = 2)
+    private BigDecimal promotionMaxDiscountSnapshot;
+
+    @Column(name = "promotion_end_at_snapshot")
+    private LocalDateTime promotionEndAtSnapshot;
+
+    @Column(name = "snapshot_review_required", nullable = false)
+    private boolean snapshotReviewRequired = false;
 
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BookingSeat> bookingSeats = new ArrayList<>();
@@ -211,4 +233,35 @@ public class Booking {
 
     public String getVoucherCodeSnapshot() { return voucherCodeSnapshot; }
     public void setVoucherCodeSnapshot(String voucherCodeSnapshot) { this.voucherCodeSnapshot = voucherCodeSnapshot; }
+
+    public Cinema getCinema() { return cinema; }
+    public void setCinema(Cinema cinema) { this.cinema = cinema; }
+
+    public String getOrderType() { return orderType; }
+    public void setOrderType(String orderType) { this.orderType = orderType; }
+
+    public String getPromotionDiscountTypeSnapshot() { return promotionDiscountTypeSnapshot; }
+    public void setPromotionDiscountTypeSnapshot(String promotionDiscountTypeSnapshot) { this.promotionDiscountTypeSnapshot = promotionDiscountTypeSnapshot; }
+
+    public BigDecimal getPromotionDiscountValueSnapshot() { return promotionDiscountValueSnapshot; }
+    public void setPromotionDiscountValueSnapshot(BigDecimal promotionDiscountValueSnapshot) { this.promotionDiscountValueSnapshot = promotionDiscountValueSnapshot; }
+
+    public BigDecimal getPromotionMaxDiscountSnapshot() { return promotionMaxDiscountSnapshot; }
+    public void setPromotionMaxDiscountSnapshot(BigDecimal promotionMaxDiscountSnapshot) { this.promotionMaxDiscountSnapshot = promotionMaxDiscountSnapshot; }
+
+    public LocalDateTime getPromotionEndAtSnapshot() { return promotionEndAtSnapshot; }
+    public void setPromotionEndAtSnapshot(LocalDateTime promotionEndAtSnapshot) { this.promotionEndAtSnapshot = promotionEndAtSnapshot; }
+
+    public boolean isSnapshotReviewRequired() { return snapshotReviewRequired; }
+    public void setSnapshotReviewRequired(boolean snapshotReviewRequired) { this.snapshotReviewRequired = snapshotReviewRequired; }
+
+    public Long resolveCinemaId() {
+        if (cinema != null && cinema.getCinemaId() != null) {
+            return cinema.getCinemaId();
+        }
+        if (showtime != null && showtime.getRoom() != null && showtime.getRoom().getCinema() != null) {
+            return showtime.getRoom().getCinema().getCinemaId();
+        }
+        return null;
+    }
 }

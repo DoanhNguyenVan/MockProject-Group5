@@ -5,13 +5,17 @@ import com.boxcinema.common.entity.Genre;
 import com.boxcinema.common.entity.Movie;
 import com.boxcinema.common.repository.GenreRepository;
 import com.boxcinema.common.repository.MovieRepository;
+import com.boxcinema.common.repository.ShowtimeRepository;
 import com.boxcinema.admin.service.AdminMovieManagementService;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 @Service
@@ -19,15 +23,26 @@ import java.util.Set;
 public class AdminMovieManagementServiceImpl
         implements AdminMovieManagementService {
 
+    private static final Set<String> VALID_MOVIE_STATUSES = Set.of("NOW_SHOWING", "COMING_SOON", "ENDED", "INACTIVE");
+
     private final MovieRepository movieRepository;
     private final GenreRepository genreRepository;
+    private final ShowtimeRepository showtimeRepository;
 
     public AdminMovieManagementServiceImpl(
             MovieRepository movieRepository,
             GenreRepository genreRepository) {
+        this(movieRepository, genreRepository, null);
+    }
 
+    @Autowired
+    public AdminMovieManagementServiceImpl(
+            MovieRepository movieRepository,
+            GenreRepository genreRepository,
+            @Autowired(required = false) ShowtimeRepository showtimeRepository) {
         this.movieRepository = movieRepository;
         this.genreRepository = genreRepository;
+        this.showtimeRepository = showtimeRepository;
     }
 
     // Get all movies
@@ -107,7 +122,13 @@ public class AdminMovieManagementServiceImpl
         existingMovie.setLanguage(updatedMovie.getLanguage());
         existingMovie.setReleaseDate(updatedMovie.getReleaseDate());
         existingMovie.setEndDate(updatedMovie.getEndDate());
-        existingMovie.setStatus(updatedMovie.getStatus());
+        String nextStatus = updatedMovie.getStatus().trim().toUpperCase(Locale.ROOT);
+        if (("ENDED".equals(nextStatus) || "INACTIVE".equals(nextStatus))
+                && showtimeRepository != null
+                && showtimeRepository.countUpcomingActiveShowtimesByMovie(movieId, LocalDateTime.now()) > 0) {
+            throw new IllegalStateException("Cannot set movie status to " + nextStatus + " while upcoming active showtimes exist.");
+        }
+        existingMovie.setStatus(nextStatus);
         existingMovie.setPosterUrl(updatedMovie.getPosterUrl());
         existingMovie.setBannerUrl(updatedMovie.getBannerUrl());
         existingMovie.setTrailerUrl(updatedMovie.getTrailerUrl());
@@ -122,6 +143,10 @@ public class AdminMovieManagementServiceImpl
     public void deleteMovie(Long movieId) {
 
         Movie movie = getMovieById(movieId);
+        if (showtimeRepository != null
+                && showtimeRepository.countUpcomingActiveShowtimesByMovie(movieId, LocalDateTime.now()) > 0) {
+            throw new IllegalStateException("Cannot delete this movie while upcoming active showtimes exist.");
+        }
 
         movieRepository.delete(movie);
     }
@@ -195,5 +220,11 @@ public class AdminMovieManagementServiceImpl
             throw new IllegalArgumentException(
                     "Movie status is required.");
         }
+        String normalizedStatus = movie.getStatus().trim().toUpperCase(Locale.ROOT);
+        if (!VALID_MOVIE_STATUSES.contains(normalizedStatus)) {
+            throw new IllegalArgumentException(
+                    "Invalid movie status. Allowed values: NOW_SHOWING, COMING_SOON, ENDED, INACTIVE.");
+        }
+        movie.setStatus(normalizedStatus);
     }
 }

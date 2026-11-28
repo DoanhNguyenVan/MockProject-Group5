@@ -125,24 +125,61 @@
       function handleResolvedQr(decodedText) {
         if (!decodedText) return;
         const text = decodedText.trim();
-        statusBox.classList.remove('d-none', 'alert-danger');
-        statusBox.classList.add('alert-success');
-        statusBox.textContent = 'QR recognized! Opening ticket details...';
 
-        // Case 1: Full URL (e.g. https://domain.ngrok-free.dev/t/BOX1.xyz or http://localhost:8080/t/BOX1.xyz)
-        if (text.startsWith('http://') || text.startsWith('https://')) {
-          window.location.href = text;
-          return;
+        const showReject = (msg) => {
+          statusBox.classList.remove('d-none', 'alert-success', 'alert-warning');
+          statusBox.classList.add('alert-danger');
+          statusBox.textContent = msg;
+        };
+
+        // Case 1: Full URL — strictly allow same-origin /t/<token> only (prevent open redirect)
+        if (/^https?:\/\//i.test(text)) {
+          try {
+            const parsed = new URL(text);
+            if (parsed.origin !== window.location.origin || !parsed.pathname.startsWith('/t/')) {
+              showReject('Invalid QR code: external or non-ticket URLs are not permitted.');
+              return;
+            }
+            const tokenPart = parsed.pathname.slice(3);
+            if (!tokenPart || !/^[A-Za-z0-9._-]+$/.test(tokenPart)) {
+              showReject('Invalid ticket token format.');
+              return;
+            }
+            statusBox.classList.remove('d-none', 'alert-danger', 'alert-warning');
+            statusBox.classList.add('alert-success');
+            statusBox.textContent = 'QR recognized! Opening ticket details...';
+            window.location.href = '/t/' + encodeURIComponent(tokenPart);
+            return;
+          } catch (_) {
+            showReject('Invalid QR URL.');
+            return;
+          }
         }
 
-        // Case 2: Token path or raw token
+        // Case 2: Relative /t/<token> path
         if (text.startsWith('/t/')) {
-          window.location.href = text;
+          const tokenPart = text.slice(3).split(/[?#]/)[0];
+          if (!tokenPart || !/^[A-Za-z0-9._-]+$/.test(tokenPart)) {
+            showReject('Invalid ticket token format.');
+            return;
+          }
+          statusBox.classList.remove('d-none', 'alert-danger', 'alert-warning');
+          statusBox.classList.add('alert-success');
+          statusBox.textContent = 'QR recognized! Opening ticket details...';
+          window.location.href = '/t/' + encodeURIComponent(tokenPart);
           return;
         }
 
-        // Case 3: Raw token string (BOX1.xyz) or code
-        window.location.href = '/t/' + encodeURIComponent(text);
+        // Case 3: Raw BOX1.<payload>.<sig> token
+        if (/^BOX1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(text)) {
+          statusBox.classList.remove('d-none', 'alert-danger', 'alert-warning');
+          statusBox.classList.add('alert-success');
+          statusBox.textContent = 'QR recognized! Opening ticket details...';
+          window.location.href = '/t/' + encodeURIComponent(text);
+          return;
+        }
+
+        showReject('Unrecognized QR code. Please scan a valid BOX1 e-ticket QR.');
       }
 
       manualBtn.addEventListener('click', function() {

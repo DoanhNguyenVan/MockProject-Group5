@@ -2,8 +2,8 @@ package com.boxcinema.staff.controller;
 
 import com.boxcinema.common.dto.BookingResponseDto;
 import com.boxcinema.staff.dto.request.StaffCheckinRequestDto;
+import com.boxcinema.staff.dto.response.StaffCheckinHistoryDto;
 import com.boxcinema.staff.dto.response.StaffCheckinResponseDto;
-import com.boxcinema.common.entity.BookingCheckin;
 import com.boxcinema.staff.service.StaffCheckinService;
 import com.boxcinema.common.util.SecurityContextUtils;
 import org.springframework.http.ResponseEntity;
@@ -27,7 +27,7 @@ public class StaffCheckinApiController {
     public ResponseEntity<StaffCheckinResponseDto> checkin(@RequestBody StaffCheckinRequestDto request) {
         String token = request != null ? request.getQrPayload() : null;
         if (token == null || token.isBlank()) {
-            return ResponseEntity.badRequest().build();
+            throw new IllegalArgumentException("QR payload is required.");
         }
         Long staffUserId = SecurityContextUtils.resolveCurrentUserId();
         StaffCheckinResponseDto response = staffCheckinService.checkinByQrToken(token.trim(), staffUserId);
@@ -36,11 +36,13 @@ public class StaffCheckinApiController {
 
     @GetMapping("/bookings/{id}")
     public ResponseEntity<BookingResponseDto> getBookingDetails(@PathVariable Long id) {
-        return ResponseEntity.ok(staffCheckinService.getBookingForStaff(id));
+        Long staffUserId = SecurityContextUtils.resolveCurrentUserId();
+        return ResponseEntity.ok(staffCheckinService.getBookingForStaff(id, staffUserId));
     }
 
     @GetMapping("/check-ins")
-    public ResponseEntity<List<BookingCheckin>> getCheckinHistory() {
-        return ResponseEntity.ok(staffCheckinService.getCheckinHistory());
+    public ResponseEntity<List<StaffCheckinHistoryDto>> getCheckinHistory() {
+        Long staffUserId = SecurityContextUtils.resolveCurrentUserId();
+        return ResponseEntity.ok(staffCheckinService.getCheckinHistoryDtos(staffUserId));
     }
 }

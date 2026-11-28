@@ -45,6 +45,24 @@ public class BookingFoodItem {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal subtotal;
 
+    @Column(name = "discount_allocated", nullable = false, precision = 12, scale = 2)
+    private BigDecimal discountAllocated = BigDecimal.ZERO;
+
+    @Column(name = "net_paid_amount", nullable = false, precision = 12, scale = 2)
+    private BigDecimal netPaidAmount = BigDecimal.ZERO;
+
+    @Column(name = "delivered_quantity", nullable = false)
+    private int deliveredQuantity = 0;
+
+    @Column(name = "refunded_quantity", nullable = false)
+    private int refundedQuantity = 0;
+
+    @Column(name = "replacement_accepted_quantity", nullable = false)
+    private int replacementAcceptedQuantity = 0;
+
+    @Column(name = "delivery_status", nullable = false, length = 30)
+    private String deliveryStatus = "PENDING";
+
     public BookingFoodItem() {}
 
     public Long getId() { return id; }
@@ -79,4 +97,22 @@ public class BookingFoodItem {
 
     public BigDecimal getSubtotal() { return subtotal; }
     public void setSubtotal(BigDecimal subtotal) { this.subtotal = subtotal; }
+
+    public BigDecimal getDiscountAllocated() { return discountAllocated; }
+    public void setDiscountAllocated(BigDecimal discountAllocated) { this.discountAllocated = discountAllocated; }
+
+    public BigDecimal getNetPaidAmount() { return netPaidAmount; }
+    public void setNetPaidAmount(BigDecimal netPaidAmount) { this.netPaidAmount = netPaidAmount; }
+
+    public int getDeliveredQuantity() { return deliveredQuantity; }
+    public void setDeliveredQuantity(int deliveredQuantity) { this.deliveredQuantity = deliveredQuantity; }
+
+    public int getRefundedQuantity() { return refundedQuantity; }
+    public void setRefundedQuantity(int refundedQuantity) { this.refundedQuantity = refundedQuantity; }
+
+    public int getReplacementAcceptedQuantity() { return replacementAcceptedQuantity; }
+    public void setReplacementAcceptedQuantity(int replacementAcceptedQuantity) { this.replacementAcceptedQuantity = replacementAcceptedQuantity; }
+
+    public String getDeliveryStatus() { return deliveryStatus; }
+    public void setDeliveryStatus(String deliveryStatus) { this.deliveryStatus = deliveryStatus; }
 }

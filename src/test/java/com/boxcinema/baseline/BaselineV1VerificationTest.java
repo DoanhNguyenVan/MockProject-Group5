@@ -357,8 +357,11 @@ public class BaselineV1VerificationTest {
         assertNull(session.getAttribute("access_token"));
         assertNull(session.getAttribute("refresh_token"));
 
-        // 7. Google-only profile shows Set Password and requires fresh Google sub re-auth before setting password
+        // 7. Google-only profile shows Set Password on /account-settings and requires fresh Google sub re-auth before setting password
         mockMvc.perform(get("/profile").session(session))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/account-settings").session(session))
                 .andExpect(status().isOk())
                 .andExpect(model().attribute("hasPassword", false))
                 .andExpect(model().attribute("isGoogleLinked", true))
@@ -386,7 +389,7 @@ public class BaselineV1VerificationTest {
                         .param("code", "setpw-code-1")
                         .param("state", setPwState))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/profile?setPasswordReady=true"));
+                .andExpect(redirectedUrl("/account-settings?setPasswordReady=true"));
 
         mockMvc.perform(post("/api/account/set-password")
                         .session(session)

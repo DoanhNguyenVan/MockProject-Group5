@@ -14,11 +14,14 @@ import java.util.Optional;
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
     Optional<Booking> findByBookingCode(String bookingCode);
+    Optional<Booking> findByBookingCodeIgnoreCase(String bookingCode);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT b FROM Booking b WHERE b.bookingId = :id")
     Optional<Booking> findByIdForUpdate(@Param("id") Long id);
 
+    @Query("SELECT b FROM Booking b WHERE b.cinema.cinemaId = :cinemaId OR b.showtime.room.cinema.cinemaId = :cinemaId ORDER BY b.bookedAt DESC")
+    List<Booking> findByCinemaScope(@Param("cinemaId") Long cinemaId);
 
     List<Booking> findByUser_UserIdOrderByBookedAtDesc(Long userId);
 }

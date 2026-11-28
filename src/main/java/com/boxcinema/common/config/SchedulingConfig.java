@@ -1,12 +1,12 @@
 package com.boxcinema.common.config;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @Configuration
 @EnableScheduling
-@ConditionalOnProperty(name = "app.cleanup.pending-accounts.scheduling-enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnExpression("${app.scheduling.enabled:true} and ${app.cleanup.pending-accounts.scheduling-enabled:true}")
 public class SchedulingConfig {
 }
 

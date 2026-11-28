@@ -30,13 +30,13 @@ public class BookingQrServiceImpl implements BookingQrService {
     private final BookingRepository bookingRepository;
     private final QrCodeService qrCodeService;
 
-    @Value("${app.public-base-url:https://absence-turret-chapped.ngrok-free.dev}")
+    @Value("${app.public-base-url:http://localhost:8080}")
     private String publicBaseUrl;
 
     @Value("${app.qr.storage-dir:./uploads/booking-qr}")
     private String storageDir;
 
-    @Value("${payos.checksum-key:BOX_CINEMA_DEFAULT_SECURE_PAYOS_KEY_2026_@!#}")
+    @Value("${app.qr.encryption-key:${payos.collection.checksum-key:${payos.checksum-key:BOX_CINEMA_DEFAULT_SECURE_PAYOS_KEY_2026_@!#}}}")
     private String checksumKey;
 
     public BookingQrServiceImpl(

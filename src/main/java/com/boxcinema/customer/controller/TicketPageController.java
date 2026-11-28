@@ -42,7 +42,7 @@ public class TicketPageController {
         return "customer/booking-history";
     }
 
-    @GetMapping("/booking/history/{bookingId}")
+    @GetMapping({"/booking/history/{bookingId}", "/booking/detail/{bookingId}"})
     public String bookingDetail(@PathVariable Long bookingId, Model model) {
         Long userId = resolveCurrentUserId();
         try {

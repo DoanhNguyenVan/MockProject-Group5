@@ -341,8 +341,10 @@
             <a href="/about" th:href="@{/about}" data-nav-route="about">About</a>
             <a href="/contact" th:href="@{/contact}" data-nav-route="contact">Contact</a>
             <a href="/admin" th:href="@{/admin}" th:if="${(currentUser != null and currentUser.role == 'ADMIN') or (session.currentUser != null and session.currentUser.role == 'ADMIN')}" th:classappend="${activePage == 'admin' ? 'active' : ''}">Admin</a>
+            <a href="/manager" th:href="@{/manager}" th:if="${(currentUser != null and (currentUser.role == 'MANAGER' or currentUser.role == 'ADMIN')) or (session.currentUser != null and (session.currentUser.role == 'MANAGER' or session.currentUser.role == 'ADMIN'))}" th:classappend="${activePage == 'manager' ? 'active' : ''}">Manager</a>
             <a href="/staff/checkin" th:href="@{/staff/checkin}" th:if="${(currentUser != null and (currentUser.role == 'STAFF' or currentUser.role == 'MANAGER' or currentUser.role == 'ADMIN')) or (session.currentUser != null and (session.currentUser.role == 'STAFF' or session.currentUser.role == 'MANAGER' or session.currentUser.role == 'ADMIN'))}" th:classappend="${activePage == 'staff-checkin' ? 'active' : ''}">Ticket Scanner</a>
             <a href="/staff/food" th:href="@{/staff/food}" th:if="${(currentUser != null and (currentUser.role == 'STAFF' or currentUser.role == 'MANAGER' or currentUser.role == 'ADMIN')) or (session.currentUser != null and (session.currentUser.role == 'STAFF' or session.currentUser.role == 'MANAGER' or session.currentUser.role == 'ADMIN'))}" th:classappend="${activePage == 'staff-food' ? 'active' : ''}">Concessions</a>
+            <a href="/staff/incidents" th:href="@{/staff/incidents}" th:if="${(currentUser != null and (currentUser.role == 'STAFF' or currentUser.role == 'MANAGER' or currentUser.role == 'ADMIN')) or (session.currentUser != null and (session.currentUser.role == 'STAFF' or session.currentUser.role == 'MANAGER' or session.currentUser.role == 'ADMIN'))}" th:classappend="${activePage == 'staff-incidents' ? 'active' : ''}">Incidents</a>
           </div>
 
           <!-- Mobile Only: Account Links & Theme Toggle inside dropdown menu -->
@@ -380,7 +382,7 @@
                     </svg>
                     <span>Booking History</span>
                   </a>
-                  <a href="javascript:void(0)" onclick="alert('My Vouchers feature is coming soon.');" class="nav-account-dropdown-item">
+                  <a href="javascript:void(0)" data-my-vouchers-trigger="true" class="nav-account-dropdown-item">
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                       <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
                       <circle cx="9" cy="9" r="1"></circle>
@@ -533,7 +535,7 @@
 
                   <!-- 3. My Vouchers -->
                   <li>
-                    <a class="nav-account-dropdown-item" href="javascript:void(0)" onclick="alert('My Vouchers feature is coming soon.');">
+                    <a class="nav-account-dropdown-item" href="javascript:void(0)" data-my-vouchers-trigger="true">
                       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
                         <circle cx="9" cy="9" r="1"></circle>

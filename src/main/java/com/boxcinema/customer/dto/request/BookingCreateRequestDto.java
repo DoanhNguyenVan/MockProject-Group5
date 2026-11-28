@@ -5,6 +5,7 @@ import java.util.List;
 
 public class BookingCreateRequestDto {
     private Long showtimeId;
+    private Long cinemaId;
     private List<Long> seatIds = new ArrayList<>();
     private String holdSessionId;
     private String guestName;
@@ -18,6 +19,8 @@ public class BookingCreateRequestDto {
 
     public Long getShowtimeId() { return showtimeId; }
     public void setShowtimeId(Long showtimeId) { this.showtimeId = showtimeId; }
+    public Long getCinemaId() { return cinemaId; }
+    public void setCinemaId(Long cinemaId) { this.cinemaId = cinemaId; }
     public List<Long> getSeatIds() { return seatIds; }
     public void setSeatIds(List<Long> seatIds) { this.seatIds = seatIds; }
     public String getHoldSessionId() { return holdSessionId; }

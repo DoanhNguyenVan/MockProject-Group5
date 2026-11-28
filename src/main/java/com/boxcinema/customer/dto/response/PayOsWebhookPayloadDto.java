@@ -2,6 +2,7 @@ package com.boxcinema.customer.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -12,10 +13,15 @@ import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PayOsWebhookPayloadDto {
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     private String code;
     private String desc;
     private PayOsWebhookDataDto data;
+    @JsonIgnore
     private JsonNode rawData;
+    @JsonIgnore
+    private boolean dataParseError;
     private String signature;
 
     public PayOsWebhookPayloadDto() {}
@@ -32,13 +38,34 @@ public class PayOsWebhookPayloadDto {
     @JsonProperty("data")
     public void handleDataNode(JsonNode node) {
         this.rawData = node;
+        if (node == null || node.isNull()) {
+            this.data = null;
+            this.dataParseError = false;
+            return;
+        }
+        if (!node.isObject()) {
+            this.data = null;
+            this.dataParseError = true;
+            return;
+        }
         try {
-            this.data = new ObjectMapper().treeToValue(node, PayOsWebhookDataDto.class);
-        } catch (Exception ignored) {}
+            this.data = MAPPER.treeToValue(node, PayOsWebhookDataDto.class);
+            this.dataParseError = false;
+        } catch (Exception ex) {
+            this.data = null;
+            this.dataParseError = true;
+        }
     }
 
+    @JsonIgnore
     public JsonNode getRawData() { return rawData; }
+    @JsonIgnore
     public void setRawData(JsonNode rawData) { this.rawData = rawData; }
+
+    @JsonIgnore
+    public boolean isDataParseError() { return dataParseError; }
+    @JsonIgnore
+    public void setDataParseError(boolean dataParseError) { this.dataParseError = dataParseError; }
 
     public String getSignature() { return signature; }
     public void setSignature(String signature) { this.signature = signature; }
@@ -56,6 +83,7 @@ public class PayOsWebhookPayloadDto {
         private String code;
         private String desc;
         private String counterAccountBankId;
+        private String counterAccountBankName;
         private String counterAccountName;
         private String counterAccountNumber;
         private String virtualAccountName;
@@ -85,6 +113,8 @@ public class PayOsWebhookPayloadDto {
         public void setDesc(String desc) { this.desc = desc; }
         public String getCounterAccountBankId() { return counterAccountBankId; }
         public void setCounterAccountBankId(String counterAccountBankId) { this.counterAccountBankId = counterAccountBankId; }
+        public String getCounterAccountBankName() { return counterAccountBankName; }
+        public void setCounterAccountBankName(String counterAccountBankName) { this.counterAccountBankName = counterAccountBankName; }
         public String getCounterAccountName() { return counterAccountName; }
         public void setCounterAccountName(String counterAccountName) { this.counterAccountName = counterAccountName; }
         public String getCounterAccountNumber() { return counterAccountNumber; }

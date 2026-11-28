@@ -12,14 +12,26 @@ public class EmailOutbox {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "booking_id", nullable = false)
+    @JoinColumn(name = "booking_id")
     private Booking booking;
+
+    @Column(name = "refund_request_id")
+    private Long refundRequestId;
 
     @Column(name = "recipient_email", nullable = false, length = 255)
     private String recipientEmail;
 
     @Column(name = "email_type", nullable = false, length = 50)
     private String emailType = "BOOKING_CONFIRMATION";
+
+    @Column(name = "subject", length = 255)
+    private String subject;
+
+    @Column(name = "body_html", columnDefinition = "MEDIUMTEXT")
+    private String bodyHtml;
+
+    @Column(name = "dedup_key", unique = true, length = 120)
+    private String dedupKey;
 
     @Column(nullable = false, length = 20)
     private String status = "PENDING"; // PENDING, PROCESSING, SENT, RETRYING, FAILED
@@ -72,4 +84,16 @@ public class EmailOutbox {
 
     public String getLastError() { return lastError; }
     public void setLastError(String lastError) { this.lastError = lastError; }
+
+    public Long getRefundRequestId() { return refundRequestId; }
+    public void setRefundRequestId(Long refundRequestId) { this.refundRequestId = refundRequestId; }
+
+    public String getSubject() { return subject; }
+    public void setSubject(String subject) { this.subject = subject; }
+
+    public String getBodyHtml() { return bodyHtml; }
+    public void setBodyHtml(String bodyHtml) { this.bodyHtml = bodyHtml; }
+
+    public String getDedupKey() { return dedupKey; }
+    public void setDedupKey(String dedupKey) { this.dedupKey = dedupKey; }
 }

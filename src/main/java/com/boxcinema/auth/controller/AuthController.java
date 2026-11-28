@@ -166,7 +166,7 @@ public class AuthController {
     public String loginPage(@RequestParam(value = "redirect", required = false) String redirect,
                             HttpSession session,
                             Model model) {
-        if (redirect != null && !redirect.isBlank() && redirect.startsWith("/")) {
+        if (isSafeRelativeRedirect(redirect)) {
             if (session != null) {
                 session.setAttribute("REDIRECT_AFTER_LOGIN", redirect);
             }
@@ -176,6 +176,16 @@ public class AuthController {
         model.addAttribute("googleOAuthConfigured", isGoogleOAuthConfigured());
         populateAuthShowcasePosters(model);
         return "auth/login";
+    }
+
+    private boolean isSafeRelativeRedirect(String redirect) {
+        return redirect != null
+                && !redirect.isBlank()
+                && redirect.startsWith("/")
+                && !redirect.startsWith("//")
+                && !redirect.startsWith("/\\")
+                && !redirect.contains("\r")
+                && !redirect.contains("\n");
     }
 
     @GetMapping({"/register", "/signup"})
@@ -2275,11 +2285,8 @@ public class AuthController {
         if (request == null) {
             return "unknown";
         }
-        String xff = request.getHeader("X-Forwarded-For");
-        if (xff != null && !xff.isBlank()) {
-            return xff.split(",")[0].trim();
-        }
-        return request.getRemoteAddr() != null ? request.getRemoteAddr() : "unknown";
+        String remoteAddr = request.getRemoteAddr();
+        return (remoteAddr != null && !remoteAddr.isBlank()) ? remoteAddr.trim() : "unknown";
     }
 
     private String urlEncode(String val) {
