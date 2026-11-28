@@ -57,8 +57,8 @@ public class MovieReviewServiceImpl implements MovieReviewService {
         if (currentUserId == null) {
             throw new AccessDeniedException("Please sign in to review this movie.");
         }
-        if (request == null || request.getRating() == null || request.getRating() < 1 || request.getRating() > 5) {
-            throw new IllegalArgumentException("Rating must be between 1 and 5 stars.");
+        if (request == null) {
+            throw new IllegalArgumentException("Review submission cannot be empty.");
         }
         String comment = request.getComment() != null ? request.getComment().trim() : "";
         if (comment.length() > MAX_COMMENT_LENGTH) {
@@ -74,8 +74,34 @@ public class MovieReviewServiceImpl implements MovieReviewService {
             throw new AccessDeniedException("Staff counter accounts cannot post customer movie reviews.");
         }
 
-        if (movieReviewRepository.findByMovie_MovieIdAndUser_UserId(movieId, currentUserId).isPresent()) {
-            throw new IllegalStateException("You have already reviewed this movie. Reviews cannot be edited once posted.");
+        boolean verifiedViewer = bookingRepository.existsConfirmedBookingForMovie(currentUserId, movieId);
+
+        MovieReview existing = movieReviewRepository.findByMovie_MovieIdAndUser_UserId(movieId, currentUserId).orElse(null);
+        if (existing != null) {
+            boolean canAppendComment = existing.isVerifiedViewer()
+                    && existing.getRating() != null
+                    && (existing.getComment() == null || existing.getComment().isBlank());
+            if (!canAppendComment) {
+                throw new IllegalStateException("You have already reviewed this movie. Reviews cannot be edited once posted.");
+            }
+            if (comment.isEmpty()) {
+                throw new IllegalArgumentException("Please enter a comment before posting.");
+            }
+            existing.setComment(comment);
+            existing.setUpdatedAt(LocalDateTime.now());
+            movieReviewRepository.saveAndFlush(existing);
+            return buildSummary(movieId, currentUserId, isAdmin, "newest");
+        }
+
+        if (!verifiedViewer) {
+            if (request.getRating() != null) {
+                throw new AccessDeniedException("Only verified ticket holders can submit a star rating.");
+            }
+            if (comment.isEmpty()) {
+                throw new IllegalArgumentException("Please enter a comment before posting.");
+            }
+        } else if (request.getRating() == null || request.getRating() < 1 || request.getRating() > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5 stars.");
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -85,9 +111,9 @@ public class MovieReviewServiceImpl implements MovieReviewService {
         review.setStatus("VISIBLE");
         review.setCreatedAt(now);
         review.setUpdatedAt(now);
-        review.setRating(request.getRating());
+        review.setRating(verifiedViewer ? request.getRating() : null);
         review.setComment(comment.isEmpty() ? null : comment);
-        review.setVerifiedViewer(bookingRepository.existsConfirmedBookingForMovie(currentUserId, movieId));
+        review.setVerifiedViewer(verifiedViewer);
 
         movieReviewRepository.saveAndFlush(review);
         return buildSummary(movieId, currentUserId, isAdmin, "newest");
@@ -120,14 +146,21 @@ public class MovieReviewServiceImpl implements MovieReviewService {
         }
 
         int total = rawList.size();
+        int ratedCount = 0;
+        int discussionCount = 0;
         int sum = 0;
         for (MovieReview r : rawList) {
-            int rating = r.getRating() != null ? Math.max(1, Math.min(5, r.getRating())) : 5;
-            sum += rating;
-            counts.put(rating, counts.getOrDefault(rating, 0) + 1);
+            if (r.getRating() != null) {
+                int rating = Math.max(1, Math.min(5, r.getRating()));
+                sum += rating;
+                ratedCount++;
+                counts.put(rating, counts.getOrDefault(rating, 0) + 1);
+            } else {
+                discussionCount++;
+            }
         }
 
-        double average = total > 0 ? Math.round((sum / (double) total) * 10.0) / 10.0 : 0.0;
+        double average = ratedCount > 0 ? Math.round((sum / (double) ratedCount) * 10.0) / 10.0 : 0.0;
 
         String normalizedSort = sort != null ? sort.trim().toLowerCase() : "newest";
         List<MovieReview> sorted = new ArrayList<>(rawList);
@@ -156,6 +189,8 @@ public class MovieReviewServiceImpl implements MovieReviewService {
         summary.setMovieId(movieId);
         summary.setAverageRating(average);
         summary.setTotalReviews(total);
+        summary.setTotalRatings(ratedCount);
+        summary.setTotalDiscussions(discussionCount);
         summary.setRatingCounts(counts);
         summary.setAuthenticated(authenticated);
         summary.setCanReview(authenticated);
@@ -180,7 +215,7 @@ public class MovieReviewServiceImpl implements MovieReviewService {
         dto.setAuthorName(authorName);
         dto.setAuthorInitial(initial);
         dto.setAuthorAvatarUrl(author != null ? author.getAvatarUrl() : null);
-        dto.setRating(r.getRating() != null ? r.getRating() : 5);
+        dto.setRating(r.getRating());
         dto.setComment(r.getComment());
         dto.setVerifiedViewer(r.isVerifiedViewer());
         dto.setOwner(owner);

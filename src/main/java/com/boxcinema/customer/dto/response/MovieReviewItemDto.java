@@ -8,7 +8,7 @@ public class MovieReviewItemDto {
     private String authorName;
     private String authorInitial;
     private String authorAvatarUrl;
-    private int rating;
+    private Integer rating;
     private String comment;
     private boolean verifiedViewer;
     private boolean owner;
@@ -62,11 +62,11 @@ public class MovieReviewItemDto {
         this.authorAvatarUrl = authorAvatarUrl;
     }
 
-    public int getRating() {
+    public Integer getRating() {
         return rating;
     }
 
-    public void setRating(int rating) {
+    public void setRating(Integer rating) {
         this.rating = rating;
     }
 

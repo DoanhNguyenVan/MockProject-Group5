@@ -63,14 +63,26 @@ class MovieReviewServiceImplTest {
         r2.setCreatedAt(LocalDateTime.now().minusHours(1));
         r2.setUpdatedAt(r2.getCreatedAt());
 
+        MovieReview r3 = new MovieReview();
+        r3.setReviewId(12L);
+        r3.setMovie(movie);
+        r3.setUser(u2);
+        r3.setRating(null);
+        r3.setComment("Excited to watch this weekend!");
+        r3.setVerifiedViewer(false);
+        r3.setCreatedAt(LocalDateTime.now().minusHours(2));
+        r3.setUpdatedAt(r3.getCreatedAt());
+
         when(movieRepo.existsById(7L)).thenReturn(true);
-        when(reviewRepo.findVisibleByMovieIdOrderByCreatedAtDesc(7L)).thenReturn(List.of(r1, r2));
+        when(reviewRepo.findVisibleByMovieIdOrderByCreatedAtDesc(7L)).thenReturn(List.of(r1, r2, r3));
         when(bookingRepo.existsConfirmedBookingForMovie(1L, 7L)).thenReturn(true);
 
         MovieReviewSummaryDto summary = service.getReviewsForMovie(7L, 1L, false, "newest");
 
         assertEquals(4.5, summary.getAverageRating());
-        assertEquals(2, summary.getTotalReviews());
+        assertEquals(3, summary.getTotalReviews());
+        assertEquals(2, summary.getTotalRatings());
+        assertEquals(1, summary.getTotalDiscussions());
         assertEquals(1, summary.getRatingCounts().get(5));
         assertEquals(1, summary.getRatingCounts().get(4));
         assertEquals(0, summary.getRatingCounts().get(1));
@@ -81,6 +93,17 @@ class MovieReviewServiceImplTest {
 
     @Test
     void rejectsOutOfRangeRating() {
+        Movie movie = new Movie();
+        movie.setMovieId(7L);
+        User verified = new User();
+        verified.setUserId(1L);
+        verified.setRole("CUSTOMER");
+
+        when(movieRepo.findById(7L)).thenReturn(Optional.of(movie));
+        when(userRepo.findById(1L)).thenReturn(Optional.of(verified));
+        when(bookingRepo.existsConfirmedBookingForMovie(1L, 7L)).thenReturn(true);
+        when(reviewRepo.findByMovie_MovieIdAndUser_UserId(7L, 1L)).thenReturn(Optional.empty());
+
         assertThrows(IllegalArgumentException.class,
                 () -> service.submitReview(7L, 1L, false, new MovieReviewSubmitRequestDto(6, "Too high")));
         assertThrows(IllegalArgumentException.class,
@@ -149,6 +172,84 @@ class MovieReviewServiceImplTest {
         assertThrows(IllegalStateException.class,
                 () -> service.submitReview(7L, 15L, false, new MovieReviewSubmitRequestDto(4, "Edited")));
         verify(reviewRepo, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void allowsUnverifiedUserToPostCommentOnlyWithoutStarRating() {
+        Movie movie = new Movie();
+        movie.setMovieId(7L);
+        User user = new User();
+        user.setUserId(20L);
+        user.setRole("CUSTOMER");
+
+        when(movieRepo.findById(7L)).thenReturn(Optional.of(movie));
+        when(movieRepo.existsById(7L)).thenReturn(true);
+        when(userRepo.findById(20L)).thenReturn(Optional.of(user));
+        when(bookingRepo.existsConfirmedBookingForMovie(20L, 7L)).thenReturn(false);
+        when(reviewRepo.findByMovie_MovieIdAndUser_UserId(7L, 20L)).thenReturn(Optional.empty());
+        when(reviewRepo.saveAndFlush(any(MovieReview.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(reviewRepo.findVisibleByMovieIdOrderByCreatedAtDesc(7L)).thenReturn(List.of());
+
+        MovieReviewSummaryDto res = service.submitReview(7L, 20L, false,
+                new MovieReviewSubmitRequestDto(null, "Cannot wait for IMAX tonight!"));
+
+        assertFalse(res.isVerifiedViewer());
+        verify(reviewRepo).saveAndFlush(argThat(r ->
+                r.getRating() == null && "Cannot wait for IMAX tonight!".equals(r.getComment()) && !r.isVerifiedViewer()));
+    }
+
+    @Test
+    void rejectsStarRatingOrBlankCommentFromUnverifiedUser() {
+        Movie movie = new Movie();
+        movie.setMovieId(7L);
+        User user = new User();
+        user.setUserId(20L);
+        user.setRole("CUSTOMER");
+
+        when(movieRepo.findById(7L)).thenReturn(Optional.of(movie));
+        when(userRepo.findById(20L)).thenReturn(Optional.of(user));
+        when(bookingRepo.existsConfirmedBookingForMovie(20L, 7L)).thenReturn(false);
+        when(reviewRepo.findByMovie_MovieIdAndUser_UserId(7L, 20L)).thenReturn(Optional.empty());
+
+        assertThrows(AccessDeniedException.class,
+                () -> service.submitReview(7L, 20L, false, new MovieReviewSubmitRequestDto(5, "Great")));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.submitReview(7L, 20L, false, new MovieReviewSubmitRequestDto(null, "   ")));
+        verify(reviewRepo, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void allowsVerifiedUserToRateWithoutCommentAndAddCommentLater() {
+        Movie movie = new Movie();
+        movie.setMovieId(7L);
+        User customer = new User();
+        customer.setUserId(15L);
+        customer.setRole("CUSTOMER");
+
+        MovieReview savedRatingOnly = new MovieReview();
+        savedRatingOnly.setReviewId(88L);
+        savedRatingOnly.setMovie(movie);
+        savedRatingOnly.setUser(customer);
+        savedRatingOnly.setRating(4);
+        savedRatingOnly.setComment(null);
+        savedRatingOnly.setVerifiedViewer(true);
+
+        when(movieRepo.findById(7L)).thenReturn(Optional.of(movie));
+        when(movieRepo.existsById(7L)).thenReturn(true);
+        when(userRepo.findById(15L)).thenReturn(Optional.of(customer));
+        when(bookingRepo.existsConfirmedBookingForMovie(15L, 7L)).thenReturn(true);
+        when(reviewRepo.findByMovie_MovieIdAndUser_UserId(7L, 15L))
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.of(savedRatingOnly));
+        when(reviewRepo.saveAndFlush(any(MovieReview.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(reviewRepo.findVisibleByMovieIdOrderByCreatedAtDesc(7L)).thenReturn(List.of(savedRatingOnly));
+
+        service.submitReview(7L, 15L, false, new MovieReviewSubmitRequestDto(4, ""));
+        verify(reviewRepo).saveAndFlush(argThat(r -> r.getRating() == 4 && r.getComment() == null && r.isVerifiedViewer()));
+
+        service.submitReview(7L, 15L, false, new MovieReviewSubmitRequestDto(1, "Great visuals!"));
+        assertEquals(4, savedRatingOnly.getRating());
+        assertEquals("Great visuals!", savedRatingOnly.getComment());
     }
 
     @Test

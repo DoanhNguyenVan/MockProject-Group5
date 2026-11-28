@@ -136,28 +136,37 @@ export function initMovieReviews(doc = document) {
 
   const renderSummary = (summary) => {
     const total = Number(summary?.totalReviews || 0);
+    const totalRatings = Number(summary?.totalRatings ?? total);
+    const totalDiscussions = Number(summary?.totalDiscussions ?? 0);
     const avg = Number(summary?.averageRating || 0);
-    const avgText = total > 0 ? avg.toFixed(1) : "0.0";
+    const avgText = totalRatings > 0 ? avg.toFixed(1) : "0.0";
 
     const headerPill = el("movieHeaderRating");
     if (headerPill) {
       headerPill.hidden = false;
       el("headerAvgText").textContent = avgText;
-      el("headerCountText").textContent = `(${total} ${total === 1 ? "review" : "reviews"})`;
+      el("headerCountText").textContent = `(${totalRatings} ${totalRatings === 1 ? "rating" : "ratings"})`;
     }
 
     el("avgRatingNum").textContent = avgText;
     el("avgStarsDisplay").innerHTML = renderStarsHtml(avg);
-    el("totalReviewsLabel").textContent = total
-      ? `Based on ${total} audience ${total === 1 ? "review" : "reviews"}`
-      : "No reviews yet — be the first to rate!";
+
+    let summaryLabel = "No reviews yet — be the first to share!";
+    if (totalRatings > 0 && totalDiscussions > 0) {
+      summaryLabel = `Based on ${totalRatings} verified ${totalRatings === 1 ? "rating" : "ratings"} · ${totalDiscussions} ${totalDiscussions === 1 ? "discussion" : "discussions"}`;
+    } else if (totalRatings > 0) {
+      summaryLabel = `Based on ${totalRatings} verified ${totalRatings === 1 ? "rating" : "ratings"}`;
+    } else if (totalDiscussions > 0) {
+      summaryLabel = `${totalDiscussions} community ${totalDiscussions === 1 ? "discussion" : "discussions"} · No star ratings yet`;
+    }
+    el("totalReviewsLabel").textContent = summaryLabel;
 
     const bars = el("ratingBars");
     bars.replaceChildren();
     const counts = summary?.ratingCounts || {};
     [5, 4, 3, 2, 1].forEach((star) => {
       const count = Number(counts[star] ?? counts[String(star)] ?? 0);
-      const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+      const pct = totalRatings > 0 ? Math.round((count / totalRatings) * 100) : 0;
       const row = doc.createElement("div");
       row.className = "rating-bar-row";
       row.innerHTML = `
@@ -173,6 +182,11 @@ export function initMovieReviews(doc = document) {
     const guestBox = el("reviewGuestBox");
     const alreadyBox = el("reviewAlreadyBox");
     const form = el("movieReviewForm");
+    const starSection = el("starPickerSection");
+    const ratedBar = el("ratedSummaryBar");
+    const promptBox = el("emptyCommentPrompt");
+    if (promptBox) promptBox.hidden = true;
+
     if (!summary?.authenticated) {
       guestBox.hidden = false;
       if (alreadyBox) alreadyBox.hidden = true;
@@ -182,7 +196,11 @@ export function initMovieReviews(doc = document) {
 
     guestBox.hidden = true;
     const mine = summary.myReview;
-    if (mine) {
+    const canAppendComment = Boolean(
+      mine && summary.verifiedViewer && mine.rating != null && (!mine.comment || !mine.comment.trim())
+    );
+
+    if (mine && !canAppendComment) {
       form.hidden = true;
       if (alreadyBox) alreadyBox.hidden = false;
       return;
@@ -190,14 +208,36 @@ export function initMovieReviews(doc = document) {
 
     if (alreadyBox) alreadyBox.hidden = true;
     form.hidden = false;
-    el("formVerifiedBadge").hidden = !summary.verifiedViewer;
-
     const commentEl = el("reviewCommentInput");
-    el("reviewFormHeading").textContent = "Write a Review";
-    el("submitReviewBtn").textContent = "Post Review";
-    pickedRating = 0;
     commentEl.value = "";
     el("reviewCharCount").textContent = "0";
+    pickedRating = 0;
+
+    if (canAppendComment) {
+      el("formVerifiedBadge").hidden = false;
+      if (starSection) starSection.hidden = true;
+      if (ratedBar) {
+        ratedBar.hidden = false;
+        el("ratedSummaryText").textContent = `You rated this movie ${mine.rating} / 5 ★`;
+      }
+      el("reviewFormHeading").textContent = "Share Your Thoughts";
+      el("submitReviewBtn").textContent = "Add Comment";
+      commentEl.placeholder = "Want to tell others what you liked or didn't like? Add your comment here...";
+    } else if (!summary.verifiedViewer) {
+      el("formVerifiedBadge").hidden = true;
+      if (starSection) starSection.hidden = true;
+      if (ratedBar) ratedBar.hidden = true;
+      el("reviewFormHeading").textContent = "Join the Discussion";
+      el("submitReviewBtn").textContent = "Post Comment";
+      commentEl.placeholder = "Share your thoughts, expectations, or questions about this film...";
+    } else {
+      el("formVerifiedBadge").hidden = false;
+      if (starSection) starSection.hidden = false;
+      if (ratedBar) ratedBar.hidden = true;
+      el("reviewFormHeading").textContent = "Rate & Review";
+      el("submitReviewBtn").textContent = "Post Review";
+      commentEl.placeholder = "Write your thoughts on the direction, performances, sound, and visuals...";
+    }
     paintStarPicker();
   };
 
@@ -259,6 +299,11 @@ export function initMovieReviews(doc = document) {
         vb.className = "verified-badge";
         vb.innerHTML = VERIFIED_BADGE_HTML;
         nameRow.append(vb);
+      } else if (r.rating == null) {
+        const db = doc.createElement("span");
+        db.className = "review-discussion-tag";
+        db.textContent = "Discussion";
+        nameRow.append(db);
       }
 
       const dateDiv = doc.createElement("div");
@@ -267,11 +312,13 @@ export function initMovieReviews(doc = document) {
       meta.append(nameRow, dateDiv);
       authorWrap.append(avatar, meta);
 
-      const stars = doc.createElement("div");
-      stars.className = "stars-display";
-      stars.innerHTML = renderStarsHtml(r.rating);
-
-      top.append(authorWrap, stars);
+      top.append(authorWrap);
+      if (r.rating != null) {
+        const stars = doc.createElement("div");
+        stars.className = "stars-display";
+        stars.innerHTML = renderStarsHtml(r.rating);
+        top.append(stars);
+      }
       card.append(top);
 
       if (r.comment && r.comment.trim()) {
@@ -279,6 +326,11 @@ export function initMovieReviews(doc = document) {
         body.className = "review-body";
         body.textContent = r.comment;
         card.append(body);
+      } else if (r.rating != null) {
+        const note = doc.createElement("p");
+        note.className = "review-rating-only-note";
+        note.textContent = `Rated ${r.rating} / 5 stars (no written comment)`;
+        card.append(note);
       }
 
       if (r.adminReply && r.adminReply.trim()) {
@@ -366,28 +418,20 @@ export function initMovieReviews(doc = document) {
     btn.addEventListener("click", () => { pickedRating = val; setFeedback(""); paintStarPicker(); });
   });
 
-  el("reviewCommentInput")?.addEventListener("input", () => {
-    el("reviewCharCount").textContent = String(el("reviewCommentInput").value.length);
-  });
-
-  el("movieReviewForm")?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    if (!pickedRating) {
-      setFeedback("Please select 1 to 5 stars before submitting.", "error");
-      return;
-    }
+  const postReviewPayload = async (ratingValue, commentValue, successMessage) => {
     const submitBtn = el("submitReviewBtn");
-    submitBtn.disabled = true;
+    const confirmBtn = el("btnSubmitRatingOnly");
+    if (submitBtn) submitBtn.disabled = true;
+    if (confirmBtn) confirmBtn.disabled = true;
     setFeedback("");
     try {
-      const comment = el("reviewCommentInput")?.value || "";
       const res = await fetch(`/api/movies/${encodeURIComponent(movieId)}/reviews`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...getCsrfHeaders(doc)
         },
-        body: JSON.stringify({ rating: pickedRating, comment })
+        body: JSON.stringify({ rating: ratingValue, comment: commentValue })
       });
       const data = await res.json();
       if (!res.ok) {
@@ -395,12 +439,85 @@ export function initMovieReviews(doc = document) {
         return;
       }
       applySummary(data);
-      setFeedback("Your review has been saved.", "success");
+      setFeedback(successMessage || "Your review has been saved.", "success");
     } catch {
       setFeedback("Network error while saving your review.", "error");
     } finally {
-      submitBtn.disabled = false;
+      if (submitBtn) submitBtn.disabled = false;
+      if (confirmBtn) confirmBtn.disabled = false;
     }
+  };
+
+  el("reviewCommentInput")?.addEventListener("input", () => {
+    const val = el("reviewCommentInput").value;
+    el("reviewCharCount").textContent = String(val.length);
+    if (val.trim()) {
+      const promptBox = el("emptyCommentPrompt");
+      if (promptBox) promptBox.hidden = true;
+    }
+  });
+
+  el("movieReviewForm")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const comment = el("reviewCommentInput")?.value || "";
+    const mine = currentSummary?.myReview;
+    const canAppendComment = Boolean(
+      mine && currentSummary?.verifiedViewer && mine.rating != null && (!mine.comment || !mine.comment.trim())
+    );
+
+    if (canAppendComment) {
+      if (!comment.trim()) {
+        setFeedback("Please write a comment before submitting.", "error");
+        return;
+      }
+      await postReviewPayload(mine.rating, comment, "Your comment has been added.");
+      return;
+    }
+
+    if (!currentSummary?.verifiedViewer) {
+      if (!comment.trim()) {
+        setFeedback("Please write a comment before posting.", "error");
+        return;
+      }
+      await postReviewPayload(null, comment, "Your comment has been posted.");
+      return;
+    }
+
+    if (!pickedRating) {
+      setFeedback("Please select 1 to 5 stars before submitting.", "error");
+      return;
+    }
+
+    if (!comment.trim()) {
+      const promptBox = el("emptyCommentPrompt");
+      const titleEl = el("emptyCommentPromptTitle");
+      if (titleEl) {
+        titleEl.textContent = `Submit your ${pickedRating} ★ rating without a comment?`;
+      }
+      if (promptBox) {
+        promptBox.hidden = false;
+        setFeedback("");
+        return;
+      }
+    }
+
+    await postReviewPayload(pickedRating, comment, "Your review has been saved.");
+  });
+
+  el("btnAddCommentFocus")?.addEventListener("click", () => {
+    const promptBox = el("emptyCommentPrompt");
+    if (promptBox) promptBox.hidden = true;
+    el("reviewCommentInput")?.focus();
+  });
+
+  el("btnSubmitRatingOnly")?.addEventListener("click", async () => {
+    if (!pickedRating) {
+      setFeedback("Please select 1 to 5 stars before submitting.", "error");
+      return;
+    }
+    const promptBox = el("emptyCommentPrompt");
+    if (promptBox) promptBox.hidden = true;
+    await postReviewPayload(pickedRating, "", "Your star rating has been saved. You can add a comment anytime below.");
   });
 
   el("reviewSortSelect")?.addEventListener("change", loadReviews);

@@ -7,6 +7,8 @@ public class MovieReviewSummaryDto {
     private Long movieId;
     private double averageRating;
     private int totalReviews;
+    private int totalRatings;
+    private int totalDiscussions;
     private Map<Integer, Integer> ratingCounts;
     private boolean authenticated;
     private boolean canReview;
@@ -39,6 +41,22 @@ public class MovieReviewSummaryDto {
 
     public void setTotalReviews(int totalReviews) {
         this.totalReviews = totalReviews;
+    }
+
+    public int getTotalRatings() {
+        return totalRatings;
+    }
+
+    public void setTotalRatings(int totalRatings) {
+        this.totalRatings = totalRatings;
+    }
+
+    public int getTotalDiscussions() {
+        return totalDiscussions;
+    }
+
+    public void setTotalDiscussions(int totalDiscussions) {
+        this.totalDiscussions = totalDiscussions;
     }
 
     public Map<Integer, Integer> getRatingCounts() {

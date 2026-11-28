@@ -52,7 +52,7 @@ public class SchemaCompatibilityInitializer implements ApplicationRunner {
                                 "review_id BIGINT NOT NULL AUTO_INCREMENT, " +
                                 "movie_id BIGINT NOT NULL, " +
                                 "user_id BIGINT NOT NULL, " +
-                                "rating TINYINT NOT NULL, " +
+                                "rating TINYINT NULL, " +
                                 "comment TEXT NULL, " +
                                 "is_verified_viewer TINYINT(1) NOT NULL DEFAULT 0, " +
                                 "status VARCHAR(20) NOT NULL DEFAULT 'VISIBLE', " +
@@ -73,6 +73,7 @@ public class SchemaCompatibilityInitializer implements ApplicationRunner {
                     ensureColumnExists(reviewsTable, "movie_reviews", "admin_reply", "TEXT NULL");
                     ensureColumnExists(reviewsTable, "movie_reviews", "admin_replied_at", "DATETIME NULL");
                     ensureColumnExists(reviewsTable, "movie_reviews", "admin_replied_by", "BIGINT NULL");
+                    ensureRatingNullable(reviewsTable);
                 }
             }
         } catch (Exception ex) {
@@ -101,6 +102,18 @@ public class SchemaCompatibilityInitializer implements ApplicationRunner {
         if (count != null && count == 0) {
             jdbcTemplate.execute("ALTER TABLE " + exactTableName + " ADD COLUMN " + columnName + " " + columnDefinition);
             log.info("Added missing {} column to {}.", columnName, exactTableName);
+        }
+    }
+
+    private void ensureRatingNullable(String exactTableName) {
+        String isNullable = jdbcTemplate.queryForObject(
+                "SELECT COALESCE(MAX(IS_NULLABLE), 'YES') FROM information_schema.columns " +
+                        "WHERE table_schema = DATABASE() AND LOWER(table_name) = 'movie_reviews' AND LOWER(column_name) = 'rating'",
+                String.class
+        );
+        if ("NO".equalsIgnoreCase(isNullable)) {
+            jdbcTemplate.execute("ALTER TABLE " + exactTableName + " MODIFY COLUMN rating TINYINT NULL");
+            log.info("Updated {}.rating column to NULLABLE for comment-only discussions.", exactTableName);
         }
     }
 }

@@ -23,7 +23,7 @@ public class MovieReview {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "rating", nullable = false)
+    @Column(name = "rating")
     private Integer rating;
 
     @Column(name = "comment", columnDefinition = "TEXT")

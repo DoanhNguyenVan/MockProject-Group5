@@ -192,7 +192,7 @@
               <div class="review-surface-card guest-review-box" id="reviewAlreadyBox" hidden>
                 <div>
                   <strong>Thank you for your review</strong>
-                  <p>You have already rated and reviewed this movie. Reviews cannot be edited once posted.</p>
+                  <p>You have already contributed to this movie's reviews. Reviews cannot be edited once posted.</p>
                 </div>
               </div>
 
@@ -205,7 +205,12 @@
                   </span>
                 </div>
 
-                <div class="star-picker-wrap">
+                <div id="ratedSummaryBar" class="rated-summary-bar" hidden>
+                  <span id="ratedSummaryText">You rated this movie 5 / 5 ★</span>
+                  <span class="rated-summary-note">Star rating saved</span>
+                </div>
+
+                <div class="star-picker-wrap" id="starPickerSection">
                   <div class="star-picker" id="reviewStarPicker" role="radiogroup" aria-label="Rate from 1 to 5 stars">
                     <button type="button" class="star-pick-btn" data-star="1" aria-label="1 star"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg></button>
                     <button type="button" class="star-pick-btn" data-star="2" aria-label="2 stars"><svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg></button>
@@ -225,6 +230,15 @@
                   <span class="review-char-counter"><span id="reviewCharCount">0</span> / 1000</span>
                   <div class="review-form-actions">
                     <button type="submit" class="movie-details-buy review-submit-btn" id="submitReviewBtn">Post Review</button>
+                  </div>
+                </div>
+
+                <div id="emptyCommentPrompt" class="review-confirm-prompt" hidden>
+                  <h4 id="emptyCommentPromptTitle">Submit your star rating without a comment?</h4>
+                  <p>You haven't written a review yet. You can add your thoughts now, or submit your star rating right away and add a comment later whenever you'd like.</p>
+                  <div class="review-confirm-actions">
+                    <button type="button" class="review-btn-secondary" id="btnAddCommentFocus">Add a Comment</button>
+                    <button type="button" class="movie-details-buy review-submit-btn" id="btnSubmitRatingOnly">Submit Rating Only</button>
                   </div>
                 </div>
               </form>

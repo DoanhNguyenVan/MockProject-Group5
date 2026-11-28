@@ -70,13 +70,13 @@ public interface MovieReviewRepository extends JpaRepository<MovieReview, Long> 
 
     long countByVerifiedViewerTrue();
 
-    @Query("SELECT COALESCE(AVG(r.rating), 0.0) FROM MovieReview r WHERE UPPER(r.status) = 'VISIBLE'")
+    @Query("SELECT COALESCE(AVG(r.rating), 0.0) FROM MovieReview r WHERE UPPER(r.status) = 'VISIBLE' AND r.rating IS NOT NULL")
     Double findAverageVisibleRating();
 
     @Query("SELECT m.movieId, m.title, m.posterUrl, m.bannerUrl, AVG(r.rating), COUNT(r) " +
            "FROM MovieReview r " +
            "JOIN r.movie m " +
-           "WHERE UPPER(r.status) = 'VISIBLE' " +
+           "WHERE UPPER(r.status) = 'VISIBLE' AND r.rating IS NOT NULL " +
            "GROUP BY m.movieId, m.title, m.posterUrl, m.bannerUrl " +
            "ORDER BY AVG(r.rating) DESC, COUNT(r) DESC, m.movieId ASC")
     List<Object[]> findTopRatedMovies(Pageable pageable);
